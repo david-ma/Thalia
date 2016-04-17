@@ -18,19 +18,39 @@ Thalia.module = function(config) {
 			.append("h1")
 			.html(config.title);
 
-	var ul = this.ul = div.append("ul")
-		.style({
-			clip: "rect(0px, 1000px, 0px, 0px)"
-		});
 
-	if(config.data instanceof Array) {
-		config.data.forEach(function(d){
-			ul.append("li").html(d);
-		});
-	} else {
-		Object.keys(config.data).forEach(function(key){
-			ul.append("li").html(key+": "+config.data[key]);
-		});
+	switch(config.type) {
+		case "table":
+			var table = div.append("table").append("tbody");
+			var tr = table.append("tr");
+			if(config.header){
+				config.header.forEach(function(d){
+					tr.append("th").html(d);
+				});
+				config.data.forEach(function(row){
+					tr = table.append("tr");
+					row.forEach(function(cell){
+						tr.append("td").html(cell);
+					});
+				});
+			}
+			
+		break;
+		default:
+			var ul = this.ul = div.append("ul")
+				.style({
+					clip: "rect(0px, 1000px, 0px, 0px)"
+				});
+
+			if(config.data instanceof Array) {
+				config.data.forEach(function(d){
+					ul.append("li").html(d);
+				});
+			} else {
+				Object.keys(config.data).forEach(function(key){
+					ul.append("li").html(key+": "+config.data[key]);
+				});
+			}
 	}
 
 	var id = "#"+config.name;

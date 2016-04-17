@@ -142,6 +142,15 @@ html * {
 			position: absolute; 
 			overflow: hidden;
 		}
+		table {
+			width: 100%;
+			:first-child {
+				text-align: left;
+			}
+			:last-child {
+				text-align: right;
+			}
+		}
 	}
 	&:last-child {
 		padding-bottom: $footer-height;

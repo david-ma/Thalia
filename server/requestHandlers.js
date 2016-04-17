@@ -41,7 +41,15 @@ handle.addWebsite({
 
 handle.addWebsite({
 	folder: "reddit",
-	domains: ["localhost"]
+	domains: ["localhost"],
+	sockets: {
+		emit: {},
+		on: {
+			threads: function(){
+				console.log("heeey!");
+			}
+		}
+	}
 })
 
 exports.handle = handle;

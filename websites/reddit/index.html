@@ -90,8 +90,26 @@ This is a stupid dashboard for us to do stupid things
     <script src="/dist/js/vendor.min.js"></script>
 
     <script>
+var socket = io.connect();
+
+socket.on("hello", function(d){
+	console.log(d);
+})
+
+// var socket = io.connect('http://example.com/user');
 
 
+var threads = new Thalia.module({
+	name: "threads",
+	hidden: false,
+	title: "Official Threads",
+	type: "table",
+	header: ["Name", "Age"],
+	data: [
+		[1,2],
+		[2,3]
+	]
+})
 
 
 

@@ -39,6 +39,11 @@ handle.addWebsite({
 	domains: [""]
 })
 
+handle.addWebsite({
+	folder: "reddit",
+	domains: ["localhost"]
+})
+
 exports.handle = handle;
 
 

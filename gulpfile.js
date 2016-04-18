@@ -48,12 +48,14 @@ gulp.task("jsconcat", function() {
 	return gulp.src([
 			// Editable - Add any additional paths to JS Bower components here
 
-			// Uncomment the following line to use jQuery
+			// For instance, uncomment the following line to use jQuery
 			"bower_components/d3/d3.min.js",
 			"bower_components/jquery/dist/jquery.min.js",
-			'bower_components/bootstrap-sass/assets/javascripts/bootstrap.min.js',
+			"bower_components/bootstrap-sass/assets/javascripts/bootstrap.min.js",
+			"bower_components/jquery-ui/jquery-ui.min.js",
 			"bower_components/jqGrid/js/jquery.jqGrid.min.js",
-			'node_modules/socket.io-client/socket.io.js',
+			"bower_components/jqGrid/js/minified/i18n/grid.locale-en.js",
+			"node_modules/socket.io-client/socket.io.js",
 			"src/js/vendor/*.js"
 		]).pipe( $.concat("vendor.min.js"))
 		.pipe( gulp.dest(dist+"/js"));
@@ -104,6 +106,9 @@ gulp.task("stylesheets", function() {
 		// Uncomment the following two lines to use Bourbon/Neat
 		// 'bower_components/neat/app/assets/stylesheets',
 
+		'bower_components/jqGrid/css',
+// 		'bower_components/jquery-ui/themes/base',
+		'src/jquery-ui',
 		'bower_components/bourbon/app/assets/stylesheets',
 		'bower_components/bootstrap-sass/assets/stylesheets',
 		'bower_components/normalize-scss'

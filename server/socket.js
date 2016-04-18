@@ -3,13 +3,13 @@ var db = require("./database").db;
 var cred = require("./credentials").cred;
 
 var maindb = new db(cred.db);
-var reddit_data = {};
+var data = {};
 
 function init(io, handle){
 	
 
 	//this stuff happens once, when the server starts:
-	refresh_redit_data();
+	refresh_data();
 
 
 	//this stuff happens every time a page is loaded:
@@ -19,25 +19,25 @@ function init(io, handle){
 	console.log("socket connected at "+socket.id+" "+socket.handshake.address.address+" "+socket.handshake.headers.referer);
 
 	socket.on("refresh", function(){
-		refresh_redit_data();
+		refresh_data();
 
 
 
 
-		socket.emit("refreshed", reddit_data);
+		socket.emit("refreshed", data);
 	});
 
 
-	socket.emit("hello", reddit_data)
+	socket.emit("hello", data)
 
 	});
 }
 
-function refresh_redit_data(){
-	console.log("Refreshing reddit data from database into memory");
+function refresh_data(){
+	console.log("Refreshing spotify data from database into memory");
 
-	maindb.query("select * from reddit_photo_threads;", function(d){
-		reddit_data = {
+	maindb.query("select * from spotify;", function(d){
+		data = {
 			threads: d
 		}
 	})

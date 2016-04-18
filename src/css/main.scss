@@ -7,14 +7,17 @@
 @import "bootstrap/scaffolding";
 @import "bootstrap/grid";
 
-@import "bower_components/jqGrid/css/ui.jqgrid";
-@import "bower_components/jqGrid/css/ui.jqgrid-bootstrap";
-@import "bower_components/jqGrid/css/ui.jqgrid-bootstrap-ui";
+/* This is made up of jquery-ui.theme and jquery-ui.structure, concatenated */
+@import "jquery-ui.min";
 
-// @import "neat.scss";
-// Add any additional Bower imports here, and also remember to add the path to the folder containing them to gulpfile.js in the Stylesheets section
+@import "ui.jqgrid";
+@import "ui.jqgrid-bootstrap";
+@import "ui.jqgrid-bootstrap-ui";
 
-// @import "components/*"
+/*  @import "neat.scss"; */
+/*  Add any additional Bower imports here, and also remember to add the path to the folder containing them to gulpfile.js in the Stylesheets section */
+
+/*  @import "components" */
 
 $transition: all 0.5s ease;
 $width: 300px;
@@ -23,10 +26,10 @@ $footer-height: 20px;
 
 $font-stack: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
 
-$primary-color: #077C0C;
+$primary-color: #07447C;
 $sidebar-color: darken( $primary-color, 10% );
 $link-color: #4478ac;
-
+	
 
 html * {
 	font-family: $font-stack;
@@ -252,10 +255,11 @@ h1 {
 }
 
 
-
-
-
-
+/* Stops the jqgrid buttons acting weird */
+.ui-jqgrid .ui-pg-button:hover {
+    padding: 0 5px;
+    border: 0px;
+}
 
 /* If your screen is smaller than 768px... do something */
 /* We should hide the sidebar, and collapse the nav */

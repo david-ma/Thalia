@@ -52,6 +52,7 @@ gulp.task("jsconcat", function() {
 			"bower_components/d3/d3.min.js",
 			"bower_components/jquery/dist/jquery.min.js",
 			'bower_components/bootstrap-sass/assets/javascripts/bootstrap.min.js',
+			"bower_components/jqGrid/js/jquery.jqGrid.min.js",
 			'node_modules/socket.io-client/socket.io.js',
 			"src/js/vendor/*.js"
 		]).pipe( $.concat("vendor.min.js"))

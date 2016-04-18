@@ -7,6 +7,9 @@
 @import "bootstrap/scaffolding";
 @import "bootstrap/grid";
 
+@import "bower_components/jqGrid/css/ui.jqgrid";
+@import "bower_components/jqGrid/css/ui.jqgrid-bootstrap";
+@import "bower_components/jqGrid/css/ui.jqgrid-bootstrap-ui";
 
 // @import "neat.scss";
 // Add any additional Bower imports here, and also remember to add the path to the folder containing them to gulpfile.js in the Stylesheets section

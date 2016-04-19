@@ -52,6 +52,8 @@ gulp.task("jsconcat", function() {
 			'bower_components/d3/d3.min.js',
 			'bower_components/jquery/dist/jquery.min.js',
 			'bower_components/bootstrap-sass/assets/javascripts/bootstrap.min.js',
+			'bower_components/datatables.net/js/jquery.dataTables.min.js',
+			'bower_components/datatables.net-bs/js/dataTables.bootstrap.js',
 			'node_modules/socket.io-client/socket.io.js',
 			"src/js/vendor/*.js"
 		]).pipe( $.concat("vendor.min.js"))
@@ -109,7 +111,7 @@ gulp.task("stylesheets", function() {
 
 		// Uncomment the following two lines to use Bourbon/Neat
 		// 'bower_components/neat/app/assets/stylesheets',
-
+		'bower_components/datatables.net-bs/css',
 		'bower_components/bourbon/app/assets/stylesheets',
 		'bower_components/bootstrap-sass/assets/stylesheets',
 		'bower_components/normalize-scss'

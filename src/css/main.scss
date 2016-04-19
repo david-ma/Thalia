@@ -1,12 +1,16 @@
 // Bower
-@import "normalize.scss";
+/* @import "normalize.scss"; */
 @import "bourbon.scss";
 
+@import "bootstrap";
+/* 
 @import "bootstrap/variables";
 @import "bootstrap/mixins";
 @import "bootstrap/scaffolding";
 @import "bootstrap/grid";
+ */
 
+@import "dataTables.bootstrap.min";
 
 // @import "neat.scss";
 // Add any additional Bower imports here, and also remember to add the path to the folder containing them to gulpfile.js in the Stylesheets section
@@ -30,13 +34,16 @@ html * {
 }
 
 
-.navbar-default {
+.navbar-thalia {
 	z-index: 1001;
 	position: fixed;
 	top: 0px;
 	width: 100%;
 	
 	background-color: $primary-color;
+/* 	border-color: rgba(0,0,0,0); */
+/* 	border-radius: 0px; */
+
 	color: #ffffff;
 	height: $nav-height;
 	div {

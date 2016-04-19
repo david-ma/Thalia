@@ -38,5 +38,6 @@ node_modules
 *.swp
 credentials.js
 *.dropbox
+bower_components
 
-
+websites/public/dist

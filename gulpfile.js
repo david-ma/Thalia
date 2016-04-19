@@ -49,8 +49,8 @@ gulp.task("jsconcat", function() {
 			// Editable - Add any additional paths to JS Bower components here
 
 			// Uncomment the following line to use jQuery
-			"bower_components/d3/d3.min.js",
-			"bower_components/jquery/dist/jquery.min.js",
+			'bower_components/d3/d3.min.js',
+			'bower_components/jquery/dist/jquery.min.js',
 			'bower_components/bootstrap-sass/assets/javascripts/bootstrap.min.js',
 			'node_modules/socket.io-client/socket.io.js',
 			"src/js/vendor/*.js"

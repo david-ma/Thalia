@@ -3,7 +3,7 @@ var db = require("./database").db;
 var cred = require("./credentials").cred;
 
 var maindb = new db(cred.db);
-var reddit_data = {};
+var data = {};
 
 function init(io, handle){
 	
@@ -24,20 +24,20 @@ function init(io, handle){
 
 
 
-		socket.emit("refreshed", reddit_data);
+		socket.emit("refreshed", data);
 	});
 
 
-	socket.emit("hello", reddit_data)
+	socket.emit("hello", data)
 
 	});
 }
 
 function refresh_redit_data(){
-	console.log("Refreshing reddit data from database into memory");
+	console.log("Refreshing data from 'stuff' into memory");
 
-	maindb.query("select * from reddit_photo_threads;", function(d){
-		reddit_data = {
+	maindb.query("select * from stuff;", function(d){
+		data = {
 			threads: d
 		}
 	})

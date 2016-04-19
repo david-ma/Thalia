@@ -40,7 +40,7 @@ handle.addWebsite({
 })
 
 handle.addWebsite({
-	folder: "reddit",
+	folder: "public",
 	domains: ["localhost"],
 	sockets: {
 		emit: {},

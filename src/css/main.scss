@@ -1,0 +1,289 @@
+// Bower
+@import "normalize.scss";
+@import "bourbon.scss";
+
+@import "bootstrap/variables";
+@import "bootstrap/mixins";
+@import "bootstrap/scaffolding";
+@import "bootstrap/grid";
+
+
+// @import "neat.scss";
+// Add any additional Bower imports here, and also remember to add the path to the folder containing them to gulpfile.js in the Stylesheets section
+
+// @import "components/*"
+
+$transition: all 0.5s ease;
+$width: 300px;
+$nav-height: 100px;
+$footer-height: 20px;
+
+$font-stack: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+
+$primary-color: #077C0C;
+$sidebar-color: darken( $primary-color, 10% );
+$link-color: #4478ac;
+
+
+html * {
+	font-family: $font-stack;
+}
+
+
+.navbar-default {
+	z-index: 1001;
+	position: fixed;
+	top: 0px;
+	width: 100%;
+	
+	background-color: $primary-color;
+	color: #ffffff;
+	height: $nav-height;
+	div {
+		padding: 10px;
+	}
+	.navlogo {
+		height: 60px;
+	}
+
+	#top-left {
+		height: 60px;
+		padding: 10px;
+		position: absolute;
+		top: 10px;
+		left: 10px;
+		a {
+			padding-right: 10px;
+		}
+		#petermac_logo {
+			padding-bottom: 8px;
+		}
+	}
+
+	#top-right {
+		width: 50%;
+		height: 60px;
+		padding: 10px;
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		div {
+			padding-left: 10px;
+		}
+		#searchHeader>form>input {
+			color: #000;
+			margin-top: 5px;
+			width: 40%;
+		}
+		#loginHeader {
+			font-size: 19px;
+			position: absolute;
+			right: 15px;
+			top: 15px;
+			color: #fff;
+			color: white;
+			a:link, a:visited, a:hover {
+					color: $link-color;
+			}
+		}
+	}
+}
+
+#wrapper {
+	margin-top: $nav-height;
+	padding-left: $width;
+	@include transition( $transition );
+	&.toggled {
+		padding-left: 0;
+		#sidebar-wrapper {
+      width: 0;
+		}
+		#page-content-wrapper {
+			position: relative;
+			margin-right: 0;
+		}
+	}
+}
+
+#sidebar {
+	margin-bottom: 120px;
+	.sidebar-module {
+		width: $width - 30;
+		color: #999;
+		margin-top: 0px;
+		padding: 15px;
+		text-align: justify;
+		h4 {
+			margin: 0;
+			color: #eee;
+		}
+	}
+
+	.module {
+		background-color: #eee;
+		margin: 10px;
+		padding: 10px;
+		width: $width - 40px;
+		border-radius: 0.6em;
+		min-height: 0px;
+		transition: $transition;
+		h1 {
+			text-transform: uppercase;
+			font-size: 1.1em;
+			margin: 0 0 0.3em;
+		}
+		ul {
+			padding-right: 15px;
+			font-size: 0.9em;
+			margin: 0;
+		}
+		a+ul {
+			transition: $transition;
+			position: absolute; 
+			overflow: hidden;
+		}
+		table {
+			width: 100%;
+			:first-child {
+				text-align: left;
+			}
+			:last-child {
+				text-align: right;
+			}
+		}
+	}
+	&:last-child {
+		padding-bottom: $footer-height;
+	}
+}
+
+
+#sidebar-wrapper {
+	z-index: 1000;
+	position: fixed;
+	left: $width;
+			width: $width;
+	height: 100%;
+	margin-left: -$width;
+	overflow-y: scroll;
+	background: $sidebar-color;
+	@include transition( $transition );
+}
+
+
+#page-content-wrapper {
+	width: 100%;
+	height: calc(100vh - 100px);
+	position: relative;
+}
+
+
+h1 {
+	color: $primary-color;
+	font-weight: normal;
+	font-size: 1.25em;
+	margin: 0.8em 0 0.3em 0;
+}
+
+
+#searchBody > form > input {
+	margin-top: 20%;
+	margin-left: 25%;
+	width: 50%;
+	border: 3px solid $primary-color;
+	padding: 10px;
+}
+
+#sidebar-footer {
+	background: $sidebar-color;
+	z-index: 1002;
+	color: #fff;
+	font-size: 0.8em;
+	padding: 10px;
+	width: $width - 20px;
+
+	position: fixed;
+	bottom: 0px;
+	a {
+		color: #fff;
+	}
+}
+
+
+.sidebar-nav {
+/* 	position: absolute; */
+	top: 0;
+	width: $width;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	li {
+		text-indent: 20px;
+		line-height: 40px;
+		a {
+			display: block;
+			text-decoration: none;
+			color: #999999;
+			&:hover {
+				text-decoration: none;
+				color: #fff;
+				background: rgba(255,255,255,0.2);
+			}
+		}
+		&:active, &:focus {
+			text-decoration: none;
+		}
+	}
+	> .sidebar-brand {
+    height: 65px;
+    font-size: 18px;
+    line-height: 60px;
+    a {
+			color: #999999;
+			&:hover {
+				color: #fff;
+				background: none;
+			}
+		}
+	}
+}
+
+
+
+
+
+
+
+/* If your screen is smaller than 768px... do something */
+/* We should hide the sidebar, and collapse the nav */
+@media(max-width:768px) {
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

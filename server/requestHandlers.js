@@ -39,6 +39,19 @@ handle.addWebsite({
 	domains: [""]
 })
 
+handle.addWebsite({
+	folder: "public",
+	domains: ["localhost"],
+	sockets: {
+		emit: {},
+		on: {
+			threads: function(){
+				console.log("heeey!");
+			}
+		}
+	}
+})
+
 exports.handle = handle;
 
 

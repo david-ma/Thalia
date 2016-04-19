@@ -43,7 +43,7 @@ gulp.task('html', function() {
 		.pipe(gulp.dest(dist+'/'));
 });
 
-// Concatenate JS
+// Concatenate JS (vendor js)
 gulp.task("jsconcat", function() {
 	return gulp.src([
 			// Editable - Add any additional paths to JS Bower components here
@@ -88,11 +88,18 @@ gulp.task( "javascript", ["jshint"], function() {
 	return out.pipe( gulp.dest( dist+"/js" ) );
 });
 
-// Images
+// Images (from source... you need something else for vendor images)
 gulp.task("images", function(cb) {
 	return gulp.src('src/img/**/*', {
 		base: "src/img"
 	}).pipe( gulp.dest( dist+"/img" ) );
+});
+
+// Fonts
+gulp.task('fonts', function() {
+	return gulp.src([
+// 		'bower_components/bootstrap-sass/assets/fonts/**/*'
+	]).pipe(gulp.dest(dist+'/fonts/'));
 });
 
 // Stylesheets
@@ -144,7 +151,7 @@ gulp.task( 'production_env', function() {
 });
 
 // Livereload
-gulp.task( "watch", ["stylesheets", "javascript", "jsconcat", "images", "html", "copy"], function() {
+gulp.task( "watch", ["stylesheets", "javascript", "jsconcat", "images", "fonts", "html", "copy"], function() {
 	$.livereload.listen();
 
 	gulp.watch(staticSrc, ["copy"]);
@@ -188,6 +195,7 @@ gulp.task( "build", [
 	"javascript",
 	"jsconcat",
 	"images",
+	"fonts",
 	"html",
 	"copy"
 ], function () {});

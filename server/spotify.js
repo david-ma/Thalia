@@ -1,13 +1,21 @@
 var db = require("./database").db;
-var cred = require("./credentials").cred;
+var cred = require("./credentials").cred.spotify;
 
 var util = require('util'),
-    querystring = require('querystring');
+    querystring = require('querystring'),
+		Auth = require("./auth").Auth;
+
+var auth = new Auth(cred);
+
 
 var site = {
 	folder: "dist",
 	domains: ["localhost"],
-	services: {},
+	services: {
+		login: function(res, req, extra){auth.login(res, req, extra)},
+		callback: function(res, req, extra){auth.callback(res, req, extra)},
+		post: function(res, req, extra){auth.post(res, req, extra)}		
+	},
 	sockets: {
 		emit: {},
 		on: {
@@ -19,17 +27,11 @@ var site = {
 }
 
 
-var scopes = "user-read-private user-read-email playlist-read-private	playlist-read-collaborative	user-top-read"
 
 
 
-var spotify = {
-	init: function(){
-		
-	}
-}
 
-exports.spotify = spotify;
+
 
 exports.site = site;
 

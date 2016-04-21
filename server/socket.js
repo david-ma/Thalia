@@ -32,11 +32,12 @@ function init(io, handle){
 
 
 function refresh_data(){
-	console.log("Refreshing data from 'stuff' into memory");
+	console.log("Refreshing data from '"+table+"' into memory");
 
 	maindb.query("select * from "+table+";", function(d){
 		data = {
-			threads: d
+			table: table,
+			rows: d
 		}
 	})
 

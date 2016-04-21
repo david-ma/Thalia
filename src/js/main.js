@@ -20,6 +20,9 @@ Thalia.module = function(config) {
 
 
 	switch(config.type) {
+		case "login":
+			
+			break;
 		case "table":
 			var table = div.append("table").append("tbody");
 			var tr = table.append("tr");
@@ -35,7 +38,7 @@ Thalia.module = function(config) {
 				});
 			}
 			
-		break;
+			break;
 		default:
 			var ul = this.ul = div.append("ul")
 				.style({

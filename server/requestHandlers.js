@@ -40,7 +40,7 @@ handle.addWebsite({
 })
 
 handle.addWebsite({
-	folder: "public",
+	folder: "dist",
 	domains: ["localhost"],
 	sockets: {
 		emit: {},

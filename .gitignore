@@ -41,7 +41,4 @@ credentials.js
 
 
 bower_components
-websites/default/js
-websites/default/css
-websites/reddit/dist
-websites/public/dist
+websites/dist

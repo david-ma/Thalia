@@ -103,26 +103,36 @@ This is a simple dashboard
 
     <script>
 var socket = io.connect();
+var a = [];
 
-socket.on("hello", function(d){
+var stuff = {};
+
+socket.on("spotify_data", function(d){
+	a = d;
 	console.log(d);
 	
-	columns = [];
-	Object.keys(d.threads[0]).forEach(function(column){
-		columns.push({
-			data: column,
-			title: column
-		})
+	d.tracks.items.forEach(function(i){
+		if(i.track.album){
+			$.getJSON( i.track.album.href, function( data ) {
+// 				console.log(data);
+				stuff[i.track.album.id] = data.release_date;
+				console.log(data.name);
+				console.log(data.release_date_precision);
+			});
+		}
 	})
-	
-	columns[5].type = "date";
-	
-    $('#example').DataTable({
-    	data: d.threads,
-    	columns: columns
-    });
-
 })
+
+
+// socket.emit("once",{})
+
+
+// 
+// $.getJSON( "https://api.spotify.com/v1/albums/0C29hfEJQdcyzpTHy8tTXr", function( data ) {
+// 	console.log(data);
+// });
+
+
 
 
 // var socket = io.connect('http://example.com/user');

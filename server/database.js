@@ -19,10 +19,34 @@ db = function(cred){
 				throw err;                                  // server variable configures this)
 			}
 		});
-		console.log("db connected");
+		console.log('db connected');
 }
 
 db.prototype.query = function(query, callback){
+	db.dbConnection.query(query, function(err, results) {
+		if(err == null) {
+			callback(results);
+		} else {
+			console.log(err);
+		}
+	});
+}
+
+db.prototype.insert = function(table, object, callback){
+	var query = 'INSERT INTO `'+table+'` (`';
+			keys = Object.keys(object),
+			items = [];
+	keys.forEach(function(key){
+		items.push(object[key]); 
+	});
+
+	query += keys.join('`, `');
+	query += '`) VALUES ("';
+	query += items.join('", "');
+	query += '");';
+
+console.log(query);
+
 	db.dbConnection.query(query, function(err, results) {
 		if(err == null) {
 			callback(results);

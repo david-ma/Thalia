@@ -11,7 +11,7 @@
 
     <title>Dashboard</title>
 
-    <link href="/dist/css/main.css" rel="stylesheet">
+    <link href="/css/main.css" rel="stylesheet">
 
 <style>
 
@@ -98,8 +98,8 @@ This is a simple dashboard
 
 </div>
 
-    <script src="/dist/js/scripts.min.js"></script>
-    <script src="/dist/js/vendor.min.js"></script>
+    <script src="/js/scripts.min.js"></script>
+    <script src="/js/vendor.min.js"></script>
 
     <script>
 var socket = io.connect();
@@ -131,11 +131,10 @@ socket.on("hello", function(d){
 new Thalia.module({
 	name: "Spotify",
 	hidden: false,
-	title: "Simple Table",
-	type: "table",
-	header: ["Name", "Age"],
+	title: "Spotify",
+	type: "login",
 	data: {
-		login: "asdf"
+		login: ""
 	}
 })
 

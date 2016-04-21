@@ -3,17 +3,7 @@ var url = require("url");
 
 //This part of the server starts the server on port 80 and logs stuff to the std.out
 function start(route, handle) {
-	function onRequest(request, response) {
 
-		var pathname = url.parse(request.url).pathname;
-		
-		console.log();
-		console.log("Request for " + pathname);
-		console.log("Received at " + getDateTime() +
-								" From " + request.connection.remoteAddress);
-		route(handle, pathname, response, request);
-	}
-	
 	var port = 80; // change the port here?
 	var pattern = /^\d{0,5}$/
 	var workspace = 'default';
@@ -34,7 +24,21 @@ function start(route, handle) {
   console.log("Setting workspace to: "+workspace)
   console.log("Server has started on port: " + port);
   handle.index.localhost = workspace;
+  handle.addWebsite(require("./"+workspace).site);
+  
   return http.createServer(onRequest).listen(port);
+
+
+	function onRequest(request, response) {
+
+		var pathname = url.parse(request.url).pathname;
+		
+		console.log();
+		console.log("Request for " + pathname);
+		console.log("Received at " + getDateTime() +
+								" From " + request.connection.remoteAddress);
+		route(handle, pathname, response, request);
+	}
 }
 
 exports.start = start;

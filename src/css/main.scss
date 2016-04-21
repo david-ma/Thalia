@@ -2,6 +2,7 @@
 /* @import "normalize.scss"; */
 @import "bourbon.scss";
 
+@import "jquery-ui.min";
 @import "bootstrap";
 /* 
 @import "bootstrap/variables";
@@ -48,6 +49,11 @@ html * {
 	height: $nav-height;
 	div {
 		padding: 10px;
+	}
+	h1 {
+		color: #fff;
+		font-weight: bolder;
+		font-size: 2em;
 	}
 	.navlogo {
 		height: 60px;
@@ -109,6 +115,9 @@ html * {
 			position: relative;
 			margin-right: 0;
 		}
+	}
+	#page-content-wrapper {
+		padding: 20px;
 	}
 }
 
@@ -254,7 +263,6 @@ h1 {
 		}
 	}
 }
-
 
 
 

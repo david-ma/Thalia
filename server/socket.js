@@ -4,12 +4,13 @@ var cred = require("./credentials").cred;
 
 var maindb = new db(cred.db);
 var data = {};
+var table = "spotify";
 
 function init(io, handle){
 	
 
 	//this stuff happens once, when the server starts:
-	refresh_redit_data();
+	refresh_data();
 
 
 	//this stuff happens every time a page is loaded:
@@ -19,24 +20,21 @@ function init(io, handle){
 	console.log("socket connected at "+socket.id+" "+socket.handshake.address.address+" "+socket.handshake.headers.referer);
 
 	socket.on("refresh", function(){
-		refresh_redit_data();
-
-
-
+		refresh_data();
 
 		socket.emit("refreshed", data);
 	});
-
 
 	socket.emit("hello", data)
 
 	});
 }
 
-function refresh_redit_data(){
+
+function refresh_data(){
 	console.log("Refreshing data from 'stuff' into memory");
 
-	maindb.query("select * from stuff;", function(d){
+	maindb.query("select * from "+table+";", function(d){
 		data = {
 			threads: d
 		}

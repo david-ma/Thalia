@@ -51,6 +51,7 @@ gulp.task("jsconcat", function() {
 			// Uncomment the following line to use jQuery
 			'bower_components/d3/d3.min.js',
 			'bower_components/jquery/dist/jquery.min.js',
+			'bower_components/jquery-ui/jquery-ui.min.js',
 			'bower_components/bootstrap-sass/assets/javascripts/bootstrap.min.js',
 			'bower_components/datatables.net/js/jquery.dataTables.min.js',
 			'bower_components/datatables.net-bs/js/dataTables.bootstrap.js',
@@ -90,11 +91,18 @@ gulp.task( "javascript", ["jshint"], function() {
 	return out.pipe( gulp.dest( dist+"/js" ) );
 });
 
-// Images (from source... you need something else for vendor images)
+// Images from source
 gulp.task("images", function(cb) {
 	return gulp.src('src/img/**/*', {
 		base: "src/img"
 	}).pipe( gulp.dest( dist+"/img" ) );
+});
+
+// Images from vendor
+gulp.task('vendor-images', function() {
+	return gulp.src([
+		'bower_components/jquery-ui/themes/base/images/*'
+	]).pipe(gulp.dest(dist+'/images/'));
 });
 
 // Fonts
@@ -111,6 +119,7 @@ gulp.task("stylesheets", function() {
 
 		// Uncomment the following two lines to use Bourbon/Neat
 		// 'bower_components/neat/app/assets/stylesheets',
+		'bower_components/jquery-ui/themes/base',
 		'bower_components/datatables.net-bs/css',
 		'bower_components/bourbon/app/assets/stylesheets',
 		'bower_components/bootstrap-sass/assets/stylesheets',
@@ -153,7 +162,7 @@ gulp.task( 'production_env', function() {
 });
 
 // Livereload
-gulp.task( "watch", ["stylesheets", "javascript", "jsconcat", "images", "fonts", "html", "copy"], function() {
+gulp.task( "watch", ["stylesheets", "javascript", "jsconcat", "images", "vendor-images", "fonts", "html", "copy"], function() {
 	$.livereload.listen();
 
 	gulp.watch(staticSrc, ["copy"]);
@@ -174,7 +183,7 @@ gulp.task( "watch", ["stylesheets", "javascript", "jsconcat", "images", "fonts",
 });
 
 // Serve
-gulp.task('serve', ["stylesheets", "javascript", "jsconcat", "images", "html", "copy", "watch"], function() {
+gulp.task('serve', ["stylesheets", "javascript", "jsconcat", "images", "vendor-images", "fonts", "html", "copy", "watch"], function() {
 		browserSync.init({
 			ghostMode: false,
 			proxy: "localhost", // Editable - defines proxy URL
@@ -197,6 +206,7 @@ gulp.task( "build", [
 	"javascript",
 	"jsconcat",
 	"images",
+	"vendor-images",
 	"fonts",
 	"html",
 	"copy"

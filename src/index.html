@@ -14,6 +14,32 @@
     <link href="/css/main.css" rel="stylesheet">
 
 <style>
+.axis {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.axis--x path {
+  display: none;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.julia-line {
+  fill: none;
+  stroke: red;
+  stroke-width: 1.5px;
+}
 
 </style>
 
@@ -90,6 +116,11 @@ This is a simple dashboard
         </tbody>
     </table>
 
+<div id="d3"></div>
+
+<div id="d4"></div>
+
+
 </div>
 <!-- /#page-content-wrapper -->
 
@@ -100,53 +131,244 @@ This is a simple dashboard
 
     <script src="/js/scripts.min.js"></script>
     <script src="/js/vendor.min.js"></script>
+		<script src="//d3js.org/d3.v4.0.0-alpha.15.min.js"></script>
 
     <script>
 var socket = io.connect();
-var a = [];
-
-var stuff = {};
+var data = [];
 
 socket.on("spotify_data", function(d){
-	a = d;
+	data = d;
 	console.log(d);
 	
-	d.tracks.items.forEach(function(i){
-		if(i.track.album){
-			$.getJSON( i.track.album.href, function( data ) {
-// 				console.log(data);
-				stuff[i.track.album.id] = data.release_date;
-				console.log(data.name);
-				console.log(data.release_date_precision);
-			});
-		}
+	columns = [];
+	Object.keys(d[0]).forEach(function(column, i){
+		columns.push({
+			data: column,
+			title: column + "-"+i
+		})
 	})
-})
+	
+	columns[0].visible = false;
+	columns[4].visible = false;
+	columns[6].visible = false;
+	columns[8].visible = false;
+
+	columns[1].title = "Date Added";
+	columns[1].type = "date";
+	columns[1].render = function(d){
+		return d.split("T")[0];
+	};
+	columns[2].title = "Added By";
+	columns[3].title = "Album";
+	columns[5].title = "Artist";
+	columns[7].title = "Length";
+	columns[7].render = function(d){
+		var val = parseInt(d) / 1000,
+				result = Math.floor(val / 60) + ":" + ("0000" + Math.round(val % 60)).slice(-2);
+		return result;
+	};
+	columns[9].title = "Song";
+	columns[10].title = "Year";
+	columns[10].type = "date";
+	columns[10].render = function(d){
+		return d.split("-")[0];
+	};
+	columns[11].title = "Lyrics";
+	
+    $('#example').DataTable({
+    	data: d,
+    	columns: columns
+    });
+
+
+
+
+
+
+// d3.js stuff
+
+
+
+var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+
+var x = d3.scaleTime()
+    .range([0, width]);
+
+var y = d3.scaleLinear()
+    .range([height, 0]);
+
+var svg = d3.select("#d3").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+
+
+var parseTime = d3.timeParse("%Y-%m-%e");
+
+var line = d3.line()
+    .x(function(d) { return x(d.x); }) // added_at
+    .y(function(d) { return y(d.y); }); // duration_ms
+
+	var david = [],
+			dcum = 0,
+			julia = [],
+			jcum = 0;
+
+	data.forEach(function(d){
+		d.x = parseTime(d.added_at.split("T")[0]);
+// 		d.y = cum += d.duration_ms / 1000;
+		
+		if(d.added_by == "david") {
+			d.y = dcum += d.duration_ms / 1000;
+			david.push(d);
+		} else {
+			d.y = jcum += d.duration_ms / 1000;
+			julia.push(d);
+		}
+	});
+
+  x.domain(d3.extent(data, function(d) {
+  	return d.x;
+  }));
+  y.domain(d3.extent(data, function(d) {
+  	return d.y;
+  }));
+
+  svg.append("g")
+      .attr("class", "axis axis--x")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x));
+
+  svg.append("g")
+      .attr("class", "axis axis--y")
+      .call(d3.axisLeft(y))
+    .append("text")
+      .attr("class", "axis-title")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Price ($)");
+
+  svg.append("path")
+      .datum(david)
+      .attr("class", "line")
+      .attr("d", line);
+
+  svg.append("path")
+      .datum(julia)
+      .attr("class", "julia-line")
+      .attr("d", line);
+
+
+
+
+
+
+
+
+
+
+
+
+var parseTime = d3.timeParse("%d-%b-%y");
+
+var line = d3.line()
+    .x(function(d) { return x(d.date); })
+    .y(function(d) { return y(d.close); });
+
+var svg = d3.select("#d4").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+d3.tsv("data.tsv", type, function(error, data) {
+  if (error) throw error;
+
+  x.domain(d3.extent(data, function(d) { return d.date; }));
+  y.domain(d3.extent(data, function(d) { return d.close; }));
+
+  svg.append("g")
+      .attr("class", "axis axis--x")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x));
+
+  svg.append("g")
+      .attr("class", "axis axis--y")
+      .call(d3.axisLeft(y))
+    .append("text")
+      .attr("class", "axis-title")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Price ($)");
+
+console.log("loooL");
+console.log(data);
+
+  svg.append("path")
+      .datum(data)
+      .attr("class", "line")
+      .attr("d", line);
+});
+
+function type(d) {
+  d.date = parseTime(d.date);
+  d.close = +d.close;
+  return d;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+});
 
 
 // socket.emit("once",{})
-
-
-// 
-// $.getJSON( "https://api.spotify.com/v1/albums/0C29hfEJQdcyzpTHy8tTXr", function( data ) {
-// 	console.log(data);
-// });
 
 
 
 
 // var socket = io.connect('http://example.com/user');
 
-
-new Thalia.module({
-	name: "Spotify",
-	hidden: false,
-	title: "Spotify",
-	type: "login",
-	data: {
-		login: ""
-	}
-})
+// 
+// new Thalia.module({
+// 	name: "Spotify",
+// 	hidden: false,
+// 	title: "Spotify",
+// 	type: "login",
+// 	data: {
+// 		login: ""
+// 	}
+// })
 
 
 

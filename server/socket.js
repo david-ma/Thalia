@@ -18,46 +18,19 @@ function init(io, handle){
 		//on every connection:
 	console.log("socket connected at "+socket.id+" "+socket.handshake.address.address+" "+socket.handshake.headers.referer);
 
-	var host = socket.handshake.headers.host;
-	var website = handle.getWebsite(host);
+		var host = socket.handshake.headers.host;
+		var website = handle.getWebsite(host);
 
-	if(website != undefined && website.sockets){
-				console.log("heeeey");
-		website.sockets.on.forEach(function(d){
-			socket.on(d.name, d.callback);
-		})
-		website.sockets.emit.forEach(function(d){
-			socket.emit(d.name, d.data);
-		})
-	}
-
-
-
-// 
-// 	socket.on("refresh", function(){
-// 		refresh_data();
-// 
-// 		socket.emit("refreshed", data);
-// 	});
-// 
-// 	socket.emit("hello", data)
+		if(website != undefined && website.sockets){
+			website.sockets.on.forEach(function(d){
+				socket.on(d.name, d.callback);
+			})
+			website.sockets.emit.forEach(function(d){
+				socket.emit(d.name, d.data);
+			})
+		}
 	});
-	
-	
-	}
-
-// 
-// function refresh_data(){
-// 	console.log("Refreshing data from '"+table+"' into memory");
-// 
-// 	maindb.query("select * from "+table+";", function(d){
-// 		data = {
-// 			table: table,
-// 			rows: d
-// 		}
-// 	})
-//}
-
+}
 
 
 

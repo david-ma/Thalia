@@ -88,11 +88,14 @@ Thalia.module.prototype.toggle = function(){
 
 
 
+
 // Add hotkeys to any Thalia page.
 // init is called once in layouts/main.gsp
 // use Thalia.hotkeys.off(); to turn off the hotkeys on a page.
  Thalia.hotkeys = {
- 	keys: {},
+ 	keys: {192: function(){
+ 		$("#wrapper").toggleClass("toggled");
+ 	}},
  	add: function(key, action){
  		this.keys[key] = action;
  	},
@@ -120,3 +123,13 @@ Thalia.module.prototype.toggle = function(){
 		}); 
  	}
  };
+
+
+// It isn't really necissary to return this... or is it?
+socket.on('drip', function(data){
+	console.log("beat");
+	socket.emit('drop', {beat: 1});
+});
+
+
+

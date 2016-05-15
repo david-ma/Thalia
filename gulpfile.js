@@ -38,7 +38,7 @@ gulp.task('html', function() {
 		}))
 		.pipe($.htmlmin({
 		// Editable - see https://www.npmjs.com/package/gulp-minify-html#options for details
-			minifyJS: true
+			minifyJS: false
 		}))
 		.pipe(gulp.dest(dist+'/'));
 });
@@ -50,6 +50,7 @@ gulp.task("jsconcat", function() {
 
 			// Uncomment the following line to use jQuery
 			'bower_components/d3/d3.min.js',
+			'bower_components/d3-cloud/build/d3.layout.cloud.js',
 			'bower_components/jquery/dist/jquery.min.js',
 			'bower_components/jquery-ui/jquery-ui.min.js',
 			'bower_components/bootstrap-sass/assets/javascripts/bootstrap.min.js',

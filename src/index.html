@@ -53,8 +53,9 @@
 
 <div>
 	<h1>
-Spotify thing
+Spotify Playlist Analysis
 	</h1>
+
 </div>
 
 <!--     <div id="login">LOL login thing here</div> -->
@@ -68,20 +69,17 @@ Spotify thing
 
 </div>
 
-<div id="wrapper">
+<div id="wrapper" class="toggled">
 
 		<!-- Sidebar -->
 		<div id="sidebar-wrapper">
 <div id="sidebar">
 <div class="sidebar-module">
-<h4>Dashboard</h4>
 <p>
-This is a simple dashboard
-<br>
--David
+Take a collaborative playlist on Spotify and analyse it. In a collaborative playlist, people are able to add songs and listen to each other's music. Playlists can have themes or just be shared between friends.
 </p>
 </div>
-
+<iframe src="https://embed.spotify.com/?uri=spotify%3Auser%3A1231035644%3Aplaylist%3A6fUEtOQ30j5HgA9o5vA6FP" width="280" height="600" frameborder="0" allowtransparency="true"></iframe>
 
 
 
@@ -105,16 +103,22 @@ This is a simple dashboard
 <div id="page-content-wrapper">
 
 
-<table id="example" class="table table-striped table-bordered" cellspacing="0" width="100%">
+Spotify Playlist Analysis
+
+<div id="datatable">
+
+<a href="#" style="font-size: 24px;" onclick="$('#example').toggleClass('hidden');">Toggle Table</a>
+
+<table id="example" class="table table-striped table-bordered hidden" cellspacing="0" width="100%">
         <thead>
             <tr>
             </tr>
         </thead>
 
         <tbody>
-
         </tbody>
     </table>
+</div>
 
 <div id="d3"></div>
 
@@ -131,7 +135,7 @@ This is a simple dashboard
 
     <script src="/js/scripts.min.js"></script>
     <script src="/js/vendor.min.js"></script>
-		<script src="//d3js.org/d3.v4.0.0-alpha.15.min.js"></script>
+<!-- 		<script src="//d3js.org/d3.v4.0.0-alpha.15.min.js"></script> -->
 
     <script>
 var socket = io.connect();
@@ -188,18 +192,110 @@ socket.on("spotify_data", function(d){
 
 // d3.js stuff
 
+var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+
+// ----------------------------------------------------------------------
+//        Line graph
+// ----------------------------------------------------------------------
+
+
+// var x = d3.scaleTime()
+//     .range([0, width]);
+// 
+// var y = d3.scaleLinear()
+//     .range([height, 0]);
+// 
+// var svg = d3.select("#d3").append("svg")
+//     .attr("width", width + margin.left + margin.right)
+//     .attr("height", height + margin.top + margin.bottom)
+//   .append("g")
+//     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+// 
+// var parseTime = d3.timeParse("%Y-%m-%e");
+// 
+// var line = d3.line()
+//     .x(function(d) { return x(d.x); }) // added_at
+//     .y(function(d) { return y(d.y); }); // duration_ms
+// 
+// 	var david = [],
+// 			dcum = 0,
+// 			julia = [],
+// 			jcum = 0;
+// 
+// 	data.forEach(function(d){
+// 		d.x = parseTime(d.added_at.split("T")[0]);
+// // 		d.y = cum += d.duration_ms / 1000;
+// 		
+// 		if(d.added_by == "david") {
+// 			d.y = dcum += d.duration_ms / 1000;
+// 			david.push(d);
+// 		} else {
+// 			d.y = jcum += d.duration_ms / 1000;
+// 			julia.push(d);
+// 		}
+// 	});
+// 
+//   x.domain(d3.extent(data, function(d) {
+//   	return d.x;
+//   }));
+//   y.domain(d3.extent(data, function(d) {
+//   	return d.y;
+//   }));
+// 
+//   svg.append("g")
+//       .attr("class", "axis axis--x")
+//       .attr("transform", "translate(0," + height + ")")
+//       .call(d3.axisBottom(x));
+// 
+//   svg.append("g")
+//       .attr("class", "axis axis--y")
+//       .call(d3.axisLeft(y))
+//     .append("text")
+//       .attr("class", "axis-title")
+//       .attr("transform", "rotate(-90)")
+//       .attr("y", 6)
+//       .attr("dy", ".71em")
+//       .style("text-anchor", "end")
+//       .text("Price ($)");
+// 
+//   svg.append("path")
+//       .datum(david)
+//       .attr("class", "line")
+//       .attr("d", line);
+// 
+//   svg.append("path")
+//       .datum(julia)
+//       .attr("class", "julia-line")
+//       .attr("d", line);
+
 
 
 var margin = {top: 20, right: 20, bottom: 30, left: 50},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
+var formatDate = d3.time.format("%Y-%m-%e");
 
-var x = d3.scaleTime()
+var x = d3.time.scale()
     .range([0, width]);
 
-var y = d3.scaleLinear()
+var y = d3.scale.linear()
     .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var line = d3.svg.line()
+    .x(function(d) { return x(d.x); }) // added_at
+    .y(function(d) { return y(d.y); }); // duration_ms
 
 var svg = d3.select("#d3").append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -210,11 +306,6 @@ var svg = d3.select("#d3").append("svg")
 
 
 
-var parseTime = d3.timeParse("%Y-%m-%e");
-
-var line = d3.line()
-    .x(function(d) { return x(d.x); }) // added_at
-    .y(function(d) { return y(d.y); }); // duration_ms
 
 	var david = [],
 			dcum = 0,
@@ -222,7 +313,7 @@ var line = d3.line()
 			jcum = 0;
 
 	data.forEach(function(d){
-		d.x = parseTime(d.added_at.split("T")[0]);
+		d.x = formatDate.parse(d.added_at.split("T")[0]);
 // 		d.y = cum += d.duration_ms / 1000;
 		
 		if(d.added_by == "david") {
@@ -234,28 +325,23 @@ var line = d3.line()
 		}
 	});
 
-  x.domain(d3.extent(data, function(d) {
-  	return d.x;
-  }));
-  y.domain(d3.extent(data, function(d) {
-  	return d.y;
-  }));
+  x.domain(d3.extent(data, function(d) { return d.x; }));
+  y.domain(d3.extent(data, function(d) { return d.y; }));
 
   svg.append("g")
-      .attr("class", "axis axis--x")
+      .attr("class", "x axis")
       .attr("transform", "translate(0," + height + ")")
-      .call(d3.axisBottom(x));
+      .call(xAxis);
 
   svg.append("g")
-      .attr("class", "axis axis--y")
-      .call(d3.axisLeft(y))
+      .attr("class", "y axis")
+      .call(yAxis)
     .append("text")
-      .attr("class", "axis-title")
       .attr("transform", "rotate(-90)")
       .attr("y", 6)
       .attr("dy", ".71em")
       .style("text-anchor", "end")
-      .text("Price ($)");
+      .text("Cumulative Time (Seconds)");
 
   svg.append("path")
       .datum(david)
@@ -270,106 +356,54 @@ var line = d3.line()
 
 
 
+// ----------------------------------------------------------------------
+//        word cloud
+// ----------------------------------------------------------------------
 
 
-
-
-
-
-
-
-var parseTime = d3.timeParse("%d-%b-%y");
-
-var line = d3.line()
-    .x(function(d) { return x(d.date); })
-    .y(function(d) { return y(d.close); });
-
-var svg = d3.select("#d4").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-
-d3.tsv("data.tsv", type, function(error, data) {
-  if (error) throw error;
-
-  x.domain(d3.extent(data, function(d) { return d.date; }));
-  y.domain(d3.extent(data, function(d) { return d.close; }));
-
-  svg.append("g")
-      .attr("class", "axis axis--x")
-      .attr("transform", "translate(0," + height + ")")
-      .call(d3.axisBottom(x));
-
-  svg.append("g")
-      .attr("class", "axis axis--y")
-      .call(d3.axisLeft(y))
-    .append("text")
-      .attr("class", "axis-title")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 6)
-      .attr("dy", ".71em")
-      .style("text-anchor", "end")
-      .text("Price ($)");
-
-console.log("loooL");
-console.log(data);
-
-  svg.append("path")
-      .datum(data)
-      .attr("class", "line")
-      .attr("d", line);
-});
-
-function type(d) {
-  d.date = parseTime(d.date);
-  d.close = +d.close;
-  return d;
+// process lyrics into buckets
+// julia count & david count
+var words = {
 }
+var david = {},
+		julia = {};
+
+var re = /[a-z]+/;
+
+
+data.forEach(function(d){
+	console.log(d.lyrics);
+	if(d.lyrics){
+		var arr = d.lyrics.split(" ");
+		arr.forEach(function(word){
+			word.toLowerCase().match(re)
+		})
+	} else {
+		console.log("no lyrics for this one");
+		console.log(d);
+	}
+})
+// Maybe process lyrics into sets of words? I DUNNOOOOO
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// added_by
 
 
 });
 
 
-// socket.emit("once",{})
+Thalia.hotkeys.init();
 
 
 
 
-// var socket = io.connect('http://example.com/user');
-
-// 
-// new Thalia.module({
-// 	name: "Spotify",
-// 	hidden: false,
-// 	title: "Spotify",
-// 	type: "login",
-// 	data: {
-// 		login: ""
-// 	}
-// })
-
+// It isn't really necissary to return this... or is it?
+socket.on('drip', function(data){
+// 	console.log("heartbeat");
+	socket.emit('drop', {beat: 1});
+});
 
 
 
@@ -379,6 +413,38 @@ function type(d) {
 </body>
 
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

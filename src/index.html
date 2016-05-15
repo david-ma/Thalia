@@ -128,9 +128,6 @@ Spotify Playlist Analysis
 </div>
 <!-- /#page-content-wrapper -->
 
-
-
-
 </div>
 
     <script src="/js/scripts.min.js"></script>
@@ -192,86 +189,9 @@ socket.on("spotify_data", function(d){
 
 // d3.js stuff
 
-var margin = {top: 20, right: 20, bottom: 30, left: 50},
-    width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
 
 
-// ----------------------------------------------------------------------
-//        Line graph
-// ----------------------------------------------------------------------
-
-
-// var x = d3.scaleTime()
-//     .range([0, width]);
-// 
-// var y = d3.scaleLinear()
-//     .range([height, 0]);
-// 
-// var svg = d3.select("#d3").append("svg")
-//     .attr("width", width + margin.left + margin.right)
-//     .attr("height", height + margin.top + margin.bottom)
-//   .append("g")
-//     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-// 
-// var parseTime = d3.timeParse("%Y-%m-%e");
-// 
-// var line = d3.line()
-//     .x(function(d) { return x(d.x); }) // added_at
-//     .y(function(d) { return y(d.y); }); // duration_ms
-// 
-// 	var david = [],
-// 			dcum = 0,
-// 			julia = [],
-// 			jcum = 0;
-// 
-// 	data.forEach(function(d){
-// 		d.x = parseTime(d.added_at.split("T")[0]);
-// // 		d.y = cum += d.duration_ms / 1000;
-// 		
-// 		if(d.added_by == "david") {
-// 			d.y = dcum += d.duration_ms / 1000;
-// 			david.push(d);
-// 		} else {
-// 			d.y = jcum += d.duration_ms / 1000;
-// 			julia.push(d);
-// 		}
-// 	});
-// 
-//   x.domain(d3.extent(data, function(d) {
-//   	return d.x;
-//   }));
-//   y.domain(d3.extent(data, function(d) {
-//   	return d.y;
-//   }));
-// 
-//   svg.append("g")
-//       .attr("class", "axis axis--x")
-//       .attr("transform", "translate(0," + height + ")")
-//       .call(d3.axisBottom(x));
-// 
-//   svg.append("g")
-//       .attr("class", "axis axis--y")
-//       .call(d3.axisLeft(y))
-//     .append("text")
-//       .attr("class", "axis-title")
-//       .attr("transform", "rotate(-90)")
-//       .attr("y", 6)
-//       .attr("dy", ".71em")
-//       .style("text-anchor", "end")
-//       .text("Price ($)");
-// 
-//   svg.append("path")
-//       .datum(david)
-//       .attr("class", "line")
-//       .attr("d", line);
-// 
-//   svg.append("path")
-//       .datum(julia)
-//       .attr("class", "julia-line")
-//       .attr("d", line);
-
-
+// Line graph.
 
 var margin = {top: 20, right: 20, bottom: 30, left: 50},
     width = 960 - margin.left - margin.right,
@@ -294,6 +214,7 @@ var yAxis = d3.svg.axis()
     .orient("left");
 
 var line = d3.svg.line()
+		.interpolate("basis")
     .x(function(d) { return x(d.x); }) // added_at
     .y(function(d) { return y(d.y); }); // duration_ms
 
@@ -302,8 +223,6 @@ var svg = d3.select("#d3").append("svg")
     .attr("height", height + margin.top + margin.bottom)
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-
 
 
 
@@ -325,7 +244,14 @@ var svg = d3.select("#d3").append("svg")
 		}
 	});
 
-  x.domain(d3.extent(data, function(d) { return d.x; }));
+	d3X = d3.extent(data, function(d) { return d.x; });
+	console.log(d3X);
+	
+	d3X[0] = new Date(d3X[0] - 604800000);
+	d3X[1] = new Date(d3X[1] + 604800000);
+
+
+  x.domain(d3X);
   y.domain(d3.extent(data, function(d) { return d.y; }));
 
   svg.append("g")
@@ -356,6 +282,64 @@ var svg = d3.select("#d3").append("svg")
 
 
 
+
+
+var hack = d3.svg.line()
+    .x(function(d) { return x(d.x); }) // added_at
+    .y(function(d) { return y(d.y); }); // duration_ms
+
+davidStuff = hack(david).split("M")[1].split("L");
+
+	david.forEach(function(d, i){
+		addCircle(d, "steelblue", davidStuff[i].split(","));
+	});
+
+juliaStuff = hack(julia).split("M")[1].split("L");
+
+	julia.forEach(function(d, i){
+		addCircle(d, "red", juliaStuff[i].split(","));
+	});
+
+
+
+
+
+
+	function addCircle(d, color, coords) {
+		var cx = coords[0],
+				cy = coords[1];
+// 		console.log(d);
+		svg.append("circle")
+			.attr({
+				r: 8,
+				cx: cx,
+				cy: cy,
+			}).style({
+				fill: color
+			}).classed("songnode", true)
+			.datum(d)
+			.on("mouseover", function(d, i, e){
+				console.log("heyyyy "+d.song_id);
+				
+				console.log(d3.event);
+				console.log(this);
+				
+// 				$("#hoverbox").detach().appendTo(this);
+				
+				Thalia.tooltips.show("blah", [d3.event.pageY, d3.event.pageX]).append("iframe").attr({
+					width: 300,
+					height: 80,
+					frameborder: 0,
+					allowtransparency: true,
+					src: "https://embed.spotify.com/?uri=spotify:track:"+d.song_id
+				})
+			})
+	}
+
+
+// <iframe src="https://embed.spotify.com/?uri=spotify:track:010ALbbh5KlQ4fKWgSdhRd" width="300" height="80" frameborder="0" allowtransparency="true"></iframe>
+
+
 // ----------------------------------------------------------------------
 //        word cloud
 // ----------------------------------------------------------------------
@@ -366,18 +350,20 @@ var svg = d3.select("#d3").append("svg")
 var words = {
 }
 var david = {},
-		julia = {};
+		julia = {},
+		book = [];
 
 var re = /[a-z]+/;
 
 
 data.forEach(function(d){
-	console.log(d.lyrics);
+// 	console.log(d.lyrics);
 	if(d.lyrics){
 		var arr = d.lyrics.split(" ");
 		arr.forEach(function(word){
-			word.toLowerCase().match(re)
+			book.push(word.toLowerCase().match(re));
 		})
+		
 	} else {
 		console.log("no lyrics for this one");
 		console.log(d);
@@ -391,23 +377,82 @@ data.forEach(function(d){
 // added_by
 
 
+
+var fill = d3.scale.category20();
+
+var layout = d3.layout.cloud()
+    .size([500, 500])
+    .words(book.map(function(d) {
+      return {text: d, size: 10 + Math.random() * 90, test: "haha"};
+    }))
+    .padding(5)
+    .rotate(function() { return ~~(Math.random() * 2) * 90; })
+    .font("Impact")
+    .fontSize(function(d) { return d.size; })
+    .on("end", draw);
+
+layout.start();
+
+function draw(words) {
+  d3.select("body").append("svg")
+      .attr("width", layout.size()[0])
+      .attr("height", layout.size()[1])
+    .append("g")
+      .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
+    .selectAll("text")
+      .data(words)
+    .enter().append("text")
+      .style("font-size", function(d) { return d.size + "px"; })
+      .style("font-family", "Impact")
+      .style("fill", function(d, i) { return fill(i); })
+      .attr("text-anchor", "middle")
+      .attr("transform", function(d) {
+        return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+      })
+      .text(function(d) { return d.text; });
+}
+
+
+
 });
 
 
-Thalia.hotkeys.init();
 
 
 
 
-// It isn't really necissary to return this... or is it?
-socket.on('drip', function(data){
-// 	console.log("heartbeat");
-	socket.emit('drop', {beat: 1});
-});
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Thalia.init();
     </script>
 
 </body>

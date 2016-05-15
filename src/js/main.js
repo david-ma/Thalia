@@ -1,3 +1,6 @@
+// Tooltips requires d3.js
+// Heartbeat require socket.io
+
 var Thalia = Thalia || {};
 
 Thalia.module = function(config) {
@@ -88,11 +91,10 @@ Thalia.module.prototype.toggle = function(){
 
 
 
-
 // Add hotkeys to any Thalia page.
 // init is called once in layouts/main.gsp
 // use Thalia.hotkeys.off(); to turn off the hotkeys on a page.
- Thalia.hotkeys = {
+Thalia.hotkeys = {
  	keys: {192: function(){
  		$("#wrapper").toggleClass("toggled");
  	}},
@@ -125,11 +127,79 @@ Thalia.module.prototype.toggle = function(){
  };
 
 
-// It isn't really necissary to return this... or is it?
-socket.on('drip', function(data){
-	console.log("beat");
-	socket.emit('drop', {beat: 1});
-});
+
+Thalia.tooltips = {
+	init: function(){
+// 		d3.select("body").append("div").attr({
+// 			id: "tooltip"
+// 		});
+	},
+	current: null,
+	show: function (id, pos){
+		d3.select("#tooltip").remove();
+		
+		
+		return d3.select("body").append("div").attr({
+			id: "tooltip"
+		}).style({
+			position: "absolute",
+			top: pos[0]+"px",
+			left: pos[1]+"px"
+		});
+		
+// 		if (Thalia.tooltips.current != id) {}
+	}
+};
+
+
+Thalia.init = function(){
+	// Heartbeat function - drips every 8 seconds to keep the socket alive.
+	// It isn't really necissary to use this... or is it?
+	socket.on('drip', function(data){
+	// 	console.log("heartbeat");
+		socket.emit('drop', {beat: 1});
+	});
+
+	Thalia.hotkeys.init();
+	Thalia.tooltips.init();
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

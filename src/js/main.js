@@ -89,7 +89,6 @@ Thalia.module.prototype.toggle = function(){
 
 
 // Add hotkeys to any Thalia page.
-// init is called once in layouts/main.gsp
 // use Thalia.hotkeys.off(); to turn off the hotkeys on a page.
  Thalia.hotkeys = {
  	keys: {},

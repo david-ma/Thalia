@@ -14,6 +14,19 @@
     <link href="/css/main.css" rel="stylesheet">
 
 <style>
+
+body {
+	background: #eee;
+}
+
+.fb-box {
+	background: #fff;
+  border: 1px solid;
+  border-color: #e5e6e9 #dfe0e4 #d0d1d5;
+  border-radius: 3px;
+}
+
+
 .axis {
   font: 10px sans-serif;
 }
@@ -120,10 +133,10 @@ Spotify Playlist Analysis
     </table>
 </div>
 
-<div id="d3"></div>
-
-<div id="d4"></div>
-
+<div id="graphs">
+	<div id="d3" class="fb-box"></div>
+	<div id="d4" class="fb-box"></div>
+</div>
 
 </div>
 <!-- /#page-content-wrapper -->
@@ -132,13 +145,20 @@ Spotify Playlist Analysis
 
     <script src="/js/scripts.min.js"></script>
     <script src="/js/vendor.min.js"></script>
+    
+<!--     d3 version 4 isn't really ready yet.  -->
 <!-- 		<script src="//d3js.org/d3.v4.0.0-alpha.15.min.js"></script> -->
 
     <script>
-var socket = io.connect();
 var data = [];
+var socket = io.connect();
 
 socket.on("spotify_data", function(d){
+console.log('heyyyyy');
+console.log(data);
+
+
+	if(data.length == 0) {
 	data = d;
 	console.log(d);
 	
@@ -347,6 +367,10 @@ juliaStuff = hack(julia).split("M")[1].split("L");
 
 // process lyrics into buckets
 // julia count & david count
+
+// drawWordCloud();
+function drawWordCloud(){
+
 var words = {
 }
 var david = {},
@@ -413,6 +437,241 @@ function draw(words) {
 }
 
 
+}
+
+
+
+
+
+
+
+// ----------------------------------------------------------------------
+//        Box and Whiskers
+// ----------------------------------------------------------------------
+
+
+yearOfRelease();
+function yearOfRelease(){
+	console.log("Graphing the year of release");
+	var svg = d3.select("#graphs").append("div").attr({
+		id: 'year-of-release',
+		class: 'fb-box'
+	}).style({
+		width: '100%',
+		height: '800px',
+		'margin-bottom': '200px'
+	}).append('svg').attr({
+		width: '100%',
+		height: '100%'
+	});
+
+console.log(d);
+
+listeners = {
+	david: [],
+	xibing: [],
+	total: []
+}
+
+d.forEach(function(song){
+console.log(song.added_by);
+	listeners[song.added_by].push(parseInt(song.release_date.split("-")[0]));
+	listeners.total.push(parseInt(song.release_date.split("-")[0]));
+});
+
+for(var person in listeners) {
+	listeners[person].sort();
+}
+
+var min = listeners.total[0] - 1,
+		max = listeners.total[listeners.total.length-1] + 1;
+
+
+
+console.log(listeners);
+	svg.append("line").attr({
+		x1: 50,
+		y1: 50,
+		x2: 50,
+		y2: 600,
+		stroke: 'black',
+		'stroke-width': 1
+	})
+
+	svg.append("line").attr({
+		x1: 50,
+		y1: 600,
+		x2: 800,
+		y2: 600,
+		stroke: 'black',
+		'stroke-width': 1
+	})
+
+	svg.append('text').attr({
+		'text-anchor': 'end',
+		x: 45,
+		y: 65
+	}).text(max);
+
+	svg.append('text').attr({
+		'text-anchor': 'end',
+		x: 45,
+		y: 590
+	}).text(min);
+
+var range = max - min;
+var modifier = 600 / range;
+
+console.log(max);
+console.log('modifier is: '+modifier);
+var david = listeners.david;
+var top = (max - david[david.length-1]) * modifier + 50,
+		first = (max - david[Math.floor(3 * david.length / 4)]) * modifier + 50,
+		third = (max - david[Math.floor(david.length / 4)]) * modifier + 50,
+		end = (max - david[0]) * modifier + 50;
+
+var s1 = 200,
+		s2 = 300,
+		s3 = 250
+
+console.log(top);
+
+svg.append('line').attr({
+	x1: s1,
+	y1: top,
+	x2: s2,
+	y2: top,
+	stroke: 'black',
+	'stroke-width': 1
+})
+
+console.log(third - first);
+
+svg.append('rect').attr({
+	x: s1,
+	y: first,
+	width: s2 - s1,
+	height: third - first,
+	fill: 'white',
+	stroke: 'black',
+	'stroke-width': 1
+})
+
+svg.append('line').attr({
+	x1: s1,
+	y1: end,
+	x2: s2,
+	y2: end,
+	stroke: 'black',
+	'stroke-width': 1
+})
+
+svg.append('line').attr({
+	x1: s3,
+	y1: top,
+	x2: s3,
+	y2: first,
+	stroke: 'black',
+	'stroke-width': 1
+})
+
+svg.append('line').attr({
+	x1: s3,
+	y1: third,
+	x2: s3,
+	y2: end,
+	stroke: 'black',
+	'stroke-width': 1
+})
+
+svg.append('text').attr({
+	x: s3,
+	y: 620,
+	'text-anchor': 'middle'
+}).text('David');
+
+
+
+
+
+
+var person = listeners.xibing;
+var top = (max - person[person.length-1]) * modifier + 50,
+		first = (max - person[Math.floor(3 * person.length / 4)]) * modifier + 50,
+		third = (max - person[Math.floor(person.length / 4)]) * modifier + 50,
+		end = (max - person[0]) * modifier + 50;
+
+var s1 = 400,
+		s2 = 500,
+		s3 = 450
+
+console.log(top);
+
+svg.append('line').attr({
+	x1: s1,
+	y1: top,
+	x2: s2,
+	y2: top,
+	stroke: 'black',
+	'stroke-width': 1
+})
+
+console.log(third - first);
+
+svg.append('rect').attr({
+	x: s1,
+	y: first,
+	width: s2 - s1,
+	height: third - first,
+	fill: 'white',
+	stroke: 'black',
+	'stroke-width': 1
+})
+
+svg.append('line').attr({
+	x1: s1,
+	y1: end,
+	x2: s2,
+	y2: end,
+	stroke: 'black',
+	'stroke-width': 1
+})
+
+svg.append('line').attr({
+	x1: s3,
+	y1: top,
+	x2: s3,
+	y2: first,
+	stroke: 'black',
+	'stroke-width': 1
+})
+
+svg.append('line').attr({
+	x1: s3,
+	y1: third,
+	x2: s3,
+	y2: end,
+	stroke: 'black',
+	'stroke-width': 1
+})
+
+svg.append('text').attr({
+	x: s3,
+	y: 620,
+	'text-anchor': 'middle'
+}).text('Xi Bing');
+
+}
+
+
+
+
+
+
+
+
+
+} // if data length is zero...
 
 });
 

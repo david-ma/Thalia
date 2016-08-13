@@ -156,7 +156,7 @@ Thalia.init = function(){
 	// Heartbeat function - drips every 8 seconds to keep the socket alive.
 	// It isn't really necissary to use this... or is it?
 	socket.on('drip', function(data){
-	// 	console.log("heartbeat");
+		console.log("heartbeat");
 		socket.emit('drop', {beat: 1});
 	});
 

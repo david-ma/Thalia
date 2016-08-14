@@ -1,3 +1,3 @@
 exports.config = {
-	"domains": ["localhost", "www.yourwebsite.com"]
+	"domains": ["www.yourwebsite.com"]
 };

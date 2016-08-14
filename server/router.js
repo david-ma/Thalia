@@ -2,12 +2,9 @@ var path = require("path");
 var fs = require("fs");
 var requestHandlers = require("./requestHandlers");
 var mime = require('mime');
-var db = require("./database").db;
 
 function route(handle, pathname, response, request) {
 	console.log(pathname);
-//	console.log(pathname.split("/"));
-
 	console.log(request.headers.host);
 
 	var website = handle.getWebsite(request.headers.host);

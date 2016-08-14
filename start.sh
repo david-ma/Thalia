@@ -6,5 +6,4 @@
 
 echo Hello user, running David Ma\'s nodejs server at localhost
 echo
-cd websites
-sudo node ../server/index.js $1 $2
+sudo node server/index.js $1 $2

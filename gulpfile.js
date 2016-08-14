@@ -199,31 +199,3 @@ gulp.task( "build", [
 	"html",
 	"copy"
 ], function () {});
-
-// Deploy
-gulp.task( "deploy", function(callback) {
-	runSequence(
-		'build',
-		'publish',
-		 callback)
-});
-
-// Publish to S3
-gulp.task('publish', function() {
-
-	var publisher = awspublish.create({
-			region: 'ap-southeast-2', // Editable - S3 bucket region
-			params: {
-				Bucket: 'example-bucket' // Editable - S3 bucket name
-			},
-			"accessKeyId": process.env.AWS_ACCESS_KEY,
-			"secretAccessKey": process.env.AWS_SECRET_KEY
-		});
-
-	var files = gulp.src([dist+'/**'])
-		.pipe(publisher.publish());
-
-	return files
-		.pipe(publisher.cache())
-		.pipe(awspublish.reporter());
-});

@@ -1,6 +1,6 @@
 {
-  "name": "thirst-quencher",
-  "version": "1.0.0",
+  "name": "Frostickle's Server",
+  "version": "2.0.0",
   "license": "MIT",
   "private": true,
   "dependencies": {

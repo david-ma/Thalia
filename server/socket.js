@@ -1,15 +1,15 @@
 var fs = require("fs");
-var db = require("./database").db;
-var cred = require("./credentials").cred;
 
-var maindb = new db(cred.db);
+// var cred = require("./credentials").cred;
+// var maindb = new db(cred.db);
+
+
 var data = {};
 
 function init(io, handle){
 	
 
 	//this stuff happens once, when the server starts:
-	refresh_redit_data();
 
 
 	//this stuff happens every time a page is loaded:
@@ -19,7 +19,6 @@ function init(io, handle){
 	console.log("socket connected at "+socket.id+" "+socket.handshake.address.address+" "+socket.handshake.headers.referer);
 
 	socket.on("refresh", function(){
-		refresh_redit_data();
 
 
 
@@ -33,17 +32,24 @@ function init(io, handle){
 	});
 }
 
-function refresh_redit_data(){
-	console.log("Refreshing data from 'stuff' into memory");
-
-	maindb.query("select * from stuff;", function(d){
-		data = {
-			threads: d
-		}
-	})
 
 
-}
+
+
+
+
+// 
+// function refresh_redit_data(){
+// 	console.log("Refreshing data from 'stuff' into memory");
+// 
+// 	maindb.query("select * from stuff;", function(d){
+// 		data = {
+// 			threads: d
+// 		}
+// 	})
+// 
+// 
+// }
 
 
 

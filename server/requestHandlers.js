@@ -1,70 +1,55 @@
-var socket = require("./socket");
 var db = require("./database").db;
-var router = require("./router");
 
-
-var Website = function (data) {
-	if(typeof data == "object" && typeof data.folder == "string") {
-		this.folder = data.folder;
-		this.domains = typeof data.domains == "object" ? data.domains : [];
-		this.pages = typeof data.pages == "object" ? data.pages : {"/": "index.html"};
-		this.redirects = typeof data.redirects == "object" ? data.redirects : {};
-		this.services = typeof data.services == "object" ? data.services : {};
-		this.sockets = typeof data.sockets == "object" ? data.sockets : {emit:{}, on:{}};
+var Website = function (site, config) {
+	if(typeof config == "object") {
+		this.folder = typeof config.folder == "string" ? config.folder : "websites/"+site+"/public";
+		this.domains = typeof config.domains == "object" ? config.domains : [];
+		this.pages = typeof config.pages == "object" ? config.pages : {"/": "index.html"};
+		this.redirects = typeof config.redirects == "object" ? config.redirects : {};
+		this.services = typeof config.services == "object" ? config.services : {};
+		this.sockets = typeof config.sockets == "object" ? config.sockets : {emit:{}, on:{}};
 	} else {
-		console.log("Error, folder should be a string");
+		console.log("Config isn't an object");
 	}
 }
 
 var handle = {
 	websites: {},
 	index: {localhost: 'default'},
-	addWebsite: function(data){
-		handle.websites[data.folder] = new Website(data);
+	
+	// Add a site to the handle
+	addWebsite: function(site, config, cred){
+		console.log("Adding site.. "+site);
+		handle.websites[site] = new Website(site, config);
 
-		handle.websites[data.folder].domains.forEach(function(domain){
-			handle.index[domain] = data.folder;
-		})
 
+		// Add the site to the index
+		handle.websites[site].domains.forEach(function(domain){
+			handle.index[domain] = site;
+		});
+		
+		// If DB credentials are provided, connect to the db and add to the site handle
+		if(cred) {
+			handle.websites[site].db = db(cred);
+		}
+		
+		// If the site has any startup actions, do them
+		if(config.startup){
+			config.startup.forEach(function(action){
+				action(handle.websites[site]);
+			});
+		}
 	},
 	getWebsite: function(domain){
-		var folder = typeof handle.index[domain] == "undefined" ? "default" : handle.index[domain];
+		var site = typeof handle.index[domain] == "undefined" ? "default" : handle.index[domain];
 
-		return handle.websites[folder];
+		return handle.websites[site];
 	}
 };
 
-handle.addWebsite({
-	folder: "default",
-	domains: [""]
-})
-
-handle.addWebsite({
-	folder: "public",
-	domains: ["localhost"],
-	sockets: {
-		emit: {},
-		on: {
-			threads: function(){
-				console.log("heeey!");
-			}
-		}
-	}
-})
+handle.addWebsite("default", {});
 
 exports.handle = handle;
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -1,27 +1,33 @@
-var path = require("path");
 var fs = require("fs");
-var requestHandlers = require("./requestHandlers");
 var mime = require('mime');
 
-function route(handle, pathname, response, request) {
-	console.log(pathname);
-	console.log(request.headers.host);
-
-	var website = handle.getWebsite(request.headers.host);
-	//website has, folder, domains, pages and services...
-
+function route(website, pathname, response, request) {
 	//check for services...
-	if(typeof pathname.split("/")[1] != 'undefined' &&
-		 typeof website.services[pathname.split("/")[1].toLowerCase()] === 'function') {
-		 
-	website.services[pathname.split("/")[1].toLowerCase()](response, request, pathname.split("/")[2]);
+	
+	try {
+		var first = pathname.split("/")[1].toLowerCase();
+	} catch (err){}
+	try {
+		var second = pathname.split("/")[2].toLowerCase();
+	} catch (err){}
+
+	if(typeof website.services[first] === 'function') {
+
+console.log(website);
+
+		
+
+		website.services[first](response, request, website.db, second);
+
+
+
 
 	} else if(typeof website.redirects[pathname] != "undefined") {
 		redirect(response, request, website.redirects[pathname]);
 	} else if(typeof website.pages[pathname] != "undefined") {
-		routeFile(response, request, website.folder.concat("/", website.pages[pathname]));
+		routeFile(response, request, [website.folder, website.pages[pathname]].join("/"));
 	} else {
-		routeFile(response, request, path.join(process.cwd(), website.folder.concat("/", pathname)));
+		routeFile(response, request, website.folder.concat(pathname));
 	}
 }
 

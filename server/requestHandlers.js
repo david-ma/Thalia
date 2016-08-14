@@ -19,20 +19,27 @@ var handle = {
 	
 	// Add a site to the handle
 	addWebsite: function(site, config, cred){
-		console.log("Adding site.. "+site);
+		console.log("Adding site: "+site);
+		
+		config = config || {};
+		
 		handle.websites[site] = new Website(site, config);
 
 
 		// Add the site to the index
+		handle.index[site+".com"] = site;
+		handle.index[site+".net"] = site;
+		handle.index[site+".localhost"] = site;
+		handle.index[site+".david-ma.net"] = site;
 		handle.websites[site].domains.forEach(function(domain){
 			handle.index[domain] = site;
 		});
-		
+
 		// If DB credentials are provided, connect to the db and add to the site handle
 		if(cred) {
-			handle.websites[site].db = db(cred);
+			handle.websites[site].db = new db(cred);
 		}
-		
+
 		// If the site has any startup actions, do them
 		if(config.startup){
 			config.startup.forEach(function(action){
@@ -41,6 +48,9 @@ var handle = {
 		}
 	},
 	getWebsite: function(domain){
+	
+	console.log("the domain is... "+domain);
+	
 		var site = typeof handle.index[domain] == "undefined" ? "default" : handle.index[domain];
 
 		return handle.websites[site];
@@ -50,6 +60,54 @@ var handle = {
 handle.addWebsite("default", {});
 
 exports.handle = handle;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

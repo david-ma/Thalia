@@ -3,7 +3,7 @@ var mime = require('mime');
 
 function route(website, pathname, response, request) {
 	//check for services...
-	
+
 	try {
 		var first = pathname.split("/")[1].toLowerCase();
 	} catch (err){}
@@ -12,20 +12,11 @@ function route(website, pathname, response, request) {
 	} catch (err){}
 
 	if(typeof website.services[first] === 'function') {
-
-console.log(website);
-
-		
-
 		website.services[first](response, request, website.db, second);
-
-
-
-
 	} else if(typeof website.redirects[pathname] != "undefined") {
 		redirect(response, request, website.redirects[pathname]);
-	} else if(typeof website.pages[pathname] != "undefined") {
-		routeFile(response, request, [website.folder, website.pages[pathname]].join("/"));
+	} else if(typeof website.pages[first] != "undefined") {
+		routeFile(response, request, website.folder.concat(website.pages[first]));
 	} else {
 		routeFile(response, request, website.folder.concat(pathname));
 	}

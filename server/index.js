@@ -16,7 +16,7 @@ var index = {
 		fs.readdirSync('websites/').forEach(function(site){
 			if(fs.lstatSync('websites/'+site).isDirectory()) {
 				try {
-						var config = require('../websites/'+site+'/config').config;
+					var config = require('../websites/'+site+'/config').config;
 				} catch (err){}
 				try {
 					var cred = JSON.parse(fs.readFileSync('websites/'+site+'/cred.json'));

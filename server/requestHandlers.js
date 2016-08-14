@@ -4,7 +4,7 @@ var Website = function (site, config) {
 	if(typeof config == "object") {
 		this.folder = typeof config.folder == "string" ? config.folder : "websites/"+site+"/public";
 		this.domains = typeof config.domains == "object" ? config.domains : [];
-		this.pages = typeof config.pages == "object" ? config.pages : {"/": "index.html"};
+		this.pages = typeof config.pages == "object" ? config.pages : {"": "/index.html"};
 		this.redirects = typeof config.redirects == "object" ? config.redirects : {};
 		this.services = typeof config.services == "object" ? config.services : {};
 		this.sockets = typeof config.sockets == "object" ? config.sockets : {emit:{}, on:{}};
@@ -20,11 +20,9 @@ var handle = {
 	// Add a site to the handle
 	addWebsite: function(site, config, cred){
 		console.log("Adding site: "+site);
-		
-		config = config || {};
-		
-		handle.websites[site] = new Website(site, config);
 
+		config = config || {};		
+		handle.websites[site] = new Website(site, config);
 
 		// Add the site to the index
 		handle.index[site+".com"] = site;
@@ -48,11 +46,9 @@ var handle = {
 		}
 	},
 	getWebsite: function(domain){
-	
-	console.log("the domain is... "+domain);
-	
+		console.log("Domain: "+domain);
+		var domain = domain.replace("www.","");	
 		var site = typeof handle.index[domain] == "undefined" ? "default" : handle.index[domain];
-
 		return handle.websites[site];
 	}
 };

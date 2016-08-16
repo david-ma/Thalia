@@ -24,7 +24,7 @@ function start(route, handle) {
 		port = process.argv[3];
 	}
 
-	// To do: we should check that the workspace exists... otherwise leave it as default
+	// To do: we should check that the workspace exists, otherwise leave it as default
 	if (process.argv[2] != null && process.argv[2] != undefined && !pattern.exec(process.argv[2])) {
 		workspace = process.argv[2];
 	} else if(typeof process.argv[3] != null && process.argv[3] != undefined && !pattern.exec(process.argv[3])){

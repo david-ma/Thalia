@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Survey Results!</title>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+
+
+
+<!-- 
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="/heartbox/images/touch-icon-iphone.png">
+	<link rel="apple-touch-icon" sizes="76x76" href="/heartbox/images/touch-icon-ipad.png">
+	<link rel="apple-touch-icon" sizes="120x120" href="/heartbox/images/touch-icon-iphone-retina.png">
+	<link rel="apple-touch-icon" sizes="152x152" href="/heartbox/images/touch-icon-ipad-retina.png">
+ -->
+
+
+
+	<script type="text/javascript" src="/bower_components/jquery/dist/jquery.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script type="text/javascript" src="js/d3.v3.4.6.js"></script>
+	<script type="text/javascript" src="js/d3.layout.cloud.js"></script>
+		
+<!-- Stuff for the map projection -->
+<script type="text/javascript" src="js/d3.geo.projection.v0.min.js" charset="utf-8"></script>
+<script type="text/javascript" src="js/topojson.v1.min.js"></script>
+<script type="text/javascript" src="js/countrycode.js"></script>
+
+  <style>
+body{
+	margin: 0;
+  background: #fcfcfa;
+}
+.background
+{
+	fill: rgba(80,120,100,.5);
+}
+
+.stroke {
+  fill: none;
+  stroke: #000;
+  stroke-width: 3px;
+}
+.fill {
+  fill: #fff;
+}
+.graticule {
+  fill: none;
+  stroke: #777;
+  stroke-width: .5px;
+  stroke-opacity: .5;
+}
+
+.land {
+  fill: #222;
+}
+
+.boundary {
+  fill: none;
+  stroke: #fff;
+  stroke-width: .5px;
+}
+
+.night {
+  stroke: steelblue;
+  fill: steelblue;
+  fill-opacity: .3;
+}
+
+text {
+  font-family: Menlo, monospace;
+}
+
+  </style>
+</head>
+<body touch-action="auto">
+	<h1>/r/photography survey from 2013!</h1>
+	<div id="viewport">
+		<svg id="vis">
+		</svg>
+	</div>
+
+<script type='text/javascript'>
+	$(window).resize(updateWidth);
+	textX = 10;
+	textY = 25;
+	width = height = 300;
+	color = d3.scale.category10();
+	position = 0,
+	columns = 3;
+
+	d3.select("#vis").attr({
+		width: 900,
+		height: 2100,
+		style: "background: lightgrey"
+	}).append("svg:g").attr({
+		id: "boxes"
+	})
+	d3.select("#vis").append("svg:g").attr({
+		id: "labels"
+	})
+
+	var tooltip = {
+		"w": 260,
+		"h": 50,
+		"viswidth": 900,
+		"bodywidth": 2000,
+		"init": function(){
+		tooltip.viswidth = $("#vis").width();
+		tooltip.bodywidth = $("body").width();
+		tooltip.label = d3.select("#labels").append("svg:g").attr({
+			id: "label",
+			display: "none"
+		})
+
+		tooltip.label.append("svg:rect").attr({
+			x: 15,
+			y: 15,
+			width: tooltip.w,
+			height: tooltip.h,
+			fill: "white",
+			stroke: "black"
+		})
+		
+		tooltip.title = tooltip.label.append("svg:text")
+			.text("adsf")
+			.attr({
+				x: 20,
+				y: 35
+			});
+
+		tooltip.value = tooltip.label.append("svg:text")
+			.text("adsf")
+			.attr({
+				x: 20,
+				y: 55
+			});
+		},
+		"mouse": {},
+		"mouseenter": function(data){
+			tooltip.title.text(data.title);
+			tooltip.value.text(data.value);
+
+			var mouse = tooltip.mouse,
+					listener = function(){
+						var e = d3.event
+						mouse.x = e.pageX;//clientX;// || e.pageX;
+						mouse.y = e.pageY;//clientY;// || e.pageY 
+						mouse.x = mouse.x - $("#boxes").position().left;
+						mouse.y = mouse.y - $("#boxes").position().top;
+						update();
+					};
+
+			d3.select("body").on("mousemove", listener);
+
+			d3.select("#label").attr("display", "");
+
+			function update(){
+			var x = mouse.x,
+					y = mouse.y,
+					total = parseFloat(mouse.x) + tooltip.w;
+
+			if(total > tooltip.viswidth - 20){
+				x = tooltip.viswidth - tooltip.w - 20;
+			}
+			if(total > tooltip.bodywidth - 20){
+				x = tooltip.bodywidth - tooltip.w - 20 < x ? tooltip.bodywidth - tooltip.w - 20 : x;
+			}
+
+				tooltip.label.attr({
+					transform: "matrix(1 0 0 1 "+x+" "+y+")"
+				});
+			}
+		},
+		"mouseout": function(){
+			d3.select("body").on("mousemove", "");
+//document.removeEventListener("mousemove", d0.label.listener, false);
+			if(typeof tooltip.myTimeout != "undefined"){
+				clearTimeout(tooltip.myTimeout);
+			}
+			d3.select("#label").attr("display", "none");
+		}
+	}
+
+tooltip.init();
+
+
+
+
+//load results
+d3.csv("safesurveyresults.csv", function(d){
+//	console.log(d);
+	console.log("results loaded");
+//	console.log(d);
+
+	var data = {};
+	d.forEach(function(row){
+		multiHashCount(data, row["How many photos do you take in an average month?"]);
+	})
+	console.log(data);
+
+	crap = d;
+
+	createVis(d, "Location", "Where do you live?", "map");
+	createVis(d, "What is your profession?", "What is your occupation?", "wordCloud");
+	createVis(d, "Do you identify as:", "What gender are you?", "pie", [2]);
+	createVis(d, "What is your age?", "How old are you?", "line",[{"Under 18":0, "18-25":0, "26-35":0, "36-49":0, "50-64":0, "65+":0}]);
+	createVis(d, "Do you make any money from photography?", "Do you make money from photos?", "otherBar", [{"None":0, "Occasional extra cash":0, "Substantial secondary income":0, "Photography is how you pay your rent":0}]);
+	createVis(d, "Do you own a:", "What's your type of camera?", "enumBar");
+	createVis(d, "What brands do you own?", "What brands do you own?", "multiBar");
+	createVis(d, "What brands have you shot with in the past month?", "What brands do you shoot with?", "multiBar");
+	createVis(d, "What camera do you normally shoot with?", "Which camera do you use?", "multiBar");
+	createVis(d, "How much editing/post-processing do you normally do before sharing your photos?", "How much do you edit?", "enumBar");
+	createVis(d, "How many photos do you take in an average month?", "How many photos per month?", "line", [{"Under 100":0, "100 to 500":0, "500 to 1000":0, "1000 to 2000":0, "2000+":0}]);
+	createVis(d, "Which of these websites/services for storing photos do you use?", "How do you store photos?", "enumBar");
+	createVis(d, "Which of these websites/services for sharing photos do you use?", "How do you share photos?", "enumBar");
+	createVis(d, "What is the typical fate of one of your photographs?", "What do you do with your pics?", "otherEnumBar", [6]);
+	createVis(d, "What are the main types of photography that you do?", "What genre do you shoot?", "enumBar");
+	createVis(d, "What is your normal/favourite shooting mode?", "What mode do you use?", "otherBar",[5]);
+	createVis(d, "What software do you use, if any?", "What software do you use?", "otherEnumBar", [5]);
+	createVis(d, "Which of the following mobile devices do you own?", "What devices do you own?", "otherEnumBar", [5]);
+	createVis(d, "What bags/cases do you own?", "What brand bags do you own?", "enumBar");
+});
+
+allData = [];
+boxes = [];
+function createVis(d, field, identifier, type, options){
+	var data = {};
+	switch (type){
+		case "otherEnumBar":
+			d.forEach(function(row){
+				enumCount(data, row[field]);
+			});
+			var sorted = sortList(data);
+			var cleanData = {};
+			var i = 0;
+
+			for(; i < options[0]; i++){
+				cleanData[sorted[i]] = data[sorted[i]];
+			}
+			cleanData["Other"] = 0;
+			for(; i < sorted.length; i++){
+				cleanData["Other"] += data[sorted[i]];
+			}
+			data = cleanData;
+			boxes.push(drawBarChart(data, identifier));
+			break;
+		case "otherBar":
+			if(typeof options[0] == "object"){
+				data = options[0];
+				data.Other = 0;
+				d.forEach(function(row){
+					otherCount(data, row[field]);
+				});
+			} else if (typeof options[0] == "number"){
+				d.forEach(function(row){
+					hashCount(data, row[field]);
+				});				
+				var sorted = sortList(data);
+				var cleanData = {};
+				var i = 0;
+
+				for(; i < options[0]; i++){
+					cleanData[sorted[i]] = data[sorted[i]];
+				}
+				cleanData["Other"] = 0;
+				for(; i < sorted.length; i++){
+					cleanData["Other"] += data[sorted[i]];
+				}
+				data = cleanData;
+			}
+			boxes.push(drawBarChart(data, identifier));
+			break;
+		case "line":
+			data = options[0];
+			d.forEach(function(row){
+				hashCount(data, row[field]);
+			});
+			boxes.push(drawLineChart(data, identifier));
+			break;
+		case "multiBar":
+			d.forEach(function(row){
+				multiHashCount(data, row[field]);
+			});
+			boxes.push(drawBarChart(data, identifier));
+			break;
+		case "enumBar":
+			d.forEach(function(row){
+				enumCount(data, row[field]);
+			});
+			boxes.push(drawBarChart(data, identifier));
+			break;
+		case "wordCloud":
+			d.forEach(function(row){
+				hashCount(data, row[field]);
+			});
+	
+			boxes.push(drawWordCloud(data, identifier));
+			break;
+		case "pie":
+			d.forEach(function(row){
+				hashCount(data, row[field]);
+			});
+			boxes.push(drawPie(data, identifier, options[0]));
+			break;
+		case "map":
+			d.forEach(function(row){
+				hashCount(data, row[field].split(",").slice(-1)[0]);
+			});
+			boxes.push(drawMap(data, identifier));
+			break;
+		default:
+			break;
+	}
+	allData.push(data);
+	boxes.forEach(function(box, i){
+		box.on("click",function(d){
+			console.log("clicking box!");
+			console.log(d);
+
+
+
+
+			if(columns > 2){
+				//zoom in...
+//				box.attr({transform: 'scale(2)'})
+				console.log(i);
+
+				d3.select("#vis").attr('height', boxes.length * 600);
+				window.scrollTo(0,i*600);
+				
+				var blurbs = d3.select("#vis").append("svg:g").attr({
+					id: "blurbs"
+				})
+				boxes.forEach(function(b, j){
+					b.attr({
+						transform: 'matrix(2 0 0 2 0 '+600*j+')'
+					})
+					var group = blurbs.append("svg:g")
+					group.append("svg:rect")
+						.attr({
+						})
+					group.append("svg:text")
+						.text(metadata[b.datum()])
+						.attr({
+							x: 620,
+							y: 50+j*600
+						})
+
+
+				})
+				
+
+
+
+			}
+		})
+	})
+}
+
+
+
+
+
+function cleanID(str) {
+  return str.replace(/[^\w]/gi, '')
+}
+
+function enumCount(hash, query){
+	query.split(",").forEach(function(d){
+		hashCount(hash, d);
+	})
+}
+
+function makeBox(identifier, color){
+	var box = d3.select("#boxes")
+				.append("svg:g").attr({
+					id: cleanID(identifier)+"box",
+					width: width,
+					height: height,
+					transform: getTransformation()
+				});
+	
+	var background = box.append("svg:rect").attr({
+			x: 0,
+			y: 0,
+			width: 300,
+			height: 300,
+			fill: getBackgroundColor()
+		})
+	
+	if(typeof color == "string"){
+		background.attr("fill", color);
+	}
+
+		box.append("svg:text").attr({
+			x: textX,
+			y: textY
+		}).text(identifier);
+	box.datum(identifier);
+	return box;
+}
+
+function drawLineChart(data, identifier){
+	var box = makeBox(identifier);
+
+	var ordered = Object.keys(data);
+	var sorted = Object.keys(data).sort(function(a,b){
+		return data[b] - data[a];
+	})
+
+	box.append("svg:rect").attr({
+		x: 30,
+		y: 30,
+		height: 240,
+		width: 240,
+		fill: "none",
+		stroke: "none"
+	});
+
+	var max = data[sorted[0]],
+			multiplier = 240/max;
+	var end = sorted.length < 9 ? sorted.length : 9;
+	var w = 240 / end;
+
+	for(var i = 0; i < end; i++){
+
+		var h = multiplier * data[ordered[i]];
+		box.append("svg:rect").attr({
+			x: 30+i*w,
+			y: 30,
+			height: 240,
+			width: w,
+			fill: color(i)
+		}).datum(function(){
+			return {
+				title: ordered[i],
+				value: data[ordered[i]]
+			};
+		})
+		.on("mouseover",function(d){
+			tooltip.mouseenter(d);
+		}).on("mouseout",function(){
+			tooltip.mouseout();
+		})
+	}
+
+	var mask = "M270,30 30,30 30,270L",
+			path = "M30,270L";
+
+	for(var i = 0; i < end; i++){
+		var h = multiplier * data[ordered[i]];
+		var a = 50+i*w,
+				b = 270 - h;
+		mask = mask.concat(a+","+b+" ");
+		path = path.concat(a+","+b+" ");
+
+
+		var text = ordered[i];
+		var x = 30+(i+0.5)*w,
+				y = 280;
+		box.append("svg:g").attr({
+			transform: "matrix(1 0 0 1 "+x+" "+y+")"
+		}).append("svg:g").attr({
+			transform: "rotate(15)"
+		}).append("svg:text")
+			.text(text)
+			.attr({
+				"font-size": 9
+			})
+		box.append("svg:path").attr({
+			stroke: "black",
+			d: "M"+x+",270 "+x+",275"
+		})
+	}
+	mask = mask.concat("270,270Z");
+	path = path.concat("270,270");
+
+	
+	box.append("svg:path").attr({
+		d: mask,
+		stroke: "none",
+		fill: getBackgroundColor()
+	})
+
+	box.append("svg:path").attr({
+		d: path,
+		stroke: "black",
+		fill: "none",
+		"stroke-width": 2
+	})
+	
+	box.append("svg:path").attr({
+		d: "M30,30 30,270 270,270",
+		fill: "none",
+		stroke: "black",
+		"stroke-width": 2
+	})
+	
+	box.append("svg:text")
+		.text(max)
+		.attr({
+			x: 28,
+			y: 40,
+			"text-anchor": "end",
+			"font-size": 9
+		})
+	
+	var mid = max/2;
+
+	box.append("svg:text")
+		.text(mid)
+		.attr({
+			x: 28,
+			y: 155,
+			"text-anchor": "end",
+			"font-size": 9
+		})
+
+	box.append("svg:text")
+		.text(0)
+		.attr({
+			x: 28,
+			y: 270,
+			"text-anchor": "end",
+			"font-size": 9
+		})
+	return box;
+}
+
+function drawBarChart(data, identifier){
+	var box = makeBox(identifier);
+
+	var sorted = Object.keys(data).sort(function(a,b){
+		return data[b] - data[a];
+	})
+	
+
+
+
+	box.append("svg:rect").attr({
+		x: 30,
+		y: 30,
+		height: 240,
+		width: 240,
+		fill: "none",
+		stroke: "none"
+	});
+	
+
+	var max = data[sorted[0]],
+			multiplier = 240/max;
+	var end = sorted.length < 9 ? sorted.length : 9;
+
+//	console.log(identifier +": "+end);
+
+	var w = 225/end;
+
+
+	for(var i = 0; i < end; i++){
+		sorted[i]
+		var h = multiplier * data[sorted[i]];
+		box.append("svg:rect").attr({
+			x: 40+i*w,
+			y: 270 - h,
+			height: h,
+			width: w-5,
+			fill: color(i),
+			stroke: "black"
+		}).datum(function(){
+			return {
+				title: sorted[i],
+				value: data[sorted[i]]
+			};
+		})
+		.on("mouseover",function(d){
+			tooltip.mouseenter(d);
+		}).on("mouseout",function(){
+			tooltip.mouseout();
+		})
+		
+		var text = sorted[i];
+		if(text.length > 10){
+			text = text.slice(0,8).concat("...");
+		}
+		var x = 35 + (i+0.5) * w,
+				y = 275;
+		box.append("svg:g").attr({
+			transform: "matrix(1 0 0 1 "+x+" "+y+")"
+		}).append("svg:g").attr({
+			transform: "rotate(30)"
+		}).append("svg:text")
+			.text(text)
+			.attr({
+				"font-size": 6
+			})
+	}
+	
+	box.append("svg:path").attr({
+		d: "M30,30 30,270 270,270",
+		fill: "none",
+		stroke: "black",
+		"stroke-width": 2
+	})
+	
+	box.append("svg:text")
+		.text(max)
+		.attr({
+			x: 28,
+			y: 40,
+			"text-anchor": "end",
+			"font-size": 9
+		})
+	
+	var mid = max/2;
+
+	box.append("svg:text")
+		.text(mid)
+		.attr({
+			x: 28,
+			y: 155,
+			"text-anchor": "end",
+			"font-size": 9
+		})
+
+	box.append("svg:text")
+		.text(0)
+		.attr({
+			x: 28,
+			y: 270,
+			"text-anchor": "end",
+			"font-size": 9
+		})
+		
+	return box;
+}
+
+function drawWordCloud(data, identifier){
+	var box = makeBox(identifier, "white");
+	var wordData = [];
+	var wordDataTemp = {};
+
+	Object.keys(data).forEach(function(d){
+		var desired = d.replace(/[^\w\s]/gi, ' ')
+		desired.split(" ").forEach(function(word){
+			if(word.length > 3) {
+				hashCount(wordDataTemp, word.toLowerCase());
+			}
+		});
+	})
+	Object.keys(wordDataTemp).forEach(function(d){
+		wordData.push({
+			size: wordDataTemp[d],
+			text: d
+		})
+	});
+
+	
+	wordvis = box.append("svg:g").attr({
+		transform: "matrix(1 0 0 1 0 25)"
+	})
+
+  var fill = d3.scale.category20();
+
+
+  d3.layout.cloud().size([300, 250])
+      .words(wordData)
+      .padding(1)
+      .rotate(function() { return ~~(Math.random() * 2) * 90; })
+      .font("Impact")
+      .fontSize(function(d) { return d.size; })
+      .on("end", draw)
+      .start();
+
+
+
+  function draw(words) {
+    wordvis.append("g")
+        .attr("transform", "translate(150,150)")
+      .selectAll("text")
+        .data(words)
+      .enter().append("text")
+        .style("font-size", function(d) { return d.size + "px"; })
+        .style("font-family", "Impact")
+        .style("fill", function(d, i) { return fill(i); })
+        .attr("text-anchor", "middle")
+        .attr("transform", function(d) {
+          return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+        })
+        .text(function(d) { return d.text; });
+  }
+  return box;
+}
+
+function drawPie(data, identifier, numberOfLabels){
+	var box = makeBox(identifier);
+	var sorted = sortList(data);
+	var cleanData = {};
+	var i = 0;
+
+	for(; i < numberOfLabels; i++){
+		cleanData[sorted[i]] = data[sorted[i]];
+	}
+	cleanData["Other"] = 0;
+	for(; i < sorted.length; i++){
+		cleanData["Other"] += data[sorted[i]];
+	}
+
+	var color = d3.scale.category10();
+
+	var arc = d3.svg.arc()
+		.outerRadius(100)
+		.innerRadius(10);
+	pie = d3.layout.pie();
+	blah = pie(hashToArray(cleanData))
+
+	var i = 0;
+	for(; i < numberOfLabels; i++){
+		blah[i].title = sorted[i];
+	}
+	blah[i].title = "Other";
+
+	box.append("svg:g").attr({
+		id: cleanID(identifier)+"piechart",
+		transform: "matrix(1 0 0 1 150 180)"
+	}).selectAll(".arc")
+			.data(blah)
+		.enter().append("g")
+			.attr("class", "arc")
+			.append("path")
+		.attr({
+			d: arc,
+			stroke: "black"
+		})
+		.style("fill", function(d) {return color(d.startAngle);})
+		.on("mouseover",function(d){
+			tooltip.mouseenter(d);
+		}).on("mouseout",function(){
+			tooltip.mouseout();
+		})
+
+	return box;
+}
+
+var backgroundColors = ["#aec7e8","#ffbb78","#98df8a","#ff9896","#c5b0d5","#c49c94","#f7b6d2","#dbdb8d","#9edae5"];
+function getBackgroundColor(){
+	var i = (position - 1) % 9;
+	return backgroundColors[i];
+}
+
+function sortList(data){
+	return Object.keys(data).sort(function(a,b){
+		return data[b] - data[a];
+	})
+}
+
+function drawMap(data, identifier){
+	var box = makeBox(identifier);
+
+//attempt 1:
+// var color = d3.scale.linear()
+// 							.domain([0, 0, 700])
+// 							.range(['rgb(255,237,160)','rgb(254,178,76)','rgb(240,59,32)']);
+
+//attempt 2:
+// 	var color = d3.scale.ordinal()
+//     .domain([0, 0, 700])
+//     .range(['rgb(255,255,178)','rgb(254,204,92)','rgb(253,141,60)','rgb(240,59,32)','rgb(189,0,38)']);
+//colours from Cynthia Brewer's http://colorbrewer2.org/
+
+//attempt 3:
+var color = function(d){
+	var p = {
+				min: 0,
+				max: 700,
+				step: 140,
+				c: ['rgb(255,255,178)',
+						'rgb(254,204,92)',
+						'rgb(253,141,60)',
+						'rgb(240,59,32)',
+						'rgb(189,0,38)'],
+				grey: 'rgb(170, 170, 170)'
+			},
+			color = p.grey,
+			val = Math.floor(d/p.step);
+
+//this is hardcoded to match my data... a more robust solution should go up expnoentially or logaritmicly or something like that....
+	color = p.c[0]
+	if(d > 5) {
+		color = p.c[1]
+	}
+	if(d > 15) {
+		color = p.c[2]
+	}
+	if(d > 50) {
+		color = p.c[3]
+	}
+	if(d > 150) {
+		color = p.c[4]
+	}
+
+	return color;
+}
+
+	var projection = d3.geo.kavrayskiy7()
+//			.scale(170)
+//			.translate([width / 2, height / 2])
+//			.precision(.1);
+
+	var path = d3.geo.path()
+			.projection(projection);
+
+	var graticule = d3.geo.graticule();
+
+	var svg = box.append("svg:g").attr({
+				id: "map",
+				transform: "matrix(.31 0 0 .31 0 100)"
+			});
+
+	svg.append("defs").append("path")
+			.datum({type: "Sphere"})
+			.attr("id", "sphere")
+			.attr("d", path);
+
+	svg.append("use")
+			.attr("class", "stroke")
+			.attr("xlink:href", "#sphere");
+
+	svg.append("use")
+			.attr("class", "fill")
+			.attr("xlink:href", "#sphere");
+
+	svg.append("path")
+			.datum(graticule)
+			.attr("class", "graticule")
+			.attr("d", path);
+
+	d3.json("js/world-50m.json", function(error, world) {
+		var countries = topojson.feature(world, world.objects.countries).features,
+				neighbors = topojson.neighbors(world.objects.countries.geometries);
+
+		svg.selectAll(".country")
+				.data(countries)
+			.enter().insert("path", ".graticule")
+				.attr("class", function(d){return "country place"+d.id})
+				.attr("d", path)
+				.style("fill", function(d, i) {
+	//      	console.log(d);
+					var c = "#AAA";
+	//      	console.log(countrycode[d.id]);
+					if(typeof data[countrycode[d.id]] != 'undefined'){
+	//      		console.log(data[countrycode[d.id]]);
+						c = color(data[countrycode[d.id]])
+					}
+
+					d.title = countrycode[d.id];
+					d.value = data[countrycode[d.id]];
+					return c; 
+				})
+				.on("mouseover",function(d){
+					if(typeof d.value != 'undefined'){
+						tooltip.mouseenter(d);
+					} else {
+						tooltip.mouseout();
+					}
+				}).on("mouseout",function(){
+					tooltip.mouseout();
+				});
+
+
+	//not sure what this next bit does...
+		svg.insert("path", ".graticule")
+				.datum(topojson.mesh(world, world.objects.countries, function(a, b) { return a !== b; }))
+				.attr("class", "boundary")
+				.attr("d", path);
+	});
+
+
+
+	return box;
+}
+
+function hashToArray(hash){
+	var arr = [];
+	Object.keys(hash).forEach(function(key){
+		arr.push(hash[key]);
+	});
+	return arr;
+}
+
+function multiHashCount(hash, thing){
+	var words = thing.split(",");
+	words.forEach(function(word){
+		hashCount(hash, word.trim().toLowerCase());
+	})
+}
+
+function otherCount(hash, thing){
+	thing = thing.trim();
+	if (thing != "") {
+		if(typeof hash[thing] != 'undefined'){
+			hash[thing]++;
+		} else {
+			hash.Other++;
+		}
+	}
+}
+
+function hashCount(hash, thing){
+	thing = thing.trim();
+	if (thing != "") {
+		if(typeof hash[thing] != 'undefined'){
+			hash[thing]++;
+		} else {
+			hash[thing] = 1;
+		}
+	}
+}
+
+function getTransformation(){
+	var pos = position++;
+	var a = (pos * 300) % (300 * columns);
+	var b = Math.floor(pos/columns) * 300;
+	return "matrix(1 0 0 1 "+a+" "+b+")"
+}
+
+// call this function whenever window is resized.
+// this function will make sure the window is properly sized.
+function updateWidth(){
+	console.log("updating width");
+	var bw = $('body').width();
+
+	if (bw >= 600){ // if bigger than 600, start tiling things.
+		oldColumns = columns;
+		columns = Math.floor(bw/300);
+		moveBoxes();
+
+		var extra = (bw - (300*columns)) / 2;
+		d3.select("#vis").attr("width", 300*columns);
+		d3.select("#vis").style("margin", "0 "+extra);
+		d3.select("#vis").style("transform","scale(1)");
+	} else { // if smaller than 600, zoom in on it.
+		oldColumns = columns;
+		columns = 1;
+		moveBoxes();
+		d3.select("#vis").attr("width", bw);
+		d3.select("#vis").style("margin", "0");
+//		d3.select("#vis")
+		console.log("woooo");
+	}
+
+	tooltip.viswidth = $("#vis").width();
+	tooltip.bodywidth = $("body").width();
+}
+function moveBoxes(){
+//	console.log('moving boxes');
+//	console.log(boxes);
+	if(oldColumns != columns){
+		position = 0;
+		boxes.forEach(function(box){
+			box.transition().duration(500).attr("transform", getTransformation());
+		})
+
+	}
+}
+
+
+	metadata = {};
+	socket = io.connect()
+	socket.on("generic_data", function(d){
+		for(var i = 1; i < d.Sheet1.length; i++){
+			metadata[d.Sheet1[i][1]] = d.Sheet1[i][2];
+		}
+	});
+	socket.emit("generic_load",{"key":"1gYvKP6sBXbM5kn0rFmEQKKpkXwNM8SPJVjIWulIirlw"});
+
+	updateWidth();
+
+
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>SnapShot: Insulin/IGF1 signaling</title>
+	<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+
+	<script type="text/javascript" src="/assets/js/jquery.min.js"></script>
+	<script src="https://www.youtube.com/iframe_api"></script>
+        <script>
+        	// Youtube IDs here
+        	var help = ""; 
+        	var info = "f_5DCfGKdaA";
+        
+        	function watch(vid) {	 
+        		var source = vid == 'none' ? "" : "http://www.youtube.com/embed/" + vid + "?enablejsapi=1&origin=http://minardo.org";
+        		$("#overlay_video").attr("src", source);
+        		$("#screen").show(300); 
+        	}
+        	
+        	//get URL parameters
+			var QueryString = function () {
+			  // This function is anonymous, is executed immediately and 
+			  // the return value is assigned to QueryString!
+			  // later, access via QueryString.something
+			  var query_string = {};
+			  var query = window.location.search.substring(1);
+			  var vars = query.split("&");
+			  for (var i=0;i<vars.length;i++) {
+				var pair = vars[i].split("=");
+					// If first entry with this name
+				if (typeof query_string[pair[0]] === "undefined") {
+				  query_string[pair[0]] = pair[1];
+					// If second entry with this name
+				} else if (typeof query_string[pair[0]] === "string") {
+				  var arr = [ query_string[pair[0]], pair[1] ];
+				  query_string[pair[0]] = arr;
+					// If third or later entry with this name
+				} else {
+				  query_string[pair[0]].push(pair[1]);
+				}
+			  } 
+				return query_string;
+			} (); 
+			
+			function reload() {         			
+				window.location = "http://minardo.org/snapshot_update/";
+				}
+
+        	
+        	$(document).ready( function () {
+        		
+			  var player;
+			  function onYouTubeIframeAPIReady() {
+				player = new YT.Player('overlay_video', {
+				  videoId: 'fyVr7gdGEPE',
+				  playerVars: { 'autoplay': 1 },
+				  events: {
+					'onReady': onPlayerReady,
+					'onStateChange': onPlayerStateChange
+				  }
+				});
+			  }
+	
+        	// open video
+        		var start = window.setTimeout(watch(info), 800);
+        		
+        	//if (QueryString.p  == "help") { watch(help); }
+        	//if (QueryString.p  == "info") { watch(info); }
+        		$("#screen").click( function() { 
+        			watch('none');
+        			$(this).hide(300); 
+        			var relo = window.setTimeout(reload, 500);
+        		});
+        	});
+        	
+        </script>
+
+
+<style>
+html, body {
+	font-family: RobotoDraft, 'Helvetica Neue', Helvetica, Arial;
+	height: 100%;
+	margin: 0;
+	background-color: #FFF;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	-webkit-tap-highlight-color: rgba(0,0,0,0);
+	-webkit-touch-callout: none;
+	transform: translateZ(0);
+	-webkit-transform: translateZ(0);
+	font-size: 14px;
+}
+
+
+.researcher-names {
+/* 	font-family: HelveticaNeue-Medium; */
+	fill: rgb(34, 31, 31);
+	font-size: 9px;
+	font-family: "HelveticaNeue-Medium", "HelveticaNeueMedium", "Helvetica Neue Medium", "HelveticaNeue", "Helvetica Neue", 'TeXGyreHerosRegular', "Helvetica", "Tahoma", "Geneva", "Arial", sans-serif;
+/* 	font-weight:500; */
+/* 	font-stretch:normal; */
+}
+
+/* video buttons */
+	.videolink { 
+		position: absolute;
+		top: 10px;
+		z-index: 10000;
+		background: #d9c697 url(video.png) no-repeat;
+		padding: 8px 4px 8px 38px;
+		border-radius: 6px;
+		opacity: 0.7;
+		cursor: pointer;
+		font: 10px sans-serif;
+		line-height: 10px;
+		letter-spacing: 0.2em; 
+		color: #333; 
+	 }
+	 .videolink:hover { opacity: 1; }
+	 #screen { 
+		background: transparent url(black50.png); 
+		position: fixed; 
+		width: 100%; 
+		height: 2000px; 
+		overflow: hidden;
+		top:0;
+		left:0;
+		display: none;
+		z-index:9999;
+	  }
+	  #overlay_video {
+		margin: 25% auto;
+		display: block;
+		background: black;
+	  }
+	  
+	 #help_btn { left: 60%; }
+	 #info_btn { left: 70%; }
+		 
+</style>
+
+</head>
+<body>
+	<div style="text-align: center;"><img src="cs.png" alt="image of Cell Snapshot" style="max-width: 100%;"></div>
+	<div id="screen" title="Click to stop video">
+    	<iframe id="overlay_video" type="text/html" width="640" height="390" frameborder="0" src="http://www.youtube.com/embed/?enablejsapi=1&origin=http://minardo.org" allowfullscreen ></iframe>
+	</div>
+
+
+	<script>
+	  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+	  ga('create', 'UA-62772011-1', 'auto');
+	  ga('send', 'pageview');
+
+	</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

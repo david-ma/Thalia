@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Reddit Photography Annual Competition</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="css/clean-blog.min.css" rel="stylesheet">
+
+    <!-- Custom Fonts -->
+    <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <link href='css/google-fonts.css' rel='stylesheet' type='text/css'>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+
+
+
+
+    <!-- Polymer Crap -->
+
+	<link rel="import" href="/bower_components/paper-menu-button/paper-menu-button.html">
+  <link rel="import" href="/bower_components/iron-icons/iron-icons.html">
+  <link rel="import" href="/bower_components/paper-toolbar/paper-toolbar.html">
+
+  
+	<link rel="import" href="/bower_components/paper-input/paper-input.html">
+	<link rel="import" href="/bower_components/iron-autogrow-textarea/iron-autogrow-textarea.html">
+	<link rel="import" href="/bower_components/paper-radio-group/paper-radio-group.html">
+	<link rel="import" href="/bower_components/paper-checkbox/paper-checkbox.html">
+	<link rel="import" href="/bower_components/paper-progress/paper-progress.html">
+	<link rel="import" href="/bower_components/paper-tooltip/paper-tooltip.html">
+
+
+	<link rel="import" href="/bower_components/paper-button/paper-button.html">
+
+	<link rel="import" href="/bower_components/paper-styles/paper-styles.html">
+
+
+
+
+<style>
+#holder {
+	border: 10px dashed #ccc;
+	width: 300px;
+	height: 300px;
+	margin: 20px auto;
+	padding: 20px auto;
+	cursor: pointer;
+	background-size: contain;
+}
+#holder.hover {
+	border: 10px dashed #333;
+}
+#holder input {
+	opacity: 0;
+			width: 280px;
+			height: 280px;
+}
+
+</style>
+
+
+
+
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="index.html">Reddit Photography Annual Competition</a>            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+<!-- 
+                    <li>
+                        <a href="index.html">Home</a>
+                    </li>
+                    <li>
+                        <a href="about.html">About</a>
+                    </li>
+                    <li>
+                        <a href="post.html">Sample Post</a>
+                    </li>
+                    <li>
+                        <a href="contact.html">Contact</a>
+                    </li>
+ -->
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+    <!-- Page Header -->
+    <!-- Set your background image for this header on the line below. -->
+    <header class="intro-header" style="background-image: url('img/home-bg.jpg')">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <div class="site-heading">
+                        <h1>Best of /r/photography 2015!</h1>
+                        <hr class="small">
+                        <span class="subheading">Reddit Photography's Annual Competition</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-preview">
+                        <h2 class="post-title text-center">
+                            Simple page to get people's submissions.
+                        </h2>
+<hr>
+<row>
+<div class="col-md-8 col-md-offset-2">
+<p>Hi guys, I'll write more info here later. But for now I just want to give you a way to submit your photos. If you don't know what this website is about, go visit <a href="http://reddit.com/r/photography">/r/photography</a></p>
+</div>
+</row>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+<hr>
+
+<div class="container">
+<row>
+<div id="main" class="text-center">
+	<button id="mainbutton" onclick="main()">
+	Submit your best photo of 2015!
+	</button>
+
+	<button onclick="fakeHash()">
+	fakeHash
+	</button>
+
+	<button onclick="refresh()">
+	emit refresh
+	</button>
+</div>
+
+
+
+
+
+
+
+
+<article>
+	<core-tooltip label="Upload a jpg or jpeg file, up to 50mb, up to 100 megapixels in sRGB colourspace.">
+		<div id="holder" class="hiddenAtStart" style="display:none;">
+			<input id="fileBox" type="file"></input> 
+		</div>
+  </core-tooltip>
+		<p class="hiddenAtStart horizontal layout center-justified">Click the box, or drag a photo onto it!</p>
+
+<paper-button class="hiddenAtStart horizontal layout center-justified" style="background: yellow;" raised onclick="submitStuff()">Submit</paper-button>
+
+
+
+</article>
+
+
+
+
+
+
+
+
+
+
+</row>
+</div>
+    <hr>
+
+
+    <!-- jQuery  d3.js  socket.io -->
+    <script src="js/jquery.js"></script>
+		<script type="text/javascript" src="/assets/js/d3.v3.4.6.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.min.js"></script>
+
+    <!-- Custom Theme JavaScript -->
+    <script src="js/clean-blog.min.js"></script>
+<script>
+console.log("Hi there! Join us at /r/metaphotography or on Slack if you want to help me with this! Tweet me for access :)\n-Frostickle");
+var socket = io.connect();
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Part 1 - Log into reddit
+////////////////////////////////////////////////////////////////////////////////////////
+
+
+var main = function(){
+	console.log("clicking main button");
+	if(typeof localStorage.hash == "undefined"){
+		window.location.href = 'https://www.reddit.com/api/v1/authorize?client_id=LY22U8w1jbfyWw&state=foobar&redirect_uri=http%3A%2F%2Ftest.redditphotography.com%2Fsubmit%2F&duration=permanent&response_type=code&scope=identity';		
+	} else {
+		socket.emit("submitcode", {hash: localStorage.hash});
+	}
+}
+
+var fakeHash = function(){
+	socket.emit("submitcode", {hash: "fakehash"});
+}
+
+var refresh = function(){
+	console.log("sending refresh token");
+	socket.emit("naiveRefreshTokenRecieved", {refresh_token: localStorage.refresh_token});
+}
+
+if(getParameterByName("code") != ""){
+	$("#mainbutton").remove();
+	socket.emit("submitcode", {code: getParameterByName("code")});
+} else {
+	
+}
+
+socket.on("naiveRefreshToken", function(d){
+	localStorage.refresh_token = d.refresh_token;
+	socket.emit("naiveRefreshTokenRecieved", {
+		refresh_token: d.refresh_token,
+		auth_code: localStorage.hash
+	});
+})
+
+
+socket.on("badcode", function(d){
+	console.log(d);
+	alert("Error signing in! Please try again");
+// 	delete localStorage.hash;
+// 	window.location.href = window.location.origin + window.location.pathname;
+})
+
+
+
+function getParameterByName(name) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Part 2. Load a form if we have a refresh_token from reddit
+////////////////////////////////////////////////////////////////////////////////////////
+
+if(localStorage.refresh_token){
+	phase2();
+}
+
+
+
+
+function phase2(){
+	d3.selectAll("#main button").remove();
+	var main = d3.select("#main");
+	main.style({
+// 		width: "100%"
+		"text-align": "left"
+	}).attr({
+		id: "main-form"
+	}).classed("container", true);
+
+
+	buildField("Username", "username", "Your reddit username should be here, please message /u/frostickle if this is broken.");
+	buildField("Legal Name", "realname", "This is so you can win prizes, we won't publish it without your permission.", {
+		checkbox: "Publishable"
+	});
+
+	buildField("Email", "email", "Please enter a valid email");
+	buildField("Photograph Title", "title", "Please think of a title for your photo.");
+	buildField("Description", "description", "Please give a description for your photo.");
+	buildField("Category", "category", "Please enter your category. General, Landscape, Street, Portrait, etc.");
+
+	buildPictureBox();
+	
+	
+//	addCheckbox("");
+// 	addField("Category", "category");
+// 	addField("username");
+// 	addField("username");
+
+
+	function addField(field, id, desc){
+		var row = main.append("div").classed("row", true);
+	
+		row.append("text").text(field);
+		row.append("input").attr({
+			id: "input-"+id
+		});
+	}
+
+function buildField(field, id, desc, options){
+
+	var div = main.append("div")
+	var row = div.append("div").classed("layout horizontal", true)
+	
+	row.append("paper-input").style({
+		width: "100%"
+	}).attr({
+		label: field,
+		id: id
+	})
+
+	if(options){
+		if(options.checkbox){
+			row.append("paper-checkbox").style({
+				"margin": "30px 0px 0px 10px"
+			}).attr({
+				id: options.checkbox
+			});
+			row.append("p").text(options.checkbox).style({
+				"font-size": "1em",
+				"margin-bottom": "0px"
+			})
+		}
+	}
+
+	div.append("p").style({
+		margin: "5px 0",
+		"font-size": ".65em"
+	}).text(desc);	
+
+}
+
+function buildPictureBox(){
+	var holder = document.getElementById('holder');
+	
+	d3.selectAll(".hiddenAtStart").style({
+		display: ""
+	})
+
+	holder.ondragover = function () { this.className = 'hover'; return false; };
+	holder.ondragend = function () { this.className = ''; return false; };
+	holder.ondrop = function (e) {
+		this.className = '';
+		e.preventDefault();
+	//  console.log(e);
+		updatePhoto(e.dataTransfer.files[0]);
+	};
+
+
+
+}
+
+
+
+
+
+
+
+function fileChosen(evnt) {
+	updatePhoto(evnt.target.files[0]);
+}
+
+
+function updatePhoto(photo){
+	selectedFile = photo
+	reader = new FileReader();
+
+  reader.onload = function (event) {
+    console.log(event.target);
+    holder.style.background = 'url(' + event.target.result + ') no-repeat center';
+    holder.style["background-size"] = 'contain';
+  };
+
+  console.log(selectedFile);
+  reader.readAsDataURL(selectedFile);
+  return false;
+}
+
+
+
+
+}
+
+
+
+
+
+function submitStuff(){
+	console.log("Woo! Submitting stuff!");
+	//grab all the shit...
+	//validate all the shit...
+	//send it via socket...
+	//send message saying "response approooved!"
+
+	var stuff = {
+		refresh_token: localStorage.refresh_token,
+		username: $("#username").val(),
+		realname: $("#realname").val(),
+		publishable: d3.select("#checkbox").classed("checked"),
+		email: $("#email").val(),
+		title: $("#title").val(),
+		description: $("#description").val(),
+		category: $("#category").val()
+	}
+	
+	if (validateStuff(stuff)) {
+		console.log("Info is valid! Uploading file!");
+
+
+
+		FReader = new FileReader();
+	
+		FReader.onprogress = function(e){
+			console.log(e);
+			var progress = Math.floor(100 * e.loaded/e.total);
+			d3.select("#progress_bar").attr("value", progress);
+		}
+
+		FReader.onload = function(evnt){
+			socket.emit("rPhoto15sub", {
+				'size' : selectedFile.size,
+				'filename' : selectedFile.name,
+				'data' : evnt.target.result,
+				'meta' : stuff
+			});
+		}
+
+		FReader.readAsBinaryString(selectedFile);
+	}
+	
+	function validateStuff(stuff){
+		//todo... validate things...
+
+		return true;
+	}
+}
+
+
+
+
+
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-53149148-2', 'auto');
+ga('send', 'pageview');
+
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

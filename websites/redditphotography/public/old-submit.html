@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Annual Reddit Photography Competition!</title>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+
+<!--   <script src="/bower_components/platform/platform.js"></script> -->
+	<script src="/bower_components/webcomponentsjs/webcomponents.js"></script>
+
+	<script type="text/javascript" src="/bower_components/jquery/dist/jquery.js"></script>
+	<script type="text/javascript" src="/assets/js/d3.v3.4.6.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+
+  <link href="/bower_components/font-roboto/roboto.html" rel="import">
+
+	<link rel="import" href="/bower_components/paper-button/paper-button.html">
+  <link rel="import" href="/bower_components/core-icons/core-icons.html">
+  <link rel="import" href="/bower_components/core-toolbar/core-toolbar.html">
+  <link rel="import" href="/bower_components/core-pages/core-pages.html">
+  
+  
+	<link rel="import" href="/bower_components/core-header-panel/core-header-panel.html">
+	<link rel="import" href="/bower_components/paper-input/paper-input.html">
+	<link rel="import" href="/bower_components/paper-input/paper-autogrow-textarea.html">
+	<link rel="import" href="/bower_components/paper-radio-group/paper-radio-group.html">
+	<link rel="import" href="/bower_components/paper-checkbox/paper-checkbox.html">
+	<link rel="import" href="/bower_components/paper-elements/paper-elements.html">
+	<link rel="import" href="/bower_components/paper-progress/paper-progress.html">
+	<link rel="import" href="/bower_components/core-tooltip/core-tooltip.html">
+
+  <style>
+    html, body {
+      font-family: RobotoDraft, 'Helvetica Neue', Helvetica, Arial;
+      height: 100%;
+      margin: 0;
+	    background-color: #E5E5E5;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: rgba(0,0,0,0);
+      -webkit-touch-callout: none;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+    }
+
+    core-toolbar {
+      color: #f1f1f1;
+      fill: #f1f1f1;
+    }
+		core-header-panel {
+			height: 100%;
+			overflow: auto;
+			-webkit-overflow-scrolling: touch; 
+		}
+    section {
+      padding: 20px 0;
+      width: 300px;
+    }
+
+    section > div {
+      padding: 14px;
+    }
+
+    paper-button {
+/*       margin: 1em; */
+      width: 100%;
+    }
+
+    paper-button.colored {
+      color: #4285f4;
+      fill: #4285f4;
+    }
+
+    paper-button[raisedButton].colored {
+      background: #4285f4;
+      color: #fff;
+    }
+
+    paper-button[raisedButton].colored #ripple,
+    paper-button[raisedButton].colored::shadow #ripple {
+      color: #2a56c6;
+    }
+
+    paper-button[raisedButton].colored #focusBg,
+    paper-button[raisedButton].colored::shadow #focusBg {
+      background: #3367d6;
+    }
+
+    core-pages {
+      width: 300px;
+      height: 300px;
+      border: 1px solid black;
+      -webkit-user-select: none;
+      border-radius: 5px;
+    }
+    core-pages > div {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: inherit;
+    }
+
+  .container {
+    width: 80%;
+    margin: 50px auto;
+    padding: 24px;
+  	background-color: white;
+  }
+  .questiontitlebox{
+  	background-color: skyblue;
+  	padding: 50px auto 50px 50px;
+  	width: 100%;
+  }
+  .questiontitle{
+  	padding: 24px 24px;
+  }
+  .answergroup{
+  	margin:20px;
+  }
+
+  .quizpanel {
+  	background-color: white;
+  	width: 100%;
+  	margin: 0px;
+  	padding: 0px;
+  	
+  	border-style: dotted;
+  	border-width: 1px;
+  }
+  .submitbutton {
+  	width: 100%;
+  	margin: 0px;
+  }
+
+		paper-radio-group.blue paper-radio-button::shadow #ink[checked] {
+			color: #4285f4;
+		}
+	
+		paper-radio-group.blue paper-radio-button::shadow #onRadio {
+			background-color: #4285f4;
+		}
+
+    paper-checkbox.blue::shadow #ink[checked] {
+      color: #4285f4;
+    }
+    
+    paper-checkbox.blue::shadow #checkbox.checked {
+      border-color: #4285f4;
+    }
+    paper-checkbox {
+      padding: 20px 20px 20px 0;
+    }
+    
+    paper-input {
+    	width: 100%;
+    }
+    paper-input-decorator {
+    	width: 100%;
+    }
+    paper-autogrow-textarea {
+    	width: 100%;
+    }
+
+
+
+  	#holder {
+  		border: 10px dashed #ccc;
+  		width: 300px;
+  		height: 300px;
+  		margin: 20px auto;
+  		padding: 20px auto;
+  		cursor: pointer;
+  		background-size: contain;
+  	}
+		#holder.hover {
+			border: 10px dashed #333;
+		}
+
+		input {
+			font-family: Arial;
+			font-size: 118px;
+			margin: 0px;
+			padding: 0px;
+			cursor: pointer;
+			height: 100%;
+			width: 100%;
+		}
+		#fileBox {
+			opacity: 0;
+		}
+
+		core-tooltip{
+			width: 100%;
+		}
+
+  </style>
+</head>
+<body unresolved touch-action="auto">
+
+
+<core-header-panel>
+  <core-toolbar style="background: #4285f4;">
+<!-- 
+    <paper-icon-button icon="menu"></paper-icon-button>
+ -->
+    <span id="menuTitle" flex>Submission page for /r/photography best of 2014!</span>
+<!-- 
+    <paper-icon-button icon="refresh"></paper-icon-button>
+    <paper-icon-button icon="more-vert"></paper-icon-button>
+ -->
+  </core-toolbar>
+
+
+
+<div id="viewport" style="max-width: 900px" class="container" layout center="">
+
+<!-- 
+
+<div id="refresh_tags" flex>
+		<paper-button flex raisedButton class="colored" label="Refresh config" onclick="refresh_config()"></paper-button>
+		<paper-button flex raisedButton class="colored" label="View config" onclick="view_config()"></paper-button>
+	</div>
+ -->
+
+<paper-input-decorator label="Photograph Description" floatinglabel="" layout="" vertical="">
+	<core-tooltip label="You can use the return key to enter multiple lines. This is for the book/gallery and will not be shown during the competition.">
+		<paper-autogrow-textarea id="growarea">
+			<textarea id="description" placeholder="" aria-label="Photograph Description"></textarea>
+		</paper-autogrow-textarea>
+	</core-tooltip>
+</paper-input-decorator>
+
+<article>
+	<core-tooltip label="Upload a jpg or jpeg file, up to 50mb, up to 100 megapixels in sRGB colourspace.">
+		<div id="holder">
+			<input id="fileBox" type="file"></input> 
+		</div>
+  </core-tooltip>
+</article>
+
+<div horizontal layout center-justified>
+	<div layout>
+		<p>Click the box, or drag a photo onto it!</p>
+		<core-tooltip label="This is an upload progress bar, but it only tracks the first step of uploading. Please wait for a 'success' notification">
+			<paper-progress id="progress_bar" style="width:100%;" value="0"></paper-progress>
+		</core-tooltip>
+
+			<br>
+		<core-tooltip label="Having all of /r/photography upload at once might be slow, please leave this window open until you see a 'success' notification">
+			<paper-button center raisedButton class="colored" label="save" onclick="submit()"></paper-button>
+		</core-tooltip>
+	</div>
+	</div>
+
+
+</div>
+
+
+</core-header-panel>
+
+<script type='text/javascript'>
+	var socket = io.connect(),
+			viewport = d3.select("#viewport"),
+			selectedFile = null,
+			data = null;
+
+
+
+if(typeof(Storage) !== "undefined") {
+	console.log("wooo, we have storage!");
+    // Code for localStorage/sessionStorage.
+
+
+	if(getParameterByName("code") != ""){
+		socket.emit("submitpage_code", {code: getParameterByName("code")});
+	} else {
+
+
+// 		if(typeof localStorage.hash == "undefined"){
+// 			window.location.href = 'https://www.reddit.com/api/v1/authorize?client_id=0T2xNjD4rbeOGQ&response_type=code&state=join2014comp&redirect_uri=http://redditphotography.com/submit.html&duration=permanent&scope=identity,vote';
+// 		} else {
+// 			socket.emit("submitpage_hash", {hash: localStorage.hash});
+// 		}
+	}
+
+} else {
+	window.location.href = 'http://www.redditphotography.com/joinCompetition';
+    // Sorry! No Web Storage support..
+}
+
+
+
+
+
+
+
+			
+window.addEventListener("load", ready);
+function ready(){ 
+	if(window.File && window.FileReader){ //These are the relevant HTML5 objects that we are going to use 
+		document.getElementById('fileBox').addEventListener('change', fileChosen);		
+	}
+	else
+	{
+		alert("Your browser is too old. How about you just email me your submission? bestof2014@redditphotography.com");
+	}
+}
+
+function fileChosen(evnt) {
+	updatePhoto(evnt.target.files[0]);
+}
+
+
+buildField("username", "Reddit Username", "Your reddit username should be here, please message /u/frostickle if this is broken.")
+
+buildField("realname", "Enter your legal name", "This is so you can win prizes, we won't publish it without your permission.")
+	.append("core-tooltip")
+		.attr({
+			style: "width: 180px",
+			label: "This is for the photobook. If you don't check this box, we'll only publish your username."
+		})
+	.append("paper-checkbox")
+	.attr({
+		id: "publishable",
+		label: "Can we publish your real name?",
+		style: "padding-left: 10px"
+	});
+buildField("email", "Enter your email", "Your email will only be shared if you win, and then only with the Sponsor who is providing the prize. Frostickle will only use your email to notify you of a win.");
+buildField("title", "Photograph Title", "This is for the book or gallery. Voting will be unlabelled");
+buildRadio("category", ["General", "Landscape", "Street", "Portrait"], "If your photo doesn't fit in anything, place it in 'General'");
+//buildTextarea("description", "Description: ");
+
+var holder = document.getElementById('holder');
+
+holder.ondragover = function () { this.className = 'hover'; return false; };
+holder.ondragend = function () { this.className = ''; return false; };
+holder.ondrop = function (e) {
+  this.className = '';
+  e.preventDefault();
+//  console.log(e);
+	updatePhoto(e.dataTransfer.files[0]);
+};
+
+
+function updatePhoto(photo){
+	selectedFile = photo
+	reader = new FileReader();
+
+  reader.onload = function (event) {
+    console.log(event.target);
+    holder.style.background = 'url(' + event.target.result + ') no-repeat center';
+    holder.style["background-size"] = 'contain';
+  };
+
+  console.log(selectedFile);
+  reader.readAsDataURL(selectedFile);
+  return false;
+}
+
+function buildRadio(field, options, tooltip){
+	var div = viewport.insert("div", "article")
+		.attr({
+			id: field+"-div",
+			flex: true,
+			horizontal: true,
+			layout: true
+		})
+
+	group = div
+		.append("core-tooltip").attr({label: tooltip})
+	.append("paper-radio-group")
+		.attr({
+			role: "radiogroup",
+			id: field+"group"
+		});
+	
+	options.forEach(function(option){
+		group.append("paper-radio-button")
+			.attr({
+				id: option+"Radiobutton",
+				role: "radio",
+				class: "radiobutton",
+				label: option
+			})
+	})
+	return div;
+}
+
+function buildField(field, alt_text, tooltip){
+	var div = viewport.insert("div", "paper-input-decorator")
+		.attr({
+			id: field+"-div",
+			flex: true,
+			horizontal: true,
+			layout: true
+		})
+
+	div.append("core-tooltip")
+		.attr({label: tooltip})
+		.append("paper-input")
+		.attr({
+			floatinglabel: true,
+			id: field,
+			label: alt_text
+		});
+		
+	return div;
+}
+
+function buildTextarea(field, alt_text){
+	var div = viewport.insert("div", "paper-input-decorator")
+		.attr({
+			id: field+"-div",
+			flex: true,
+			horizontal: true,
+			layout: true
+		})
+//	div.append("P").text(alt_text);
+	div.append("core-tooltip")
+		.attr({label: tooltip})
+	.append("paper-autogrow-textarea")
+		.append("textarea")
+		.attr({
+			floatinglabel: true,
+			"placeholder": alt_text,
+			id: field
+		})
+	return div;
+}
+
+function validateEmail(email) { 
+    var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
+//    var re = /[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:[A-Z]{2}|fr|de|co|uk|photography|photo|com|org|net|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum)\b/;
+    return re.test(email);
+} 
+
+function submit(){
+	console.log("submitting...");
+
+	var filetype = null;
+	
+	if(selectedFile != null && selectedFile != "oldphoto") {
+		filetype = selectedFile.name.split(".").pop().toLowerCase();
+	}
+
+	if(selectedFile == null) {
+		alert("Please select a file");
+	} else if (filetype != "jpg" && filetype != "jpeg" && selectedFile != "oldphoto"){
+		alert("Please upload a jpg or jpeg");
+	} else if (d3.select('.radiobutton.core-selected')[0][0] == null){
+		alert("Please select a category");
+	} else if ($("#realname").val() == "") {
+		alert("Please enter your legal name");
+	} else if ($("#email").val() == "") {
+		alert("Please enter your email");
+	} else {
+
+		d3.select("body").style("cursor", "progress");
+		var metadata = {
+				hash: localStorage.hash,
+				username: localStorage.username,
+				category: d3.select('.radiobutton.core-selected').attr("label"),
+				realname: $("#realname").val(),
+				nameable: $("#publishable").attr("aria-checked"),
+				email: $("#email").val(),
+				title: $("#title").val(),
+				description: $("#description").val()
+		}
+		console.log(metadata);
+		if(selectedFile == "oldphoto"){
+			metadata.photo = data[1];
+			socket.emit("update_metadata", metadata);
+		} else {
+			FReader = new FileReader();
+		
+			FReader.onprogress = function(e){
+				console.log(e);
+				var progress = Math.floor(100 * e.loaded/e.total);
+				d3.select("#progress_bar").attr("value", progress);
+			}
+
+			FReader.onload = function(evnt){
+				socket.emit("bounce_file", {
+					'size' : selectedFile.size,
+					'name' : selectedFile.name,
+					'data' : evnt.target.result,
+					'metadata' : metadata
+				});
+			}
+
+			FReader.readAsBinaryString(selectedFile);
+		}
+	}
+}
+
+
+//socket.emit("submit_page_loaded", {hash: document.URL.split("/hash/")[1]});
+
+socket.on("reddit_hash", function(d){
+	console.log(d);
+	d3.select("#username").attr("disabled",true)
+		.attr("value", d.username);
+	localStorage.username = d.username
+	localStorage.hash = d.hash;
+});
+
+socket.on("best2014_data",function(blob){
+	console.log(blob);
+	data = blob.data;
+	d3.select("#username").attr("disabled",true)
+		.attr("value", blob.data[0]);
+
+	d3.select("#"+blob.data[2]+"Radiobutton").attr("checked", true).classed("core-selected", true);
+
+	d3.select("#realname")
+		.attr("value", blob.data[3]);
+
+
+	d3.select("#publishable")
+		.attr("checked", data[4]);
+
+
+	d3.select("#email")
+		.attr("value", blob.data[5]);
+	d3.select("#title")
+		.attr("value", blob.data[6]);
+//	$("#description").val(blob.data[7]);
+//	document.getElementById("description").update();
+	description.value = blob.data[7];
+	growarea.update();
+
+	if(blob.data[1]){
+		var img = blob.data[1].split("-")[0];
+		d3.select("#holder").style({
+			background:"url(http://photos.smugmug.com/photos/i-"+img+"/0/M/i-"+img+"-M.jpg)",
+			"background-size": "contain",
+			"background-repeat": "no-repeat",
+			"background-position": "50% 50%"
+		});
+		selectedFile = "oldphoto";
+	}
+});
+
+socket.on("metadata_uploaded", function(d){
+	d3.select("body").style("cursor", "");
+	alert(JSON.stringify(d.value));
+})
+
+
+
+
+
+
+function getParameterByName(name) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
+
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-53149148-2', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

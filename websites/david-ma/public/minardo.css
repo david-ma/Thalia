@@ -1,0 +1,178 @@
+body{
+	margin: 0;
+	padding: 0;
+}
+.membrane
+{
+	fill: rgba(168,188,205,1);
+}
+.cytoplasm
+{
+	fill: rgba(180,180,180,1);
+}
+.nucleus
+{
+	fill: rgba(155,141,149,1);
+}
+.sectorGroup:nth-child(odd)
+{
+	fill: rgba(10,50,150,.1);
+	stroke: black;
+}
+.sectorGroup:nth-child(even)
+{
+	fill: rgba(200,200,200,.3);
+	stroke: black;
+}
+.cellSectorGroup
+{
+	fill: rgba(10,50,150,.1);
+	stroke: black;
+}
+g.cellSectorGroup text.label
+{
+	font-size: 20px;
+	fill: #FFFFFF;
+	font-weight: bold;
+}
+.link
+{
+	fill: rgba(0,0,0,0);
+	stroke-width: 1.5;
+	stroke: rgba(0,0,0,0.5);
+	stroke-opacity: 1;
+}
+.track
+{
+	stroke-width: 2;
+	stroke: rgba(255,255,255,1);
+}
+text
+{
+	font-family: Verdana, Geneva, sans-serif;
+	font-size: 10px;
+	stroke: none;
+}
+g.sectorGroup text.label
+{
+	font-size: 20px;
+	fill: #FFFFFF;
+	font-weight: bold;
+}
+g#tracks text.label
+{
+	font-size: 15px;
+	fill: rgba(43,57,144,1);
+	font-weight: bold;
+	text-anchor: end;
+}
+g.node text
+{
+	text-anchor: middle;
+}
+g.node text.name
+{
+	font-weight: bold;
+}
+.buttonText
+{
+	font-size: 18px;
+}
+.listTitle
+{
+	font-size: 20px;
+}
+.racetrackBackground
+{
+	fill: rgba(100,100,100,.5);
+}
+.selectionBackground
+{
+	fill: rgba(70,70,70,.5);
+}
+.buttonBackground
+{
+	fill: rgba(25,25,25,.5);
+}
+.sector{
+	stroke: none;
+}
+.selected path
+{
+	stroke: rgba(150,255,255,1);
+}
+.selected .nodebackground
+{
+	fill: rgba(150,255,255,1);
+}
+.splashBackground
+{
+	fill: rgba(80,120,100,.5);
+}
+
+.node text, .label{
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+#frame {
+	stroke-width: 4;
+	stroke: black;
+	stroke-dasharray: 4px;
+	stroke-opacity: 1;
+	fill: rgba(0,0,0,0);
+}
+ .nodebackground
+{
+	fill: none;
+	stroke: none;
+}
+.nodebackground:hover
+{
+	fill: rgba(250,255,255,0.5);
+}
+#hoverbox rect
+{
+	fill: white;
+	stroke: none;
+}
+.draglayer
+{
+	fill: rgba(0,0,0,0);
+}
+.ghost
+{
+	opacity: 0.75
+}
+circle.ghost_box
+{
+	fill: white;
+	stroke: none;
+	fill-opacity: 0.75;
+}
+.heatmaptext
+{
+	font-size: 8px;
+}
+.heatmaptitle
+{
+	font-size: 20px;
+}
+#hoverbox image
+{
+	cursor: pointer;
+}
+#hoverbox text
+{
+	font-size: 10px;
+}
+.background_label{
+	font-size: 20px;
+	font-weight: bold;
+	font-family: "Times New Roman", Times, serif;
+	fill: rgba(0,0,0,0.4);
+}

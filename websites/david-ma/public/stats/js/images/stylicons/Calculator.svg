@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Generator: Adobe Illustrator 15.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="48px"
+	 height="48px" viewBox="0 0 48 48" style="enable-background:new 0 0 48 48;" xml:space="preserve">
+<g id="Calculator">
+	<path style="fill:#945BA4;" d="M42.089,0H24H5.91C2.646,0,0,2.646,0,5.91V24v18.089C0,45.354,2.646,48,5.91,48H24V24h24V5.91
+		C48,2.646,45.354,0,42.089,0z"/>
+	<path style="fill:#F19B1F;" d="M24,48h18.089C45.354,48,48,45.354,48,42.089V24H24V48z"/>
+	<polygon style="fill:#FFFFFF;" points="12.49,6.534 11.068,6.534 11.068,11.528 6.072,11.528 6.072,12.951 11.068,12.951 
+		11.068,17.948 12.49,17.948 12.49,12.951 17.485,12.951 17.485,11.528 12.49,11.528 	"/>
+	<rect x="30.514" y="11.528" style="fill:#FFFFFF;" width="11.414" height="1.423"/>
+	<rect x="30.514" y="32.666" style="fill:#FFFFFF;" width="11.414" height="1.422"/>
+	<rect x="30.514" y="37.277" style="fill:#FFFFFF;" width="11.414" height="1.421"/>
+	<polygon style="fill:#FFFFFF;" points="15.312,31.146 11.778,34.678 8.246,31.146 7.24,32.149 10.773,35.683 7.24,39.214 
+		8.246,40.22 11.778,36.688 15.312,40.22 16.317,39.214 12.784,35.683 16.317,32.149 	"/>
+</g>
+<g id="Layer_1">
+</g>
+</svg>

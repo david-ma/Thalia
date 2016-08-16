@@ -1,0 +1,146 @@
+#map { position:absolute; top:0; bottom:0; width:100%; }
+
+.leaflet-control-attribution {
+	display: none;
+}
+
+
+.marker-properties {
+	border-collapse:collapse;
+	font-size:11px;
+	border:1px solid #eee;
+	margin:0;
+}
+
+html, body {
+	font-family: RobotoDraft, 'Helvetica Neue', Helvetica, Arial;
+	height: 100%;
+	margin: 0;
+	background-color: #E5E5E5;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	-webkit-tap-highlight-color: rgba(0,0,0,0);
+	-webkit-touch-callout: none;
+	transform: translateZ(0);
+	-webkit-transform: translateZ(0);
+}
+
+core-toolbar {
+	color: #f1f1f1;
+	fill: #f1f1f1;
+	background-color: #526E9C;
+}
+
+core-header-panel {
+	height: 100%;
+	overflow: auto;
+	-webkit-overflow-scrolling: touch; 
+}
+section {
+	padding: 20px 0;
+	width: 300px;
+}
+
+section > div {
+	padding: 14px;
+}
+
+paper-button {
+	margin: 1em;
+	width: 10em;
+}
+
+paper-button.colored {
+	color: #4285f4;
+	fill: #4285f4;
+}
+
+paper-button[raisedButton].colored {
+	background: #4285f4;
+	color: #fff;
+}
+
+paper-button[raisedButton].colored #ripple,
+paper-button[raisedButton].colored::shadow #ripple {
+	color: #2a56c6;
+}
+
+paper-button[raisedButton].colored #focusBg,
+paper-button[raisedButton].colored::shadow #focusBg {
+	background: #3367d6;
+}
+
+core-pages {
+	width: 300px;
+	height: 300px;
+	border: 1px solid black;
+	-webkit-user-select: none;
+	border-radius: 5px;
+}
+core-pages > div {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: inherit;
+}
+
+.container {
+	width: 80%;
+	margin: 50px auto;
+	padding: 24px;
+	background-color: white;
+}
+.questiontitlebox{
+	background-color: skyblue;
+	padding: 50px auto 50px 50px;
+	width: 100%;
+}
+.questiontitle{
+	padding: 24px 24px;
+}
+.answergroup{
+	margin:20px;
+}
+
+.quizpanel {
+	background-color: white;
+	width: 100%;
+	margin: 0px;
+	padding: 0px;
+	
+	border-style: dotted;
+	border-width: 1px;
+}
+.submitbutton {
+	width: 100%;
+	margin: 0px;
+}
+
+paper-radio-group.blue paper-radio-button::shadow #ink[checked] {
+	color: #4285f4;
+}
+
+paper-radio-group.blue paper-radio-button::shadow #onRadio {
+	background-color: #4285f4;
+}
+
+paper-checkbox.blue::shadow #ink[checked] {
+	color: #4285f4;
+}
+
+paper-checkbox.blue::shadow #checkbox.checked {
+	border-color: #4285f4;
+}
+paper-checkbox {
+	padding: 20px 20px 20px 0;
+}
+
+paper-input {
+	width: 100%;
+}
+
+
+
+

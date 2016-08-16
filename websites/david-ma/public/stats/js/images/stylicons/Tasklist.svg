@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Generator: Adobe Illustrator 15.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="47.999px" height="48px" viewBox="0 0 47.999 48" style="enable-background:new 0 0 47.999 48;" xml:space="preserve">
+<g id="Tasklist">
+	<path style="fill-rule:evenodd;clip-rule:evenodd;fill:#945BA4;" d="M47.999,42.09c0,3.264-2.646,5.91-5.91,5.91H5.91
+		C2.646,48,0,45.354,0,42.09V5.911C0,2.646,2.646,0,5.91,0h36.179c3.265,0,5.91,2.646,5.91,5.911V42.09z"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M38.825,10.223H9.772c-0.707,0-1.283,0.577-1.283,1.284v25.667c0,0.705,0.576,1.283,1.283,1.283
+			h29.053c0.705,0,1.283-0.578,1.283-1.283V11.507C40.108,10.8,39.53,10.223,38.825,10.223z"/>
+	</g>
+	<path style="fill:#4EB96F;" d="M40.108,17.589v-6.082c0-0.707-0.578-1.284-1.283-1.284H9.772c-0.707,0-1.283,0.577-1.283,1.284
+		v6.082H40.108z"/>
+	<circle style="fill:#FFFFFF;" cx="12.799" cy="14.27" r="1.438"/>
+	<circle style="fill:#FFFFFF;" cx="35.799" cy="14.27" r="1.438"/>
+	<circle style="fill:#E64C3B;" cx="12.799" cy="21.758" r="1.438"/>
+	<rect x="16.424" y="20.646" style="fill:#CCCCCC;" width="19.938" height="2.223"/>
+	<circle style="fill:#3B97D2;" cx="12.799" cy="26.758" r="1.438"/>
+	<rect x="16.424" y="25.646" style="fill:#CCCCCC;" width="19.938" height="2.223"/>
+	<circle style="fill:#EFC319;" cx="12.799" cy="31.758" r="1.438"/>
+	<rect x="16.424" y="30.646" style="fill:#CCCCCC;" width="19.938" height="2.223"/>
+</g>
+<g id="Layer_1">
+</g>
+</svg>

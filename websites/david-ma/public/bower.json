@@ -1,0 +1,26 @@
+{
+  "name": "public",
+  "version": "0.0.0",
+  "authors": [
+    "David Ma <github@david-ma.net>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "~1.1.0",
+    "d3": "~3.5.6",
+    "jquery": "~2.1.4",
+    "bootstrap": "~3.3.5",
+    "modernizr": "~2.8.3",
+    "font-awesome": "~4.4.0",
+    "jquery-ui": "~1.11.4",
+    "underscore": "~1.8.3",
+    "normalize.css": "~3.0.3"
+  }
+}

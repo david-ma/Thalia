@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Generator: Adobe Illustrator 15.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="48px"
+	 height="48px" viewBox="0 0 48 48" style="enable-background:new 0 0 48 48;" xml:space="preserve">
+<g id="Hazard">
+	<path style="fill-rule:evenodd;clip-rule:evenodd;fill:#4EB96F;" d="M48,42.09c0,3.264-2.646,5.91-5.91,5.91H5.911
+		C2.647,48,0,45.354,0,42.09V5.911C0,2.646,2.647,0,5.911,0H42.09C45.354,0,48,2.646,48,5.911V42.09z"/>
+	<g>
+		<polygon style="fill:#E64C3B;" points="33.812,33.357 26.387,8.683 22.168,8.683 14.761,33.357 		"/>
+	</g>
+	<g>
+		<polygon style="fill:#CE3A38;" points="33.812,33.357 26.387,8.683 24.287,8.683 24.287,33.357 		"/>
+	</g>
+	<polygon style="fill:#FFFFFF;" points="24.286,23.357 17.762,23.357 16.186,28.609 24.286,28.609 	"/>
+	<polygon style="fill:#E6E7E8;" points="31.576,25.91 30.809,23.357 24.286,23.357 24.286,28.609 32.387,28.609 	"/>
+	<polygon style="fill:#FFFFFF;" points="24.286,13.357 20.764,13.357 19.188,18.609 24.286,18.609 	"/>
+	<polygon style="fill:#E6E7E8;" points="27.809,13.357 24.286,13.357 24.286,18.609 29.385,18.609 	"/>
+	<g>
+		<path style="fill:#1C272B;" d="M32.086,38.382h4.094c1.387-0.001,2.512-1.125,2.512-2.513c0-1.387-1.125-2.512-2.513-2.512h-3.053
+			l-9.839,0.002v5.023L32.086,38.382z"/>
+		<path style="fill:#222F35;" d="M12.393,33.36c-1.387,0.001-2.512,1.125-2.511,2.513c0,1.388,1.125,2.512,2.512,2.512h4.093
+			l7.8-0.002v-5.023l-8.841,0.002L12.393,33.36z"/>
+	</g>
+</g>
+<g id="Layer_1">
+</g>
+</svg>

@@ -1,0 +1,6 @@
+Hi! This website was made by David Ma
+Email me at hello@david-ma.net
+
+See also:
+robots.txt, hackers.txt
+http://humanstxt.org/

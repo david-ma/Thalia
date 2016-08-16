@@ -40,5 +40,3 @@ credentials.js
 *.dropbox
 bower_components
 
-bower_components
-websites/public/dist

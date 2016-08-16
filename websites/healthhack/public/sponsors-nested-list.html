@@ -1,0 +1,69 @@
+<link rel="import" href="/bower_components/polymer/polymer.html">
+<link rel="import" href="/bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+
+<dom-module id="sponsors-nested-list">
+    <template>
+        <style is="custom-style" include="iron-flex iron-flex-alignment">
+            .hr-padding {
+                margin-top: 20px;
+                margin-bottom: 20px;
+            }
+        </style>
+        <iron-ajax
+        auto
+        url="/data/sponsors-new.json"
+        last-response="{{sponsors}}">
+        </iron-ajax>
+        <template is="dom-repeat" items="[[categories]]">
+            <div class="sponsor-hr hr-padding">
+                <img class="sponsor-grouping-img" src="/images/sponsors/[[item.scope]]-[[item.type]].png">
+            </div>
+            <div class="horizontal layout flex wrap">
+            <template is="dom-repeat" items="{{sponsors}}" filter="{{_filterSponsors(item)}}">
+                <div class="vertical layout" style="width:400px">
+                    <a href="{{item.href}}">
+                        <img src="/images/sponsors/{{item.img}}" style="height:100px">
+                    </a>
+                    
+                    <div style="padding:10px">
+                        {{item.text}}
+                    </div>
+                </div>
+            </template>
+            </div>
+        </template>
+    </template>
+    <script>
+        Polymer({
+            is: 'sponsors-nested-list',
+            properties: {
+                categories: {
+                    type: Array,
+                    value: [
+                        {type: "gold", scope: "national"},
+                        {type: "gold", scope: "community"},
+                        {type: "silver", scope: "national"},
+                        {type: "silver", scope: "community"},
+                        {type: "standard", scope: "community"}
+                    ]
+                },
+                mode: {
+                    type: String,
+                    notify: true,
+                    reflectToAttribute: true
+                }
+            },
+            _filterSponsors: function(category) {
+                var scope = category.scope;
+                var type = category.type;
+                // if(scope == undefined || type == undefined) {
+                //     return null;
+                // }
+                return function(item) {
+                    return item.scope == scope && item.type == type;
+                }
+            }
+        })
+    </script>
+</dom-module>

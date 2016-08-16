@@ -19,9 +19,10 @@ var Database = function (cred) {
 		 * connnection idle timeout (the wait_timeoutserver variable configures this)
 		 */
 		if(err.code === 'PROTOCOL_CONNECTION_LOST') {
+			console.log('PROTOCOL_CONNECTION_LOST, reconnecting');
 			db.connect();
 		} else {
-			throw err;
+			console.log(err);
 		}
 	});
 }

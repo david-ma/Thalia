@@ -2,8 +2,6 @@ var fs = require("fs");
 var mime = require('mime');
 
 function route(website, pathname, response, request) {
-	//check for services...
-
 	try {
 		var first = pathname.split("/")[1].toLowerCase();
 	} catch (err){}

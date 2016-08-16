@@ -32,14 +32,19 @@ var reddit = {
 	},
 	redirect: function(res, req, db, type){
 		if (typeof(reddit.links[type]) == "string") {
-			var body ='<meta http-equiv="refresh" content="0; url='+reddit.links[type]+'">';
-			
-			res.writeHead(302, {"Location": reddit.links[type]});
-	//		this is the old way of redirecting... note that even with 302, you need a body
-	//		res.writeHead(200, {"Content-Type": "text/html", "charset": "utf-8"});
+			var query = "select url from reddit_photo_threads where nickname = '"+type+"' order by id desc limit 1;"
+				db.query(query, function(error, results){	
+					if(!error) {
+						var url = results[0].url;
+						var body ='<meta http-equiv="refresh" content="0; url='+url+'">';
+						res.writeHead(302, {"Location": url});
+						res.end(body);
+					} else {
+						response.writeHead(200);
+						response.end(error);
+					}
+				});
 
-			res.write(body);
-			res.end();
 		} else {
 			console.log("error, 400 no service found");
 

@@ -2,5 +2,5 @@
 	"host": "localhost",
 	"user": "david",
 	"password": "altoids",
-	"database": "govhack2015"
+	"database": "maindatabase"
 }

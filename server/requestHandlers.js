@@ -48,7 +48,7 @@ var handle = {
 	getWebsite: function(domain){
 		console.log("Domain: "+domain);
 		var domain = domain.replace("www.","");	
-		var site = typeof handle.index[domain] == "undefined" ? "default" : handle.index[domain];
+		var site = typeof handle.index[domain] == "undefined" ? handle.index.localhost : handle.index[domain];
 		return handle.websites[site];
 	}
 };

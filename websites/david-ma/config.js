@@ -40,8 +40,8 @@ var reddit = {
 						res.writeHead(302, {"Location": url});
 						res.end(body);
 					} else {
-						response.writeHead(200);
-						response.end(error);
+						res.writeHead(500);
+						res.end("Database Error");
 					}
 				});
 

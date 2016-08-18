@@ -11,7 +11,7 @@ var runSequence = require('run-sequence');
 // Editable - any file extensions added here will trigger the watch task and will be instantly copied to your /dist folder
 var staticSrc = "src/**/*.{eot,ttf,woff,woff2,otf,json,pdf}";
 var browserSync = require('browser-sync').create();
-var dist = "websites/public/dist"
+var dist = "websites/public/dist";
 
 // Clean
 gulp.task("clean", function() {

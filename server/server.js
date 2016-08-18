@@ -21,23 +21,23 @@ function start(route, handle) {
 	}
 
 	var port = 80; // change the port here?
-	var pattern = /^\d{0,5}$/
+	var pattern = /^\d{0,5}$/;
 	var workspace = 'default';
 
-	if(typeof process.argv[2] != null && pattern.exec(process.argv[2])){
+	if(typeof process.argv[2] !== null && pattern.exec(process.argv[2])){
 		port = process.argv[2];
-	} else if(typeof process.argv[3] != null && pattern.exec(process.argv[3])){
+	} else if(typeof process.argv[3] !== null && pattern.exec(process.argv[3])){
 		port = process.argv[3];
 	}
 
 	// To do: we should check that the workspace exists, otherwise leave it as default
-	if (process.argv[2] != null && process.argv[2] != undefined && !pattern.exec(process.argv[2])) {
+	if (process.argv[2] !== null && process.argv[2] !== undefined && !pattern.exec(process.argv[2])) {
 		workspace = process.argv[2];
-	} else if(typeof process.argv[3] != null && process.argv[3] != undefined && !pattern.exec(process.argv[3])){
+	} else if(typeof process.argv[3] !== null && process.argv[3] !== undefined && !pattern.exec(process.argv[3])){
 		workspace = process.argv[3];
 	} 
 
-  console.log("Setting workspace to: "+workspace)
+  console.log("Setting workspace to: "+workspace);
   console.log("Server has started on port: " + port);
   handle.index.localhost = workspace;
   return http.createServer(onRequest).listen(port);
@@ -66,7 +66,7 @@ function proxy(client_req, client_res, port) {
     console.log(err);
     client_res.write("Error, server is down.");
     client_res.end();
-  })
+  });
 
   client_req.pipe(proxyServer, {
     end: true

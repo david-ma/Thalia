@@ -2,13 +2,12 @@ var fs = require("fs");
 var mime = require('mime');
 
 function route(website, pathname, response, request) {
-	//check for services...
-
+	var first, second;
 	try {
-		var first = pathname.split("/")[1].toLowerCase();
+		first = pathname.split("/")[1].toLowerCase();
 	} catch (err){}
 	try {
-		var second = pathname.split("/")[2].toLowerCase();
+		second = pathname.split("/")[2].toLowerCase();
 	} catch (err){}
 
 	if(typeof website.services[first] === 'function') {
@@ -63,7 +62,7 @@ function routeFile(response, request, filename){
 								var arr = url.split("?");
 								redirect = arr[0]+"/?"+arr[1];
 							}
-							response.writeHead(303, {Location: redirect})
+							response.writeHead(303, {Location: redirect});
 							response.end();
 						}
 					} else {

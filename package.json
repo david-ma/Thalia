@@ -38,6 +38,7 @@
     "node": ">=6.0.0"
   },
   "scripts": {
+    "lint": "jshint server/**.js",
     "build": "gulp build",
     "start": "./start.sh"
   },

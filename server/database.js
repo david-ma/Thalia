@@ -47,6 +47,10 @@ Database.prototype.query = function(query, callback){
   }
 }
 
+Database.prototype.queryVariables = function(query, variables, callback){
+	this.query(query, variables, callback);
+}
+
 exports.db = Database;
 
 

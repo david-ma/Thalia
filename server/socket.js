@@ -32,14 +32,23 @@ function init(io, handle){
 
 		if(website != undefined && website.sockets){
 	
-			website.sockets.on.forEach(function(d){
-				socket.on(d.name, d.callback);
-			})
+			if(website.sockets.on instanceof Array) {
+				website.sockets.on.forEach(function(d){
+					socket.on(d.name, function(data){
+						d.callback(data, website.db);
+					});
+				})
+			}
 
-			website.sockets.emit.forEach(function(d){
-				socket.emit(d.name, d.data);
-			})
+			if(website.sockets.emit instanceof Array) {
+				website.sockets.emit.forEach(function(d){
+					socket.emit(d.name, d.data);
+				})
+			}
 		}
+
+
+
 	});
 }
 

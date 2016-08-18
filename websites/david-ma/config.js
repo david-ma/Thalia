@@ -14,20 +14,23 @@ var reddit = {
 	},
 	redirect: function(res, req, db, type){
 		if (typeof(reddit.links[type]) == "string") {
-			var query = "select url from reddit_photo_threads where nickname = '"+type+"' order by id desc limit 2;"
+			var query = "select url from reddit_photo_threads where nickname = '"+type+"' order by id desc limit 1;"
+			
+      if(type === "oldraw") {
+        query = "select url from (select id, url from reddit_photo_threads where nickname = 'raw' order by id desc limit 2) as x order by id asc limit 1;"
+      }
 
 				db.query(query, function(error, results){	
 					if(!error) {
 					  if(results && results[0] && results[0].url) {
               var url = results[0].url;
-              
-              if(type === "oldraw") {
-                url = results[1].url;
-              }
 
               var body ='<meta http-equiv="refresh" content="0; url='+url+'">';
               res.writeHead(302, {"Location": url});
               res.end(body);
+						} else {
+              res.writeHead(500);
+              res.end("Database Error");
 						}
 					} else {
 						res.writeHead(500);

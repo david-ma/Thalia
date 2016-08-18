@@ -2,19 +2,20 @@ var mysql = require("mysql");
 
 var Database = function (cred) {
   this.cred = cred;
-  this.connect_database();
+  this.connected = false;
 }
-
-
-Database.prototype.connect_database = function(){
-  var cred = this.cred
+Database.prototype.connect = function(){
+  var that = this,
+      cred = this.cred;
 
 	var db = this.db = mysql.createConnection(cred);
+
 	db.connect(function(err) {
 			if(err) {
 				console.log("Error in database!");
 				console.log(err);
 			} else {
+			  that.connected = true;
 				console.log('Database connected: '+cred.database+' as id: ' + db.threadId);
 			}
 		});
@@ -27,16 +28,23 @@ Database.prototype.connect_database = function(){
 		 * connnection idle timeout (the wait_timeoutserver variable configures this)
 		 */
 		if(err.code === 'PROTOCOL_CONNECTION_LOST') {
-			console.log('PROTOCOL_CONNECTION_LOST, reconnecting');
-			this.connect_database();
+		  that.connected = false;
+			console.log('PROTOCOL_CONNECTION_LOST');
 		} else {
+		  console.log("Some sort of DB error...");
 			console.log(err);
 		}
 	});
+	return db;
 }
 
 Database.prototype.query = function(query, callback){
-	this.db.query(query, callback);
+  if(this.connected) {
+  	this.db.query(query, callback);
+  } else {
+    this.connect();
+  	this.db.query(query, callback);
+  }
 }
 
 exports.db = Database;

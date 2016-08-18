@@ -1,6 +1,14 @@
 var mysql = require("mysql");
 
 var Database = function (cred) {
+  this.cred = cred;
+  this.connect_database();
+}
+
+
+Database.prototype.connect_database = function(){
+  var cred = this.cred
+
 	var db = this.db = mysql.createConnection(cred);
 	db.connect(function(err) {
 			if(err) {
@@ -20,7 +28,7 @@ var Database = function (cred) {
 		 */
 		if(err.code === 'PROTOCOL_CONNECTION_LOST') {
 			console.log('PROTOCOL_CONNECTION_LOST, reconnecting');
-			db.connect();
+			this.connect_database();
 		} else {
 			console.log(err);
 		}

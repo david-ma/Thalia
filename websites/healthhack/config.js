@@ -28,20 +28,3 @@ exports.config = {
 	}
 };
 
-
-
-
-
-			var query = "select * from tempview where row_names = "+d;
-				db.query(query, function(error, results){	
-					if(!error) {
-						response.writeHead(200, {
-							"Content-Type": "application/json",
-							"Access-Control-Allow-Origin": "*"
-						});
-						response.end(JSON.stringify(results[0]));
-					} else {
-						response.writeHead(200);
-						response.end(error);
-					}
-				});

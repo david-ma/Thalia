@@ -52,8 +52,14 @@ var handle = {
 	},
 	getWebsite: function(domain){
 		console.log("Domain: "+domain);
-		var domain = domain.replace("www.","");	
-		var site = typeof handle.index[domain] == "undefined" ? handle.index.localhost : handle.index[domain];
+		var site = handle.index.localhost;
+
+		if(domain) {
+			domain = domain.replace("www.","");
+			if(handle.index.hasOwnProperty(domain)) {
+				site = handle.index[domain];
+			}
+		}
 		return handle.websites[site];
 	},
 	proxies: {}

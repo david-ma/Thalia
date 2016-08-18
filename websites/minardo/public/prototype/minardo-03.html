@@ -1,0 +1,197 @@
+<html>
+  <head>
+  <script type="text/javascript" src="javascript/d3.v3.min.js"></script>
+  <script type="text/javascript" src="javascript/jquery-2.0.2.min.js"></script>
+  <script type="text/javascript" src="javascript/minardo_data4.js"></script>
+  <script type="text/javascript" src="javascript/racetrack-04.js"></script>
+  <script type="text/javascript" src="javascript/heatmap-03.js"></script>
+  <script type="text/javascript" src="javascript/insulin_KEGG.js"></script>
+
+  <style>
+    body {
+      margin: 0px;
+      padding: 0px;
+      height:2000px;
+      font: 12px Arial;
+    }
+    .centered
+		{
+				width: 1900px;
+				margin: auto;
+				padding: auto;
+				height:2000px;
+		}
+		.svgButton
+		{
+			cursor: pointer
+		}
+		.unselected_outline
+		{
+			fill: rgba(0,0,0,0);
+			stroke-width: 1;
+			stroke: rgba(1,1,1,.2);
+			stroke-opacity: 1;
+		}
+		.heavy_outline
+		{
+			fill: rgba(0,0,0,0);
+			stroke-width: 1;
+			stroke: rgba(1,1,1,1);
+			stroke-opacity: 1;
+		}
+		.membrane
+		{
+			fill: rgba(150,150,50,1);
+		}
+		.cytoplasm
+		{
+			fill: rgba(50,150,150,1);
+		}
+		.nucleus
+		{
+			fill: rgba(150,50,150,1);
+		}
+		.sectorGroup:nth-child(odd)
+		{
+			fill: rgba(10,50,150,.1);
+			stroke: black;
+		}
+		.sectorGroup:nth-child(even)
+		{
+			fill: rgba(10,50,150,.3);
+			stroke: black;
+		}
+		.link
+		{
+			fill: rgba(0,0,0,0);
+			stroke-width: 1;
+			stroke: rgba(1,1,1,1);
+			stroke-opacity: 1;
+		}
+		textarea
+		{
+			width: 500px;
+			height: 100px;
+			margin-left: 200px;
+		}
+  </style>
+	<title>Minardo</title>
+  </head>
+  <body>
+		<h1 class="centered" style="height:auto;padding:20px;">Insulin response in adipocytes (<a href="http://www.cell.com/cell-metabolism/abstract/S1550-4131(13)00152-6">Humphrey et al., 2013</a>)</h1>
+		<p class="centered" style="height:auto;">Best viewed in chrome</p><br>
+		<div>
+			<textarea rows="1" cols="1" name="text" id="commentBox"></textarea>
+		</div>
+		<div class="centered" id="mapdiv">
+			<svg class="centered" id="vis" style="background: eeeeee;">
+			</svg>
+		</div>
+<script>
+
+
+	MINARDO.data.init();
+
+	//function (data, svg, x, y, width, height)
+	MINARDO.heatmap.init(minardo_data, d3.select("#vis"), 0, 50, 420, 1080);
+	MINARDO.racetrack.init(d3.select("#vis"), 400, 50, 1400, 1000);
+
+	MINARDO.helper.init();
+	MINARDO.heatmap.highlight.init();
+
+MINARDO.data.comments = false;
+MINARDO.data.include = false;
+//testing = null;
+d3.json("https://spreadsheets.google.com/feeds/list/0Ak1mMm6bc71LdEdhaExGWnp3M0dyUkJNQ0RBbU04M2c/1/public/values?alt=json", function(json) {
+//testing = json;
+	MINARDO.data.comments = {};
+	MINARDO.data.include = {};
+	json.feed.entry.forEach(function(row){
+		MINARDO.data.comments[row.gsx$databasenumber.$t] = row.gsx$roleofthisphosphoeventininsulinresponse.$t;
+		if(row.gsx$included.$t == 'yes') {
+			MINARDO.data.include[row.gsx$databasenumber.$t] = row;
+		}
+//		MINARDO.data.comments[row.gsx$databasenumber.$t] = row.gsx$roleofthisphosphoeventininsulinresponse.$t;
+	});
+	console.log("Comments loaded");
+	MINARDO.racetrack.buildCommentBox();
+});
+
+	
+
+
+
+/* snippet for verifying humphrey number and the actual number David used in the data
+Object.keys(MINARDO.data.data).forEach(function(key){
+	console.log(MINARDO.data.data[key].h_number + " " + MINARDO.data.data[key].Amino_Acid + "-" + MINARDO.data.data[key].Position);
+});
+
+foo = [["S","9"],["S","21"],["T","36"],["T","45"],["S","64"],["T","86"],["S","92"],["S","112"],["S","136"],["S","159"],["S","161"],["T","183"],["Y","185"],["T","198"],["T","203"],["Y","204"],["S","236"],["S","240"],["S","252"],["T","270"],["S","272"],["S","303"],["S","307"],["T","309"],["S","319"],["S","324"],["S","326"],["S","330"],["T","330"],["S","337"],["T","348"],["S","363"],["T","366"],["S","375"],["T","421"],["S","422"],["S","439"],["S","452"],["Y","460"],["S","469"],["S","474"],["S","486"],["S","492"],["S","503"],["S","526"],["S","555"],["S","595"],["Y","608"],["S","632"],["S","641"],["T","649"],["S","649"],["S","707"],["S","763"],["Y","891"],["S","939"],["S","981"],["Y","1163"],["Y","1167"],["Y","1168"],["Y","1171"],["S","1176"],["S","1179"],["S","1183"],["S","1196"],["T","1466"],["T","1982"],["S","2448"],["S","2481"]];
+
+foo.forEach(function(thing){
+//	console.log(thing);
+	Object.keys(MINARDO.data.data).forEach(function(key){
+		if (MINARDO.data.data[key].Position == thing[1] && MINARDO.data.data[key].Amino_Acid == thing[0]) {
+		console.log(key, MINARDO.data.data[key].Gene_Names);
+		}
+	});
+});
+
+
+//*/
+
+</script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

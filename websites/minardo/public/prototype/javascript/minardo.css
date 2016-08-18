@@ -1,0 +1,98 @@
+body{
+	margin: 0px;
+}
+.membrane
+{
+	fill: rgba(150,150,50,1);
+}
+.cytoplasm
+{
+	fill: rgba(50,150,150,1);
+}
+.nucleus
+{
+	fill: rgba(150,50,150,1);
+}
+.sectorGroup:nth-child(odd)
+{
+	fill: rgba(10,50,150,.1);
+	stroke: black;
+}
+.sectorGroup:nth-child(even)
+{
+	fill: rgba(10,50,150,.3);
+	stroke: black;
+}
+.link
+{
+	fill: rgba(0,0,0,0);
+	stroke-width: 1;
+	stroke: rgba(0,0,0,1);
+	stroke-opacity: 1;
+}
+.track
+{
+	stroke-width: 6;
+	stroke: rgba(255,255,255,1);
+}
+text
+{
+	font-family: Verdana, Geneva, sans-serif;
+	font-size: 10;
+}
+.buttonText
+{
+	font-size: 18;
+}
+.listTitle
+{
+	font-size: 20;
+}
+.racetrackBackground
+{
+	fill: rgba(100,100,100,.5);
+}
+.selectionBackground
+{
+	fill: rgba(70,70,70,.5);
+}
+.buttonBackground
+{
+	fill: rgba(25,25,25,.5);
+}
+.sector{
+	stroke: none;
+}
+.selected path
+{
+	stroke: rgba(150,255,255,1);
+}
+.selected rect
+{
+	fill: rgba(150,255,255,1);
+}
+.splashBackground
+{
+	fill: rgba(80,120,100,.5);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,281 @@
+<html>
+  <head>
+  <script type="text/javascript" src="/minardo/javascript/d3.v3.min.js"></script>
+  <script type="text/javascript" src="/minardo/javascript/jquery-2.0.2.min.js"></script>
+  <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+  <script type="text/javascript" src="/minardo/javascript/minardo_data5.js"></script>
+  <script type="text/javascript" src="/minardo/javascript/racetrack-07.js"></script>
+  <script type="text/javascript" src="/minardo/javascript/heatmap-05.js"></script>
+  <script type="text/javascript" src="/minardo/javascript/insulin_KEGG.js"></script>
+  <script type="text/javascript" src="/minardo/javascript/full_data.js"></script>
+  <script type="text/javascript" src="/minardo/javascript/cheap_doc_json.js"></script>
+
+  <style>
+    body {
+      margin: 0px;
+      padding: 0px;
+      height:2000px;
+      font: 12px Arial;
+    }
+    .centered
+		{
+				width: 1900px;
+				margin: auto;
+				padding: auto;
+				height:2000px;
+		}
+		.svgButton
+		{
+			cursor: pointer
+		}
+		.unselected_outline
+		{
+			fill: rgba(0,0,0,0);
+			stroke-width: 1;
+			stroke: rgba(1,1,1,.2);
+			stroke-opacity: 1;
+		}
+		.heavy_outline
+		{
+			fill: rgba(0,0,0,0);
+			stroke-width: 1;
+			stroke: rgba(1,1,1,1);
+			stroke-opacity: 1;
+		}
+		.membrane
+		{
+			fill: rgba(150,150,50,1);
+		}
+		.cytoplasm
+		{
+			fill: rgba(50,150,150,1);
+		}
+		.nucleus
+		{
+			fill: rgba(150,50,150,1);
+		}
+		.sectorGroup:nth-child(odd)
+		{
+			fill: rgba(10,50,150,.1);
+			stroke: black;
+		}
+		.sectorGroup:nth-child(even)
+		{
+			fill: rgba(10,50,150,.3);
+			stroke: black;
+		}
+		.link
+		{
+			fill: rgba(0,0,0,0);
+			stroke-width: 1;
+			stroke: rgba(1,1,1,1);
+			stroke-opacity: 1;
+		}
+		.spectraLink
+		{
+			stroke-width: 4;
+		}
+		.substrateLink
+		{
+			stroke: rgba(255,0,0,1);
+		}
+		.kinaseLink
+		{
+			stroke: rgba(0,0,255,1);
+		}
+		.track
+		{
+			stroke-width: 6;
+			stroke: rgba(255,255,255,1);
+		}
+		textarea
+		{
+			width: 500px;
+			height: 100px;
+			margin-left: 200px;
+		}
+  </style>
+	<title>Minardo</title>
+  </head>
+  <body>
+		<h1 class="centered" style="height:auto;padding:20px;">Insulin response in adipocytes (<a href="http://www.cell.com/cell-metabolism/abstract/S1550-4131(13)00152-6">Humphrey et al., 2013</a>)</h1>
+		<p class="centered" style="height:auto;">Best viewed in chrome</p><br>
+		<div>
+			<textarea rows="1" cols="1" name="text" id="commentBox"></textarea>
+		</div>
+		<div class="centered" id="mapdiv">
+			<svg class="centered" id="vis" style="background: eeeeee;">
+			</svg>
+		</div>
+<script>
+
+
+
+MINARDO.data.comments = false;
+MINARDO.data.include = false;
+kinase_data = {};
+
+//decide if we we want to load it from google docs or locally....
+loadFromGoogleDocs(GetURLParameter("local"));
+
+function loadFromGoogleDocs(local){
+var doc_1 = "https://spreadsheets.google.com/feeds/list/0Ak1mMm6bc71LdEdhaExGWnp3M0dyUkJNQ0RBbU04M2c/1/public/values?alt=json",
+	doc_2 = "https://spreadsheets.google.com/feeds/list/0Ak1mMm6bc71LdEdhaExGWnp3M0dyUkJNQ0RBbU04M2c/2/public/values?alt=json",
+	doc_3 = "https://spreadsheets.google.com/feeds/list/0Ak1mMm6bc71LdEdhaExGWnp3M0dyUkJNQ0RBbU04M2c/3/public/values?alt=json"; 
+
+	if (local != "yes") {
+		d3.json(doc_1, function(json) {
+			MINARDO.data.comments = {};
+			MINARDO.data.include = {};
+			json.feed.entry.forEach(function(row){
+				MINARDO.data.comments[row.gsx$databasenumber.$t] =
+				row.gsx$roleofthisphosphoeventininsulinresponse.$t;
+				if(row.gsx$included.$t == 'yes') {
+					MINARDO.data.include[row.gsx$databasenumber.$t] = row;
+				}
+			});
+			MINARDO.racetrack.buildCommentBox();
+			MINARDO.data.init();
+
+			d3.json(doc_2, function(json) {
+
+				json.feed.entry.forEach(function(row){
+					var kinase = row.gsx$group.$t;
+					var phosphosite = row.gsx$phosphosites.$t;
+					addToKinaseData("phosphosites", kinase, phosphosite);
+				});
+				d3.json(doc_3, function(json) {
+					json.feed.entry.forEach(function(row){
+						var kinase = row.gsx$group.$t;
+						var phosphosite = row.gsx$substrates.$t;
+
+						addToKinaseData("substrates", kinase, phosphosite);
+					});
+					startEverything();
+				});
+			});
+		});
+	} else {
+
+		MINARDO.data.comments = {};
+		MINARDO.data.include = {};
+		doc_json_1.feed.entry.forEach(function(row){
+			MINARDO.data.comments[row.gsx$databasenumber.$t] =
+			row.gsx$roleofthisphosphoeventininsulinresponse.$t;
+			if(row.gsx$included.$t == 'yes') {
+				MINARDO.data.include[row.gsx$databasenumber.$t] = row;
+			}
+		});
+		MINARDO.racetrack.buildCommentBox();
+		MINARDO.data.init();
+
+		doc_json_2.feed.entry.forEach(function(row){
+			var kinase = row.gsx$group.$t;
+			var phosphosite = row.gsx$phosphosites.$t;
+			addToKinaseData("phosphosites", kinase, phosphosite);
+		});
+		doc_json_3.feed.entry.forEach(function(row){
+			var kinase = row.gsx$group.$t;
+			var phosphosite = row.gsx$substrates.$t;
+
+			addToKinaseData("substrates", kinase, phosphosite);
+		});
+		startEverything();
+	}
+
+
+}
+
+function startEverything(){
+
+	//function (data, svg, x, y, width, height)
+	MINARDO.heatmap.init(MINARDO.data.data, d3.select("#vis"), 0, 50, 420, 1080);
+	$("#heatmap").attr("display", "none");
+
+	MINARDO.racetrack.init(d3.select("#vis"), 50, 50, 1400, 1000);
+
+	MINARDO.helper.init();
+	MINARDO.heatmap.highlight.init();
+}
+
+function addToKinaseData(thing, kinase, id){
+	if (typeof kinase_data[kinase] == 'undefined'){
+		kinase_data[kinase] = {
+			kinaseID: Object.keys(kinase_data).length+1,
+			name: kinase,
+			phosphosites: {},
+			substrates: {}
+		}
+	}
+//	console.log(thing, kinase, id);
+	kinase_data[kinase][thing][id] = 1;
+}
+
+function GetURLParameter(sParam) {
+    var sPageURL = window.location.search.substring(1);
+    var sURLVariables = sPageURL.split('&');
+    for (var i = 0; i < sURLVariables.length; i++) 
+    {
+        var sParameterName = sURLVariables[i].split('=');
+        if (sParameterName[0] == sParam) 
+        {
+            return sParameterName[1];
+        }
+    }
+}
+
+</script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

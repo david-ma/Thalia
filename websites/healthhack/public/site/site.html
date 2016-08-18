@@ -1,350 +1,47 @@
-<link rel="import" href="/bower_components/polymer/polymer.html">
-<link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Custom Fonts -->
-    <link href="/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
-    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
-    <link href='https://fonts.googleapis.com/css?family=Kaushan+Script' rel='stylesheet' type='text/css'>
-    <link href='https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
-    <link href='https://fonts.googleapis.com/css?family=Roboto+Slab:400,100,300,700' rel='stylesheet' type='text/css'>
-    <script src="/socket.io/socket.io.js"></script>
+<link rel="import" href="/bower_components/google-map/google-map.html">
 
-    <!-- Plugin JavaScript -->
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js"></script>
+<template>
 
-    <!-- Contact Form JavaScript -->
-    <script src="/js/jqBootstrapValidation.js"></script>
-    <script src="/js/contact_me.js"></script>
-
-    <link rel="import" href="/bower_components/google-map/google-map.html">
-    <link rel="import" href="/bower_components/marked-element/marked-element.html">
-    <link rel="import" href="/sponsors-nested-list.html">
-
-    <!-- Theme CSS -->
-    <link href="/css/healthhack.css" rel="stylesheet">
-<dom-module id="healthhack-site">
-    <template>
-    <style>
-        .navbar-custom .nav li a {
-          font-family: "Montserrat", "Helvetica Neue", Helvetica, Arial, sans-serif;
-          text-transform: uppercase;
-          font-weight: 400;
-          letter-spacing: 1px;
-          color: white;
-        }
-        header {
-            background-image: url(/img/HH_HomeImage_1x.jpg);
-            background-repeat: no-repeat;
-            background-attachment: scroll;
-            background-position: center center;
-            -webkit-background-size: cover;
-            -moz-background-size: cover;
-            background-size: cover;
-            -o-background-size: cover;
-            text-align: center;
-            color: #fff;
-            height: 300px;
-        }
-
-        header @media(width < 600px) {
-            height: 100px;
-        }
-
-        .linkhider {
-            :before {
-                content: "";
-                height: 100px;
-                width: 100%;
-                color: green;
-            }
-        }
-
-        .collapsed {
-            height: 180px;
-            overflow: hidden;
-        }
-
-        .collapsed .expando {
-            position: absolute;
-        }
-
-        .collapsed .expando i:before {
-            content: "\f078"
-        }
-
-        .expando i:before {
-            content: "\f077"
-        }
-
-        .expando {
-            height: 40px;
-            width: 100%;
-            position: initial;
-            top: 140px;
-            left: 0;
-            display: block;
-            cursor: pointer;
-            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #fff);
-        }
-
-        section.bg-light-gray .expando {
-            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #eee);
-        }
-
-        .expando p {
-            color: rgb(68, 120, 172);
-            margin: 10px auto auto;
-            width: 1%;
-        }
-
-        #hh_logo {
-            background: white;
-            padding: 5px 15px;
-        }
-
-        #mainNav.affix #hh_logo {
-            margin-top: -10px;
-            height: 43px;
-        }
-
-        .form-control,
-        .form-group input {
-            background-color: rgba(8, 179, 166, 0.42);
-            color: white;
-        }
-
-        .modal-dialog {
-            margin: 0;
-            width: 100%;
-        }
-
-        google-map {
-            height: 300px;
-        }
-        .sidebar-descriptor {
-            font-size: 1.2em;
-            line-height: 1.6;
-            font-family: "Montserrat", "Helvetica Neue", Helvetica, Arial, sans-serif;
-        }
-        </style>
-
-        <nav id="mainNav" class="navbar navbar-default navbar-custom navbar-fixed-top">
-        <div class="container">
-            <!-- Brand and toggle get grouped for better mobile display -->
-            <div class="navbar-header page-scroll">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-                    <span class="sr-only">Toggle navigation</span> Menu <i class="fa fa-bars"></i>
-                </button>
-                <a class="navbar-brand page-scroll" href="/index.html#page-top"><img src="/img/HH_Logo.svg" class="navlogo" id="hh_logo" alt="PathOS"></a>
-            </div>
-
-            <!-- Collect the nav links, forms, and other content for toggling -->
-            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-                <ul class="nav navbar-nav navbar-right">
-                    <li class="hidden">
-                        <a href="#page-top"></a>
-                    </li>
-                    <li>
-                        <a class="page-scroll" href="/index.html#mission">Mission</a>
-                    </li>
-                    <li>
-                        <a class="page-scroll" href="/index.html#blog">Blog</a>
-                    </li>
-                    <li>
-                        <a class="page-scroll" href="/index.html#problems">Problems</a>
-                    </li>
-                    <li>
-                        <a class="page-scroll" href="/index.html#sites">Sites</a>
-                    </li>
-                    <li>
-                        <a class="page-scroll" href="/index.html#sponsors">Sponsors</a>
-                    </li>
-                </ul>
-            </div>
-            <!-- /.navbar-collapse -->
-        </div>
-        <!-- /.container-fluid -->
-    </nav>
-    <header style="padding-top:100px">
-        <div class="container" style="display:flex;flex-direction:column;justify-content: bottom">
-            <h1>{{site.name}}</h1>
-            <h2>{{site.street_address}}</h2>
-        </div>
-    </header>
-    <section id="main_body">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-9">
-                    <template is="dom-if" if="{{site.sponsorSpiel}}">
-                    <h1>A note from the Sponsor</h1>
-                    </template>
-                    <div id="sponsorSpiel"></div>
-                    <h2>What to Expect</h2>
-                    <div id="whatToExpectSpiel"></div>
-                    <h2>How it Works</h2>
-                    <div id="howItWorksSpiel"></div>
-                    <h2>Frequently Asked Questions - Problem Owners</h2>
-                    <div id="problemOwners"></div>
-                    <h2>Frequently Asked Questions - Participants</h2>
-                    <div id="participants"></div>
-                </div>
-                <div class="col-md-3">
-                    <div class="flex" style="padding:10px;background-color: #eee">
-                        <h2>When</h2>
-                        <p class="sidebar-descriptor">{{general.date}}</p>
-                        <google-map zoom="14"
-                        latitude="{{site.where_coords.0}}"
-                        longitude="{{site.where_coords.1}}"
-                        api-key="AIzaSyBrFuberrerC60d7fOx8QSRgNW61xUG6Ys">
-                            <google-map-marker
-                            latitude="{{site.where_coords.0}}"
-                            longitude="{{site.where_coords.1}}"></google-map-marker>
-                        </google-map>
-                        <h2>Where</h2>
-                        <p class="sidebar-descriptor">{{site.name}}</p>
-                        <p class="sidebar-descriptor">{{site.readable_location}}</p>
-                        <p class="sidebar-descriptor">{{site.street_address}}</p>
-                        <p class="sidebar-descriptor">{{site.location_coarse}}</p>
-                        <h2>Contact</h2>
-                        <a class="sidebar-descriptor" target="_blank" href="mailto:{{name}}@healthhack.com.au">{{name}}@healthhack.com.au</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-<!--     <section style="display: flex;flex-direction:column; align-items: center;justify-content: center">
-        <h1 style="text-align: center">Sponsors for the {{name}} event</h1>
-        <sponsors-nested-list></sponsors-nested-list>
-    </section> -->
-    <!-- Contact Section -->
-    <section id="contact">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-12 text-center">
-                    <h2 class="section-heading">Register Interest</h2>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-lg-12">
-                    <form name="sentMessage" id="contactForm" novalidate>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <input type="text" class="form-control" placeholder="Your Name" id="name" required data-validation-required-message="Please enter your name.">
-                                    <p class="help-block text-danger"></p>
-                                </div>
-                                <div class="form-group">
-                                    <input type="email" class="form-control" placeholder="Your Email" id="email" required data-validation-required-message="Please enter your email address.">
-                                    <p class="help-block text-danger"></p>
-                                </div>
-                                <div class="form-group">
-                                        <input type="text" class="form-control" placeholder="Role (Scientist, Developer, Designer, Storyteller, etc.)" id="role" required data-validation-required-message="Please enter your role.">
-                                    <p class="help-block text-danger"></p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <textarea class="form-control" placeholder="Tell us about yourself" id="message" required data-validation-required-message="Please enter a message."></textarea>
-                                    <p class="help-block text-danger"></p>
-                                </div>
-                            </div>
-                            <div class="clearfix"></div>
-                            <div class="col-lg-12 text-center">
-                                <div id="success"></div>
-                                <button type="submit" id="contact_button" class="btn btn-xl">Join Mailing List</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <footer>
-        <div class="container">
-            <div class="row">
-                <div class="col-md-4">
-<div>HealthHack is an <a href="http://au.okfn.org/code-of-conduct/" target="_blank">
-<img alt="Open Knowledge Foundation Australia" class="footer-okfna" src="/img/okfna.png" style="height: 30px;">
-</a>
-            <a href="http://au.okfn.org/code-of-conduct/" target="_blank">Open Knowledge Foundation Australia event </a>
-        </div>
-                </div>
-                <div class="col-md-4">
-                    <ul class="list-inline social-buttons">
-                        <li><a href="https://twitter.com/okfnau"><i class="fa fa-twitter"></i></a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="col-md-4">
-                    <ul class="list-inline quicklinks">
-                        <li>
-                        <a href="http://startbootstrap.com/template-overviews/agency/">Website Theme</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </footer>
-    </template>
-<script>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-
-  ga('create', 'UA-82263021-1', 'auto');
-  ga('send', 'pageview');
-</script>
-    <script>
-        Polymer({
-            is: 'healthhack-site',
-            properties: {
-                name: {
-                    type: String,
-                    reflectToAttribute: true,
-                    notify: true
-                }
-            },
-            attached: function() {
-                fetch('/site/sites.json')
-                .then( function(resp) {
-                    return resp.json();
-                })
-                .then(function(sites) {
-                    this.general = sites.general;
-                    this.site = sites[this.name];
-                    var sections = {
-                        "sponsorSpiel": this.$.sponsorSpiel,
-                        "whatToExpectSpiel": this.$.whatToExpectSpiel,
-                        "howItWorksSpiel": this.$.howItWorksSpiel,
-                        "problemOwners": this.$.problemOwners,
-                        "participants": this.$.participants
-                    }
-                    Object.keys(sections).map( function(key) {
-                        var q_string;
-                        if(key == 'sponsorSpiel') {
-                            if(Object.keys(this.site).indexOf('sponsorSpiel') == -1) {
-                                return;
-                            }
-                            q_string = this.site.sponsorSpiel;
-                        }
-                        else {
-                            q_string = `/data/${key}.html`
-                        }
-                        fetch(q_string)
-                        .then( function(resp) { return resp.text(); })
-                        .then(function(html) {
-                            sections[key].innerHTML = html;
-                        }.bind(this))
-                    }.bind(this))
-                }.bind(this))
-                $('#mainNav').affix({
-                    offset: {
-                        top: 100
-                    }
-                })
-            }
-        })
-    </script>
-</dom-module>
+  <header style="padding-top:100px">
+    <div class="container" style="display:flex;flex-direction:column;justify-content: bottom">
+        <h1 id="city_name"></h1>
+        <h2 id="street_address"></h2>
+    </div>
+  </header>
+  <section id="main_body">
+      <div class="container">
+          <div class="row">
+              <div class="col-md-9">
+                
+                  <div id="sponsorSpiel"></div>
+                  <h2>What to Expect</h2>
+                  <div id="whatToExpectSpiel"></div>
+                  <h2>How it Works</h2>
+                  <div id="howItWorksSpiel"></div>
+                  <h2>Frequently Asked Questions - Problem Owners</h2>
+                  <div id="problemOwners"></div>
+                  <h2>Frequently Asked Questions - Participants</h2>
+                  <div id="participants"></div>
+              </div>
+              <div class="col-md-3">
+                  <div class="flex" style="padding:10px;background-color: #eee">
+                      <h2>When</h2>
+                      <p class="sidebar-descriptor" id="sb-date"></p>
+                      <google-map zoom="14"
+                      api-key="AIzaSyBrFuberrerC60d7fOx8QSRgNW61xUG6Ys">
+                          <google-map-marker></google-map-marker>
+                      </google-map>
+                      <h2>Where</h2>
+                      <p class="sidebar-descriptor" id="sb-name"></p>
+                      <p class="sidebar-descriptor" id="sb-readable_location"></p>
+                      <p class="sidebar-descriptor" id="sb-street_address"></p>
+                      <p class="sidebar-descriptor" id="sb-location_coarse"></p>
+                      <h2>Contact</h2>
+                      <a class="sidebar-descriptor" id="mail-link" target="_blank" href="mailto:info@healthhack.com.au">info@healthhack.com.au</a>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </section>
+</template>

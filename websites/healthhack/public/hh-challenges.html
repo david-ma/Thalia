@@ -1,0 +1,56 @@
+<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/iron-collapse/iron-collapse.html">
+<link rel="import" href="/bower_components/juicy-html/juicy-html.html" />
+<dom-module id="hh-challenges">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <input class='search-input' type="text" placeholder="Search" value="{{filterVal::input}}">
+    <template is="dom-repeat" items="[[challenges]]" filter="{{_filter(filterVal)}}">
+      <div class="challenge-item" style="margin:auto;padding:10px;width:100%;min-height:150px;justify-content:space-between;border-top:dashed;border-color:grey;border-width:thin;display:flex;flex-direction:column">
+        <div>
+          <h3>[[item.title]]</h3>
+          <h5>[[item.location]] | <a href="[[item.organisationLink]]">[[item.organisation]]</a></h5>
+          <template is="juicy-html" content$="[[item.summary]]"></template>
+          <iron-collapse>
+            <div>
+              <div style="display:flex;flex-direction:row">
+                <img class="challenge-img" src$="[[item.img]]" alt$="[[item.organisation]]"/>
+                <div style="display:flex;flex-direction:column">
+                  <h5>Presented by [[item.presenters]]</h5>
+                  <a href$="[[item.organisationLink]]">[[item.organisation]]</a>
+                </div>
+              </div>
+              <h5 hidden$="[[!item.description]]">The problem</h5>
+              <template is="juicy-html" content$="[[item.description]]"></template>
+            </div>
+          </iron-collapse>
+        </div>
+        <div>
+          <button type="button" class="btn btn-primary challenge-demo-link">Working Demo</button>
+          <button type="button" onclick="this.closest('.challenge-item').querySelector('iron-collapse').toggle();" class="btn btn-primary">Details</button>
+        </div>
+      </div>
+    </template>
+  </template>
+  <script>
+    Polymer({
+      is: 'hh-challenges',
+      properties: {
+        challenges: {
+          type: Array,
+          notify: true,
+          reflectToAttribute: true
+        }
+      },
+      _filter: function(filterVal) {
+        return function(challenge) {
+          return challenge.title.indexOf(filterVal) != -1
+        }
+      }
+    });
+  </script>
+</dom-module>

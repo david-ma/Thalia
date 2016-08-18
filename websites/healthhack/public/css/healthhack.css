@@ -13,6 +13,18 @@ body {
 .text-primary {
   color: #08b3a6;
 }
+
+.search-input {
+    padding: 10px;
+    border: none;
+    border-bottom: solid 2px #c9c9c9;
+    transition: border 0.3s;
+    margin-bottom:10px;
+}
+.search-input:focus,
+.search-input.focus {
+    border-bottom: solid 2px #969696;
+}
 p {
   font-size: 14px;
   line-height: 1.75;
@@ -735,6 +747,13 @@ img::selection {
 }
 img::-moz-selection {
   background: transparent;
+}
+.challenge-img {
+  width:120px;
+  height:120px;
+  padding-right:5px;
+  padding-bottom:5px;
+  object-fit:contain;
 }
 body {
   webkit-tap-highlight-color: #08b3a6;

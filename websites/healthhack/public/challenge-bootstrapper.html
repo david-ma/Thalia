@@ -1,0 +1,27 @@
+<link async rel="import" href="/async-js-imports.html">
+<script>
+  window.stampChallenges = function(year) {
+    var link = document.querySelector('link[rel="import"][href="/header-imports.html"]');
+    var template = link.import.querySelector('template');
+    var clone = document.importNode(template.content, true);
+    document.body.insertBefore(clone, document.body.firstChild);
+    fetch('data/challenges.json')
+    .then( function(resp) { return resp.json() })
+    .then(function(challenges) {
+      current = (new Date).getFullYear() == year;
+      if(current) {
+        document.querySelector('#challenges-header').innerHTML = "Browse the current collection of problems and submit your own";
+      }
+      else {
+        document.querySelector('#challenges-header').innerHTML = "View previous years problems and submit your own";
+      }
+      console.log(challenges);
+      document.querySelector('hh-challenges').challenges = challenges;
+
+      var link = document.querySelector('link[rel="import"][href="/footer-imports.html"]');
+      var template = link.import.querySelector('template');
+      var clone = document.importNode(template.content, true);
+      document.body.appendChild(clone);
+    }.bind(this));
+  }
+</script>

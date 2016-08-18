@@ -4,14 +4,20 @@ var url = require("url");
 //This part of the server starts the server on port 80 and logs stuff to the std.out
 function start(route, handle) {
 	function onRequest(request, response) {
-		var site = handle.getWebsite(request.headers.host);
-		var url_object = url.parse(request.url);
 
-		console.log();
-		console.log("Request for " + url_object.href + " At " + getDateTime() +
-								" From " + request.connection.remoteAddress);
+	  if (handle.proxies[request.headers.host]) {
+	    proxy(request, response, handle.proxies[request.headers.host]);
+	  } else {
+      var site = handle.getWebsite(request.headers.host);
+    
+      var url_object = url.parse(request.url);
 
-		route(site, url_object.pathname, response, request);
+      console.log();
+      console.log("Request for " + url_object.href + " At " + getDateTime() +
+                  " From " + request.connection.remoteAddress);
+
+      route(site, url_object.pathname, response, request);
+		}
 	}
 
 	var port = 80; // change the port here?
@@ -39,6 +45,33 @@ function start(route, handle) {
 
 exports.start = start;
 
+function proxy(client_req, client_res, port) {
+  console.log('Proxying to: '+port+ client_req.url);
+
+  var options = {
+    port: port,
+    path: client_req.url,
+    method: client_req.method,
+    headers: client_req.headers
+  };
+
+  var proxyServer = http.request(options, function (res) {
+      client_res.writeHeader(res.statusCode, res.headers);
+      res.pipe(client_res, {
+        end: true
+      });
+  });
+
+  proxyServer.on('error', function(err){
+    console.log(err);
+    client_res.write("Error, server is down.");
+    client_res.end();
+  })
+
+  client_req.pipe(proxyServer, {
+    end: true
+  });
+}
 
 function getDateTime() {
 //    var date = new Date();

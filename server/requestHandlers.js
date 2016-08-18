@@ -8,6 +8,7 @@ var Website = function (site, config) {
 		this.redirects = typeof config.redirects == "object" ? config.redirects : {};
 		this.services = typeof config.services == "object" ? config.services : {};
 		this.sockets = typeof config.sockets == "object" ? config.sockets : {emit:[], on:[]};
+		this.proxies = typeof config.proxies == "object" ? config.proxies : {};
 	} else {
 		console.log("Config isn't an object");
 	}
@@ -23,6 +24,10 @@ var handle = {
 
 		config = config || {};		
 		handle.websites[site] = new Website(site, config);
+		
+		Object.keys(handle.websites[site].proxies).forEach(function(proxy){
+		  handle.proxies[proxy] = handle.websites[site].proxies[proxy];
+		});
 
 		// Add the site to the index
 		handle.index[site+".com"] = site;
@@ -50,7 +55,8 @@ var handle = {
 		var domain = domain.replace("www.","");	
 		var site = typeof handle.index[domain] == "undefined" ? handle.index.localhost : handle.index[domain];
 		return handle.websites[site];
-	}
+	},
+	proxies: {}
 };
 
 handle.addWebsite("default", {});

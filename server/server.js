@@ -13,7 +13,7 @@ function start(route, handle) {
       var url_object = url.parse(request.url);
 
       console.log();
-      console.log("Request for " + url_object.href + " At " + getDateTime() +
+      console.log("Request for "+ request.headers.host + url_object.href + " At " + getDateTime() +
                   " From " + request.connection.remoteAddress);
 
       route(site, url_object.pathname, response, request);

@@ -20,8 +20,6 @@ var handle = {
 	
 	// Add a site to the handle
 	addWebsite: function(site, config, cred){
-		console.log("Adding site: "+site);
-
 		config = config || {};		
 		handle.websites[site] = new Website(site, config);
 		
@@ -51,9 +49,7 @@ var handle = {
 		}
 	},
 	getWebsite: function(domain){
-		console.log("Domain: "+domain);
 		var site = handle.index.localhost;
-
 		if(domain) {
 			domain = domain.replace("www.","");
 			if(handle.index.hasOwnProperty(domain)) {

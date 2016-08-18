@@ -15,9 +15,15 @@ var index = {
 	loadWebsites: function (){
 		fs.readdirSync('websites/').forEach(function(site){
 			if(fs.lstatSync('websites/'+site).isDirectory()) {
+				console.log("Adding site: "+site);
 				try {
 					var config = require('../websites/'+site+'/config').config;
-				} catch (err){}
+				} catch (err){
+					if(err.code !== 'MODULE_NOT_FOUND') {
+						console.log("Warning, your config script for "+site+" is broken!");
+						console.log();
+					}
+				}
 				try {
 					var cred = JSON.parse(fs.readFileSync('websites/'+site+'/cred.json'));
 				} catch (err){}
@@ -27,7 +33,7 @@ var index = {
 	}
 }
 
-index.init();
 index.loadWebsites();
+index.init();
 
 

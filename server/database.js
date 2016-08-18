@@ -20,7 +20,14 @@ var Database = function (cred) {
 		 */
 		if(err.code === 'PROTOCOL_CONNECTION_LOST') {
 			console.log('PROTOCOL_CONNECTION_LOST, reconnecting');
-			db.connect();
+			db.connect(function(err) {
+        if(err) {
+          console.log("Error in database!");
+          console.log(err);
+        } else {
+          console.log('Database connected: '+cred.database+' as id: ' + db.threadId);
+        }
+      });
 		} else {
 			console.log(err);
 		}

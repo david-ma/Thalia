@@ -51,10 +51,12 @@ function proxy(client_req, client_res, port) {
   var options = {
     port: port,
     path: client_req.url,
-    method: client_req.method
+    method: client_req.method,
+    headers: client_req.headers
   };
 
   var proxyServer = http.request(options, function (res) {
+      client_res.writeHeader(res.statusCode, res.headers);
       res.pipe(client_res, {
         end: true
       });

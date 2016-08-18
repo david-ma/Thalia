@@ -40,3 +40,7 @@ credentials.js
 *.dropbox
 bower_components
 
+websites
+!websites/default
+!websites/example
+

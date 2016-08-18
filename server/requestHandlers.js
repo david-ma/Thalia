@@ -12,7 +12,7 @@ var Website = function (site, config) {
 	} else {
 		console.log("Config isn't an object");
 	}
-}
+};
 
 var handle = {
 	websites: {},

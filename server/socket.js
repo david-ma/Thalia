@@ -22,9 +22,7 @@ function init(io, handle){
 	io.on('connection', function(socket){
 		
 		// Heartbeat function to keep connections alive.
-    socket.on("drop", function(data){
-    	console.log("drop");
-    });
+    socket.on("drop", function(data){console.log("drop");});
     
     // Crappy logging
 		console.log("Socket connection "+socket.id+" from "+socket.handshake.headers.referer);
@@ -32,31 +30,20 @@ function init(io, handle){
 		var host = socket.handshake.headers.host;
 		var website = handle.getWebsite(host);
 
-
-// console.log(website);
-
-		if(website !== undefined && website.sockets !== undefined){
-	
+		if(website !== undefined && website.sockets !== undefined){	
 			if(website.sockets.on instanceof Array) {
 				website.sockets.on.forEach(function(d){
-				
-				console.log("adding sockets..");
-				
 					socket.on(d.name, function(data){
 						d.callback(data, website.db);
 					});
-				})
+				});
 			}
-
 			if(website.sockets.emit instanceof Array) {
 				website.sockets.emit.forEach(function(d){
 					socket.emit(d.name, d.data);
-				})
+				});
 			}
 		}
-
-
-
 	});
 }
 

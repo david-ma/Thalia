@@ -16,8 +16,9 @@ var index = {
 		fs.readdirSync('websites/').forEach(function(site){
 			if(fs.lstatSync('websites/'+site).isDirectory()) {
 				console.log("Adding site: "+site);
+				var config, cred;
 				try {
-					var config = require('../websites/'+site+'/config').config;
+					config = require('../websites/'+site+'/config').config;
 				} catch (err){
 					if(err.code !== 'MODULE_NOT_FOUND') {
 						console.log("Warning, your config script for "+site+" is broken!");
@@ -25,13 +26,13 @@ var index = {
 					}
 				}
 				try {
-					var cred = JSON.parse(fs.readFileSync('websites/'+site+'/cred.json'));
+					cred = JSON.parse(fs.readFileSync('websites/'+site+'/cred.json'));
 				} catch (err){}
 				handle.addWebsite(site, config, cred);
 			}
 		});
 	}
-}
+};
 
 index.loadWebsites();
 index.init();

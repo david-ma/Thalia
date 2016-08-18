@@ -3,7 +3,8 @@ var mysql = require("mysql");
 var Database = function (cred) {
   this.cred = cred;
   this.connected = false;
-}
+};
+
 Database.prototype.connect = function(){
   var that = this,
       cred = this.cred;
@@ -36,7 +37,7 @@ Database.prototype.connect = function(){
 		}
 	});
 	return db;
-}
+};
 
 Database.prototype.query = function(query, callback){
   if(this.connected) {
@@ -45,11 +46,11 @@ Database.prototype.query = function(query, callback){
     this.connect();
   	this.db.query(query, callback);
   }
-}
+};
 
 Database.prototype.queryVariables = function(query, variables, callback){
 	this.query(query, variables, callback);
-}
+};
 
 exports.db = Database;
 

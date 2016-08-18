@@ -69,4 +69,29 @@
         </div>
     </div>
 </footer>
+
+
+<script>
+var socket = io.connect();
+
+d3.select("#contact_button").on("click", function(d){
+	var data = {
+		name: $("#name").val(),
+		email: $("#email").val(),
+		role: $("#role").val(),
+		message: $("#message").val()
+	};
+
+	console.log(data);
+	socket.emit("healthhack_email", data);
+})
+
+</script>
+
+
+
 </template>
+
+
+
+

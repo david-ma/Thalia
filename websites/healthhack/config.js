@@ -1,5 +1,5 @@
 exports.config = {
-	domains: ["healthhack.david-ma.net", "healthhack.com.au", "www.healthhack.com.au", "test.healthhack.com.au"],
+	domains: ["healthhack.david-ma.net", "healthhack.com.au", "www.healthhack.com.au", "test.healthhack.com.au", "2016.healthhack.com.au"],
 	sockets: {
 		emit: [],
 		on: [{"name": "healthhack_email",

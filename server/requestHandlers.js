@@ -7,7 +7,7 @@ var Website = function (site, config) {
 		this.pages = typeof config.pages == "object" ? config.pages : {"": "/index.html"};
 		this.redirects = typeof config.redirects == "object" ? config.redirects : {};
 		this.services = typeof config.services == "object" ? config.services : {};
-		this.sockets = typeof config.sockets == "object" ? config.sockets : {emit:{}, on:{}};
+		this.sockets = typeof config.sockets == "object" ? config.sockets : {emit:[], on:[]};
 		this.proxies = typeof config.proxies == "object" ? config.proxies : {};
 	} else {
 		console.log("Config isn't an object");

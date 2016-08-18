@@ -1,7 +1,3 @@
-Hello GovHack judges!! Since we at team Potato Heads would very much like to continue working on this project and turn it into something fun and useful for people, we have created a "5pm Sunday submission branch", which is pretty much the "Master" just as it was at 5pm on Sunday, except some misc files have been deleted and the readme has been updated. The core functionality of the app has not been changed/improved since 5pm Sunday, please judge accordingly :)
-
-You can view the preserved "5pm Sunday submission" branch here:  https://github.com/certifiedwaif/GovHack2015/tree/5pm-Sunday-submission
-
 # True Stories
 
 Created for Australia's [GovHack] 2015 by team [Potato Heads]. A hackathon based on [OKFA] (Open Knowledge Foundation Australia)'s publicly available datasets, released by the Australian Government.

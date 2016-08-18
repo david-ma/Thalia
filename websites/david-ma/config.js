@@ -1,22 +1,4 @@
 var reddit = {
-	refresh_reddit_links: function(){
-		db.get_photo_threads(function(d){
-			d.forEach(function(row){
-				if(row && typeof row.nickname == "string" && typeof row.url == "string") {
-					if(row.nickname == "raw") {
-						reddit.links.oldraw = reddit.links.raw;
-					}
-					reddit.links[row.nickname] = row.url;
-				}
-			})
-		})
-	},
-	refresh: function(res, req) {
-		reddit.refresh_reddit_links();
-		res.writeHead(200, {"Content-Type": "text/plain"});
-		res.end("reddit links refreshed");
-		return;
-	},
 	links: {
 		raw: "https://redd.it/3j7i9m",
 		oldraw: "https://redd.it/3i6fta",
@@ -32,13 +14,21 @@ var reddit = {
 	},
 	redirect: function(res, req, db, type){
 		if (typeof(reddit.links[type]) == "string") {
-			var query = "select url from reddit_photo_threads where nickname = '"+type+"' order by id desc limit 1;"
+			var query = "select url from reddit_photo_threads where nickname = '"+type+"' order by id desc limit 2;"
+
 				db.query(query, function(error, results){	
 					if(!error) {
-						var url = results[0].url;
-						var body ='<meta http-equiv="refresh" content="0; url='+url+'">';
-						res.writeHead(302, {"Location": url});
-						res.end(body);
+					  if(results && results[0] && results[0].url) {
+              var url = results[0].url;
+              
+              if(type === "oldraw") {
+                url = results[1].url;
+              }
+
+              var body ='<meta http-equiv="refresh" content="0; url='+url+'">';
+              res.writeHead(302, {"Location": url});
+              res.end(body);
+						}
 					} else {
 						res.writeHead(500);
 						res.end("Database Error");

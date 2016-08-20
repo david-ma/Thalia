@@ -15,6 +15,7 @@ var staticSrc = "src/**/*.{eot,ttf,woff,woff2,otf,json,pdf,ico}";
 var browserSync = require('browser-sync').create();
 var dist = "websites/example/public";
 var site = "websites/example";
+var confirmation = false;
 
 gulp.task("workspace", function(){
 	if (argv.s === true || argv.site === true) {
@@ -27,12 +28,13 @@ gulp.task("workspace", function(){
 });
 
 gulp.task("confirm", ["workspace"], function(){
-	if(site !== 'websites/example') {
+	if(site !== 'websites/example' && !confirmation) {
 		return gulp.src('').pipe(
 		confirm({
 			// Static text. 
 			question: 'Delete and rebuild '+site+'/public? (type "yes" to confirm)',
 			proceed: function(answer) {
+				confirmation = true;
 				if(answer.toLowerCase() === "y" || answer.toLowerCase() === "yes") {
 					dist = site+"/public";
 					console.log("Setting file output to: "+dist);

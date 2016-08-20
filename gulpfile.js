@@ -11,7 +11,7 @@ var runSequence = require('run-sequence');
 // Editable - any file extensions added here will trigger the watch task and will be instantly copied to your /dist folder
 var staticSrc = "src/**/*.{eot,ttf,woff,woff2,otf,json,pdf}";
 var browserSync = require('browser-sync').create();
-var dist = "websites/public/dist";
+var dist = "dist"
 
 // Clean
 gulp.task("clean", function() {
@@ -43,16 +43,19 @@ gulp.task('html', function() {
 		.pipe(gulp.dest(dist+'/'));
 });
 
-// Concatenate JS (vendor js)
+// Concatenate JS
 gulp.task("jsconcat", function() {
 	return gulp.src([
 			// Editable - Add any additional paths to JS Bower components here
 
-			// Uncomment the following line to use jQuery
-			'bower_components/d3/d3.min.js',
-			'bower_components/jquery/dist/jquery.min.js',
+			"bower_components/d3/d3.min.js",
+			"bower_components/jquery/dist/jquery.min.js",
+			"bower_components/jquery-ui/jquery-ui.min.js",
 			'bower_components/bootstrap-sass/assets/javascripts/bootstrap.min.js',
-			'node_modules/socket.io-client/socket.io.js',
+			'bower_components/datatables.net/js/jquery.dataTables.min.js',
+			'bower_components/datatables.net-colreorder/js/dataTables.colReorder.min.js',
+			'bower_components/datatables.net-select/js/dataTables.select.min.js',
+ 			'bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js',
 			"src/js/vendor/*.js"
 		]).pipe( $.concat("vendor.min.js"))
 		.pipe( gulp.dest(dist+"/js"));
@@ -88,18 +91,32 @@ gulp.task( "javascript", ["jshint"], function() {
 	return out.pipe( gulp.dest( dist+"/js" ) );
 });
 
-// Images (from source... you need something else for vendor images)
+// Images
 gulp.task("images", function(cb) {
-	return gulp.src('src/img/**/*', {
-		base: "src/img"
-	}).pipe( gulp.dest( dist+"/img" ) );
+	return gulp.src([
+		'src/images/**/*',
+		'bower_components/jquery-ui/themes/cupertino/images/*',
+		'bower_components/datatables.net-dt/images/*'
+	]).pipe( gulp.dest( dist+"/images" ) );
 });
 
 // Fonts
 gulp.task('fonts', function() {
 	return gulp.src([
-// 		'bower_components/bootstrap-sass/assets/fonts/**/*'
+		'bower_components/bootstrap-sass/assets/fonts/**/*',
+		'bower_components/font-awesome/fonts/**/*'
 	]).pipe(gulp.dest(dist+'/fonts/'));
+});
+
+// Static CSS
+gulp.task("staticCSS", function(cb) {
+	return gulp.src([
+		'bower_components/jquery-ui/themes/cupertino/jquery-ui.min.css',
+		'bower_components/datatables.net-dt/css/jquery.dataTables.min.css',
+		'bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css',
+		'bower_components/datatables.net-colreorder-dt/css/colReorder.dataTables.min.css',
+		'bower_components/datatables.net-select-dt/css/select.dataTables.min.css'
+	]).pipe( gulp.dest( dist+"/css" ) );
 });
 
 // Stylesheets
@@ -112,10 +129,13 @@ gulp.task("stylesheets", function() {
 
 		'bower_components/bourbon/app/assets/stylesheets',
 		'bower_components/bootstrap-sass/assets/stylesheets',
-		'bower_components/normalize-scss'
+		'bower_components/normalize-scss',
+		'bower_components/font-awesome/scss'
 	];
 
-	var out = gulp.src('src/css/main.scss')
+	var out = gulp.src([
+			'src/css/main.scss'
+		])
 		.pipe( $.sourcemaps.init() )
 		.pipe( $.cssGlobbing({
 			extensions: ['.scss']
@@ -172,7 +192,7 @@ gulp.task( "watch", ["stylesheets", "javascript", "jsconcat", "images", "fonts",
 });
 
 // Serve
-gulp.task('serve', ["stylesheets", "javascript", "jsconcat", "images", "html", "copy", "watch"], function() {
+gulp.task('serve', ["stylesheets", "javascript", "jsconcat", "images", "html", "copy", "staticCSS", "watch"], function() {
 		browserSync.init({
 			ghostMode: false,
 			proxy: "localhost", // Editable - defines proxy URL
@@ -197,5 +217,34 @@ gulp.task( "build", [
 	"images",
 	"fonts",
 	"html",
-	"copy"
+	"copy",
+	"staticCSS",
 ], function () {});
+
+// // Deploy
+// gulp.task( "deploy", function(callback) {
+// 	runSequence(
+// 		'build',
+// 		'publish',
+// 		 callback)
+// });
+// 
+// // Publish to S3
+// gulp.task('publish', function() {
+// 
+// 	var publisher = awspublish.create({
+// 			region: 'ap-southeast-2', // Editable - S3 bucket region
+// 			params: {
+// 				Bucket: 'example-bucket' // Editable - S3 bucket name
+// 			},
+// 			"accessKeyId": process.env.AWS_ACCESS_KEY,
+// 			"secretAccessKey": process.env.AWS_SECRET_KEY
+// 		});
+// 
+// 	var files = gulp.src([dist+'/**'])
+// 		.pipe(publisher.publish());
+// 
+// 	return files
+// 		.pipe(publisher.cache())
+// 		.pipe(awspublish.reporter());
+// });

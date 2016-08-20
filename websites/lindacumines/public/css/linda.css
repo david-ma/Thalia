@@ -186,16 +186,6 @@ header h2 {
 	background: rgba(0,0,0,0.1);
 }
 
-
-
-
-
-
-
-
-
-
-
 footer {
 	width: 100%;
 	height: 300px;
@@ -218,9 +208,14 @@ footer ul {
 footer ul li:first-child{
 	font-size: 24px;
 }
+footer ul li a {
+	color: #3b9fff;
+	text-decoration: underline;
+}
 #footer_cherry {
 	height: 100%;
 	background: rgba(0,0,0,0) url("/images/cherry.png") no-repeat;
 	background-position: 50% 90%;
 	background-size: 120px;
 }
+

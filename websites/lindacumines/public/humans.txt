@@ -1,0 +1,7 @@
+This site was built for Linda Cumines by David Ma
+Twitter: @Frostickle
+Location: Melbourne, Australia
+
+This site is designed to be served with Thalia (https://github.com/david-ma/Thalia)
+I used HTML5, CSS3, Bootstrap, normalize and font-awesome for this site.
+I built it on the 20th of August, 2016

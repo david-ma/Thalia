@@ -7,14 +7,47 @@ var $ 			= require("gulp-load-plugins")({});
 var rimraf 		= require("rimraf");
 var envProd 	= false;
 var runSequence = require('run-sequence');
+var argv = require('yargs').argv;
+var confirm = require('gulp-confirm');
 
 // Editable - any file extensions added here will trigger the watch task and will be instantly copied to your /dist folder
-var staticSrc = "src/**/*.{eot,ttf,woff,woff2,otf,json,pdf}";
+var staticSrc = "src/**/*.{eot,ttf,woff,woff2,otf,json,pdf,ico}";
 var browserSync = require('browser-sync').create();
-var dist = "dist"
+var dist = "websites/example/public";
+var site = "websites/example";
+
+gulp.task("workspace", function(){
+	if (argv.s === true || argv.site === true) {
+		$.notify().write("You need to use -s or --site to specify which site you're using.");
+	} else if (argv.s || argv.site) {
+		var workspace = argv.s || argv.site;
+		site = "websites/"+workspace;
+		console.log("Getting input files from: "+workspace+"/src");
+	}
+});
+
+gulp.task("confirm", ["workspace"], function(){
+	if(site !== 'websites/example') {
+		return gulp.src('').pipe(
+		confirm({
+			// Static text. 
+			question: 'Delete and rebuild '+site+'/public? (type "yes" to confirm)',
+			proceed: function(answer) {
+				if(answer.toLowerCase() === "y" || answer.toLowerCase() === "yes") {
+					dist = site+"/public";
+					console.log("Setting file output to: "+dist);
+					return true;
+				} else {
+					console.log("Leaving file output as: "+dist);
+					return false;
+				}
+			}
+		}));
+	}
+});
 
 // Clean
-gulp.task("clean", function() {
+gulp.task("clean", ["confirm"], function() {
 	return rimraf.sync(dist);
 });
 
@@ -23,15 +56,20 @@ gulp.task("cacheclear", function() {
 });
 
 // Copy staticSrc
-gulp.task("copy", function() {
+gulp.task("copy", ["confirm"], function() {
 	return gulp.src(staticSrc, {
 		base: "src"
 	}).pipe( gulp.dest(dist) );
 });
+gulp.task("sitecopy", ["confirm"], function(){
+	return gulp.src(site+"/"+staticSrc, {
+		base: site+"/src"
+	}).pipe( gulp.dest(dist) );
+});
 
 // Compile Partials
-gulp.task('html', function() {
-	gulp.src(['src/*.html'])
+gulp.task('html', ["confirm"], function() {
+	gulp.src(['src/*.html', site+'/src/*.html'])
 		.pipe($.fileInclude({
 			prefix: '@@',
 			basepath: 'src/partials/'
@@ -40,11 +78,19 @@ gulp.task('html', function() {
 		// Editable - see https://www.npmjs.com/package/gulp-minify-html#options for details
 			minifyJS: true
 		}))
+		.on('error', function(e) {
+			if(!envProd) {
+				console.log("Error in this HTML file:");
+				console.log(e.fileName);
+				
+				$.notify().write("HTML Parse Error");
+			}
+		})
 		.pipe(gulp.dest(dist+'/'));
 });
 
 // Concatenate JS
-gulp.task("jsconcat", function() {
+gulp.task("jsconcat", ["confirm"], function() {
 	return gulp.src([
 			// Editable - Add any additional paths to JS Bower components here
 
@@ -63,7 +109,7 @@ gulp.task("jsconcat", function() {
 
 // JSHint
 gulp.task("jshint", function () {
-	return gulp.src("src/js/*.js")
+	return gulp.src(["src/js/*.js", site+'/src/js/*.js'])
 		.pipe( $.jshint() )
 		.pipe( $.jshint.reporter( "jshint-stylish" ) )
 		.pipe( $.jshint.reporter('fail') )
@@ -75,10 +121,11 @@ gulp.task("jshint", function () {
 });
 
 // Compile JS
-gulp.task( "javascript", ["jshint"], function() {
+gulp.task( "javascript", ["jshint", "confirm"], function() {
 	var out = gulp.src([
 			"src/js/plugins/*.js",
-			"src/js/*.js"
+			"src/js/*.js",
+			site+'/src/js/*.js'
 		])
 		.pipe( $.concat( "scripts.min.js" ));
 
@@ -92,8 +139,9 @@ gulp.task( "javascript", ["jshint"], function() {
 });
 
 // Images
-gulp.task("images", function(cb) {
+gulp.task("images", ["confirm"], function(cb) {
 	return gulp.src([
+		site+'/src/images/**/*',
 		'src/images/**/*',
 		'bower_components/jquery-ui/themes/cupertino/images/*',
 		'bower_components/datatables.net-dt/images/*'
@@ -101,7 +149,7 @@ gulp.task("images", function(cb) {
 });
 
 // Fonts
-gulp.task('fonts', function() {
+gulp.task('fonts', ["confirm"], function() {
 	return gulp.src([
 		'bower_components/bootstrap-sass/assets/fonts/**/*',
 		'bower_components/font-awesome/fonts/**/*'
@@ -109,7 +157,7 @@ gulp.task('fonts', function() {
 });
 
 // Static CSS
-gulp.task("staticCSS", function(cb) {
+gulp.task("staticCSS", ["confirm"], function(cb) {
 	return gulp.src([
 		'bower_components/jquery-ui/themes/cupertino/jquery-ui.min.css',
 		'bower_components/datatables.net-dt/css/jquery.dataTables.min.css',
@@ -120,7 +168,7 @@ gulp.task("staticCSS", function(cb) {
 });
 
 // Stylesheets
-gulp.task("stylesheets", function() {
+gulp.task("stylesheets", ["confirm"], function() {
 	var paths = [
 		// Editable - Defines directories where Bower CSS includes can be found. Also make sure to add the usual @import to you main.scss file
 
@@ -134,7 +182,8 @@ gulp.task("stylesheets", function() {
 	];
 
 	var out = gulp.src([
-			'src/css/main.scss'
+			'src/css/main.scss',
+			site+'/src/css/main.scss'
 		])
 		.pipe( $.sourcemaps.init() )
 		.pipe( $.cssGlobbing({
@@ -171,15 +220,15 @@ gulp.task( 'production_env', function() {
 });
 
 // Livereload
-gulp.task( "watch", ["stylesheets", "javascript", "jsconcat", "images", "fonts", "html", "copy"], function() {
+gulp.task( "watch", ["stylesheets", "javascript", "jsconcat", "images", "fonts", "html", "copy", "sitecopy", "confirm"], function() {
 	$.livereload.listen();
 
-	gulp.watch(staticSrc, ["copy"]);
-	gulp.watch("src/**/*.html", ["html"]);
-	gulp.watch("src/js/vendor/*.js", ["jsconcat"]);
-	gulp.watch("src/css/**/*.scss", ["stylesheets"]);
-	gulp.watch("src/js/**/*.js", ["javascript"]);
-	gulp.watch("src/img/**/*.{jpg,png,svg}", ["images"]);
+	gulp.watch([site+"/"+staticSrc, staticSrc], ["copy", "sitecopy"]);
+	gulp.watch([site+"/src/**/*.html","src/**/*.html"], ["html"]);
+	gulp.watch([site+"/src/js/vendor/*.js", "src/js/vendor/*.js"], ["jsconcat"]);
+	gulp.watch([site+"/src/css/**/*.scss", "src/css/**/*.scss"], ["stylesheets"]);
+	gulp.watch([site+"/src/js/**/*.js", "src/js/**/*.js"], ["javascript"]);
+	gulp.watch([site+"/src/img/**/*.{jpg,png,svg}", "src/img/**/*.{jpg,png,svg}"], ["images"]);
 
 	gulp.watch([
 		dist+"/**/*.html",
@@ -192,18 +241,27 @@ gulp.task( "watch", ["stylesheets", "javascript", "jsconcat", "images", "fonts",
 });
 
 // Serve
-gulp.task('serve', ["stylesheets", "javascript", "jsconcat", "images", "html", "copy", "staticCSS", "watch"], function() {
-		browserSync.init({
-			ghostMode: false,
-			proxy: "localhost", // Editable - defines proxy URL
-			server: {
-				baseDir: dist+"/"
-			}
-	});
-	gulp.watch(staticSrc, ["copy"]);
-	gulp.watch("src/js/vendor/*.js", ["jsconcat"]);
-	gulp.watch("src/scss/**/*.scss", ["stylesheets"]).on("change", browserSync.reload);
-	gulp.watch("src/js/*.js", ["javascript"]).on("change", browserSync.reload);
+gulp.task('serve', ["stylesheets", "javascript", "jsconcat", "images", "html", "copy", "sitecopy", "staticCSS", "watch", "confirm"], function() {
+	var bs = {
+			server: { baseDir: dist+"/" },
+			ghostMode: false
+	};
+
+	// Use the proxy thing, if we need the Thalia server
+	// Only necessary if you're doing complicated stuff?
+	if(argv.t) {
+		bs = {
+ 			proxy: "localhost",
+			ghostMode: false
+		};
+	}
+	
+	browserSync.init(bs);
+
+	gulp.watch([site+"/"+staticSrc, staticSrc], ["copy", "sitecopy"]);
+	gulp.watch([site+"/src/js/vendor/*.js", "src/js/vendor/*.js"], ["jsconcat"]);
+	gulp.watch([site+"/src/css/**/*.scss", "src/css/**/*.scss"], ["stylesheets"]).on("change", browserSync.reload);
+	gulp.watch([site+"/src/js/**/*.js", "src/js/**/*.js"], ["javascript"]).on("change", browserSync.reload);
 	gulp.watch(dist+"/*.html").on("change", browserSync.reload);
 });
 
@@ -218,6 +276,7 @@ gulp.task( "build", [
 	"fonts",
 	"html",
 	"copy",
+	"sitecopy",
 	"staticCSS",
 ], function () {});
 

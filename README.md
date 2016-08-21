@@ -2,10 +2,12 @@
 
 Thalia is a nodejs server, which allows for simple serving of multiple websites from one instance.
 
-This allows me to quickly create a new project folder and get to work. It contains a basic HTML5 boilerplate that sets you up with bootstrap, jquery, datatables & d3.js*
+This allows me to quickly create a new project folder and get to work. It contains a basic HTML5 boilerplate that sets you up with bootstrap, jquery, datatables & d3.js
 
-The project folders can be git repos or shared with Dropbox if you're collaborating with less technical people. I often share these folders with friends who are learning to code so we have a shared workspace, or in hackathons when work needs to be synced across the team quickly and put online instantly.
+The project folders can be git repos or shared with Dropbox if you're collaborating with less technical people. I often share these folders with friends who are learning to code so we have a shared workspace, or in hackathons when work needs to be synced across the team quickly and put online instantly
 
+Quickstart
+-
 To install, download the repository then run:
 ```
 npm install
@@ -14,12 +16,14 @@ gulp build
 npm start
 ```
 
-Note that ```npm start``` needs your admin password because it will start serving the website on port 80**
+Note that ```npm start``` needs your admin password because it will start serving the website on port 80
 
 Use gulp serve if you want to develop stuff.
 
 If you want to start a new project, just copy the example folder and rename it. run ```gulp serve --site "folder_name"``` to start developing in that site. Note that running gulp will delete and rebuild the ```public``` folder from the ```src``` folder so I recommend only developing this way if all your developers know what the're doing. If it's just a simple Dropbox-shared project with a bunch of non-developers on your team, maybe stay away from using gulp.
 
+Features
+-
 Besides simple serving of a public folder, **Thalia** can also do:
 
 - Redirects (e.g. [david-ma.net/publications](http://david-ma.net/publications) redirects you to my google scholar page.)
@@ -33,6 +37,3 @@ I should probably explain how to use those things, but I've written enough here 
 
 -David [@Frostickle](https://twitter.com/frostickle)
 
-\* I should probably take those last two out of the basic boilerplate, not everyone needs dataviz stuff in their projects.
-
-\** I should also probably make this port 8000 by default or something like that so it doesn't need the ```sudo``` for basic development. I mean, you shouldn't be downloading random files from github and running them with sudo...

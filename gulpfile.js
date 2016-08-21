@@ -9,6 +9,7 @@ var envProd 	= false;
 var runSequence = require('run-sequence');
 var argv = require('yargs').argv;
 var confirm = require('gulp-confirm');
+var fs = require('fs');
 
 // Editable - any file extensions added here will trigger the watch task and will be instantly copied to your /dist folder
 var staticSrc = "src/**/*.{eot,ttf,woff,woff2,otf,json,pdf,ico}";
@@ -28,23 +29,29 @@ gulp.task("workspace", function(){
 });
 
 gulp.task("confirm", ["workspace"], function(){
-	if(site !== 'websites/example' && !confirmation) {
-		return gulp.src('').pipe(
-		confirm({
-			// Static text. 
-			question: 'Delete and rebuild '+site+'/public? (type "yes" to confirm)',
-			proceed: function(answer) {
-				confirmation = true;
-				if(answer.toLowerCase() === "y" || answer.toLowerCase() === "yes") {
-					dist = site+"/public";
-					console.log("Setting file output to: "+dist);
-					return true;
-				} else {
-					console.log("Leaving file output as: "+dist);
-					return false;
+	try {
+		fs.statSync(site+"/src");
+		if(site !== 'websites/example' && !confirmation) {
+			return gulp.src('').pipe(confirm({
+				// Static text. 
+				question: 'Delete and rebuild '+site+'/public? (type "yes" to confirm)',
+				proceed: function(answer) {
+					confirmation = true;
+					if(answer.toLowerCase() === "y" || answer.toLowerCase() === "yes") {
+						dist = site+"/public";
+						console.log("Setting file output to: "+dist);
+						return true;
+					} else {
+						console.log("Ok, exiting without deleting anything");
+						process.exit();
+					}
 				}
-			}
-		}));
+			}));
+		}
+	} catch (err) {
+		console.log('ERROR! Could not find "'+site+"/src', do NOT build this project.");
+		console.log("Running gulp on your project will delete the public folder.");
+		process.exit();
 	}
 });
 

@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<script src="/js/conditional-dependencies.js"></script>
-	<link rel="import" href="/header-imports.html">
-	<link rel="import" href="/footer-imports.html">
-	<link rel="import" href="site.html">
-	<link rel="import" href="site-bootstrapper.html">
-</head>
+	<head>
+		<script src="/js/conditional-dependencies.js"></script>
+		<link async rel="import" href="site.html">
+		<link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+		<link href="/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+	</head>
 	<body>
+		<healthhack-site name="canberra"></healthhack-site>
+		<script src="/vendor/jquery/jquery.min.js"></script>
+		<script src="/vendor/bootstrap/js/bootstrap.min.js"></script>
+	    <!-- Theme JavaScript -->
+	    <script src="/js/agency.min.js"></script>
+	    <script src="/js/d3.v4.min.js"></script>
 	</body>
-	<script>
-		stampSite("Canberra")
-	</script>
 </html>

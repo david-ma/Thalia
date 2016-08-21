@@ -194,6 +194,7 @@ gulp.task("stylesheets", ["confirm"], function() {
 			'src/css/main.scss',
 			site+'/src/css/main.scss'
 		])
+		.pipe( $.concat('main.scss'))
 		.pipe( $.sourcemaps.init() )
 		.pipe( $.cssGlobbing({
 			extensions: ['.scss']

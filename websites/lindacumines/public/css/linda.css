@@ -97,35 +97,21 @@ header h2 {
   top: 130px;
 }
 
-.services {
+.core_services {
 	margin-top: 15px;
-}
-
-.services div .infobox {
 	color: #efefef;
 	background: #df252a;
-	height: 150px;
-}
-
-.services .mobile_infobox {
-	color: #efefef;
-	background: #df252a;
-}
-
-.services div:nth-child(1) .infobox {
-	background: #df252a url("/images/service_1.png") no-repeat right;
-	background-position: 90%;
-}
-.services div:nth-child(2) .infobox, .services .mobile_infobox {
 	background: #df252a url("/images/service_2.png") no-repeat right;
 	background-position: 90%;
 }
-.services div:nth-child(3) .infobox {
-	background: #df252a url("/images/service_3.png") no-repeat right;
-	background-position: 90%;
+
+.core_services ul {
+	margin-top: 0;
+	font-size: 14px;
+	line-height: 1.2em;
 }
 
-.services div .infobox h1 {
+.core_services h1 {
 	font-family: 'Lora', serif;
 	color: white;
 	font-size: 22px;
@@ -133,26 +119,10 @@ header h2 {
 	text-align: center;
 }
 
-.services div .infobox ul {
-	font-size: 14px;
-	line-height: 1.2em;
-	position: absolute;
-	top: 25px;
-	left: 0;
-	padding-right: 20px;
-}
-
-.services div .mobile_infobox h1 {
-	font-family: 'Lora', serif;
-	color: white;
-	font-size: 22px;
-	padding: 0;
-	text-align: center;
-}
-
-.services div .mobile_infobox ul {
-	font-size: 14px;
-	line-height: 1.2em;
+#apd_logo {
+	padding: 15px 0;
+	background: white;
+	width: 100%;
 }
 
 .statement p {

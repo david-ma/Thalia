@@ -5,111 +5,54 @@
 	<meta charset="utf-8">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
-	<title>Title</title>
+	<title>Taxx</title>
 
 	<link rel="stylesheet" href="/css/main.css">
 	<script src="/js/vendor.min.js"></script>
 
-<style>
-
-body {
-	background-color: #eee;
-}
-
-.page {
-	background-color: #fff;
-}
-
-header {
-	width: 100%;
-	height: 500px;
-	background: #333e52;
-}
-header .blur_background {
-	height: 500px;
-	width: 100%;
-	position: absolute;
-  background: url("/images/unsplash.jpg");
-  background-size: cover;
-	background-position: 50% 60%;
-/* Depending on your photo, you might need to blur the background.
-  -webkit-filter: blur(1px);
-  -moz-filter: blur(1px);
-  -o-filter: blur(1px);
-  -ms-filter: blur(1px);
-  filter: blur(1px);
- */
-}
-footer {
-	width: 100%;
-	height: 50px;
-	background: #ddd;
-}
-
-.mask {
-	height: 100%;
-	background: linear-gradient(rgba(0,0,0,0),rgba(0,0,0,0.3), rgba(0,0,0,0.5));
-}
-
-header .container {
-	padding-top: 300px;
-}
-
-header h1 {
-	font-size: 60px;
-	color: #eee;
-	margin: 0;
-}
-header h2 {
-	font-size: 30px;
-	color: #eee;
-	margin: 0;
-}
-
-</style>
 </head>
 <body>
-	<header>
-		<div class="blur_background">
-			<div class="mask"></div>
-		</div>
-		<div class="container">
-			<div class="row">
-				<div class="col-xs-12">
-					<h1>Title</h1>
-					<h2>Subtitle</h2>
-				</div>
-			</div>
-		</div>
-	</header>
 
 	<div class="container page">
+
 		<div class="row">
-			<div class="col-xs-12">
-			<h1>
-				Sup?
-			</h1>
-		<p>Hey this is a stupid example index.html</p>
-		<p>Run "npm test example" from the thalia root to develop</p>
-		<p>Except, put the workspace you want in the place of example...</p>
-		<p>Don't forget to npm install, bower install, and gulp build if you're into that stuff.</p>
+			<header></header>
+			<div id="nav">
+				<a href="https://www.facebook.com/taxxtaxxtaxx/">Facebook</a>
+				<a href="https://www.instagram.com/taxxtaxx/">Instagram</a>
+				<a href="http://taxxtaxxtaxx.tumblr.com/">Tumblr</a>
+				<a>Twitter</a>
 			</div>
 		</div>
 
-			<h2>Ok here's some dummy text:</h2>
 		<div class="row">
-			<div class="col-xs-12 col-sm-4">
-<p>"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."</p>
+			<div id="sidebar" class="fb-box col-sm-3 col-xs-12">
+				<h1>Write Info Here</h1>
+				<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+				<div id="twitter" class="hidden-xs">
+					<a class="twitter-timeline" data-show-replies="false" href="https://twitter.com/frostickle">Tweets by frostickle</a>
+					<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+				</div>
+
 			</div>
-			<div class="col-xs-12 col-sm-4">
-<p>"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."</p>
-			</div>
-			<div class="col-xs-12 col-sm-4">
-<p>"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."</p>
+
+
+			<div class="fb-box col-sm-8 col-xs-12">
+				<h2 id="tumblr_title">Ok here's some dummy text:</h2>
+					<div id="tumblr"></div>
+					<h2><a id="next_post" href="http://taxxtaxxtaxx.tumblr.com/">Next post</a></h2>
 			</div>
 		</div>
+
+
+
+
+
+
+
+
+
 	</div>
-
 	<footer>
 		<div class="container">
 			<div class="row">
@@ -118,5 +61,50 @@ header h2 {
 			</div>
 		</div>
 	</footer>
+
+
+
+
+
+
+<script type="text/javascript" src="http://taxxtaxxtaxx.tumblr.com/api/read/json"></script>
+<script type="text/javascript">tumblr_api_read.posts.forEach(function(t){});var post=tumblr_api_read.posts[0];console.log(post),"audio"===post.type?(document.getElementById("tumblr_title").innerHTML=post["id3-title"],document.getElementById("tumblr").innerHTML=post["audio-embed"]):"photo"===post.type||"regular"===post.type&&(document.getElementById("tumblr_title").innerHTML=tumblr_api_read.posts[0]["regular-title"],document.getElementById("tumblr").innerHTML=tumblr_api_read.posts[0]["regular-body"]),document.getElementById("next_post").setAttribute("href",tumblr_api_read.posts[1]["url-with-slug"])</script>
+
+
+
+
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

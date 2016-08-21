@@ -54,11 +54,13 @@ exports.config = {
 	domains: ["david-ma.net"],
 	pages: {
 		"": "/index.html",
+		"resume": "/resume.pdf",
 		"hackers": "/hackers.txt",
 		"instameet": "/example.jpg",
 		"talks": "/talks.html"
 	},
 	redirects: {
+		"/github": "https://github.com/david-ma/",
 		"/wwim12_syd": "https://www.facebook.com/groups/741261649334543/",
 		"/publications": "https://scholar.google.com.au/citations?user=i3b7M5MAAAAJ",
 		"/dropbox": "https://www.dropbox.com/campuscup?referrer=MjE4MzE3MTc1",
@@ -68,7 +70,6 @@ exports.config = {
 		"/talks/vizbi2016": "https://docs.google.com/presentation/d/132qHk5B1MGEsP_cuG8CAzBCK2-zYmUxM4w-hNYxl8DE/pub?start=false&loop=false&delayms=3000",
 		"/talks/photography": "https://docs.google.com/presentation/d/1aUh5oIvFQBE4YxiagKByr2dycIl-ZKH9wAo0KkdolaM/pub?start=false&loop=false&delayms=3000",
 		"/ifttt": "https://ifttt.com/recipes/284348-real-instagram-photos-in-twitter",
-		"/resume": "http://david-ma.net/resume.pdf",
 		"/pathos": "http://10.126.67.70:8080/PathOS/",
 		"/govhack": "https://docs.google.com/presentation/d/1dvGaKXLaBzGVOToTjfGFxdfij5rXMFfxepPgO2aEFvY/pub?start=false&loop=false&delayms=3000",
 		"/hackaus": "https://www.facebook.com/groups/hackathonsaustralia/",

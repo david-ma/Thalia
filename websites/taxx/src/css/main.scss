@@ -27,7 +27,26 @@ footer {
 	background: #ddd;
 }
 
+#mobile-mixtapes {
+	img {
+		transition: all 0.3s;
+		border: 1px solid #333;
+		width: 25%;
+		&:hover {
+			transform: scale(1.1);
+		}
+	}
+}
+
 #tumblr_posts {
+	.tumblr_post:not(:last-child) {
+		padding-bottom: 5px;
+		border-bottom: dotted rgba(0,0,255,0.2) 5px;
+		
+		img.tumblr-img-1280 {
+			width: 100%;
+		}
+	}
   iframe {
 		width: 100%;
 	}
@@ -35,6 +54,7 @@ footer {
 
 #sidebar {
 	height: 100%;
+	border-left: dotted rgba(0,0,255,0.2) 5px;
 }
 
 #twitter {

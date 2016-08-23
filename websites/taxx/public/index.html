@@ -5,10 +5,12 @@
 	<meta charset="utf-8">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
-	<title>Taxx</title>
+	<title>Taxx Music</title>
+<meta name="description" content="Taxx is an occasional mixtape series. With forward thinking electronica, beats, ambient and dance music from around">
 
 	<link rel="stylesheet" href="/css/main.css">
 	<script src="/js/vendor.min.js"></script>
+	<script src="/js/scripts.min.js"></script>
 
 </head>
 <body>
@@ -23,22 +25,35 @@
 			</div>
 		</div>
 
+		<div id="mobile-mixtapes" class="row text-center visible-xs">
+			<h1>Mixtapes!</h1>
+			<a class="fb-box" href="http://taxxtaxxtaxx.bandcamp.com/album/taxx-1-march"><img src="/images/mix1.jpg"></a>
+			<a class="fb-box" href="http://taxxtaxxtaxx.bandcamp.com/album/taxx-2-april"><img src="/images/mix2.jpg"></a>
+			<a class="fb-box" href="http://taxxtaxxtaxx.bandcamp.com/album/taxx-3-jul"><img src="/images/mix3.jpg"></a>
+		</div>
+
 		<div class="row">
-			<div id="sidebar" class="col-lg-2 col-sm-3 col-xs-12">
+			<div id="tumblr_posts" class="col-sm-7 col-sm-offset-1 col-xs-12">
+				<h3 class="text-center"><a href="#load-next-post" onclick="return load_next_post(),!1">Load Next Post</a> - <a id="tumblr_link" href="http://tumblr.taxxmusic.com">View On Tumblr</a></h3>
+			</div>
+			
+			<div id="sidebar" class="col-sm-3 col-xs-12">
+			<div id="mixtapes" class="text-center">
+				<h1>Mixtapes</h1>
+			</div>
+
+<!-- 
 				<h1>Taxx Feed</h1>
 				<p>Taxx is an occasional mixtape series. With forward thinking electronica, beats, ambient and dance music from around</p>
 				<div id="twitter" class="hidden-xs">
 					<a class="twitter-timeline" data-show-replies="false" href="https://twitter.com/taxxmusic">Tweets by TaxxMusic</a>
 				</div>
+ -->
+
 			</div>
 
-			<div id="tumblr_posts" class="col-lg-8 col-sm-6 col-xs-12">
-				<h3 class="text-center"><a id="tumblr_link" href="http://tumblr.taxxmusic.com">View On Tumblr</a></h3>
-			</div>
-			
-			<div id="mixtapes" class="text-center col-lg-2 col-sm-3 col-xs-3">
-				<h1>Mixtapes</h1>
-			</div>
+
+
 		</div>
 	</div>
 	<footer>
@@ -56,11 +71,12 @@
 
 
 <!-- Tumblr feed Script -->
-<script type="text/javascript" src="http://taxxmusic.tumblr.com/api/read/json"></script>
-<script type="text/javascript">function load_next_post(){var t=tumblr_api_read.posts[post_number++],e=d3.select("#tumblr_posts").insert("div","h3"),o=e.append("h2"),l=e.append("div");"audio"===t.type?(o.html(t["id3-title"]),l.html(t["audio-embed"]),console.log("hey"),console.log(t)):"photo"===t.type||"regular"===t.type&&(o.html(t["regular-title"]),l.html(t["regular-body"]))}tumblr_api_read.posts.forEach(function(t){});var post_number=0;load_next_post();var _throttleTimer=null,_throttleDelay=100,$window=$(window),$document=$(document);$document.ready(function(){function t(){clearTimeout(_throttleTimer),_throttleTimer=setTimeout(function(){$window.scrollTop()+$window.height()>e()-100&&load_next_post()},_throttleDelay)}function e(){var t=document;return Math.max(t.body.scrollHeight,t.documentElement.scrollHeight,t.body.offsetHeight,t.documentElement.offsetHeight,t.body.clientHeight,t.documentElement.clientHeight)}$window.off("scroll",t).on("scroll",t)})</script>
+<script type="text/javascript" src="http://taxxmusic.tumblr.com/api/read/json?num=50"></script>
+<script type="text/javascript">function load_next_post(){var t=tumblr_api_read.posts[post_number++],e=d3.select("#tumblr_posts").insert("div","h3").classed("tumblr_post",!0),o=e.append("a").attr("href",t["url-with-slug"]),l=o.append("h2"),p=e.append("div");"audio"===t.type?(l.html(t["id3-title"]),p.append("div").html(t["audio-caption"]),p.append("div").html(t["audio-embed"])):"photo"===t.type?(l.append("img").attr({"class":"tumblr-img-1280",src:t["photo-url-1280"]}),p.append("div").html(t["photo-caption"])):"regular"===t.type?(l.html(t["regular-title"]),p.html(t["regular-body"])):"link"===t.type?(l.html(t["link-text"]),o.attr("href",t["link-url"]),p.html(t["link-description"])):"video"===t.type?(console.log("VIDEO!"),console.log(t),l.html(t["video-caption"]),p.append("div").html(t["video-player-500"])):(console.log(t),p.html("WTFFFFFFFF"),$(e).remove(),load_next_post())}tumblr_api_read.posts.forEach(function(t){});var post_number=0;load_next_post(),load_next_post(),infinite_scroll(load_next_post)</script>
 
 <!-- Bandcamp feed script -->
-<script>function addMixtape(a){var t=mixtape_sidebar.insert("div","div");t.append("h3").text(a.title),t.append("div").attr({"class":"mixtape_image"}).append("a").attr({href:a.link}).append("img").attr({src:a.image})}$.get("/data/bandcamp.json",function(a){a.mixtapes.forEach(function(a){addMixtape(a)})});var mixtape_sidebar=d3.select("#mixtapes")</script>
+<script>function addMixtape(a){var t=mixtape_sidebar.append("div");t.append("h3").text(a.title),t.append("div").attr({"class":"mixtape_image"}).append("a").attr({href:a.link}).append("img").attr({src:a.image})}$.get("/data/bandcamp.json",function(a){a.mixtapes.forEach(function(a){addMixtape(a)})});var mixtape_sidebar=d3.select("#mixtapes")</script>
+<script>!function(e,t,a,n,c,o,s){e.GoogleAnalyticsObject=c,e[c]=e[c]||function(){(e[c].q=e[c].q||[]).push(arguments)},e[c].l=1*new Date,o=t.createElement(a),s=t.getElementsByTagName(a)[0],o.async=1,o.src=n,s.parentNode.insertBefore(o,s)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-82999538-1","auto"),ga("send","pageview")</script>
 </body>
 </html>
 

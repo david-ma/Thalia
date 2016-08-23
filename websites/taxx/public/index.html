@@ -14,65 +14,53 @@
 <body>
 
 	<div class="container page">
-
 		<div class="row">
 			<header></header>
 			<div id="nav">
-				<a href="https://www.facebook.com/taxxtaxxtaxx/">Facebook</a>
-				<a href="https://www.instagram.com/taxxtaxx/">Instagram</a>
-				<a href="http://taxxtaxxtaxx.tumblr.com/">Tumblr</a>
-				<a>Twitter</a>
+<span><a href="https://www.facebook.com/taxxtaxxtaxx">Facebook</a> <a href="https://www.instagram.com/taxxmusic">Instagram</a></span>
+<span><a href="http://taxxtaxxtaxx.bandcamp.com/">Bandcamp</a> <a href="mailto:hello@taxxmusic.com">Contact</a></span>
+<!--<span><a href="https://www.twitter.com/taxxmusic">Twitter</a> <a href="http://tumblr.taxxmusic.com">Tumblr</a></span>-->
 			</div>
 		</div>
 
 		<div class="row">
-			<div id="sidebar" class="fb-box col-sm-3 col-xs-12">
-				<h1>Write Info Here</h1>
-				<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+			<div id="sidebar" class="col-lg-2 col-sm-3 col-xs-12">
+				<h1>Taxx Feed</h1>
+				<p>Taxx is an occasional mixtape series. With forward thinking electronica, beats, ambient and dance music from around</p>
 				<div id="twitter" class="hidden-xs">
-					<a class="twitter-timeline" data-show-replies="false" href="https://twitter.com/frostickle">Tweets by frostickle</a>
-					<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+					<a class="twitter-timeline" data-show-replies="false" href="https://twitter.com/taxxmusic">Tweets by TaxxMusic</a>
 				</div>
-
 			</div>
 
-
-			<div class="fb-box col-sm-8 col-xs-12">
-				<h2 id="tumblr_title">Ok here's some dummy text:</h2>
-					<div id="tumblr"></div>
-					<h2><a id="next_post" href="http://taxxtaxxtaxx.tumblr.com/">Next post</a></h2>
+			<div id="tumblr_posts" class="col-lg-8 col-sm-6 col-xs-12">
+				<h3 class="text-center"><a id="tumblr_link" href="http://tumblr.taxxmusic.com">View On Tumblr</a></h3>
+			</div>
+			
+			<div id="mixtapes" class="text-center col-lg-2 col-sm-3 col-xs-3">
+				<h1>Mixtapes</h1>
 			</div>
 		</div>
-
-
-
-
-
-
-
-
-
 	</div>
 	<footer>
 		<div class="container">
-			<div class="row">
-				<p class="col-xs-6">Simple <a href="https://github.com/david-ma/Thalia">Thalia</a> Bootstrap Boilerplate</p>
-				<p class="col-xs-6 text-right">By <a href="https://twitter.com/frostickle">@Frostickle</a> <i class="fa fa-twitter" aria-hidden="true"></i></p>
+			<div class="row" style="margin-top: 5px">
+				<p class="col-xs-6"><a href="mailto:hello@taxxmusic.com">Email Us</a> <i class="fa fa-envelope" aria-hidden="true"></i></p>
+				<p class="col-xs-6 text-right">Website by <a href="https://twitter.com/frostickle">@Frostickle</a> <i class="fa fa-twitter" aria-hidden="true"></i></p>
 			</div>
 		</div>
 	</footer>
 
 
+<!-- Twitter Feed Script -->
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 
+<!-- Tumblr feed Script -->
+<script type="text/javascript" src="http://taxxmusic.tumblr.com/api/read/json"></script>
+<script type="text/javascript">function load_next_post(){var t=tumblr_api_read.posts[post_number++],e=d3.select("#tumblr_posts").insert("div","h3"),o=e.append("h2"),l=e.append("div");"audio"===t.type?(o.html(t["id3-title"]),l.html(t["audio-embed"]),console.log("hey"),console.log(t)):"photo"===t.type||"regular"===t.type&&(o.html(t["regular-title"]),l.html(t["regular-body"]))}tumblr_api_read.posts.forEach(function(t){});var post_number=0;load_next_post();var _throttleTimer=null,_throttleDelay=100,$window=$(window),$document=$(document);$document.ready(function(){function t(){clearTimeout(_throttleTimer),_throttleTimer=setTimeout(function(){$window.scrollTop()+$window.height()>e()-100&&load_next_post()},_throttleDelay)}function e(){var t=document;return Math.max(t.body.scrollHeight,t.documentElement.scrollHeight,t.body.offsetHeight,t.documentElement.offsetHeight,t.body.clientHeight,t.documentElement.clientHeight)}$window.off("scroll",t).on("scroll",t)})</script>
 
-
-<script type="text/javascript" src="http://taxxtaxxtaxx.tumblr.com/api/read/json"></script>
-<script type="text/javascript">tumblr_api_read.posts.forEach(function(t){});var post=tumblr_api_read.posts[0];console.log(post),"audio"===post.type?(document.getElementById("tumblr_title").innerHTML=post["id3-title"],document.getElementById("tumblr").innerHTML=post["audio-embed"]):"photo"===post.type||"regular"===post.type&&(document.getElementById("tumblr_title").innerHTML=tumblr_api_read.posts[0]["regular-title"],document.getElementById("tumblr").innerHTML=tumblr_api_read.posts[0]["regular-body"]),document.getElementById("next_post").setAttribute("href",tumblr_api_read.posts[1]["url-with-slug"])</script>
-
-
-
-
+<!-- Bandcamp feed script -->
+<script>function addMixtape(a){var t=mixtape_sidebar.insert("div","div");t.append("h3").text(a.title),t.append("div").attr({"class":"mixtape_image"}).append("a").attr({href:a.link}).append("img").attr({src:a.image})}$.get("/data/bandcamp.json",function(a){a.mixtapes.forEach(function(a){addMixtape(a)})});var mixtape_sidebar=d3.select("#mixtapes")</script>
 </body>
 </html>
 

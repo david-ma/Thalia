@@ -1,0 +1,15 @@
+{
+  "mixtapes": [{
+    "title": "TAXX #3 JUL",
+    "image": "/images/mix3.jpg",
+    "link": "http://taxxtaxxtaxx.bandcamp.com/album/taxx-3-jul"
+  },{
+    "title": "TAXX #2 APRIL",
+    "image": "/images/mix2.jpg",
+    "link": "http://taxxtaxxtaxx.bandcamp.com/album/taxx-2-april"
+  },{
+    "title": "TAXX #1 MARCH",
+    "image": "/images/mix1.jpg",
+    "link": "http://taxxtaxxtaxx.bandcamp.com/album/taxx-1-march"
+  }]
+}

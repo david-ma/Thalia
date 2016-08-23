@@ -10,11 +10,15 @@ header {
 	width: 100%;
 	min-height: 250px;
 	background: #fff;
-  background: url("/images/header.jpg") no-repeat center;
-  background-size: contain;
+	background: url("/images/header.jpg") no-repeat center;
+	background-size: contain;
 	.container {
 		padding-top: 300px;
 	}
+}
+
+h3 {
+	font-size: 20px;
 }
 
 footer {
@@ -23,8 +27,7 @@ footer {
 	background: #ddd;
 }
 
-#tumblr {
-	width: 100%;
+#tumblr_posts {
   iframe {
 		width: 100%;
 	}
@@ -34,10 +37,6 @@ footer {
 	height: 100%;
 }
 
-.fb-box {
-	margin: 5px;
-}
-
 #twitter {
 	max-height: 600px;
 	overflow: scroll;
@@ -45,11 +44,32 @@ footer {
 
 
 #nav {
-	padding: 20px;
+	padding: 10px;
 	text-align: center;
 	font-size: 20px;
-	a {
-		margin: 30px;
+	span {
+		white-space: nowrap;
+		a {
+			margin: 15px;
+		}
+	}
+}
+
+#mixtapes {
+	.mixtape_image {
+		position: relative;
+
+		border: 1px solid #333;
+		margin: 2%;
+		overflow: hidden;
+		width: 100%;
+		img {
+			transition: all 0.3s;
+			width: 100%;
+			&:hover {
+				transform: scale(1.1);
+			}
+		}
 	}
 }
 

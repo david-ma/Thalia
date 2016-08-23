@@ -14,83 +14,130 @@
 <body>
 
 	<div class="container page">
-
 		<div class="row">
 			<header></header>
 			<div id="nav">
-				<a href="https://www.facebook.com/taxxtaxxtaxx/">Facebook</a>
-				<a href="https://www.instagram.com/taxxtaxx/">Instagram</a>
-				<a href="http://taxxtaxxtaxx.tumblr.com/">Tumblr</a>
-				<a>Twitter</a>
+<span><a href="https://www.facebook.com/taxxtaxxtaxx">Facebook</a> <a href="https://www.instagram.com/taxxmusic">Instagram</a></span>
+<span><a href="http://taxxtaxxtaxx.bandcamp.com/">Bandcamp</a> <a href="mailto:hello@taxxmusic.com">Contact</a></span>
+<!--<span><a href="https://www.twitter.com/taxxmusic">Twitter</a> <a href="http://tumblr.taxxmusic.com">Tumblr</a></span>-->
 			</div>
 		</div>
 
 		<div class="row">
-			<div id="sidebar" class="fb-box col-sm-3 col-xs-12">
-				<h1>Write Info Here</h1>
-				<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+			<div id="sidebar" class="col-lg-2 col-sm-3 col-xs-12">
+				<h1>Taxx Feed</h1>
+				<p>Taxx is an occasional mixtape series. With forward thinking electronica, beats, ambient and dance music from around</p>
 				<div id="twitter" class="hidden-xs">
-					<a class="twitter-timeline" data-show-replies="false" href="https://twitter.com/frostickle">Tweets by frostickle</a>
-					<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+					<a class="twitter-timeline" data-show-replies="false" href="https://twitter.com/taxxmusic">Tweets by TaxxMusic</a>
 				</div>
-
 			</div>
 
-
-			<div class="fb-box col-sm-8 col-xs-12">
-				<h2 id="tumblr_title">Ok here's some dummy text:</h2>
-					<div id="tumblr"></div>
-					<h2><a id="next_post" href="http://taxxtaxxtaxx.tumblr.com/">Next post</a></h2>
+			<div id="tumblr_posts" class="col-lg-8 col-sm-6 col-xs-12">
+				<h3 class="text-center"><a id="tumblr_link" href="http://tumblr.taxxmusic.com">View On Tumblr</a></h3>
+			</div>
+			
+			<div id="mixtapes" class="text-center col-lg-2 col-sm-3 col-xs-3">
+				<h1>Mixtapes</h1>
 			</div>
 		</div>
-
-
-
-
-
-
-
-
-
 	</div>
 	<footer>
 		<div class="container">
-			<div class="row">
-				<p class="col-xs-6">Simple <a href="https://github.com/david-ma/Thalia">Thalia</a> Bootstrap Boilerplate</p>
-				<p class="col-xs-6 text-right">By <a href="https://twitter.com/frostickle">@Frostickle</a> <i class="fa fa-twitter" aria-hidden="true"></i></p>
+			<div class="row" style="margin-top: 5px;">
+				<p class="col-xs-6"><a href="mailto:hello@taxxmusic.com">Email Us</a> <i class="fa fa-envelope" aria-hidden="true"></i></p>
+				<p class="col-xs-6 text-right">Website by <a href="https://twitter.com/frostickle">@Frostickle</a> <i class="fa fa-twitter" aria-hidden="true"></i></p>
 			</div>
 		</div>
 	</footer>
 
 
+<!-- Twitter Feed Script -->
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 
-
-
-<script type="text/javascript" src="http://taxxtaxxtaxx.tumblr.com/api/read/json"></script>
+<!-- Tumblr feed Script -->
+<script type="text/javascript" src="http://taxxmusic.tumblr.com/api/read/json"></script>
 <script type="text/javascript">
 	tumblr_api_read.posts.forEach(function(post){
-// 		console.log(post);
-	})
+	});
+	var post_number = 0;
+	load_next_post();
 
-	var post = tumblr_api_read.posts[0];
-	console.log(post);
-	if (post.type === "audio") {
-		document.getElementById('tumblr_title').innerHTML = post["id3-title"];
-		document.getElementById('tumblr').innerHTML = post["audio-embed"];
-		
-	} else if (post.type === "photo") {
-		
-	} else if (post.type === "regular") {
-		document.getElementById('tumblr_title').innerHTML = tumblr_api_read.posts[0]['regular-title'];
-		document.getElementById('tumblr').innerHTML = tumblr_api_read.posts[0]['regular-body'];
+
+	function load_next_post(){
+		var post = tumblr_api_read.posts[post_number++];
+
+		var box = d3.select("#tumblr_posts").insert("div", "h3"),
+			title = box.append("h2"),
+			div = box.append("div");
+
+		if (post.type === "audio") {
+			title.html(post["id3-title"]);
+			div.html(post["audio-embed"]);
+console.log('hey')
+			console.log(post)
+		} else if (post.type === "photo") {
+
+		} else if (post.type === "regular") {
+			title.html(post["regular-title"]);
+			div.html(post["regular-body"]);
+		}
 	}
-	document.getElementById('next_post').setAttribute("href", tumblr_api_read.posts[1]['url-with-slug']);
+
+
+// Infinite scroll stuff:
+	var _throttleTimer = null;
+	var _throttleDelay = 100;
+	var $window = $(window);
+	var $document = $(document);
+	$document.ready(function () {
+		$window.off('scroll', ScrollHandler)
+				.on('scroll', ScrollHandler);
+		function ScrollHandler() {
+			//throttle event:
+			clearTimeout(_throttleTimer);
+			_throttleTimer = setTimeout(function () {
+
+				//do work
+				if ($window.scrollTop() + $window.height() > getDocHeight() - 100) {
+					load_next_post();
+				}
+
+			}, _throttleDelay);
+		}
+		function getDocHeight() {
+			var D = document;
+			return Math.max(
+					D.body.scrollHeight, D.documentElement.scrollHeight,
+					D.body.offsetHeight, D.documentElement.offsetHeight,
+					D.body.clientHeight, D.documentElement.clientHeight
+			);
+		}
+	});
 </script>
 
+<!-- Bandcamp feed script -->
+<script>
+	$.get("/data/bandcamp.json", function(data){
+		data.mixtapes.forEach(function(mixtape){
+			addMixtape(mixtape);
+		});
+	});
 
+	var mixtape_sidebar = d3.select("#mixtapes");
 
-
+	function addMixtape(mixtape){
+		var box = mixtape_sidebar.insert("div", "div");
+		box.append("h3").text(mixtape.title);
+		box.append("div").attr({
+			class: "mixtape_image"
+		}).append("a").attr({
+			href: mixtape.link
+		}).append("img").attr({
+			src: mixtape.image
+		});
+	};
+</script>
 </body>
 </html>
 

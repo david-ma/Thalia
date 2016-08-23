@@ -1,3 +1,3 @@
 exports.config = {
-	"domains": ["www.yourwebsite.com"]
+	"domains": ["taxxmusic.com"]
 };

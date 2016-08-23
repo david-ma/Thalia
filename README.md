@@ -37,3 +37,7 @@ I should probably explain how to use those things, but I've written enough here 
 
 -David [@Frostickle](https://twitter.com/frostickle)
 
+Thanks
+-
+
+Thanks [@slavanossar](https://github.com/slavanossar/) for [Thirst Quencher](https://github.com/slavanossar/thirst-quencher), from which my gulp script has been adapted!

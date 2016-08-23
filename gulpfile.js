@@ -12,7 +12,7 @@ var confirm = require('gulp-confirm');
 var fs = require('fs');
 
 // Editable - any file extensions added here will trigger the watch task and will be instantly copied to your /dist folder
-var staticSrc = "src/**/*.{eot,ttf,woff,woff2,otf,json,pdf,ico}";
+var staticSrc = "src/**/*.{eot,ttf,woff,woff2,otf,json,pdf,ico,xml}";
 var browserSync = require('browser-sync').create();
 var dist = "websites/example/public";
 var site = "websites/example";
@@ -33,7 +33,7 @@ gulp.task("confirm", ["workspace"], function(){
 		fs.statSync(site+"/src");
 		if(site !== 'websites/example' && !confirmation) {
 			return gulp.src('').pipe(confirm({
-				// Static text. 
+				// Static text.
 				question: 'Delete and rebuild '+site+'/public? (type "yes" to confirm)',
 				proceed: function(answer) {
 					confirmation = true;
@@ -84,14 +84,14 @@ gulp.task('html', ["confirm"], function() {
 			basepath: 'src/partials/'
 		}))
 		.pipe($.htmlmin({
-		// Editable - see https://www.npmjs.com/package/gulp-minify-html#options for details
+			// Editable - see https://www.npmjs.com/package/gulp-minify-html#options for details
 			minifyJS: true
 		}))
 		.on('error', function(e) {
 			if(!envProd) {
 				console.log("Error in this HTML file:");
 				console.log(e.fileName);
-				
+
 				$.notify().write("HTML Parse Error");
 			}
 		})
@@ -101,18 +101,18 @@ gulp.task('html', ["confirm"], function() {
 // Concatenate JS
 gulp.task("jsconcat", ["confirm"], function() {
 	return gulp.src([
-			// Editable - Add any additional paths to JS Bower components here
+		// Editable - Add any additional paths to JS Bower components here
 
-			"bower_components/d3/d3.min.js",
-			"bower_components/jquery/dist/jquery.min.js",
-			"bower_components/jquery-ui/jquery-ui.min.js",
-			'bower_components/bootstrap-sass/assets/javascripts/bootstrap.min.js',
-			'bower_components/datatables.net/js/jquery.dataTables.min.js',
-			'bower_components/datatables.net-colreorder/js/dataTables.colReorder.min.js',
-			'bower_components/datatables.net-select/js/dataTables.select.min.js',
- 			'bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js',
-			"src/js/vendor/*.js"
-		]).pipe( $.concat("vendor.min.js"))
+		"bower_components/d3/d3.min.js",
+		"bower_components/jquery/dist/jquery.min.js",
+		"bower_components/jquery-ui/jquery-ui.min.js",
+		'bower_components/bootstrap-sass/assets/javascripts/bootstrap.min.js',
+		'bower_components/datatables.net/js/jquery.dataTables.min.js',
+		'bower_components/datatables.net-colreorder/js/dataTables.colReorder.min.js',
+		'bower_components/datatables.net-select/js/dataTables.select.min.js',
+		'bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js',
+		"src/js/vendor/*.js"
+	]).pipe( $.concat("vendor.min.js"))
 		.pipe( gulp.dest(dist+"/js"));
 });
 
@@ -210,10 +210,10 @@ gulp.task("stylesheets", ["confirm"], function() {
 			}
 		})
 		.pipe( $.autoprefixer({
-			browsers: ['last 2 versions'], // Editable - see https://github.com/postcss/autoprefixer#options
-			cascade: false
-		})
-	);
+				browsers: ['last 2 versions'], // Editable - see https://github.com/postcss/autoprefixer#options
+				cascade: false
+			})
+		);
 
 	if(!envProd) {
 		out.pipe( $.sourcemaps.write() );
@@ -253,26 +253,28 @@ gulp.task( "watch", ["stylesheets", "javascript", "jsconcat", "images", "fonts",
 // Serve
 gulp.task('serve', ["stylesheets", "javascript", "jsconcat", "images", "html", "copy", "sitecopy", "staticCSS", "watch", "confirm"], function() {
 	var bs = {
-			server: { baseDir: dist+"/" },
-			ghostMode: false
+		server: { baseDir: dist+"/" },
+		ghostMode: false
 	};
 
 	// Use the proxy thing, if we need the Thalia server
 	// Only necessary if you're doing complicated stuff?
 	if(argv.t) {
 		bs = {
- 			proxy: "localhost",
+			proxy: "localhost",
 			ghostMode: false
 		};
 	}
-	
+
 	browserSync.init(bs);
 
 	gulp.watch([site+"/"+staticSrc, staticSrc], ["copy", "sitecopy"]);
 	gulp.watch([site+"/src/js/vendor/*.js", "src/js/vendor/*.js"], ["jsconcat"]);
-	gulp.watch([site+"/src/css/**/*.scss", "src/css/**/*.scss"], ["stylesheets"]).on("change", browserSync.reload);
-	gulp.watch([site+"/src/js/**/*.js", "src/js/**/*.js"], ["javascript"]).on("change", browserSync.reload);
-	gulp.watch(dist+"/*.html").on("change", browserSync.reload);
+	gulp.watch([site+"/src/css/**/*.scss", "src/css/**/*.scss"], ["stylesheets"]);
+	gulp.watch(dist+"/**/*.css").on("change", browserSync.reload);
+	gulp.watch([site+"/src/js/**/*.js", "src/js/**/*.js"], ["javascript"]);
+	gulp.watch(dist+"/**/*.js").on("change", browserSync.reload);
+	gulp.watch(dist+"/**/*.html").on("change", browserSync.reload);
 });
 
 // Build

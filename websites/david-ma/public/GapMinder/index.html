@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>The Wealth & Health of Nations</title>
+    <link rel="stylesheet" type="text/css" href="main.css" />
+  </head>
+  <body>
+
+    <h1>The Wealth & Health of Nations</h1>
+
+    <div class='flex-cont'>
+      <div id="chart_area"></div>
+
+      <div>
+      <label><input type="checkbox" name="region" class="region_cb" value="Sub-Saharan Africa" checked="checked"> Sub-Saharan Africa</label><br>
+      <label><input type="checkbox" name="region" class="region_cb" value="South Asia" checked="checked"> South Asia</label><br>
+      <label><input type="checkbox" name="region" class="region_cb" value="Middle East & North Africa" checked="checked"> Middle East & North Africa</label><br>
+      <label><input type="checkbox" name="region" class="region_cb" value="America" checked="checked"> America</label><br>
+      <label><input type="checkbox" name="region" class="region_cb" value="East Asia & Pacific" checked="checked"> East Asia & Pacific</label><br>
+      <label><input type="checkbox" name="region" class="region_cb" value="Europe & Central Asia" checked="checked"> Europe & Central Asia</label><br>
+      <br>
+      <label><input type="range" name="range" class="slider" id="year_slider" value="1979" min="1950" max="2008" step="1" ></label><br>
+      <div id="textInput"></div>
+      <br>
+      <span class="button" id="toggle_button">linear scale</span>
+      <br><br>
+      <span class="button" id="toggle_animation">Move Around!</span>
+      </div>
+
+      <div id="lineplot_area"></div>
+      <br>
+      <span id="clear_button" class="button">clear all</span>
+
+    </div>
+
+    <script src="d3.min.js"></script>
+    <script src="viz.js"></script>
+  </body>
+</html>

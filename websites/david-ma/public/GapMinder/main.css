@@ -1,0 +1,71 @@
+body {
+  background: rgb(50,50,50);
+  color: white;
+ font-family: sans-serif;
+}
+
+text {
+  font: 10px sans-serif;
+  fill:rgb(200,200,200);
+}
+
+h1{
+  color: rgb(200,200,200);
+ font-family:serif;
+}
+
+.dot {
+  stroke: #FFF;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #FFF;
+  shape-rendering: crispEdges;
+}
+
+.label {
+ fill: rgb(200,200,200);
+}
+
+.year.label {
+  font: 500 196px "Helvetica Neue";
+  fill: #ddd;
+}
+
+.year.label.active {
+  fill: #aaa;
+}
+
+.overlay {
+  fill: none;
+  pointer-events: all;
+  cursor: ew-resize;
+}
+
+.rectangle {
+  fill: black;
+}
+
+.flex-cont{
+  display:flex;
+  flex-direction:row;
+  juistify-content:flex-start;
+  flex-wrap: wrap;
+  align-items: center;
+
+}
+
+.line {
+  fill: none;
+  /*stroke: steelblue;*/
+  stroke-width: 2.5px;
+  opacity: 0.9;
+}
+
+.button{
+  background-color: rgb(100,100,100);
+  padding: 0.5em;
+  margin: 0.5em;
+  cursor: pointer;
+}

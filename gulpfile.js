@@ -105,12 +105,14 @@ gulp.task("jsconcat", ["confirm"], function() {
 
 		"bower_components/d3/d3.min.js",
 		"bower_components/jquery/dist/jquery.min.js",
-		"bower_components/jquery-ui/jquery-ui.min.js",
 		'bower_components/bootstrap-sass/assets/javascripts/bootstrap.min.js',
-		'bower_components/datatables.net/js/jquery.dataTables.min.js',
-		'bower_components/datatables.net-colreorder/js/dataTables.colReorder.min.js',
-		'bower_components/datatables.net-select/js/dataTables.select.min.js',
-		'bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js',
+
+// These are nice to have, but we don't need them for every page!
+// 		"bower_components/jquery-ui/jquery-ui.min.js",
+// 		'bower_components/datatables.net/js/jquery.dataTables.min.js',
+// 		'bower_components/datatables.net-colreorder/js/dataTables.colReorder.min.js',
+// 		'bower_components/datatables.net-select/js/dataTables.select.min.js',
+// 		'bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js',
 		"src/js/vendor/*.js"
 	]).pipe( $.concat("vendor.min.js"))
 		.pipe( gulp.dest(dist+"/js"));
@@ -150,10 +152,10 @@ gulp.task( "javascript", ["jshint", "confirm"], function() {
 // Images
 gulp.task("images", ["confirm"], function(cb) {
 	return gulp.src([
+// 		'bower_components/jquery-ui/themes/cupertino/images/*',
+// 		'bower_components/datatables.net-dt/images/*'
 		site+'/src/images/**/*',
-		'src/images/**/*',
-		'bower_components/jquery-ui/themes/cupertino/images/*',
-		'bower_components/datatables.net-dt/images/*'
+		'src/images/**/*'
 	]).pipe( gulp.dest( dist+"/images" ) );
 });
 
@@ -168,11 +170,12 @@ gulp.task('fonts', ["confirm"], function() {
 // Static CSS
 gulp.task("staticCSS", ["confirm"], function(cb) {
 	return gulp.src([
-		'bower_components/jquery-ui/themes/cupertino/jquery-ui.min.css',
-		'bower_components/datatables.net-dt/css/jquery.dataTables.min.css',
-		'bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css',
-		'bower_components/datatables.net-colreorder-dt/css/colReorder.dataTables.min.css',
-		'bower_components/datatables.net-select-dt/css/select.dataTables.min.css'
+// These should not be on by default...
+// 		'bower_components/jquery-ui/themes/cupertino/jquery-ui.min.css',
+// 		'bower_components/datatables.net-dt/css/jquery.dataTables.min.css',
+// 		'bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css',
+// 		'bower_components/datatables.net-colreorder-dt/css/colReorder.dataTables.min.css',
+// 		'bower_components/datatables.net-select-dt/css/select.dataTables.min.css'
 	]).pipe( gulp.dest( dist+"/css" ) );
 });
 
@@ -184,7 +187,7 @@ gulp.task("stylesheets", ["confirm"], function() {
 		// Uncomment the following two lines to use Bourbon/Neat
 		// 'bower_components/neat/app/assets/stylesheets',
 
-		'bower_components/bourbon/app/assets/stylesheets',
+// 		'bower_components/bourbon/app/assets/stylesheets',
 		'bower_components/bootstrap-sass/assets/stylesheets',
 		'bower_components/normalize-scss',
 		'bower_components/font-awesome/scss'

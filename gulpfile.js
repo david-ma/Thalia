@@ -264,7 +264,7 @@ gulp.task('serve', ["stylesheets", "javascript", "jsconcat", "images", "html", "
 	// Only necessary if you're doing complicated stuff?
 	if(argv.t) {
 		bs = {
-			proxy: "localhost",
+			proxy: "localhost:1337",
 			ghostMode: false
 		};
 	}

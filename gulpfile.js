@@ -78,7 +78,7 @@ gulp.task("sitecopy", ["confirm"], function(){
 
 // Compile Partials
 gulp.task('html', ["confirm"], function() {
-	gulp.src(['src/*.html', site+'/src/*.html'])
+	gulp.src(['src/**/*.html', site+'/src/**/*.html'])
 		.pipe($.fileInclude({
 			prefix: '@@',
 			basepath: 'src/partials/'

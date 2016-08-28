@@ -241,13 +241,13 @@ gulp.task( "watch", ["stylesheets", "javascript", "jsconcat", "images", "fonts",
 	gulp.watch([site+"/src/js/vendor/*.js", "src/js/vendor/*.js"], ["jsconcat"]);
 	gulp.watch([site+"/src/css/**/*.scss", "src/css/**/*.scss"], ["stylesheets"]);
 	gulp.watch([site+"/src/js/**/*.js", "src/js/**/*.js"], ["javascript"]);
-	gulp.watch([site+"/src/img/**/*.{jpg,png,svg}", "src/img/**/*.{jpg,png,svg}"], ["images"]);
+	gulp.watch([site+"/src/images/**/*.{jpg,png,svg}", "src/images/**/*.{jpg,png,svg}"], ["images"]);
 
 	gulp.watch([
 		dist+"/**/*.html",
 		dist+"/**/*.js",
 		dist+"/**/*.css",
-		dist+"/img/**/*"
+		dist+"/images/**/*"
 	]).on( "change", function( file ) {
 		$.livereload.changed(file.path);
 	});

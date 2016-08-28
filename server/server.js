@@ -19,7 +19,7 @@ function start(route, handle) {
 		}
 	}
 
-	var port = 80; // change the port here?
+	var port = 1337; // change the port here?
 	var pattern = /^\d{0,5}$/;
 	var workspace = 'default';
 

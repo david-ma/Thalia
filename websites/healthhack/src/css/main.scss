@@ -421,10 +421,11 @@ footer {
 	}
 	.form {
 		width: 50%;
-		min-height: 50%;
+		height: 80%;
 		padding: 10px;
 		margin: 50px auto;
 		background-color: white;
+		overflow: scroll;
 
 
 		#close-form {

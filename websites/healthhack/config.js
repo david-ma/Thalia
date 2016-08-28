@@ -3,6 +3,8 @@ const formidable = require('formidable');
 const path = require('path');
 const util = require('util');
 
+const password = "whiterabbit";
+
 var sites = {
 	"sydney": true,
 	"melbourne": true,
@@ -50,7 +52,7 @@ exports.config = {
 
 				// Protected by a password... change your password here
 				// We should also probably rate limit this shit
-				if(fields.password === "whiterabbit") {
+				if(fields.password === password) {
 
 					var images = {
 						venue_logo: fields.venue_logo,
@@ -119,7 +121,7 @@ exports.config = {
 
                 // Protected by a password... change your password here
                 // We should also probably rate limit this shit
-				if(fields.password === "whiterabbit") {
+				if(fields.password === password) {
 					var logo_src = fields.logo,
 						auth = fields.auth === "confirmed" ? 1 : 0;
 

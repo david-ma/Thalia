@@ -49,12 +49,12 @@ Database.prototype.query = function(query, callback){
 };
 
 Database.prototype.queryVariables = function(query, variables, callback){
-	if(this.connected) {
-		this.db.query(query, variables, callback);
-	} else {
-		this.connect();
-		this.db.query(query, variables, callback);
-	}
+  if(this.connected) {
+  	this.db.query(query, variables, callback);
+  } else {
+    this.connect();
+  	this.db.query(query, variables, callback);
+  }
 };
 
 exports.db = Database;

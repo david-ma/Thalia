@@ -40,10 +40,9 @@
     "node": ">=6.0.0"
   },
   "scripts": {
-    "lint": "jshint server/**.js",
     "build": "gulp build -s ",
-    "test": "./test.sh",
-    "start": "./start.sh"
+    "develop": "./develop.sh",
+    "start": "sudo ./start.sh 80"
   },
   "repository": {
     "type": "git",

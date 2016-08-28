@@ -46,7 +46,7 @@ var reddit = {
 			return;
 		}
 	}
-}
+};
 
 
 

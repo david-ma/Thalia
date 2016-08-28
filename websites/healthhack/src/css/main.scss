@@ -1,0 +1,500 @@
+
+body {
+	background-color: #eee;
+  font-family: "Montserrat", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.page {
+	background-color: #fff;
+}
+
+
+.linkhider {
+	:before {
+		content: "";
+		height: 100px;
+		width: 100%;
+		color: green;
+	}
+}
+.collapsed {
+	height: 180px;
+	overflow: hidden;
+}
+
+.collapsed .expando {
+	position: absolute;
+}
+.collapsed .expando i:before {
+	content: "\f078"
+}
+.expando i:before {
+	content: "\f077"
+}
+.expando {
+	height: 40px;
+	width: 100%;
+	position: initial;
+	top: 140px;
+	left: 0;
+	display: block;
+	cursor: pointer;
+	background: linear-gradient(to bottom,rgba(255,255,255,0),#fff);
+}
+section.bg-light-gray .expando {
+	background: linear-gradient(to bottom,rgba(255,255,255,0),#fff);
+}
+
+.expando p {
+	color: rgb(68, 120, 172);
+	margin: 10px auto auto;
+	width: 1%;
+}
+
+
+.site {
+
+	header {
+		height: 250px;
+		.blur_background {
+			height: 250px;
+		}
+
+		#header_message {
+			padding-top: 80px;
+		}
+		h1 {
+			font-size: 50px;
+		}
+		h2 {
+			font-size: 40px;
+		}
+	}
+}
+
+header {
+	width: 100%;
+	height: 500px;
+	background: rgba(37,143,183,0.7);
+
+	a, a:hover, a:visited {
+		color: #08b3a6;
+	}
+
+	.blur_background {
+		height: 500px;
+		width: 100%;
+		position: absolute;
+		background: url("/images/sydney2015.jpg");
+		background-size: cover;
+		background-position: 50% 45%;
+		-webkit-filter: blur(1px);
+		-moz-filter: blur(1px);
+		-o-filter: blur(1px);
+		-ms-filter: blur(1px);
+		filter: blur(1px);
+		.mask {
+			height: 100%;
+			background: linear-gradient(rgba(37,143,183,0.7), rgba(16,71,162,0.8));
+		}
+	}
+	#header_message {
+		padding-top: 180px;
+		text-align: center;
+		color: #eee;
+		h1, h2, h3 {
+			margin: 0;
+		}
+		h3 {
+			margin-bottom: 30px;
+		}
+	}
+	.large-link-button, .large-link-button:visited {
+		color: white;
+		background-color: #08b3a6;
+		border-color: #08b3a6;
+		font-family: "Montserrat", "Helvetica Neue", Helvetica, Arial, sans-serif;
+		text-transform: uppercase;
+		font-weight: 700;
+		border-radius: 3px;
+		font-size: 18px;
+		padding: 20px 40px;
+		margin: 10px;
+		&:hover {
+			color: white;
+			background-color: #07988d;
+			border-color: #07988d;
+		}
+		&:active {
+			outline: none;
+		}
+	}
+
+}
+
+
+#nav {
+	width: 100%;
+	z-index: 100;
+	position: fixed;
+	top: 0;
+	background: linear-gradient(rgba(37,143,183,1),rgba(16,71,162,0));
+
+	.nav-right {
+		text-align: right;
+	}
+	#hh_logo {
+		background: #fff;
+		margin: 15px;
+		padding: 10px;
+		border-radius: 2px;
+
+		@media (max-width: 768px) {
+			margin: 0;
+			transform: scale(0.6);
+		}
+	}
+	#navlist {
+		list-style: none;
+		li {
+			font-size: 20px;
+			float: right;
+			@media (min-width: 768px) {
+				padding: 20px;
+			}
+
+			@media (max-width: 768px) {
+				font-size: 15px;
+				padding-top: 20px;
+				padding-left: 10px;
+			}
+			a {
+				color: white;
+			}
+		}
+	}
+}
+
+
+
+#blog {
+
+	#blog_image img {
+		width: 40%;
+		float: right;
+		//margin: 0px 0px 10px 10px;
+		margin: 10px;
+	}
+
+	#tumblr_link {
+		text-align: center;
+	}
+}
+
+
+#sites {
+
+    // This is Mike Imelfort's code from 2015
+    .event-description {
+        text-align: justify;
+        width: 100%;
+        margin: 30px auto;
+        font-size: larger;
+        font-weight: 300; }
+    .event-regions {
+        text-align: center;
+        color: white;
+        position: relative; }
+    .event-regions .event-region {
+        color: #fff;
+        cursor: pointer;
+        position: relative;
+        display: block; }
+    .event-regions .event-region-shadow {
+        position: absolute;
+        background-color: #0A0A0A;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        opacity: 0.7; }
+    .event-regions .event-region:hover {
+        font-style: normal;
+        text-decoration: none; }
+    .event-regions .event-region:hover .event-region-shadow {
+        opacity: 0.9; }
+    .event-regions .event-region:hover .event-region-text {
+        text-decoration: none; }
+    .event-regions .event-region-shadow:hover {
+        opacity: 0.9; }
+    .event-regions .event-region-image {
+        width: 100%;
+        height: auto; }
+    .event-regions .event-region-text {
+        position: absolute;
+        top: 50%;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        margin-top: -75px;
+        color: #fff;
+    }
+
+
+	.event-regions div {
+		margin-bottom: 15px;
+	}
+
+}
+
+
+
+
+#mc_embed_signup {
+	background-color: #0d3c95;
+	background-image: url('/images/map-image.png');
+	background-position: center;
+	background-repeat: no-repeat;
+
+
+	.section-heading {
+		font-size: 24px;
+		color: white;
+		text-align: center;
+	}
+	.indicates-required {
+		color: white;
+	}
+
+	.mc-field-group {
+		label, strong {
+			color: white;
+		}
+		border-color: #08b3a6;
+		box-shadow: none;
+
+		#mce-MMERGE4 {
+			border-radius: 5px;
+			width: 100%;
+			height: 100px;
+			word-wrap: normal;
+		}
+
+		li {
+			float: left;
+			label {
+				padding-top: 10px;
+				padding-bottom: 10px;
+				padding-left: 5px;
+				padding-right: 15px;
+			}
+		}
+	}
+
+    #subscribe-button {
+      padding-top: 15px;
+      width: 60%;
+      margin: auto;
+    }
+
+	#mc-embedded-subscribe {
+		width: 100%;
+	}
+
+	#mc-embedded-subscribe {
+		padding: 0;
+		background-color: #08b3a6;
+		&:hover {
+			background-color: #068a80;
+		}
+	}
+
+	#mce-success-response, #mce-error-response {
+		width: 100%;
+		background: rgba(255,255,255,0.8);
+		padding: 10px;
+	}
+}
+
+
+
+
+footer {
+	padding-top: 5px;
+	width: 100%;
+	height: 50px;
+	background: #ddd;
+}
+
+
+
+
+
+
+// On the site page:
+.site-page {
+	padding-top: 20px;
+
+	.sidebar {
+		border-left: dotted 2px rgba(0,0,255,0.5);
+		text-align: center;
+	}
+	.sidebar #address {
+		text-align: left;
+	}
+	#venue_image {
+		max-width: 300px;
+		max-height: 300px;
+		float: left;
+		margin-right: 20px;
+	}
+	#venue_logo {
+		float: right;
+		margin-top: 4px;
+		height: 79px;
+		width: auto;
+	}
+	#site_photo {
+		float: right;
+		max-width: 300px;
+		max-height: 300px;
+		margin-left: 20px;
+	}
+	#map {
+		width: 100%;
+		height: 400px;
+	}
+	#save-widget {
+		box-shadow: rgba(0, 0, 0, 0.298039) 0px 1px 4px -1px;
+		background-color: white;
+		padding: 5px;
+		font-family: Roboto, Arial;
+		font-size: 13px;
+		margin: 15px;
+		p {
+			margin: 0;
+		}
+	}
+
+	#list-of-friends {
+		.friend-block {
+			margin: 10px;
+			width: 260px;
+			height: 350px;
+			padding: 10px;
+			text-align: center;
+			float: left;
+			cursor: pointer;
+			color: black;
+			img {
+				max-height: 120px;
+				max-width: 80%;
+				margin: auto;
+				background: white;
+			}
+			&:hover {
+				background: #ddd;
+			}
+		}
+	}
+}
+
+.edit-page {
+	textarea {
+		color: black;
+	}
+	header #header_message h3 {
+		margin-bottom: 0
+	}
+	#editSiteButton {
+		color: black;
+		font-size: 30px;
+	}
+
+	.fader {
+		width: 100%;
+		height: 100%;
+		z-index: 1000;
+		background-color: rgba(0,0,0,0.5);
+		position: fixed;
+		top: 0;
+	}
+	.form {
+		width: 50%;
+		min-height: 50%;
+		padding: 10px;
+		margin: 50px auto;
+		background-color: white;
+
+
+		#close-form {
+			position: absolute;
+			right: 26%;
+			top: 60px;
+			color: indianred;
+			cursor: pointer;
+		}
+		#form-id, #form-site, #form-lat, #form-lng, #form-placeId {
+			display: none;
+		}
+		h1 {
+			padding-top: 10px;
+			text-align: center;
+		}
+		table {
+			margin: auto;
+		}
+		td {
+			margin: 5px;
+			padding: 5px;
+			border: solid 1px grey;
+		}
+		img {
+			border: 2px dotted black;
+			height: 100px;
+		}
+		textarea {
+			width: 100%;
+			min-height: 50px;
+		}
+		input[type="text"] {
+			width: 100%;
+		}
+		#friend-delete {
+			background: indianred;
+			color: white;
+			float: right;
+		}
+		label {
+			cursor: pointer;
+		}
+	}
+	.unconfirmed {
+		border: dotted red 5px;
+		h3 {
+			color: red;
+		}
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

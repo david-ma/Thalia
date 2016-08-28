@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>HealthHack Australia</title>
+
+	<link href="//cdn-images.mailchimp.com/embedcode/classic-10_7.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="/css/main.css">
+
+	<style>
+
+
+
+	</style>
+</head>
+<body id="page-top" class="site site-page edit-page">
+<nav id="nav">
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-2">
+				<a href="/"><img src="/images/HH_Logo.svg" class="navlogo" id="hh_logo" alt="HealthHack"></a>
+			</div>
+			<div class="col-xs-10 nav-right">
+				<ul id="navlist">
+					<li><a class="page-scroll" href="/">Home</a></li>
+					<li><a class="page-scroll" href="http://blog.healthhack.com.au">Blog</a></li>
+					<li><a class="page-scroll" href="/#sites">Sites</a></li>
+					<li><a class="page-scroll" href="/faq.html">FAQ</a></li>
+					<li><a class="page-scroll" href="http://2015.healthhack.com.au">2015</a></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+</nav>
+
+<header>
+	<div class="blur_background">
+		<div class="mask"></div>
+	</div>
+	<div class="container" id="header_message">
+		<div class="row">
+			<div class="col-xs-12">
+				<h1>HealthHack Site</h1>
+				<h2>Venue Name</h2>
+				<h3>Venue Address</h3>
+				<button id="editSiteButton" onclick="editSite()">Edit this HealthHack site</button>
+			</div>
+		</div>
+	</div>
+</header>
+
+<div class="container page">
+
+	<div class="row">
+		<div class="col-sm-6 col-md-8">
+
+			<div id="venue_sponsor" class="row col-xs-12">
+				<div class="row">
+					<h1 class="col-sm-6">Venue Sponsor</h1>
+					<img class="col-sm-6 hidden-xs" id="venue_logo" src="/images/placeholder.jpg">
+				</div>
+
+				<div>
+					<img id="venue_image" src="/images/placeholder.jpg">
+					<div id="venue_description"><p>Enter a description here</p></div>
+				</div>
+			</div>
+
+
+			<div id="site_info" class="row col-xs-12">
+				<h1 id="site_info_title">Site Title Here</h1>
+				<img id="site_photo" src="/images/placeholder.jpg">
+				<div id="site_description"><p>Site Description goes here.</p></div>
+			</div>
+
+		</div>
+
+		<div class="col-sm-6 col-md-4 sidebar">
+			<h1>Getting There</h1>
+
+			<div id="save-widget">
+				<p id="address">Venue Name<br>Venue Location</p>
+			</div>
+			<div id="map"></div>
+
+			<h1>Contact Us</h1>
+			<p><i class="fa fa-twitter fa-lg"></i> <a href="https://twitter.com/healthhackau">@HealthHackAu</a></p>
+			<p><i class="fa fa-envelope-o fa-lg"></i> <a id="contact-email" href="mailto:info@healthhack.com.au">info@healthhack.com.au</a></p>
+			<p><i class="fa fa-envelope fa-lg"></i> <a href="http://eepurl.com/ccR9yr">Mailing List</a></p>
+
+		</div>
+	</div>
+
+	<div class="row">
+
+		<div id="sponsors" class="col-xs-12">
+			<h1>Sponsors - Click them to edit</h1>
+			<div id="list-of-friends">
+				<div class="friend-block fb-box" id="be-our-friend">
+					<img class="friend-logo" src="/images/sponsors/your_logo_here.png">
+					<h2>Sponsor us!</h2>
+					<p>Sponsoring HealthHack is a great way to give back to the community, money goes to feeding hackers on the day.</p>
+					<a href="mailto:sponsors@healthhack.com.au">sponsors@healthhack.com.au</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Begin MailChimp Signup Form -->
+<div id="mc_embed_signup">
+	<form action="//healthhack.us14.list-manage.com/subscribe/post?u=16e3b341b87deaa490a117bf9&amp;id=220ca0dffa" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
+		<div id="mc_embed_signup_scroll" class="container">
+			<h2 class="section-heading">Subscribe to our mailing list</h2>
+			<div class="indicates-required"><span class="asterisk">*</span> indicates required</div>
+			<div class="col-sm-6">
+				<div class="mc-field-group">
+					<label for="mce-EMAIL">Email Address  <span class="asterisk">*</span>
+					</label>
+					<input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL">
+				</div>
+				<div class="mc-field-group">
+					<label for="mce-FNAME">First Name  <span class="asterisk">*</span>
+					</label>
+					<input type="text" value="" name="FNAME" class="required" id="mce-FNAME">
+				</div>
+				<div class="mc-field-group">
+					<label for="mce-LNAME">Last Name  <span class="asterisk">*</span>
+					</label>
+					<input type="text" value="" name="LNAME" class="required" id="mce-LNAME">
+				</div>
+				<div class="mc-field-group">
+					<label for="mce-MMERGE3">Role (Scientist, Developer, Designer, Volunteer, Mentor, Sponsor, etc.)  <span class="asterisk">*</span>
+					</label>
+					<input type="text" value="" name="MMERGE3" class="required" id="mce-MMERGE3">
+				</div>
+			</div>
+
+			<div class="col-sm-6">
+				<div class="mc-field-group contact-description">
+					<label for="mce-MMERGE4">Tell us about yourself  <span class="asterisk">*</span>
+					</label>
+					<textarea type="text" value="" name="MMERGE4" class="required" id="mce-MMERGE4"></textarea>
+				</div>
+				<div class="mc-field-group input-group">
+					<strong>City  <span class="asterisk">*</span>
+					</strong>
+					<ul><li><input type="radio" value="Melbourne" name="MMERGE5" id="mce-MMERGE5-0"><label for="mce-MMERGE5-0">Melbourne</label></li>
+						<li><input type="radio" value="Sydney" name="MMERGE5" id="mce-MMERGE5-1"><label for="mce-MMERGE5-1">Sydney</label></li>
+						<li><input type="radio" value="Brisbane" name="MMERGE5" id="mce-MMERGE5-2"><label for="mce-MMERGE5-2">Brisbane</label></li>
+						<li><input type="radio" value="Perth" name="MMERGE5" id="mce-MMERGE5-3"><label for="mce-MMERGE5-3">Perth</label></li>
+						<li><input type="radio" value="Canberra" name="MMERGE5" id="mce-MMERGE5-4"><label for="mce-MMERGE5-4">Canberra</label></li>
+					</ul>
+				</div>
+				<div id="mce-responses" class="clear">
+					<div class="response" id="mce-error-response" style="display:none"></div>
+					<div class="response" id="mce-success-response" style="display:none"></div>
+				</div>
+				<div id="subscribe-button" class="clear"><input type="submit" value="Subscribe" name="subscribe" id="mc-embedded-subscribe" class="button"></div>
+
+			</div>
+			<!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+			<div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text" name="b_16e3b341b87deaa490a117bf9_220ca0dffa" tabindex="-1" value=""></div>
+		</div>
+	</form>
+</div>
+<!--End mc_embed_signup-->
+
+<footer>
+	<div class="container">
+		<div class="row">
+			<div class="col-sm-6 text-center">
+				<div>HealthHack is an <a href="http://au.okfn.org/code-of-conduct/" target="_blank">
+					<img alt="Open Knowledge Foundation Australia" class="footer-okfna" src="/images/okfna.png" style="height: 30px;">
+				</a>
+					<a href="http://au.okfn.org/code-of-conduct/" target="_blank">Open Knowledge Foundation Australia event </a>
+				</div>
+			</div>
+			<div class="col-sm-6 text-center">
+				<ul class="list-inline quicklinks">
+					<li>
+						<a href="https://github.com/david-ma/Thalia">Website Theme</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+	</div>
+</footer>
+
+
+<script src="/js/vendor.min.js"></script>
+<script src="/js/scripts.min.js"></script>
+
+<!-- Dress up the page with data about our sites -->
+<!-- DKGM 28-8-2016 -->
+<script>
+	var site = window.location.pathname.slice(6).toLowerCase();
+	var data = null;
+	$.get('/site/'+site, function(d){
+		data = JSON.parse(d)[0];
+
+		$("title").text("HealthHack "+data.site);
+		$("#header_message h1").text("HealthHack "+data.site);
+		$("#venue").text(data.venue);
+		$("#venue_address").text(data.address);
+		$("#venue_logo").attr("src", data.venue_logo);
+		$("#venue_image").attr("src", data.venue_image);
+		$("#venue_description").html(data.venue_description);
+		$("#site_info_title").text(data.site_info_title);
+		$("#site_photo").attr("src", data.site_photo);
+		$("#site_description").html(data.site_description);
+		$("#address").html(data.venue+'<br>'+data.address);
+		$("#contact-email").attr("href", "mailto:"+data.site.toLowerCase()+"@healthhack.com.au")
+				.html(data.site.toLowerCase()+"@healthhack.com.au");
+	});
+
+
+	function editSite() {
+		var form = d3.select("body").append("div").classed("fader", true).on("click",function(){
+			d3.select(".fader").remove();
+		}).append("div").on("click",function(){
+			d3.event.stopPropagation();
+		}).classed("form", true);
+		form.append("i").classed("fa fa-close fa-2x", true).attr("id", "close-form").on("click",function(){d3.select(".fader").remove();});
+		var header = form.append("div").append("h1").text("Edit site details");
+
+		console.log(data);
+		var table = form.append("form").attr({
+			onsubmit: "return checkForm(this);",
+			action: "edit_site",
+			enctype: "multipart/form-data",
+			method: "post"
+		}).append("table");
+
+		Object.keys(data).forEach(function(key){
+			var row = table.append("tr").attr("id", "form-"+key);
+
+			var title = row.append("td").text(key);
+			var input = row.append("td");
+				input.append("textarea").attr({
+				required: true,
+				type: "text",
+				name: key
+			}).text(data[key]);
+
+
+			if(key === 'venue_logo' || key === 'venue_image' || key === 'site_photo') {
+				buildImage(key, input.html(""), data[key]);
+			}
+		});
+
+
+        var row = table.append("tr");
+        row.append("td").text("Password");
+        row.append("td").append("input").attr({
+            required: true,
+            type: "text",
+            name: "password"
+        });
+        row.append("input").attr({
+        	required: true,
+            id: "current_url",
+            name: "current_url",
+            type: "hidden"
+        });
+        $("#current_url").val(window.location.href);
+
+		var row = table.append("tr");
+		row.append("td").text("Save");
+		row.append("td").append("input").attr({
+			id: "form-submit",
+			type: "submit"
+		});
+
+	}
+
+
+
+	function buildImage(key, div, src){
+		div.classed("image-row", true).datum(key);
+		div.append("input").attr({
+			id: "hidden-image-src-"+key,
+			name: key,
+			type: "hidden"
+		});
+		if(src) {
+			div.append("img").attr({
+				src: src
+			});
+			$("#hidden-image-src-"+key).val(src);
+		}
+		div.append("input").attr({
+			id: "image-upload-"+key,
+			type: "file",
+			name: key,
+			accept: "image/*"
+		});
+	}
+
+
+
+
+
+
+	function initMap() {
+		var mapDiv = document.getElementById('map');
+		var map = new google.maps.Map(mapDiv, {
+			center: {
+				lat: data.lat,
+				lng: data.lng
+			},
+			streetViewControl: false,
+			fullscreenControl: false,
+			mapTypeControl: false,
+			zoom: 17
+		});
+
+		var widgetDiv = document.getElementById('save-widget');
+		map.controls[google.maps.ControlPosition.TOP_LEFT].push(widgetDiv);
+
+		// Append a Save Control to the existing save-widget div.
+		var saveWidget = new google.maps.SaveWidget(widgetDiv, {
+			place: {
+				placeId: data.placeId,
+				location: {lat: data.lat, lng: data.lng}
+			},
+			attribution: {
+				source: 'Google Maps JavaScript API',
+				webUrl: 'https://developers.google.com/maps/'
+			}
+		});
+
+		var marker = new google.maps.Marker({
+			map: map,
+			position: saveWidget.getPlace().location
+		});
+	}
+
+<!-- Load the Sponsors-->
+<!-- DKGM 28-8-2016 -->
+	$( document ).ready(function(){
+		d3.select("#be-our-friend").on('click',function(){
+			window.open("mailto:sponsors@healthhack.com.au");
+		});
+
+		var sponsors = [{
+			logo: "/images/sponsors/thoughtworks-australia.png",
+			name: "ThoughtWorks",
+			text: "ThoughtWorks is the venue sponsor for Melbourne!",
+			link: "https://www.thoughtworks.com"
+		}];
+
+		$.get('/sponsors/'+site, function(d){
+			sponsors = JSON.parse(d);
+			var box = d3.select("#list-of-friends");
+
+			sponsors.forEach(function(sponsor){
+				if(sponsor.text !== "deleted") {
+					var block = box.append("div").attr({
+						class: "friend-block fb-box"
+					}).datum(sponsor).on('click', uploadSponsor);
+
+					block.append("img").attr({
+						src: sponsor.logo
+					});
+					block.append("h2").text(sponsor.name);
+					block.append("p").text(sponsor.text);
+
+					if(!sponsor.auth) {
+						block.classed("unconfirmed", true);
+						block.append("h3").text("Unconfirmed");
+					}
+				}
+			});
+		});
+	});
+
+	var sponsor = d3.select("#list-of-friends").append("div").classed("friend-block fb-box", true);
+	sponsor.append("img").attr("src", "/images/placeholder.jpg");
+	sponsor.append("h2").text("Click me to add a sponsor");
+	sponsor.append("p").text("You need to add a name, description and a photo");
+	sponsor.append("a").text("Also a link");
+
+	sponsor.on('click', uploadSponsor);
+
+	function checkForm(){
+		var result = true;
+		d3.selectAll(".image-row").each(function(key){
+			var old_img = $("#hidden-image-src-"+key).val(),
+				new_img = $("#image-upload-"+key).val();
+			if ( old_img === "" && new_img === "") {
+				alert("Please add a "+key);
+				result = false;
+			}
+		});
+		console.log("checking form... "+result);
+		return result;
+	}
+
+	function uploadSponsor(d){
+		d = d || {
+			name: "",
+			logo: "",
+			site: "",
+			link: "",
+			auth: 0,
+			text: ""
+		};
+
+		console.log(d);
+
+		var form = d3.select("body").append("div").classed("fader", true).on("click",function(){
+			d3.select(".fader").remove();
+		}).append("div").on("click",function(){
+			d3.event.stopPropagation();
+		}).classed("form", true);
+		form.append("i").classed("fa fa-close fa-2x", true).attr("id", "close-form").on("click",function(){d3.select(".fader").remove();});
+		var header = form.append("div").append("h1").text("Add a new sponsor");
+
+		if(d.name) {
+			header.text("Edit sponsor: "+d.name);
+		}
+
+
+		var table = form.append("form").attr({
+					onsubmit: "return checkForm(this);",
+					action: "upload_sponsor",
+					enctype: "multipart/form-data",
+					method: "post"
+				}).append("table"),
+			row = table.append("tr");
+
+		row.append("td").text("Name");
+		row.append("td").append("input").attr({
+			id: "friend-name",
+			required: true,
+			type: "text",
+			name: "name"
+		});
+		$("#friend-name").val(d.name);
+
+		row.append("input").attr({
+			id: "current_url",
+			name: "current_url",
+			type: "hidden"
+		});
+		$("#current_url").val(window.location.href);
+
+		row = table.append("tr");
+		row.append("td").text("Logo");
+
+		buildImage("logo", row.append("td"), d.logo);
+
+		row = table.append("tr");
+		row.append("td").text("Description (try to stay under 140 chars please)");
+		row.append("td").append("textarea").attr({
+			id: 'friend-text',
+			required: true,
+			type: "text",
+			name: "text"
+		});
+		$("#friend-text").val(d.text);
+
+		row = table.append("tr");
+		row.append("td").text("Website / Link / Call to Action");
+		row.append("td").append("input").attr({
+			id: 'friend-link',
+			required: true,
+			type: "text",
+			name: "link"
+		});
+		$("#friend-link").val(d.link);
+
+
+		row = table.append("tr");
+		row.append("td").text("Which site page should they be shown on?");
+		row.append("td").html('<input id="r1" type="radio" name="site" value="national" required> <label for="r1">National</label><br>' +
+				'<input id="r2" type="radio" name="site" value="sydney" required> <label for="r2">Sydney</label><br>' +
+				'<input id="r3" type="radio" name="site" value="melbourne" required> <label for="r3">Melbourne</label><br>' +
+				'<input id="r4" type="radio" name="site" value="brisbane" required> <label for="r4">Brisbane</label><br>' +
+				'<input id="r5" type="radio" name="site" value="canberra" required> <label for="r5">Canberra</label><br>' +
+				'<input id="r6" type="radio" name="site" value="perth" required> <label for="r6">Perth</label>');
+
+		$("input[type='radio'][value='"+d.site+"']").attr("checked", true);
+
+		row = table.append("tr");
+		row.append("td").text("Are they confirmed, can we show on the page?");
+		row.append("td").html('<input id="r7" type="radio" name="auth" value="confirmed" required> <label for="r7">Confirmed</label><br>' +
+				'<input id="r8" type="radio" name="auth" value="unconfirmed" required> <label for="r8">Unconfirmed</label>');
+
+		if(d.auth) {
+			$("input[type='radio'][value='confirmed']").attr("checked", true);
+		} else {
+			$("input[type='radio'][value='unconfirmed']").attr("checked", true);
+		}
+
+		row = table.append("tr");
+		row.append("td").text("Password");
+		row.append("td").append("input").attr({
+			required: true,
+			type: "text",
+			name: "password"
+		});
+
+		row = table.append("tr");
+		row.append("td").text("Submit")
+		var td = row.append("td");
+
+		td.append("input").attr({
+			id: "form-submit",
+			type: "submit"
+		});
+
+		td.append("input").attr({
+			id: "friend-delete",
+			value: "Delete",
+			type: "button"
+		}).on('click', function(d){
+			$("input[type='radio'][value='confirmed']").attr("checked", false);
+			$("input[type='radio'][value='unconfirmed']").attr("checked", true);
+			$("#friend-text").val("deleted");
+			$("#form-submit").click();
+		});
+
+
+	}
+</script>
+
+<!-- Mailchimp Javascript -->
+<script type='text/javascript' src='//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js'></script><script type='text/javascript'>(function($) {window.fnames = new Array(); window.ftypes = new Array();fnames[0]='EMAIL';ftypes[0]='email';fnames[1]='FNAME';ftypes[1]='text';fnames[2]='LNAME';ftypes[2]='text';fnames[3]='MMERGE3';ftypes[3]='text';fnames[4]='MMERGE4';ftypes[4]='text';fnames[5]='MMERGE5';ftypes[5]='radio';}(jQuery));var $mcj = jQuery.noConflict(true);</script>
+
+<!-- Google Maps -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC5BnoexCNyCosPsiH8JKh1N7r-RuJlE6A&callback=initMap"
+		async defer>
+</script>
+
+
+<!-- Google Analytics-->
+<script>
+	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+				(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+	ga('create', 'UA-82263021-1', 'auto');
+	ga('send', 'pageview');
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

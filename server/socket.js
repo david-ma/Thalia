@@ -10,8 +10,8 @@
 function init(io, handle){
 	//start the heartbeat...
 	function sendHeartbeat(){
-			setTimeout(sendHeartbeat, 8000);
-			io.sockets.emit('drip', { beat : 1 });
+		setTimeout(sendHeartbeat, 8000);
+		io.sockets.emit('drip', { beat : 1 });
 	}
 	setTimeout(sendHeartbeat, 8000);
 
@@ -20,17 +20,17 @@ function init(io, handle){
 
 	//this stuff happens every time a page is loaded:
 	io.on('connection', function(socket){
-		
+
 		// Heartbeat function to keep connections alive.
-    socket.on("drop", function(data){console.log("drop");});
-    
-    // Crappy logging
+		socket.on("drop", function(data){console.log("drop");});
+
+		// Crappy logging
 		console.log("Socket connection "+socket.id+" from "+socket.handshake.headers.referer);
 
 		var host = socket.handshake.headers.host;
 		var website = handle.getWebsite(host);
 
-		if(website !== undefined && website.sockets !== undefined){	
+		if(website !== undefined && website.sockets !== undefined){
 			if(website.sockets.on instanceof Array) {
 				website.sockets.on.forEach(function(d){
 					socket.on(d.name, function(data){

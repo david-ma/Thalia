@@ -9,13 +9,12 @@ function start(route, handle) {
 	    proxy(request, response, handle.proxies[request.headers.host]);
 	  } else {
       var site = handle.getWebsite(request.headers.host);
-    
+
       var url_object = url.parse(request.url);
 
       console.log();
       console.log("Request for "+ request.headers.host + url_object.href + " At " + getDateTime() +
                   " From " + request.connection.remoteAddress);
-
       route(site, url_object.pathname, response, request);
 		}
 	}
@@ -35,7 +34,7 @@ function start(route, handle) {
 		workspace = process.argv[2];
 	} else if(typeof process.argv[3] !== null && process.argv[3] !== undefined && !pattern.exec(process.argv[3])){
 		workspace = process.argv[3];
-	} 
+	}
 
   console.log("Setting workspace to: "+workspace);
   console.log("Server has started on port: " + port);

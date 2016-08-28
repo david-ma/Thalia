@@ -78,7 +78,7 @@ gulp.task("sitecopy", ["confirm"], function(){
 
 // Compile Partials
 gulp.task('html', ["confirm"], function() {
-	gulp.src(['src/*.html', site+'/src/*.html'])
+	gulp.src(['src/**/*.html', site+'/src/**/*.html'])
 		.pipe($.fileInclude({
 			prefix: '@@',
 			basepath: 'src/partials/'
@@ -241,7 +241,7 @@ gulp.task( "watch", ["stylesheets", "javascript", "jsconcat", "images", "fonts",
 	gulp.watch([site+"/src/js/vendor/*.js", "src/js/vendor/*.js"], ["jsconcat"]);
 	gulp.watch([site+"/src/css/**/*.scss", "src/css/**/*.scss"], ["stylesheets"]);
 	gulp.watch([site+"/src/js/**/*.js", "src/js/**/*.js"], ["javascript"]);
-	gulp.watch([site+"/src/img/**/*.{jpg,png,svg}", "src/img/**/*.{jpg,png,svg}"], ["images"]);
+	gulp.watch([site+"/src/images/**/*.{jpg,png,svg}", "src/images/**/*.{jpg,png,svg}"], ["images"]);
 
 	gulp.watch([
 		dist+"/**/*.html",

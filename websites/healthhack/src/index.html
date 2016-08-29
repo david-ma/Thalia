@@ -30,7 +30,7 @@
 						<li><a class="page-scroll" href="#sites">Sites</a></li>
 						<li><a class="page-scroll" href="#mc_embed_signup">Contact</a></li>
 						<li><a class="page-scroll" href="/faq.html">FAQ</a></li>
-                        <li><a class="page-scroll" href="http://2015.healthhack.com.au">2015</a></li>
+            <li><a class="page-scroll" href="http://2015.healthhack.com.au">2015</a></li>
 					</ul>
 				</div>
 			</div>
@@ -47,7 +47,7 @@
 					<h1>HealthHack 2016</h1>
 					<h2>14-16th of October 2016</h2>
 					<h3>An <a href="http://au.okfn.org/">Open Knowledge hackathon</a> on healthcare and medical research</h3>
-					<a href="#mission" class="large-link-button">Tell Me More</a> <a href="http://eepurl.com/ccR9yr" class="large-link-button">Join Mailing List</a>
+					<div><a href="#mission" class="large-link-button">Tell Me More</a><div class="visible-xs"><br><br><br></div><a href="http://eepurl.com/ccR9yr" class="large-link-button">Join Mailing List</a></div>
 				</div>
 			</div>
 		</div>
@@ -234,19 +234,15 @@
 
 	<!-- Collapsable section stuff: -->
 <script>
-	document.querySelectorAll(".collapsable").forEach(function(d){
-		var that = d;
-		d3.select(d).classed("collapsed", true)
-				.append("div").classed("expando", true).on("click",function(d){
-
-			console.log("clicking..");
-			console.log(this);
-			$(that).toggleClass("collapsed");
-
-		}).append("p").append("i").classed("fa fa-lg", true);
-
+	$(".collapsable").each(function(i, d){
+	  var that = this;
+	  d3.select(d).classed("collapsed", true)
+	    .append("div").classed("expando", true).on("click",function(d){
+        console.log("clicking...");
+        console.log(this);
+        $(that).toggleClass("collapsed");
+      }).append("p").append("i").classed("fa fa-lg", true);
 	})
-
 </script>
 
     <!-- Smooth Scrolling -->

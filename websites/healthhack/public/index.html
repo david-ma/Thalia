@@ -30,7 +30,7 @@
 						<li><a class="page-scroll" href="#sites">Sites</a></li>
 						<li><a class="page-scroll" href="#mc_embed_signup">Contact</a></li>
 						<li><a class="page-scroll" href="/faq.html">FAQ</a></li>
-                        <li><a class="page-scroll" href="http://2015.healthhack.com.au">2015</a></li>
+            <li><a class="page-scroll" href="http://2015.healthhack.com.au">2015</a></li>
 					</ul>
 				</div>
 			</div>
@@ -47,7 +47,7 @@
 					<h1>HealthHack 2016</h1>
 					<h2>14-16th of October 2016</h2>
 					<h3>An <a href="http://au.okfn.org/">Open Knowledge hackathon</a> on healthcare and medical research</h3>
-					<a href="#mission" class="large-link-button">Tell Me More</a> <a href="http://eepurl.com/ccR9yr" class="large-link-button">Join Mailing List</a>
+					<div><a href="#mission" class="large-link-button">Tell Me More</a><div class="visible-xs"><br><br><br></div><a href="http://eepurl.com/ccR9yr" class="large-link-button">Join Mailing List</a></div>
 				</div>
 			</div>
 		</div>
@@ -228,7 +228,7 @@
 <script type="text/javascript">document.getElementById("tumblr_title").innerHTML+=tumblr_api_read.posts[0]["regular-title"],document.getElementById("tumblr").innerHTML+=tumblr_api_read.posts[0]["regular-body"],$("#blog_image").html($("#tumblr figure").detach())</script>
 
 	<!-- Collapsable section stuff: -->
-<script>document.querySelectorAll(".collapsable").forEach(function(l){var e=l;d3.select(l).classed("collapsed",!0).append("div").classed("expando",!0).on("click",function(l){console.log("clicking.."),console.log(this),$(e).toggleClass("collapsed")}).append("p").append("i").classed("fa fa-lg",!0)})</script>
+<script>$(".collapsable").each(function(l,a){var c=this;d3.select(a).classed("collapsed",!0).append("div").classed("expando",!0).on("click",function(l){console.log("clicking..."),console.log(this),$(c).toggleClass("collapsed")}).append("p").append("i").classed("fa fa-lg",!0)})</script>
 
     <!-- Smooth Scrolling -->
 <script></script>

@@ -29,8 +29,10 @@ exports.config = {
 		"edit-perth": "/edit-site.html"
 	},
 	redirects: {
-		"/site/melbourne.html": "/melbourne",
-		"/site/sydney.html": "/sydney",
+    "/problems": "https://docs.google.com/forms/d/e/1FAIpQLSdlprdRXQkP_d4uwzd2_0FQRv5qNdSfh3TND7JY4L4ezAX0lw/viewform",
+    "/problems.html": "https://docs.google.com/forms/d/e/1FAIpQLSdlprdRXQkP_d4uwzd2_0FQRv5qNdSfh3TND7JY4L4ezAX0lw/viewform",
+    "/site/melbourne.html": "/melbourne",
+    "/site/sydney.html": "/sydney",
 		"/site/perth.html": "/perth",
 		"/site/canberra.html": "/canberra",
 		"/site/brisbane.html": "/brisbane"

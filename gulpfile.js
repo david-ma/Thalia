@@ -120,15 +120,26 @@ gulp.task("jsconcat", ["confirm"], function() {
 
 // JSHint
 gulp.task("jshint", function () {
-	return gulp.src(["src/js/*.js", site+'/src/js/*.js'])
-		.pipe( $.jshint() )
-		.pipe( $.jshint.reporter( "jshint-stylish" ) )
-		.pipe( $.jshint.reporter('fail') )
-		.on('error', function(e) {
-			if(!envProd) {
-				$.notify().write(e);
-			}
-		});
+  // -l for lint
+	if (argv.l === true) {
+    return gulp.src(["src/js/*.js", site+'/src/js/*.js'])
+      .pipe( $.jshint() )
+      .pipe( $.jshint.reporter( "jshint-stylish" ) )
+      .pipe( $.jshint.reporter('fail') )
+      .on('error', function(e) {
+        if(!envProd) {
+          $.notify().write(e);
+        }
+      });
+	} else {
+    return gulp.src(["src/js/*.js", site+'/src/js/*.js'])
+    .pipe( $.jshint() )
+    .on('error', function(e) {
+      if(!envProd) {
+        $.notify().write(e);
+      }
+    });
+	}
 });
 
 // Compile JS

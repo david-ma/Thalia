@@ -10,12 +10,12 @@ function route(website, pathname, response, request) {
 		second = pathname.split("/")[2].toLowerCase();
 	} catch (err){}
 
-	if(typeof website.services[first] === 'function') {
-		website.services[first](response, request, website.db, second);
-	} else if(typeof website.redirects[pathname] != "undefined") {
+	if(typeof website.redirects[pathname] !== "undefined") {
 		redirect(response, request, website.redirects[pathname]);
-	} else if(typeof website.pages[first] != "undefined") {
+	} else if(typeof website.pages[first] !== "undefined") {
 		routeFile(response, request, website.folder.concat(website.pages[first]));
+	} else if(typeof website.services[first] === 'function') {
+		website.services[first](response, request, website.db, second);
 	} else {
 		routeFile(response, request, website.folder.concat(pathname));
 	}

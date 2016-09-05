@@ -1,0 +1,12 @@
+<link async rel="import" href="/async-js-imports.html">
+<script>
+  window.stampChallenges = function(year) {
+    fetch('data/challenges.json')
+    .then( function(resp) { return resp.json() })
+    .then(function(challenges) {
+      current = (new Date).getFullYear() == year;
+      console.log(challenges);
+      document.querySelector('hh-challenges').challenges = challenges;
+    }.bind(this));
+  }
+</script>

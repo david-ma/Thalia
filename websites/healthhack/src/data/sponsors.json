@@ -1,0 +1,24 @@
+{
+  "community": [
+
+  ],
+  "national_gold": [
+    {"img": "/images/HH_Logo.svg", "spiel": "lorem ipsum"},
+    {"img": "/images/HH_Logo.svg", "spiel": "lorem ipsum"},
+    {"img": "/images/HH_Logo.svg", "spiel": "lorem ipsum"},
+    {"img": "/images/HH_Logo.svg", "spiel": "lorem ipsum"},
+    {"img": "/images/HH_Logo.svg", "spiel": "lorem ipsum"}
+  ],
+  "national_silver": [
+
+  ],
+  "primary": [
+
+  ],
+  "local_gold": [
+
+  ],
+  "local_silver": [
+
+  ]
+}

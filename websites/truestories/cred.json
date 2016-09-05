@@ -1,6 +1,6 @@
 {
 	"host": "localhost",
-	"user": "david",
-	"password": "altoids",
+	"user": "root",
+	"password": "",
 	"database": "govhack2015"
 }

@@ -163,8 +163,6 @@ h4 {
 }
 </style>
 
-<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&signed_in=true"></script>
-
 </head>
 
 <body id="page-top" class="index">
@@ -174,30 +172,11 @@ h4 {
     <header id="header_image"">
         <div class="container">
             <div class="intro-text">
-<!-- 
-                <div class="intro-lead-in">Welcome To Our Studio!</div>
-                <div class="intro-heading">It's Nice To Meet You</div>
- -->
-<!--                 <a href="#services" class="page-scroll btn btn-xl">Tell Me More</a> -->
             </div>
         </div>
     </header>
     
 
-    <!-- 
-
-    <header>
-    	<div id="main-header">
-        <div class="container">
-            <div class="intro-text">
-            </div>
-        </div>
-    		
-    	</div>
-    </header>
-    
- -->
-    
 
     <!-- Content -->
 <section id="content" style="padding-top:35px;">
@@ -286,35 +265,13 @@ See another True Story:
 
 <div class="col-md-3" style="padding:20px; background: rgba(216,216,216,.25); max-width: 240px;">
 
-<!-- <div class="clear" style="padding:11px;"></div> -->
-
 <div id="map-canvas"></div>
 
 <h3 id="locationtext">
 Broome, WA
 </h3>
 
-
-<!-- 
-<img class="sideicon img-responsive" src="/img/calandar.png"/>
-<p id="datetext" class="sidetext">
-11/1/1988
-</p>
 <div class="clear"></div>
-<img class="sideicon img-responsive" src="/img/photo.png"/>
-<p class="sidetext">
-Reporter: <span id="authortext">Ben Collins</span>
-</p>
- -->
-
-<div class="clear"></div>
-
-<!-- 
-<p class="metadata-text">
-<strong>Location:</strong>
-<span id="meta-location">2,240 from Perth</span>
-</p>
- -->
 
 <p class="metadata-text">
 <strong>Latitude:</strong>
@@ -342,13 +299,6 @@ Interesting Facts
 <strong>Primary Industry:</strong>
 <span id="meta-industry">Mining</span>
 </p>
-
-<!-- 
-<p class="metadata-text">
-<strong>Population Density:</strong>
-<span id="meta-pop">2000</span>
-</p>
- -->
 
 <p class="metadata-text">
 <strong>Male vs Female ratio:</strong>
@@ -473,15 +423,47 @@ function mapinit(lat,lng) {
   });
 }
 
+
+
+// 	function initMap() {
+// 		var mapDiv = document.getElementById('map-canvas');
+// 		var map = new google.maps.Map(mapDiv, {
+// 			center: {
+// 				lat: data.lat,
+// 				lng: data.lng
+// 			},
+// 			streetViewControl: false,
+// 			fullscreenControl: false,
+// 			mapTypeControl: false,
+// 			zoom: 17
+// 		});
+// 
+// 		var widgetDiv = document.getElementById('save-widget');
+// 		map.controls[google.maps.ControlPosition.TOP_LEFT].push(widgetDiv);
+// 
+// 		// Append a Save Control to the existing save-widget div.
+// 		var saveWidget = new google.maps.SaveWidget(widgetDiv, {
+// 			place: {
+// 				placeId: data.placeId,
+// 				location: {lat: data.lat, lng: data.lng}
+// 			},
+// 			attribution: {
+// 				source: 'Google Maps JavaScript API',
+// 				webUrl: 'https://developers.google.com/maps/'
+// 			}
+// 		});
+// 
+// 		var marker = new google.maps.Marker({
+// 			map: map,
+// 			position: saveWidget.getPlace().location
+// 		});
+// 	}
+
+
+
+
+
 //google.maps.event.addDomListener(window, 'load', initialize);
-
-
-
-
-
-
-
-
 
 
 //start of david's implimentation
@@ -500,60 +482,51 @@ console.log("loading up story: "+id);
 
 socket = io.connect();
 
-socket.on("row", function(d){
-console.log(d);
+$.ajax({
+	url: "/requestjson/"+id,
+	success: function(d){
+		console.log(d);
+		d3.select("#header_image").style({
+			"background-image": "url("+d['Primary.Image']+")"
+		})
 
-d3.select("#header_image").style({
-	"background-image": "url("+d["Primary.image"]+")"
-})
-
-
-
-
-d3.select("#titletext").html(d.Title);
-d3.select("#descriptiontext").html(d["Primary.image.caption"]);
+		d3.select("#titletext").html(d.Title);
+		d3.select("#descriptiontext").html(d["Primary.image.caption"]);
 
 
-d3.select("#sourcelink").html(d.URL).attr("href", d.URL);
+		d3.select("#sourcelink").html(d.URL).attr("href", d.URL);
 
-d3.select("#keywords").html(d.Keywords);
+		d3.select("#keywords").html(d.Keywords);
 
-d3.select("#locationtext").html(d.Place);
+		d3.select("#locationtext").html(d.Place);
 
-mapinit(d.Latitude, d.Longitude);
+		mapinit(d.Latitude, d.Longitude);
 
-d3.select("#datetext").html(d.Date);
+		d3.select("#datetext").html(d.Date);
 
-var rights = d["Primary.image.rights.information"].split("|"),
-		copyright = rights[0].split(":")[1].trim(),
-		station = rights[1].split(":")[1].trim(),
-		author = rights[2].split(":")[1].trim();
-
-
-d3.select("#lat-text").html(d.Latitude);
-d3.select("#lng-text").html(d.Longitude);
-d3.select("#populationtext").html(d["Total.Population"]);
+		var rights = d["Primary.image.rights.information"].split("|"),
+				copyright = rights[0].split(":")[1].trim(),
+				station = rights[1].split(":")[1].trim(),
+				author = rights[2].split(":")[1].trim();
 
 
-d3.select("#meta-industry").html(d["Main.Employing.Industry"]);
+		d3.select("#lat-text").html(d.Latitude);
+		d3.select("#lng-text").html(d.Longitude);
+		d3.select("#populationtext").html(d["Total.Population"]);
 
-// d3.select("#meta-pop").html(d["Main.Employing.Industry"]);
+		d3.select("#meta-industry").html(d["Main.Employing.Industry"]);
 
-var ratio = (parseFloat(d["Male.Population"]) / parseFloat(d["Female.Population"])).toPrecision(3);
-
-
-d3.select("#meta-ratio").html(ratio);
-d3.select("#meta-age").html(d["Median.Age"]);
-
-
-d3.select("#meta-copyright").html(copyright);
-d3.select("#meta-station").html(d["Station"]);
-d3.select("#meta-reporter").html(author);
+		var ratio = (parseFloat(d["Male.Population"]) / parseFloat(d["Female.Population"])).toPrecision(3);
+		d3.select("#meta-ratio").html(ratio);
+		d3.select("#meta-age").html(d["Median.Age"]);
 
 
+		d3.select("#meta-copyright").html(copyright);
+		d3.select("#meta-station").html(d["Station"]);
+		d3.select("#meta-reporter").html(author);
+	}
+});
 
-
-})
 
 socket.emit("get_row", {"number":id});
 
@@ -568,10 +541,6 @@ socket.on("stories", function(d){
 			box.select("img").attr("src", data["Primary.image"]);
 			box.select(".hashtag-text").html("#"+text);
 		}
-
-
-
-
 
 		console.log("woo, stories!");
 		console.log(d);
@@ -596,40 +565,13 @@ function camelize(str) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 </script>
+
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAO-QmSgZzsPYUl1GRmn3mwRg8JYdvjOYI"
+		async defer>
+</script
 
 </body>
 

@@ -327,9 +327,19 @@ footer {
 }
 
 
-
-
-
+@media screen and (max-width: 768px) {
+	.site-page #header_message {
+		h1 {
+			font-size: 30px;
+		}
+		h2 {
+			font-size: 24px;
+		}
+		h3 {
+			font-size: 20px;
+		}
+	}
+}
 
 // On the site page:
 .site-page {

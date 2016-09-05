@@ -56,12 +56,12 @@
 			<div id="venue_sponsor" class="row col-xs-12">
 				<div class="row">
 					<h1 class="col-sm-6">Venue Sponsor</h1>
-					<img class="col-sm-6 hidden-xs" id="venue_logo" src="/images/placeholder.jpg">
+					<a id="venue_logo_link"><img class="col-sm-6 hidden-xs" id="venue_logo" src="/images/placeholder.jpg"></a>
 				</div>
 
 				<div>
 					<img id="venue_image" src="/images/placeholder.jpg">
-					<div id="venue_description"><p>Enter a description here</p></div>
+					<div id="venue_description"></div>
 				</div>
 			</div>
 
@@ -69,7 +69,7 @@
 			<div id="site_info" class="row col-xs-12">
 				<h1 id="site_info_title">Team</h1>
 				<img id="site_photo" src="/images/placeholder.jpg">
-				<div id="site_description"><p>Team Description goes here.</p></div>
+				<div id="site_description"></div>
 			</div>
 
 		</div>
@@ -195,6 +195,19 @@
 <script>
 	var site = window.location.pathname.slice(1).toLowerCase();
 	var data = null;
+
+	var site_links = {
+		sydney: "http://www.garvan.org.au/",
+		melbourne: "https://www.thoughtworks.com/",
+		perth: "http://www.curtin.edu.au/",
+		brisbane: "http://www.rivercitylabs.net/",
+		canberra: "http://www.cbrin.com.au/‎"
+	};
+
+	if(site_links.hasOwnProperty(site)) {
+		d3.select("#venue_logo_link").attr("href", site_links[site]);
+	}
+
 	$.get('/site/'+site, function(d){
 		data = JSON.parse(d)[0];
 
@@ -267,6 +280,10 @@
 		$.get('/sponsors/'+site, function(d){
 			sponsors = JSON.parse(d);
 			var box = d3.select("#list-of-friends");
+
+			sponsors.sort(function(a,b){
+				return b.priority - a.priority;
+			});
 
 			sponsors.forEach(function(sponsor){
 				if(sponsor.auth && sponsor.text !== "deleted") {

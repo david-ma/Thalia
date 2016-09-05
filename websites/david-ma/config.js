@@ -77,21 +77,6 @@ exports.config = {
 	},
 	services: {
 		"reddit": reddit.redirect
-	},
-	sockets: {
-		emit: [],
-		on: [{"name": "spotify",
-					"function": function(d){
-						console.log("someone wants spotify data..");
-						var socket = this;
-						
-						// We should probably catch some errors... meh
-
-						db.pmacs_get("select * from spotify;", function(d){
-							socket.emit("results",{"songs":d})						
-						})
-					}
-				}]
 	}
 };
 

@@ -2,6 +2,7 @@ exports.config = {
 	domains: ["localstories.com.au", "www.localstories.com.au", "localstories.info", "www.localstories.info", "gettruestories.com", "www.gettruestories.com"],
 	pages: {
 		"": "/homepage.html",
+		"story": "/story.html",
 		"random": "/demo.html"
 	},
 	services: {

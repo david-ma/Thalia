@@ -48,6 +48,17 @@ body {
 	padding: 14px;
 	text-align: right;
 }
+
+@media screen and (max-width: 768px) {
+	.topright {
+		padding-top: 0;
+	}
+	.topright ul {
+		margin-top: 0;
+	}
+}
+
+
 h1 {
 	line-height:45px;
 	padding-top:40px;

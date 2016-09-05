@@ -1,0 +1,35 @@
+<link rel="import" href="/bower_components/iron-collapse/iron-collapse.html">
+<template>
+
+  <div>
+    <h4 class="title"></h4>
+    <div style="display:flex;flex-direction:row">
+      <h5 class="location"></h5>
+      <h5>|</h5>
+      <h5 class="organisation"></h5>
+    </div>
+    <a class="organisationLink organisation"></a>
+    <div class="shortDescription">
+
+    </div>
+    <iron-collapse>
+      <div>
+          <div style="display:flex;flex-direction:row">
+            <img class="challengeImg"/>
+            <div style="flex-direction:column">
+              <h6 class="presenters"></h6>
+              <a class="organisationLink organisation"></a>
+            </div>
+          </div>
+          <h5>The problem</h5>
+          <div class="description">
+
+          </div>
+      </div>
+    </iron-collapse>
+    <div style="flex-direction:row">
+      <button type="button" class="btn btn-primary">Working Demo</button>
+      <button type="button" onclick="this.parentElement.previousElementSibling.toggle()" class="btn btn-primary">Details</button>
+    </div>
+  </div>
+</template>

@@ -16,6 +16,7 @@ var sites = {
 exports.config = {
 	domains: ["healthhack.david-ma.net", "healthhack.com.au", "www.healthhack.com.au", "test.healthhack.com.au", "2016.healthhack.com.au"],
 	pages: {
+		"challenges": "/previouschallenges.html",
 		"melbourne": "/site.html",
 		"sydney": "/site.html",
 		"canberra": "/site.html",
@@ -27,8 +28,13 @@ exports.config = {
 		"edit-brisbane": "/edit-site.html",
 		"edit-perth": "/edit-site.html"
 	},
-
-
+	redirects: {
+		"/site/melbourne.html": "/melbourne",
+		"/site/sydney.html": "/sydney",
+		"/site/perth.html": "/perth",
+		"/site/canberra.html": "/canberra",
+		"/site/brisbane.html": "/brisbane"
+	},
 	services: {
 		"edit_site": function(res, req, db, type){
 			console.log("Ok, Editing Site...");
@@ -131,9 +137,9 @@ exports.config = {
 						fs.rename(files.logo.path, path.join(form.uploadDir, files.logo.name));
 					}
 
-					var query = "INSERT INTO `healthhack_sponsors` (`id`, `name`, `logo`, `link`, `text`, `site`, `auth`) VALUES (NULL, ?, ?, ?, ?, ?, ?);";
+					var query = "INSERT INTO `healthhack_sponsors` (`id`, `name`, `logo`, `link`, `text`, `site`, `priority`, `auth`) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?);";
 
-					db.queryVariables(query, [fields.name, logo_src, fields.link, fields.text, fields.site, auth], function(err, results) {
+					db.queryVariables(query, [fields.name, logo_src, fields.link, fields.text, fields.site, fields.priority, auth], function(err, results) {
 						if(!err) {
 							if (fields.password === "debug") {
 								res.writeHead(200, {'content-type': 'text/plain'});
@@ -182,7 +188,7 @@ exports.config = {
 		"sponsors": function(res, req, db, type){
 			if(sites.hasOwnProperty(type.toLowerCase())) {
 				// var query = "select * from `healthhack_sponsors` where site = 'national' or site = '"+type+"';";
-				var query = "select max.id, max.name, logo, link, text, site, auth from (select MAX(id) as id, name from `healthhack_sponsors` where site='national' or site='"+type+"' group by name) as max, `healthhack_sponsors` where `healthhack_sponsors`.id = max.id;";
+				var query = "select max.id, max.name, logo, link, text, site, priority, auth from (select MAX(id) as id, name from `healthhack_sponsors` where site='national' or site='"+type+"' group by name) as max, `healthhack_sponsors` where `healthhack_sponsors`.id = max.id;";
 				db.query(query, function(error, results){
 					if(!error){
 						res.writeHead(200);

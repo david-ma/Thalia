@@ -1,0 +1,79 @@
+<link rel="import" href="bower_components/polymer/polymer.html">
+
+<dom-module id="hh-sponsors">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+      .sponsor-img {
+        width:200px;
+        height:200px;
+      }
+    </style>
+    <h2>Primary</h2>
+    <div style="display:flex;flex-direction:row;flex-wrap:wrap;justify-content:space-between">
+      <template is="dom-repeat" items="{{sponsors.primary}}">
+        <div style="display:flex;flex-direction:column;margin:20px">
+          <img src="[[item.img]]" class="sponsor-img" />
+          <p>[[item.spiel]]</p>
+        </div>
+      </template>
+    </div>
+    <h2>National - Gold</h2>
+    <div style="display:flex;flex-direction:row;flex-wrap:wrap;justify-content:space-between">
+      <template is="dom-repeat" items="{{sponsors.national_gold}}">
+        <div style="display:flex;flex-direction:column">
+          <img src="[[item.img]]" class="sponsor-img" />
+          <p>[[item.spiel]]</p>
+        </div>
+      </template>
+    </div>
+    <h2>National - Silver</h2>
+    <div style="display:flex;flex-direction:row;flex-wrap:wrap;justify-content:space-between">
+      <template is="dom-repeat" items="{{sponsors.national_silver}}">
+        <div style="display:flex;flex-direction:column">
+          <img src="[[item.img]]" class="sponsor-img" />
+          <p>[[item.spiel]]</p>
+        </div>
+      </template>
+    </div>
+    <h2>Local - Gold</h2>
+    <div style="display:flex;flex-direction:row;flex-wrap:wrap;justify-content:space-between">
+      <template is="dom-repeat" items="{{sponsors.local_gold}}">
+        <div style="display:flex;flex-direction:column">
+          <img src="[[item.img]]" class="sponsor-img" />
+          <p>[[item.spiel]]</p>
+        </div>
+      </template>
+    </div>
+    <h2>Local - Silver</h2>
+    <div style="display:flex;flex-direction:row;flex-wrap:wrap;justify-content:space-between">
+      <template is="dom-repeat" items="{{sponsors.local_silver}}">
+        <div style="display:flex;flex-direction:column">
+          <img src="[[item.img]]" class="sponsor-img" />
+          <p>[[item.spiel]]</p>
+        </div>
+      </template>
+    </div>
+    <h2>Community</h2>
+    <div style="display:flex;flex-direction:row;flex-wrap:wrap;justify-content:space-between">
+      <template is="dom-repeat" items="{{sponsors.community}}">
+        <div style="display:flex;flex-direction:column">
+          <img src="[[item.img]]" class="sponsor-img" />
+          <p>[[item.spiel]]</p>
+        </div>
+      </template>
+    </div>
+  </template>
+  <script>
+    Polymer({
+      is: 'hh-sponsors',
+      attached: function() {
+        fetch('/data/sponsors.json')
+        .then(function(resp) { return resp.json()})
+        .then(function(sponsors) { this.sponsors = sponsors}.bind(this))
+      }
+    });
+  </script>
+</dom-module>

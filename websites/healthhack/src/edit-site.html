@@ -357,6 +357,10 @@
 			sponsors = JSON.parse(d);
 			var box = d3.select("#list-of-friends");
 
+			sponsors.sort(function(a,b){
+				return b.priority - a.priority;
+			});
+
 			sponsors.forEach(function(sponsor){
 				if(sponsor.text !== "deleted") {
 					var block = box.append("div").attr({
@@ -368,6 +372,8 @@
 					});
 					block.append("h2").text(sponsor.name);
 					block.append("p").text(sponsor.text);
+
+					block.append("p").text("Priority: "+sponsor.priority);
 
 					if(!sponsor.auth) {
 						block.classed("unconfirmed", true);
@@ -496,6 +502,16 @@
 		} else {
 			$("input[type='radio'][value='unconfirmed']").attr("checked", true);
 		}
+
+		row = table.append("tr");
+		row.append("td").text("Priority");
+		row.append("td").append("input").attr({
+			id: "priority",
+			required: true,
+			type: "text",
+			name: "priority"
+		});
+		$("#priority").val(d.priority);
 
 		row = table.append("tr");
 		row.append("td").text("Password");

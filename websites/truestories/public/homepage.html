@@ -30,6 +30,39 @@
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
+
+    <style>
+        #download_button {
+            border-radius: 3px;
+            background-color: #fed136;
+        }
+        #download_button:hover {
+            color: white;
+            /*background-color: #fec503;*/
+        }
+        #carousel {
+            background: url('/img/old_screenshot.png');
+            background-size: 74%;
+            background-repeat: no-repeat;
+            background-position: 50% 23%;
+        }
+        #govhack_logo_circle {
+            padding: 15px 5px;
+            width: 100px;
+            height: 100px;
+            background: #fed136;
+            border-radius: 100%;
+        }
+
+        #abc_logo_circle {
+            padding: 10px 0px;
+            width: 100px;
+            height: 100px;
+            background: #fed136;
+            border-radius: 100%;
+        }
+    </style>
+
 </head>
 
 <body id="page-top" class="index">
@@ -55,16 +88,19 @@
                         <a href="#page-top"></a>
                     </li>
                     <li>
-                        <a class="page-scroll" href="#download">Download</a>
+                        <a class="page-scroll" href="#about">About</a>
                     </li>
                     <li>
-                        <a class="page-scroll" href="#about">About</a>
+                        <a class="page-scroll" href="#video">video</a>
                     </li>
                     <li>
                         <a class="page-scroll" href="#team">Team</a>
                     </li>
                     <li>
-                        <a class="page-scroll" href="#contact">Contact</a>
+                        <a class="page-scroll" href="https://twitter.com/getTrueStories">Contact</a>
+                    </li>
+                    <li>
+                        <a class="page-scroll" id="download_button" href="https://chrome.google.com/webstore/detail/true-stories/cemjfombkpblppjbaepfldgmnhfjpmjh?hl=en">Download</a>
                     </li>
                 </ul>
             </div>
@@ -79,17 +115,17 @@
 						<div class="modal-content" style="padding: 0px;">
 								<div class="container">
 										<div class="row">
-												<div class="col-lg-8 col-lg-offset-2">
+												<div class="col-sm-8 col-sm-offset-2">
 														<div class="modal-body">
 																<!-- Project Details Go Here -->
 																<h2>True Stories</h2>
-																<p class="item-intro text-muted">True Stories: Real Australian Stories as ‘living art’.
-</p>
-																<img class="img-responsive img-centered" src="/img/screenshot.png" alt="">
-																<p><h5 style="margin-bottom: 0">We aim to change how you view long forgotten archived stories.</h5><br>
-As part of GovHack 2015, an Australian programming competition, team Potato Heads curated ABC ‘Local Stories’ archive of over 8500 true Australian stories. During this hackathon, we made a Google Chrome extension called ‘True Stories’. Usually these archival stories are lost and neglected after the daily news cycle but we’re keeping these stories alive by keeping them in the spotlight. </p>
-																<a href="https://chrome.google.com/webstore/detail/true-stories/cemjfombkpblppjbaepfldgmnhfjpmjh?hl=en"><button type="button" class="btn btn-primary big-button" data-dismiss="modal">Download</button></a><br><br>
-																<h4><a href="/demo.html">See a random story aka DEMO!</a></h4>
+																<p class="item-intro text-muted">Let Australian stories come to you.</p>
+																<img class="img-responsive img-centered" id="carousel" src="/img/laptop.png" alt="">
+																<h5 style="margin-bottom: 0">Let Australian stories come to you</h5>
+                                                            <br>
+                                                            <p>We turned the ABC Local Story Archive of more than 8500 Australian stories into a Google Chrome App called "True Stories". Articles in archives are usually neglected after the daily news cycle but we’re keeping these photo stories alive by using them as backgrounds in Google Chrome.</p>
+																<a href="https://chrome.google.com/webstore/detail/true-stories/cemjfombkpblppjbaepfldgmnhfjpmjh?hl=en"><button type="button" class="btn btn-primary big-button" data-dismiss="modal">Download</button></a><br>
+																<h3><a href="/demo.html">See a demo!</a></h3>
 														</div>
 												</div>
 										</div>
@@ -110,133 +146,141 @@ As part of GovHack 2015, an Australian programming competition, team Potato Head
             <div class="row text-center">
                 <div class="col-md-4">
                     <span class="fa-stack fa-4x">
-                        <i class="fa fa-circle fa-stack-2x text-primary"></i>
-                        <i class="fa fa-shopping-cart fa-stack-1x fa-inverse"></i>
+                        <img id="abc_logo_circle" src="/img/ABC-White-Transperant.png">
                     </span>
-                    <h4 class="service-heading">GovHack</h4>
-                    <p class="text-muted">Now in it’s 5th Year, GovHack has grown from a small data mashup event in 2009 to a huge international competition that brings over 1800 people together to innovate, collaborate and apply their creative skills to  open government data.  GovHack celebrates your technical and creative capacity, opens the door to  collaboration with governments, and has helped to advance the cause of open data to drive social and economic value. Over 1800 of our best and brightest gathered at an epic 30 GovHack Locations to  innovate, create, and compete!</p>
+                    <h4 class="service-heading">ABC Local's Problem</h4>
+                    <p class="text-muted">"ABC Local" had an <a href="https://data.gov.au/dataset/abc-local-online-photo-stories-2009-2014">archive</a> of over 8,500 stories that was under-utilised and they wanted to promote this content by sharing a dataset at GovHack.</p>
+                    <p class="text-muted"><a href="https://data.gov.au/dataset/abc-local-online-photo-stories-2009-2014">This data set</a> contains metadata and links for more than 8,500 stories created around Australia by ABC Local Online reporters. All the stories are currently published live on the <a href="http://www.abc.net.au/">abc.net.au</a> site.</p>
                 </div>
                 <div class="col-md-4">
                     <span class="fa-stack fa-4x">
                         <i class="fa fa-circle fa-stack-2x text-primary"></i>
                         <i class="fa fa-laptop fa-stack-1x fa-inverse"></i>
                     </span>
-                    <h4 class="service-heading">Hackathon tools used</h4>
-                    <p class="text-muted">Dropbox, Google Docs, Nodejs, mysql, jquery, d3js, etc.... check out our <a href="https://github.com/certifiedwaif/GovHack2015">github page</a> for more details. @frostickle plans to write a blog about this later, but we're too busy hacking right now to properly fill this section out, sorry!!!!</p>
+                    <h4 class="service-heading">Our Solution</h4>
+                    <p class="text-muted">Our team of 5 people put an app into the Google Chrome Store in the 48 hours given to us for this hackathon. We talked to ABC personnel, users and other stakeholders to develop this app.</p><p class="text-muted">Check out our <a href="https://github.com/david-ma/GovHack2015">github page</a> for technical details or watch our video below!</p>
+
                 </div>
                 <div class="col-md-4">
                     <span class="fa-stack fa-4x">
-                        <i class="fa fa-circle fa-stack-2x text-primary"></i>
-                        <i class="fa fa-lock fa-stack-1x fa-inverse"></i>
+                        <img id="govhack_logo_circle" src="/img/govhack_white.png">
                     </span>
-                    <h4 class="service-heading">ABC Local Online Photo Stories</h4>
-                    <p class="text-muted"><a href="https://data.gov.au/dataset/abc-local-online-photo-stories-2009-2014">This data set</a> contains meta data and links for around 8,500 stories created around Australia by ABC Local Online reporters. All the stories are currently published live on the <a href="http://www.abc.net.au/">abc.net.au</a> site.</p>
+                    <h4 class="service-heading">GovHack</h4>
+                    <p class="text-muted">Now in it’s 5th Year, GovHack is a hackathon that celebrates your technical and creative capacity, opens the door to collaboration with governments, and has helped to advance the cause of open data to drive social and economic value. Over 1800 of our best and brightest gathered at an epic 30 GovHack Locations to  innovate, create, and compete!</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Team Section -->
-    <section id="team">
+    <section id="video">
         <div class="container">
             <div class="row">
                 <div class="col-lg-12 text-center">
-                    <h2 class="section-heading">Potato Heads</h2>
+                    <h2 class="section-heading">GovHack Video</h2>
+                    <iframe width="560" height="315" src="https://www.youtube.com/embed/V1pd9OEwfxA" frameborder="0" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+
+    <!-- Team Section -->
+    <section id="team" class="bg-light-gray">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 text-center">
+                    <h2 class="section-heading">Our team</h2>
                 </div>
             </div>
             <div class="row">
                 <div class="col-lg-12">
                     <ul class="timeline">
-                        <li>
-                            <div class="timeline-image">
-                                <img class="img-circle img-responsive" src="/img/mark.jpg" alt="">
-                            </div>
-                            <div class="timeline-panel">
-                                <div class="timeline-heading">
-                                    <h4>Chips Scientist</h4>
-                                    <h4 class="subheading"><a href="http://twitter.com/certifiedwaif">Mark Greenaway</a></h4>
-                                </div>
-                                <div class="timeline-body">
-                                    <p class="text-muted">Biostatistician, coder, amateur gardener and guitar player. Love science and learning new things. Getting into making things.</p>
-                                </div>
-                            </div>
-                        </li>
 
-
-                        <li class="timeline-inverted">
-                            <div class="timeline-image">
-                                <img class="img-circle img-responsive" src="/img/zaara.jpg" alt="">
-                            </div>
-                            <div class="timeline-panel">
-                                <div class="timeline-heading">
-                                    <h4>Mash Scientist</h4>
-                                    <h4 class="subheading"><a href="http://twitter.com/zazuazad">Zaara Azad</a></h4>
-                                </div>
-                                <div class="timeline-body">
-                                    <p class="text-muted">Loves photography, number crunching and Hugh Laurie!</p>
-                                </div>
-                            </div>
-                        </li>
-                        <li>
-                            <div class="timeline-image">
-                                <img class="img-circle img-responsive" src="/img/david.jpg" alt="">
-                            </div>
-                            <div class="timeline-panel">
-                                <div class="timeline-heading">
-                                    <h4>Roast Developer</h4>
-                                    <h4 class="subheading"><a href="http://twitter.com/frostickle">David Ma</a></h4>
-                                </div>
-                                <div class="timeline-body">
-                                    <p class="text-muted">Sydney bioinformatician, web dev, photographer, foodblogger, community leader for /r/photography & /r/dataisbeautiful. Instagram/Snapchat/LinkedIn: Frostickle</p>
-                                </div>
-                            </div>
-                        </li>
-                        <li class="timeline-inverted">
-                            <div class="timeline-image">
-                                <img class="img-circle img-responsive" src="/img/daniel.png" alt="">
-                            </div>
-                            <div class="timeline-panel">
-                                <div class="timeline-heading">
-                                    <h4>Wedges Designer</h4>
-                                    <h4 class="subheading"><a href="http://twitter.com/aeromental">Daniel Sempértegui</a></h4>
-                                </div>
-                                <div class="timeline-body">
-                                    <p class="text-muted">UX / UI Designer based in Sydney. Interests include digital trends, design for innovation, start-ups, Meerkat streaming & movies</p>
-                                </div>
-                            </div>
-                        </li>
                         <li>
                             <div class="timeline-image">
                                 <img class="img-circle img-responsive" src="/img/suzie.jpg" alt="">
                             </div>
                             <div class="timeline-panel">
                                 <div class="timeline-heading">
-                                    <h4>String Fries Story</h4>
-                                    <h4 class="subheading"><a href="http://twitter.com/stringstory">Suzanne Ngyuen</a></h4>
+                                    <h4>Project Manager</h4>
+                                    <h4 class="subheading"><a href="http://twitter.com/stringstory">Suzanne Nguyen - @StringStory</a></h4>
                                 </div>
                                 <div class="timeline-body">
-                                    <p class="text-muted">My life is a social experiment. I like being paid to develop 'social wows' & yay to Bitcoin. Meerkat Top 25 #MeerGuide
-
-</p>
+                                    <p class="text-muted">Suzanne is a specialist who delivers digital stories using emerging technologies. She is a producer on branded Snapchat channels.</p>
                                 </div>
                             </div>
                         </li>
-<!-- 
+
                         <li class="timeline-inverted">
                             <div class="timeline-image">
-                                <h4>Be Part
-                                    <br>Of Our
-                                    <br>Story!</h4>
+                                <img class="img-circle img-responsive" src="/img/david.jpg" alt="">
+                            </div>
+                            <div class="timeline-panel">
+                                <div class="timeline-heading">
+                                    <h4>Software Developer</h4>
+                                    <h4 class="subheading"><a href="http://twitter.com/frostickle">David Ma - @Frostickle</a></h4>
+                                </div>
+                                <div class="text-muted timeline-body">
+                                    <p>David is a full stack software developer at the Peter MacCallum Cancer Centre, working on making lab results readable for doctors and specialists.</p>
+                                </div>
                             </div>
                         </li>
- -->
+
+                        <li>
+                            <div class="timeline-image">
+                                <img class="img-circle img-responsive" src="/img/daniel.png" alt="">
+                            </div>
+                            <div class="timeline-panel">
+                                <div class="timeline-heading">
+                                    <h4>Graphic Designer</h4>
+                                    <h4 class="subheading"><a href="http://twitter.com/aeromental">Daniel Sempértegui - @aeromental</a></h4>
+                                </div>
+                                <div class="timeline-body">
+                                    <p class="text-muted">Daniel is a UX / UI Designer based in Sydney. His interests include digital trends, design, start-ups & movies</p>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li class="timeline-inverted">
+                            <div class="timeline-image">
+                                <img class="img-circle img-responsive" src="/img/mark.jpg" alt="">
+                            </div>
+                            <div class="timeline-panel">
+                                <div class="timeline-heading">
+                                    <h4>Data Scientist</h4>
+                                    <h4 class="subheading"><a href="http://twitter.com/certifiedwaif">Mark Greenaway - @certifiedwaif</a></h4>
+                                </div>
+                                <div class="timeline-body">
+                                    <p class="text-muted">Mark is a biostatistician at Sydney University. He is a coder, amateur gardener and guitar player who loves science and learning new things.</p>
+                                </div>
+                            </div>
+                        </li>
+
+
+                        <li>
+                            <div class="timeline-image">
+                                <img class="img-circle img-responsive" src="/img/zaara.jpg" alt="">
+                            </div>
+                            <div class="timeline-panel">
+                                <div class="timeline-heading">
+                                    <h4>Data Scientist</h4>
+                                    <h4 class="subheading"><a href="http://twitter.com/zazuazad">Zaara Azad - @zazuazad</a></h4>
+                                </div>
+                                <div class="timeline-body">
+                                    <p class="text-muted">Zaara is a Data Scientist at Qantas and loves photography, number crunching and Hugh Laurie!  </p>
+                                </div>
+                            </div>
+                        </li>
+
                     </ul>
                 </div>
             </div>
         </div>
     </section>
 
-    <footer  class="bg-light-gray">
+    <footer>
         <div class="container">
             <div class="row">
                 <div class="col-md-4">
@@ -262,6 +306,7 @@ As part of GovHack 2015, an Australian programming competition, team Potato Head
     </footer>
 
 
+
     <!-- jQuery -->
     <script src="/assets/js/jquery.js"></script>
 
@@ -279,6 +324,26 @@ As part of GovHack 2015, an Australian programming competition, team Potato Head
 
     <!-- Custom Theme JavaScript -->
     <script src="/assets/js/agency.js"></script>
+
+
+    <script>
+        var i = 1;
+        setInterval(function(){
+            $("#carousel").css({
+                'background': "url('/img/screenshots/"+i+".png')",
+                'background-size': "74%",
+                'background-repeat': "no-repeat",
+                'background-position': "50% 23%"
+            });
+            i = (i+1) % 11;
+        }, 2000);
+    </script>
+
+
+
+
+
+
 <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),

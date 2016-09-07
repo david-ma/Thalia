@@ -4,7 +4,7 @@
 
 var gulp 		= require("gulp");
 var $ 			= require("gulp-load-plugins")({});
-var rimraf 		= require("rimraf");
+var del 		= require("del");
 var envProd 	= false;
 var runSequence = require('run-sequence');
 var argv = require('yargs').argv;
@@ -57,7 +57,14 @@ gulp.task("confirm", ["workspace"], function(){
 
 // Clean
 gulp.task("clean", ["confirm"], function() {
-	return rimraf.sync(dist);
+  return del.sync([ dist+"/**/*",
+                    "!"+dist,
+                    "!"+dist+"/.dropbox",
+                    "!"+dist+"/Icon?",
+                    "!"+dist+"/images",
+                    "!"+dist+"/images/uploads",
+                    "!"+dist+"/images/uploads/**/*"
+                ]);
 });
 
 gulp.task("cacheclear", function() {

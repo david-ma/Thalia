@@ -1,19 +1,40 @@
 <link rel="import" href="/bower_components/polymer/polymer.html" />
 <link rel="import" href="/bower_components/iron-collapse/iron-collapse.html">
 <link rel="import" href="/bower_components/juicy-html/juicy-html.html" />
+<link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.min.css" />
+<link rel="import" href="/bower_components/paper-toggle-button/paper-toggle-button.html" />
 <dom-module id="hh-challenges">
   <template>
     <style>
       :host {
         display: block;
       }
+      .flex-form {
+        display:flex;
+        flex-direction:row;
+        justify-content:space-between;
+      }
+      .challenge-img {
+        max-width:200px;
+        max-height:200px;
+        width:auto;
+        height:auto;
+      }
     </style>
-    <input class='search-input' type="text" placeholder="Search" value="{{filterVal::input}}">
+    <div class="flex-form">
+      <div class="form-group">
+        <input class='form-control search-input' type="text" placeholder="Search" value="{{filterVal::input}}">
+      </div>
+      <div class="checkbox-inline">
+        <paper-toggle-button>Current</paper-toggle-button>
+      </div>
+    </div>
+
     <template is="dom-repeat" items="[[challenges]]" filter="{{_filter(filterVal)}}">
       <div class="challenge-item" style="margin:auto;padding:10px;width:100%;min-height:150px;justify-content:space-between;border-top:dashed;border-color:grey;border-width:thin;display:flex;flex-direction:column">
         <div>
           <h3>[[item.title]]</h3>
-          <h5>[[item.location]] | <a href="[[item.organisationLink]]">[[item.organisation]]</a></h5>
+          <h5>[[item.location]] &nbsp;([[item.year]])&nbsp;| <a href="[[item.organisationLink]]">[[item.organisation]]</a></h5>
           <template is="juicy-html" content$="[[item.summary]]"></template>
           <iron-collapse>
             <div>
@@ -24,7 +45,7 @@
                   <a href$="[[item.organisationLink]]">[[item.organisation]]</a>
                 </div>
               </div>
-              <h5 hidden$="[[!item.description]]">The problem</h5>
+              <h4 hidden$="[[!item.description]]">The problem</h4>
               <template is="juicy-html" content$="[[item.description]]"></template>
             </div>
           </iron-collapse>
@@ -42,8 +63,7 @@
       properties: {
         challenges: {
           type: Array,
-          notify: true,
-          reflectToAttribute: true
+          notify: true
         }
       },
       _filter: function(filterVal) {

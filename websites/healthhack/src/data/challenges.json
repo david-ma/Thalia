@@ -1,4 +1,25 @@
 [{
+  "organisation": "Barwon Health",
+  "presenters": "DNS Lorne",
+  "summary": "<p>Help us help the nearly half a million Australians aged 85 years and over maintain good health by building a better diary, calendar, social interaction and medication reminder solution.",
+  "year": 2016,
+  "title": "",
+  "location": "Melbourne",
+  "organisationLink": "barwonhealth.org.au",
+  "additionalInfo": "/data/problems/barwonhealth.pdf",
+  "img": "/images/sponsors/barwonhealth.png",
+  "description": "<p>Ageing well is an urgent and pressing issue across Australian society. Over the past two decades, the number of persons aged 85 years and over increased by 148%, compared with a total population growth of 32.1% over the same period.<p>Cognitive decline, and in particular short term memory loss, occurs for most people in their late 80s and 90s, and even earlier for those who do not enjoy good physical heath. Moreover, the majority of older people retain the ability to care for themselves, even with the onset of dementia.<p><em>However, there is a major problem challenging the ability of older Australians to care for themselves. </em>Many older people are not able to maintain good health because:<ul><li>remembering,<li>attending medical appointments,<li>taking medications and<li>keeping socially interactive</ul><p>are more challenging.</p><p>As people begin to lose cognitive ability, many will use a calendar or diary to help remember and organise their outings and appointments. The diaries of people with dementia and memory problems often become cluttered with notes as they attempt to keep all the details that they may forget. Over time, the ability to plan diminishes and diary and calendar notes disappear, or are written by others.<p>Help us help the nearly half a million Australians aged 85 years and over maintain good health by building a better diary, calendar, social interaction and medication reminder solution.<h4>Possible Solutions</h4><li>A tablet that allows multiple agencies and family members remote access<li>A Display at the clients home that has clear information on what will be happening today<li>Ability for the care team to access the tablet and avoid booking appointments that will clash with other events<li>An easy alert system with a reminders for medications<li>Ability to dial the client and have a ‘facetime’ conversation<li>A clear contact list display with a phone call made at the touch of the screen</li></ul>"
+}, {
+  "organisation": "Burnet Institute",
+  "presenters": "Dr Ruth Pearson",
+  "summary": "Optima Nutrition is used by countries to inform their public health spending on nutritional interventions.  The optimisation routine samples many different spending scenarios. However, currently only the ‘best’ scenario is presented as a recommendation for spending.  It would be useful for the user to be able to explore the parameter space more interactively, as there may be other spending allocations which fit better with their practical or political constraints.",
+  "year": 2016,
+  "description": "<h4>Background<\/h4><p>Undernutrition causes 45% of child deaths per year and leads to 159 million stunted children.  Early investment in nutritional interventions can build human capital and boost shared prosperity.  The United Nation’s Sustainable Development Goals (SDGs) specify a 40% reduction in the number of stunted children by 2030.  The World Bank estimates that this target will not be met without nutrition­specific interventions.<\/p><h4>Methods<\/h4><p>Optima Nutrition is a tool to inform policy decisions in child nutrition.  It consists of an epidemiological model which is integrated with economic and financial analysis frameworks and a formal mathematical optimisation routine.  The model is a partial­cohort model written in Python which tracks the health of children from birth to age five.  Cost and coverage information about nutritional interventions are used to predict health outcomes such as death and stunting.  A unique feature of Optima Nutrition is the optimisation function that is used to calculate the optimal allocation of resources to different program areas to minimise adverse outcomes.  Additionally, it has capability to optimise funds across geographical regions, as well as being used for scenario forecasting.<\/p>",
+  "title": "Optima Nutrition",
+  "img": "/images/sponsors/burnet.png",
+  "location": "Melbourne",
+  "organisationLink": "https://www.burnet.edu.au/"
+}, {
     "team": "Panogram Pedigree Drawing Tool",
     "demoLink": "http:\/\/www.youtube.com\/watch?v=SOY9mx1irnY&feature=youtu.be",
     "organisation": "Garvan Institute",
@@ -132,7 +153,7 @@
 }, {
     "year": 2014,
     "summary": "We'd like to build a tool to collect the twitter tweets the related to microbial, antimicrobial and superbug topics. With the collected data it allows the establishment of a baseline, the exploration of trends, and the detection of unusual events.",
-    "description": "The rise of antibiotic-resistant bacteria, or Superbugs, has become a serious threat to public health and the economy worldwide. This is exemplified by Barack Obama recently announcing a new Executive Order together with a National Strategy for combating antibiotic-resistant bacteria (18\/09\/2014). In this HealthHack challenge, we will explore if social media data mining can be used for microbial prevalence monitoring.<br><br>The key steps will involve:<br><br><ul><li> Filtering Twitter tweets based on a list of keywords related to microbial, antimicrobial and superbug topics<\/li><li> Analysing the tweets using advance data analytics techniques<\/li><li>Interactive reporting\/li><\/ul>",
+    "description": "The rise of antibiotic-resistant bacteria, or Superbugs, has become a serious threat to public health and the economy worldwide. This is exemplified by Barack Obama recently announcing a new Executive Order together with a National Strategy for combating antibiotic-resistant bacteria (18\/09\/2014). In this HealthHack challenge, we will explore if social media data mining can be used for microbial prevalence monitoring.<br><br>The key steps will involve:<br><br><ul><li> Filtering Twitter tweets based on a list of keywords related to microbial, antimicrobial and superbug topics<\/li><li> Analysing the tweets using advance data analytics techniques<\/li><li>Interactive reporting<\/li><\/ul>",
     "title": "Superbug Analytics",
     "location": "Melbourne"
 }, {

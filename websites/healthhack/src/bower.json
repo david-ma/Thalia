@@ -31,6 +31,8 @@
     "jquery": "^3.0.0",
     "bootstrap": "^3.3.7",
     "list.js": "^1.2.0",
-    "juicy-html": "^1.1.0"
+    "juicy-html": "^1.1.0",
+    "paper-toggle-button": "^1.2.0",
+    "sw-toolbox": "^3.2.1"
   }
 }

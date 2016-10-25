@@ -92,7 +92,7 @@ gulp.task('html', ["confirm"], function() {
 		}))
 		.pipe($.htmlmin({
 			// Editable - see https://www.npmjs.com/package/gulp-minify-html#options for details
-			minifyJS: true
+			minifyJS: envProd
 		}))
 		.on('error', function(e) {
 			if(!envProd) {

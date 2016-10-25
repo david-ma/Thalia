@@ -6,7 +6,11 @@ function start(route, handle) {
 
     function onRequest(request, response) {
 
-        if (handle.proxies[request.headers.host]) {
+        if (handle.proxies[request.headers.host]
+            && typeof handle.proxies[request.headers.host].filter === 'undefined'
+            || handle.proxies[request.headers.host]
+            && handle.proxies[request.headers.host].filter === url.parse(request.url).pathname.split("/")[1]
+        ) {
             proxy(request, response, handle.proxies[request.headers.host]);
         } else {
             var site = handle.getWebsite(request.headers.host);
@@ -51,8 +55,8 @@ function proxy(client_req, client_res, proxy) {
     var message = proxy.message || "Error, server is down.";
 
   var options = {
-    host: proxy.host,
-    port: proxy.port,
+    host: proxy.host || "127.0.0.1",
+    port: proxy.port || 80,
     path: client_req.url,
     method: client_req.method,
     headers: client_req.headers

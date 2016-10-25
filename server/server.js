@@ -3,22 +3,23 @@ var url = require("url");
 
 //This part of the server starts the server on port 80 and logs stuff to the std.out
 function start(route, handle) {
-	function onRequest(request, response) {
 
-	  if (handle.proxies[request.headers.host]) {
-	    proxy(request, response, handle.proxies[request.headers.host]);
-	  } else {
-      var site = handle.getWebsite(request.headers.host);
-    
-      var url_object = url.parse(request.url);
+    function onRequest(request, response) {
 
-      console.log();
-      console.log("Request for "+ request.headers.host + url_object.href + " At " + getDateTime() +
-                  " From " + request.connection.remoteAddress);
+        if (handle.proxies[request.headers.host]) {
+            proxy(request, response, handle.proxies[request.headers.host]);
+        } else {
+            var site = handle.getWebsite(request.headers.host);
 
-      route(site, url_object.pathname, response, request);
-		}
-	}
+            var url_object = url.parse(request.url);
+
+            console.log();
+            console.log("Request for "+ request.headers.host + url_object.href + " At " + getDateTime() +
+                " From " + request.connection.remoteAddress);
+
+            route(site, url_object.pathname, response, request);
+        }
+    }
 
 	var port = 1337; // change the port here?
 	var pattern = /^\d{0,5}$/;
@@ -45,11 +46,13 @@ function start(route, handle) {
 
 exports.start = start;
 
-function proxy(client_req, client_res, port) {
-  console.log('Proxying to: '+port+ client_req.url);
+function proxy(client_req, client_res, proxy) {
+  console.log('Proxying to: ' + proxy.host + ':' + proxy.port + client_req.url);
+    var message = proxy.message || "Error, server is down.";
 
   var options = {
-    port: port,
+    host: proxy.host,
+    port: proxy.port,
     path: client_req.url,
     method: client_req.method,
     headers: client_req.headers
@@ -64,7 +67,7 @@ function proxy(client_req, client_res, port) {
 
   proxyServer.on('error', function(err){
     console.log(err);
-    client_res.write("Error, server is down.");
+    client_res.write(message);
     client_res.end();
   });
 

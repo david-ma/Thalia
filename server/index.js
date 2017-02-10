@@ -7,7 +7,7 @@ var fs = require('fs');
 
 var index = {
 	init: function(){
-		var s = server.start(router.route, handle);
+		var s = server.start(router.router, handle);
 		var io = require('socket.io').listen(s, {log:false});
 		socket.init(io, handle);
 

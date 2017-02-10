@@ -2,7 +2,7 @@ var http = require("http");
 var url = require("url");
 
 //This part of the server starts the server on port 80 and logs stuff to the std.out
-function start(route, handle) {
+function start(router, handle) {
 
     function onRequest(request, response) {
 
@@ -21,7 +21,7 @@ function start(route, handle) {
             console.log("Request for "+ request.headers.host + url_object.href + " At " + getDateTime() +
                 " From " + request.connection.remoteAddress);
 
-            route(site, url_object.pathname, response, request);
+            router(site, url_object.pathname, response, request);
         }
     }
 

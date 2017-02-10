@@ -70,10 +70,9 @@ function router(website, pathname, response, request) {
 
 		} else {
 			console.log("Error, url missing");
-			throw({
-				code: 501,
-				message: "501 URL Not Found"
-			});
+			response.writeHead(501, {"Content-Type": "text/plain"});
+			response.end("501 URL Not Found\n");
+			return;
 		}
 	}
 
@@ -81,10 +80,9 @@ function router(website, pathname, response, request) {
 		fs.exists(filename, function(exists) {
 			if(!exists) {
 				console.log("No file found for " + filename);
-				throw({
-					code: 404,
-					message: "404 Not Found"
-				});
+				response.writeHead(404, {"Content-Type": "text/plain"});
+				response.end("404 Page Not Found\n");
+				return;
 			}
 
 			fs.readFile(filename, "binary", function(err,file) {

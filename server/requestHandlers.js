@@ -9,6 +9,7 @@ var Website = function (site, config) {
 		this.services = typeof config.services == "object" ? config.services : {};
 		this.sockets = typeof config.sockets == "object" ? config.sockets : {emit:[], on:[]};
 		this.proxies = typeof config.proxies == "object" ? config.proxies : {};
+		this.security = typeof config.security == "object" ? config.security : {loginNeeded:function(){return false;}};
 	} else {
 		console.log("Config isn't an object");
 	}

@@ -2,7 +2,6 @@ var fs = require("fs");
 var mime = require('mime');
 
 
-
 function router(website, pathname, response, request) {
 
 	var route = new Promise(function(resolve, reject){
@@ -13,7 +12,7 @@ function router(website, pathname, response, request) {
 			};
 
 			request.headers.cookie.split(";").forEach(function(d){
-				data.cookies[d.split("=")[0]] = d.substring(d.split("=")[0].length);
+				data.cookies[d.split("=")[0].trim()] = d.substring(d.split("=")[0].length+1).trim();
 			});
 
 			data.words = pathname
@@ -29,30 +28,36 @@ function router(website, pathname, response, request) {
 
 	});
 
-	route.then(function(d){
+	route.then(function(d) {
+		if (typeof website.security !== "undefined" && website.security.loginNeeded(pathname, website.db, d.cookies)){
+			routeFile(website.folder.concat("/login.html"));
 
-		// If there's a redirect, go to it
-		if(typeof website.redirects[pathname] !== "undefined") {
-			redirect(website.redirects[pathname]);
-
-			//	If there's a page, serve it
-		} else if(typeof website.pages[d.words[1]] !== "undefined") {
-			routeFile(website.folder.concat(website.pages[d.words[1]]));
-
-			//	if there's a function, perform it
-		} else if(typeof website.services[d.words[1]] === 'function') {
-			website.services[d.words[1]](response, request, website.db, d.words[2]);
 		} else {
 
-			// Otherwise, route as normal
-			routeFile(website.folder.concat(pathname));
+			// If there's a redirect, go to it
+			if(typeof website.redirects[pathname] !== "undefined") {
+				redirect(website.redirects[pathname]);
+
+			//	If there's a page, serve it
+			} else if(typeof website.pages[d.words[1]] !== "undefined") {
+				routeFile(website.folder.concat(website.pages[d.words[1]]));
+
+			//	if there's a function, perform it
+			} else if(typeof website.services[d.words[1]] === 'function') {
+				website.services[d.words[1]](response, request, website.db, d.words[2]);
+			} else {
+
+				// Otherwise, route as normal
+				routeFile(website.folder.concat(pathname));
+			}
 		}
 	}).catch(renderError);
 
 	function renderError(d){
+		console.log("Error?");
 		d = d || {
 				code: 500,
-				message: "Server Error"
+				message: "500 Server Error"
 			};
 		response.writeHead(d.code, {
 			"Content-Type": "text/html"
@@ -93,7 +98,7 @@ function router(website, pathname, response, request) {
 //folder has index.html
 //console.log("folder has index");
 							if (filename.lastIndexOf("/") == filename.length - 1) {
-								routeFile(response, request, filename+"index.html");
+								routeFile(filename+"index.html");
 								return;
 							} else {
 								var url = request.url,

@@ -11,9 +11,11 @@ function router(website, pathname, response, request) {
 				words: []
 			};
 
-			request.headers.cookie.split(";").forEach(function(d){
-				data.cookies[d.split("=")[0].trim()] = d.substring(d.split("=")[0].length+1).trim();
-			});
+			if(request.headers.cookie) {
+				request.headers.cookie.split(";").forEach(function(d){
+					data.cookies[d.split("=")[0].trim()] = d.substring(d.split("=")[0].length+1).trim();
+				});
+			}
 
 			data.words = pathname
 				.split("/")
@@ -23,6 +25,7 @@ function router(website, pathname, response, request) {
 
 			resolve(data);
 		} catch (err){
+			console.log(err);
 			reject();
 		}
 
@@ -30,7 +33,7 @@ function router(website, pathname, response, request) {
 
 	route.then(function(d) {
 		if (typeof website.security !== "undefined" && website.security.loginNeeded(pathname, website.db, d.cookies)){
-			routeFile(website.folder.concat("/login.html"));
+			website.services.login(response, request, website.db);
 
 		} else {
 

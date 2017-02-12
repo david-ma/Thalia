@@ -34,7 +34,7 @@ function init(io, handle){
 			if(website.sockets.on instanceof Array) {
 				website.sockets.on.forEach(function(d){
 					socket.on(d.name, function(data){
-						d.callback(data, website.db);
+						d.callback(data, website.db, socket);
 					});
 				});
 			}

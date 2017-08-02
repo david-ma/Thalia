@@ -12,7 +12,7 @@ var confirm = require('gulp-confirm');
 var fs = require('fs');
 
 // Editable - any file extensions added here will trigger the watch task and will be instantly copied to your /dist folder
-var staticSrc = "src/**/*.{eot,ttf,woff,woff2,otf,json,pdf,ico,xml}";
+var staticSrc = "src/**/*.{eot,ttf,woff,woff2,otf,json,pdf,ico,xml,js,css,csv,tsv}";
 var browserSync = require('browser-sync').create();
 var dist = "websites/example/public";
 var site = "websites/example";
@@ -310,7 +310,7 @@ gulp.task( "build", [
 	"html",
 	"copy",
 	"sitecopy",
-	"staticCSS",
+	"staticCSS"
 ], function () {});
 
 // // Deploy

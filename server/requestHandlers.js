@@ -2,6 +2,7 @@ var db = require("./database").db;
 
 var Website = function (site, config) {
 	if(typeof config == "object") {
+		this.data = config.data ? "websites/"+site+"/data" : false ;
 		this.folder = typeof config.folder == "string" ? config.folder : "websites/"+site+"/public";
 		this.domains = typeof config.domains == "object" ? config.domains : [];
 		this.pages = typeof config.pages == "object" ? config.pages : {"": "/index.html"};

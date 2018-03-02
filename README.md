@@ -26,7 +26,7 @@ To develop, run:
 ```
 ./develop.sh example
 ```
-This will tell gulp to watch a single folder: websites/example/src, outputting anything you write to websites/example/public, and serving it using thalia on port 1337, and using browsersync on port 3000.
+This will tell gulp to watch a single folder: websites/example/src, outputting anything you write to websites/example/public, and serving it using Thalia on port 1337, and using browsersync on port 3000.
 
 Features
 -
@@ -38,6 +38,7 @@ Besides simple serving of a public folder, **Thalia** can also do:
 - **Web Sockets** (Very good for sending data back and forth between pages without a page refresh. It's the new Ajax. If you want Ajax you can still do it on Thalia using the REST stuff mentioned above.)
 - **Domains** (The same workspace can be served to as many different domains as you want. E.g. [localstories.info](http://localstories.info) and [localstories.com.au](http://localstories.com.au) both point at the same website)
 - **Reverse Proxy** (e.g. [slack.redditphotography.com](http://slack.redditphotography.com) proxies to [redditphotography.com:3000](http://redditphotography.com:3000), allowing me to have different things running on the same machine.), Proxies can also be filtered so only certain subdirectories are proxied. This is especially useful in conjunction with Tomcat web applications.
+- **Data** Files that don't belong in the codebase can be added to /data/ so they don't need to be commited or watched. Just set ```data: true`` in config.js and Thalia will serve files from that folder as if they were in public/data.
 
 I should probably explain how to use those things, but I've written enough here and don't think anyone is going to read this anyway. If you want to know more about this ping me on Twitter asking for more documentation or raise a github issue.
 

@@ -1,3 +1,4 @@
 exports.config = {
-	"domains": ["www.yourwebsite.com"]
+	"domains": ["www.yourwebsite.com"],
+	"data": true
 };

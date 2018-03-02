@@ -22,6 +22,12 @@ Use gulp serve if you want to develop stuff.
 
 If you want to start a new project, just copy the example folder and rename it. run ```gulp serve --site "folder_name"``` to start developing in that site. Note that running gulp will delete and rebuild the ```public``` folder from the ```src``` folder so I recommend only developing this way if all your developers know what the're doing. If it's just a simple Dropbox-shared project with a bunch of non-developers on your team, maybe stay away from using gulp.
 
+To develop, run:
+```
+./develop.sh example
+```
+This will tell gulp to watch a single folder: websites/example/src, outputting anything you write to websites/example/public, and serving it using thalia on port 1337, and using browsersync on port 3000.
+
 Features
 -
 Besides simple serving of a public folder, **Thalia** can also do:

@@ -11,7 +11,6 @@ Quickstart
 To install, download the repository then run:
 ```
 npm install
-bower install
 gulp build
 npm start
 ```

@@ -77,7 +77,7 @@ gulp.task("copy", ["confirm"], function() {
 		base: "src"
 	}).pipe( gulp.dest(dist) );
 });
-gulp.task("sitecopy", ["confirm"], function(){
+gulp.task("sitecopy", ["copy", "confirm"], function(){
 	return gulp.src(site+"/"+staticSrc, {
 		base: site+"/src"
 	}).pipe( gulp.dest(dist) );
@@ -182,10 +182,11 @@ gulp.task("images", ["confirm"], function(cb) {
 });
 
 // Fonts
-gulp.task('fonts', ["confirm"], function() {
+gulp.task('fonts', ["copy", "confirm"], function() {
 	return gulp.src([
-		'bower_components/bootstrap-sass/assets/fonts/**/*',
-		'bower_components/font-awesome/fonts/**/*'
+		// 'bower_components/bootstrap-sass/assets/fonts/**/*',
+		// 'bower_components/font-awesome/fonts/**/*'
+		'src/fonts/**/*'
 	]).pipe(gulp.dest(dist+'/fonts/'));
 });
 

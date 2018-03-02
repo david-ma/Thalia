@@ -110,9 +110,13 @@ gulp.task("jsconcat", ["confirm"], function() {
 	return gulp.src([
 		// Editable - Add any additional paths to JS Bower components here
 
-		"bower_components/d3/d3.min.js",
-		"bower_components/jquery/dist/jquery.min.js",
-		'bower_components/bootstrap-sass/assets/javascripts/bootstrap.min.js',
+		// Declare these first, so they are used in this order.
+		"src/js/vendor/d3.min.js",
+        "src/js/vendor/d3-selection-multi.v1.min.js",
+        "src/js/vendor/d3-fetch.v1.min.js",
+		"src/js/vendor/jquery.min.js",
+		'src/js/vendor/bootstrap.min.js',
+
 
 // These are nice to have, but we don't need them for every page!
 // 		"bower_components/jquery-ui/jquery-ui.min.js",
@@ -206,9 +210,13 @@ gulp.task("stylesheets", ["confirm"], function() {
 		// 'bower_components/neat/app/assets/stylesheets',
 
 // 		'bower_components/bourbon/app/assets/stylesheets',
-		'bower_components/bootstrap-sass/assets/stylesheets',
-		'bower_components/normalize-scss',
-		'bower_components/font-awesome/scss'
+// 		'bower_components/bootstrap-sass/assets/stylesheets',
+// 		'bower_components/normalize-scss',
+// 		'bower_components/font-awesome/scss'
+
+		// Don't use bower, just put the files in vendor.
+		// Move to webpack or yarn in future...
+		'src/css/vendor'
 	];
 
 	var out = gulp.src([

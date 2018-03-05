@@ -203,35 +203,16 @@ gulp.task("staticCSS", ["confirm"], function(cb) {
 });
 
 // Stylesheets
-gulp.task("stylesheets", ["confirm"], function() {
-	var paths = [
-		// Editable - Defines directories where Bower CSS includes can be found. Also make sure to add the usual @import to you main.scss file
-
-		// Uncomment the following two lines to use Bourbon/Neat
-		// 'bower_components/neat/app/assets/stylesheets',
-
-// 		'bower_components/bourbon/app/assets/stylesheets',
-// 		'bower_components/bootstrap-sass/assets/stylesheets',
-// 		'bower_components/normalize-scss',
-// 		'bower_components/font-awesome/scss'
-
-		// Don't use bower, just put the files in vendor.
-		// Move to webpack or yarn in future...
-		'src/css/vendor'
-	];
-
+gulp.task("stylesheets", [], function() {
 	var out = gulp.src([
-			'src/css/main.scss',
-			site+'/src/css/main.scss'
+			site+'/src/css/**/*.scss'
 		])
-		.pipe( $.concat('main.scss'))
 		.pipe( $.sourcemaps.init() )
 		.pipe( $.cssGlobbing({
 			extensions: ['.scss']
 		}))
 		.pipe( $.sass({
-			style: 'expanded',
-			includePaths: paths
+			style: 'expanded'
 		}))
 		.on('error', $.sass.logError)
 		.on('error', function(e) {
@@ -254,19 +235,58 @@ gulp.task("stylesheets", ["confirm"], function() {
 	return out.pipe( gulp.dest(dist+'/css') );
 });
 
+// mainCSS
+gulp.task("mainCSS", ["stylesheets"], function() {
+    var paths = [
+        'src/css/vendor'
+    ];
+    var out = gulp.src([
+        'src/css/main.scss',
+        site+'/src/css/main.scss'
+    ])
+        .pipe( $.concat('main.scss'))
+        .pipe( $.sourcemaps.init() )
+        .pipe( $.cssGlobbing({
+            extensions: ['.scss']
+        }))
+        .pipe( $.sass({
+            style: 'expanded',
+            includePaths: paths
+        }))
+        .on('error', $.sass.logError)
+        .on('error', function(e) {
+            if(!envProd) {
+                $.notify().write(e);
+            }
+        })
+        .pipe( $.autoprefixer({
+                browsers: ['last 2 versions'], // Editable - see https://github.com/postcss/autoprefixer#options
+                cascade: false
+            })
+        );
+
+    if(!envProd) {
+        out.pipe( $.sourcemaps.write() );
+    } else {
+        out.pipe( $.csso() );
+    }
+
+    return out.pipe( gulp.dest(dist+'/css') );
+});
+
 // Set Production Environment
 gulp.task( 'production_env', function() {
 	envProd = true;
 });
 
 // Livereload
-gulp.task( "watch", ["stylesheets", "javascript", "jsconcat", "images", "fonts", "html", "copy", "sitecopy", "confirm"], function() {
+gulp.task( "watch", ["mainCSS", "javascript", "jsconcat", "images", "fonts", "html", "copy", "sitecopy", "confirm"], function() {
 	$.livereload.listen();
 
 	gulp.watch([site+"/"+staticSrc, staticSrc], ["copy", "sitecopy"]);
 	gulp.watch([site+"/src/**/*.html","src/**/*.html"], ["html"]);
 	gulp.watch([site+"/src/js/vendor/*.js", "src/js/vendor/*.js"], ["jsconcat"]);
-	gulp.watch([site+"/src/css/**/*.scss", "src/css/**/*.scss"], ["stylesheets"]);
+	gulp.watch([site+"/src/css/**/*.scss", "src/css/**/*.scss"], ["mainCSS"]);
 	gulp.watch([site+"/src/js/**/*.js", "src/js/**/*.js"], ["javascript"]);
 	gulp.watch([site+"/src/images/**/*.{jpg,png,svg}", "src/images/**/*.{jpg,png,svg}"], ["images"]);
 
@@ -281,7 +301,7 @@ gulp.task( "watch", ["stylesheets", "javascript", "jsconcat", "images", "fonts",
 });
 
 // Serve
-gulp.task('serve', ["stylesheets", "javascript", "jsconcat", "images", "html", "copy", "sitecopy", "staticCSS", "watch", "confirm"], function() {
+gulp.task('serve', ["mainCSS", "javascript", "jsconcat", "images", "html", "copy", "sitecopy", "staticCSS", "watch", "confirm"], function() {
 	var bs = {
 		server: { baseDir: dist+"/" },
 		ghostMode: false
@@ -300,7 +320,7 @@ gulp.task('serve', ["stylesheets", "javascript", "jsconcat", "images", "html", "
 
 	gulp.watch([site+"/"+staticSrc, staticSrc], ["copy", "sitecopy"]);
 	gulp.watch([site+"/src/js/vendor/*.js", "src/js/vendor/*.js"], ["jsconcat"]);
-	gulp.watch([site+"/src/css/**/*.scss", "src/css/**/*.scss"], ["stylesheets"]);
+	gulp.watch([site+"/src/css/**/*.scss", "src/css/**/*.scss"], ["mainCSS"]);
 	gulp.watch(dist+"/**/*.css").on("change", browserSync.reload);
 	gulp.watch([site+"/src/js/**/*.js", "src/js/**/*.js"], ["javascript"]);
 	gulp.watch(dist+"/**/*.js").on("change", browserSync.reload);
@@ -311,7 +331,7 @@ gulp.task('serve', ["stylesheets", "javascript", "jsconcat", "images", "html", "
 gulp.task( "build", [
 	"production_env",
 	"clean",
-	"stylesheets",
+	"mainCSS",
 	"javascript",
 	"jsconcat",
 	"images",

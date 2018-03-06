@@ -18,6 +18,9 @@ function route(website, pathname, response, request) {
 		website.services[first](response, request, website.db, second);
 	} else if(website.data && fs.existsSync(website.data.concat(pathname.replace("data/", "")))) {
 		routeFile(response, request, website.data.concat(pathname.replace("data/", "")));
+	} else if(website.data && fs.existsSync(website.data.concat(pathname.replace("data/", "")).concat(".gz"))) {
+		response.setHeader('Content-Encoding', 'gzip');
+		routeFile(response, request, website.data.concat(pathname.replace("data/", "")).concat(".gz"));
 	} else {
 		routeFile(response, request, website.folder.concat(pathname));
 	}

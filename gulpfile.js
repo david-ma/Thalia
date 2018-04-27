@@ -6,7 +6,6 @@ var gulp 		= require("gulp");
 var $ 			= require("gulp-load-plugins")({});
 var del 		= require("del");
 var envProd 	= false;
-var runSequence = require('run-sequence');
 var argv = require('yargs').argv;
 var confirm = require('gulp-confirm');
 var fs = require('fs');
@@ -16,7 +15,7 @@ var staticSrc = "src/**/*.{eot,ttf,woff,woff2,otf,json,pdf,ico,xml,js,css,csv,ts
 var browserSync = require('browser-sync').create();
 var dist = "websites/example/public";
 var site = "websites/example";
-var confirmation = false;
+var confirmation = argv.y;
 
 gulp.task("workspace", function(){
 	if (argv.s === true || argv.site === true) {
@@ -47,7 +46,11 @@ gulp.task("confirm", ["workspace"], function(){
 					}
 				}
 			}));
-		}
+		} else if(site !== 'websites/example') {
+            dist = site+"/public";
+            console.log("Setting file output to: "+dist);
+            return true;
+        }
 	} catch (err) {
 		console.log('ERROR! Could not find "'+site+"/src', do NOT build this project.");
 		console.log("Running gulp on your project will delete the public folder.");
@@ -342,30 +345,3 @@ gulp.task( "build", [
 	"staticCSS"
 ], function () {});
 
-// // Deploy
-// gulp.task( "deploy", function(callback) {
-// 	runSequence(
-// 		'build',
-// 		'publish',
-// 		 callback)
-// });
-// 
-// // Publish to S3
-// gulp.task('publish', function() {
-// 
-// 	var publisher = awspublish.create({
-// 			region: 'ap-southeast-2', // Editable - S3 bucket region
-// 			params: {
-// 				Bucket: 'example-bucket' // Editable - S3 bucket name
-// 			},
-// 			"accessKeyId": process.env.AWS_ACCESS_KEY,
-// 			"secretAccessKey": process.env.AWS_SECRET_KEY
-// 		});
-// 
-// 	var files = gulp.src([dist+'/**'])
-// 		.pipe(publisher.publish());
-// 
-// 	return files
-// 		.pipe(publisher.cache())
-// 		.pipe(awspublish.reporter());
-// });

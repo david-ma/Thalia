@@ -1,5 +1,6 @@
 var fs = require("fs");
 var mime = require('mime');
+var zlib = require('zlib');
 
 function route(website, pathname, response, request) {
 	var first, second;
@@ -21,7 +22,15 @@ function route(website, pathname, response, request) {
 	} else if(website.data && fs.existsSync(website.data.concat(pathname.replace("data/", "")).concat(".gz"))) {
 		response.setHeader('Content-Encoding', 'gzip');
 		routeFile(response, request, website.data.concat(pathname.replace("data/", "")).concat(".gz"));
-	} else {
+	} else if ( request.headers['accept-encoding'].indexOf('deflate') >= 0 &&
+        ['txt', 'css', 'js', 'html', 'csv', 'tsv'].indexOf(pathname.split(".").pop()) >= 0
+    ){
+        routeDeflatedFile(response, request, website.folder.concat(pathname));
+    } else if ( request.headers['accept-encoding'].indexOf('gzip') >= 0 &&
+        ['txt', 'css', 'js', 'html', 'csv', 'tsv'].indexOf(pathname.split(".").pop()) >= 0
+    ){
+        routeZippedFile(response, request, website.folder.concat(pathname));
+    } else {
 		routeFile(response, request, website.folder.concat(pathname));
 	}
 }
@@ -39,6 +48,24 @@ function redirect(response, request, url){
 		response.end("501 URL Not Found\n");
 		return;
 	}
+}
+
+function routeDeflatedFile(response, request, filename) {
+    response.writeHead(200, { 'content-encoding': 'deflate' });
+    fs.readFile(filename, "binary", function(err,file) {
+        zlib.deflate(file, function(err, result){
+            response.end(result);
+        });
+    });
+}
+
+function routeZippedFile(response, request, filename) {
+    response.writeHead(200, { 'content-encoding': 'gzip' });
+    fs.readFile(filename, "binary", function(err,file) {
+        zlib.gzip(file, function(err, result){
+            response.end(result);
+        });
+    });
 }
 
 function routeFile(response, request, filename){

@@ -2,6 +2,18 @@ var fs = require("fs");
 var mime = require('mime');
 var zlib = require('zlib');
 
+/**
+ * The router should check what sort of route we're doing, and act appropriately.
+ * Check:
+ * - Security
+ * - Redirects to outside websites
+ * - Internal page alias
+ * - Services / functions
+ * - /data/ folder might have a file
+ * - otherwise, we serve the file normally
+ *
+ * - When serving the file normally, we need to check the header to see if it can be zipped or should be zipped.
+ */
 function route(website, pathname, response, request) {
 	var first, second;
 	try {
@@ -22,15 +34,7 @@ function route(website, pathname, response, request) {
 	} else if(website.data && fs.existsSync(website.data.concat(pathname.replace("data/", "")).concat(".gz"))) {
 		response.setHeader('Content-Encoding', 'gzip');
 		routeFile(response, request, website.data.concat(pathname.replace("data/", "")).concat(".gz"));
-	} else if ( request.headers['accept-encoding'].indexOf('deflate') >= 0 &&
-        ['txt', 'css', 'js', 'html', 'csv', 'tsv'].indexOf(pathname.split(".").pop()) >= 0
-    ){
-        routeDeflatedFile(response, request, website.folder.concat(pathname));
-    } else if ( request.headers['accept-encoding'].indexOf('gzip') >= 0 &&
-        ['txt', 'css', 'js', 'html', 'csv', 'tsv'].indexOf(pathname.split(".").pop()) >= 0
-    ){
-        routeZippedFile(response, request, website.folder.concat(pathname));
-    } else {
+	} else {
 		routeFile(response, request, website.folder.concat(pathname));
 	}
 }
@@ -50,24 +54,15 @@ function redirect(response, request, url){
 	}
 }
 
-function routeDeflatedFile(response, request, filename) {
-    response.writeHead(200, { 'content-encoding': 'deflate' });
-    fs.readFile(filename, "binary", function(err,file) {
-        zlib.deflate(file, function(err, result){
-            response.end(result);
-        });
-    });
-}
-
-function routeZippedFile(response, request, filename) {
-    response.writeHead(200, { 'content-encoding': 'gzip' });
-    fs.readFile(filename, "binary", function(err,file) {
-        zlib.gzip(file, function(err, result){
-            response.end(result);
-        });
-    });
-}
-
+/**
+ * Given a filename, serve it.
+ *
+ * Check that the file exists
+ * Check the headers..?
+ * zip/unzip if needed
+ *
+ * @param filename
+ */
 function routeFile(response, request, filename){
 	fs.exists(filename, function(exists) {
 		if(!exists) {
@@ -77,7 +72,55 @@ function routeFile(response, request, filename){
 			return;
 		}
 
-		fs.readFile(filename, "binary", function(err,file) {
+        var filetype = mime.lookup(filename);
+        var acceptedEncoding = request.headers['accept-encoding'];
+
+        var router = function(file) {
+            response.writeHead(200, {'Content-Type': filetype});
+            response.end(file, "binary");
+        };
+
+        fs.stat(filename, function(err, stats){
+            // Only zip stuff if it's bigger than 1400 bytes
+            if (stats.size > 1400) {
+                if (filetype.slice(0,4) === "text") {
+                    if(acceptedEncoding.indexOf('deflate') >= 0) {
+                        router = function(file) {
+                            response.writeHead(200, { 'content-encoding': 'deflate' });
+                            zlib.deflate(file, function(err, result){
+                                response.end(result);
+                            });
+                        };
+                    } else if(acceptedEncoding.indexOf('gzip') >= 0) {
+                        router = function(file) {
+                            response.writeHead(200, { 'content-encoding': 'gzip' });
+                            zlib.gzip(file, function(err, result){
+                                response.end(result);
+                            });
+                        };
+                    }
+                }
+
+                if (stats.size > 102400){ //cache files bigger than 100kb?
+                    //		console.log(stats.size);
+                    //		console.log(filename +" is a big file! Caching!");
+                    if (!response.getHeader('Cache-Control') || !response.getHeader('Expires')) {
+                        response.setHeader("Cache-Control", "public, max-age=604800"); // ex. 7 days in seconds.
+                        response.setHeader("Expires", new Date(Date.now() + 604800000).toUTCString());  // in ms.
+                    }
+                } else {
+                    // Cache smaller things for 3 mins?
+                    // Alternative is to use no-cache?
+                    // Probably should read this: https://jakearchibald.com/2016/caching-best-practices/
+                    if (!response.getHeader('Cache-Control') || !response.getHeader('Expires')) {
+                        response.setHeader("Cache-Control", "public, max-age=180"); // ex. 7 days in seconds.
+                        response.setHeader("Expires", new Date(Date.now() + 180000).toUTCString());  // in ms.
+                    }
+                }
+            }
+        });
+
+        fs.readFile(filename, "binary", function(err,file) {
 			if(err) {
 			
 				fs.readdir(filename,function(e,d){
@@ -106,18 +149,7 @@ function routeFile(response, request, filename){
 					}
 				});
 			} else {
-				fs.stat(filename, function(err, stats){
-					if (stats.size > 102400){ //cache files bigger than 100kb?
-				//		console.log(stats.size);
-				//		console.log(filename +" is a big file! Caching!");
-						if (!response.getHeader('Cache-Control') || !response.getHeader('Expires')) {
-								response.setHeader("Cache-Control", "public, max-age=345600"); // ex. 4 days in seconds.
-								response.setHeader("Expires", new Date(Date.now() + 345600000).toUTCString());  // in ms.
-						}
-					}
-					response.writeHead(200, {'Content-Type': mime.lookup(filename)});
-					response.end(file, "binary");
-				});
+				router(file);
 			}
 		});
 	});

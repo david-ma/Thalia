@@ -1,89 +1,130 @@
-var http = require("http");
-var url = require("url");
+const https = require("https");
+const http  = require("http");
+const url   = require("url");
 
 //This part of the server starts the server on port 80 and logs stuff to the std.out
-function start(route, handle) {
-
+function start(router, handle, tlsOptions) {
     function onRequest(request, response) {
 
-        if (handle.proxies[request.headers.host]
-            && typeof handle.proxies[request.headers.host].filter === 'undefined'
-            || handle.proxies[request.headers.host]
-            && handle.proxies[request.headers.host].filter === url.parse(request.url).pathname.split("/")[1]
+        const host = request.headers.host;
+        const proxyConfig = handle.proxies[host];
+        const site = handle.getWebsite(host);
+        const url_object = url.parse(request.url, true);
+
+        console.log();
+        console.log("Request for "+ request.headers.host + url_object.href + " At " + getDateTime() +
+            " From " + request.connection.remoteAddress);
+
+        if (proxyConfig &&
+            (
+                typeof proxyConfig.filter === 'undefined' ||
+                proxyConfig.filter === url.parse(request.url).pathname.split("/")[1]
+            )
         ) {
-            proxy(request, response, handle.proxies[request.headers.host]);
+            if(typeof proxyConfig.passwords !== 'undefined' &&
+                Array.isArray(proxyConfig.passwords)
+            ) {
+                security( proxyConfig.passwords );
+            } else {
+                proxy( proxyConfig );
+            }
         } else {
-            var site = handle.getWebsite(request.headers.host);
+            router(site, url_object.pathname, response, request);
+        }
 
-            var url_object = url.parse(request.url);
+        function proxy( config ) {
+            const message = config.message || "Error, server is down.";
+            const options = {
+                host: config.host || "127.0.0.1",
+                port: config.port || 80,
+                path: request.url,
+                method: request.method,
+                headers: request.headers
+            };
 
-            console.log();
-            console.log("Request for "+ request.headers.host + url_object.href + " At " + getDateTime() +
-                " From " + request.connection.remoteAddress);
+            console.log(`Proxying to: ${options.host}:${options.port}${request.url}`);
+            const proxyServer = http.request(options, function (res) {
+                response.writeHeader(res.statusCode, res.headers);
+                res.pipe(response, {
+                    end: true
+                });
+            });
 
-            route(site, url_object.pathname, response, request);
+            proxyServer.on('error', function(err){
+                console.log(err);
+                response.write(message);
+                response.end();
+            });
+
+            request.pipe(proxyServer, {
+                end: true
+            });
+        }
+
+        function security( passwords ){
+            let decodedCookiePassword = false;
+
+            const cookies = {};
+            if(request.headers.cookie) {
+                request.headers.cookie.split(";").forEach(function(d){
+                    cookies[d.split("=")[0].trim()] = d.substring(d.split("=")[0].length+1).trim();
+                });
+
+                decodedCookiePassword = decodeBase64(cookies.password);
+            }
+
+            if ( url_object.query.logout ) {
+                response.setHeader('Set-Cookie', ["password=;path=/;max-age=1"]);
+                response.writeHead(200);
+                response.end("Logged out.");
+            } else if( url_object.query.password && passwords.indexOf(url_object.query.password) >= 0) {
+                let password = encodeBase64(url_object.query.password);
+                response.setHeader('Set-Cookie', [`password=${password};path=/;expires=false`]);
+                proxy( proxyConfig );
+            } else if ( decodedCookiePassword && passwords.indexOf(decodedCookiePassword) >= 0) {
+                proxy( proxyConfig );
+            } else {
+                response.writeHead(200);
+                response.end(simpleLoginPage);
+            }
         }
     }
 
-	var port = 1337; // change the port here?
-	var pattern = /^\d{0,5}$/;
-	var workspace = 'default';
+    let port = 1337; // change the port here?
+    const pattern = /^\d{0,5}$/;
+    let workspace = 'default';
 
-	if(typeof process.argv[2] !== null && pattern.exec(process.argv[2])){
-		port = process.argv[2];
-	} else if(typeof process.argv[3] !== null && pattern.exec(process.argv[3])){
-		port = process.argv[3];
-	}
+    if(typeof process.argv[2] !== null && pattern.exec(process.argv[2])){
+        port = process.argv[2];
+    } else if(typeof process.argv[3] !== null && pattern.exec(process.argv[3])){
+        port = process.argv[3];
+    }
 
-	// To do: we should check that the workspace exists, otherwise leave it as default
-	if (process.argv[2] !== null && process.argv[2] !== undefined && !pattern.exec(process.argv[2])) {
-		workspace = process.argv[2];
-	} else if(typeof process.argv[3] !== null && process.argv[3] !== undefined && !pattern.exec(process.argv[3])){
-		workspace = process.argv[3];
-	} 
+    // Todo: we should check that the workspace exists, otherwise leave it as default
+    if (process.argv[2] !== null && process.argv[2] !== undefined && !pattern.exec(process.argv[2])) {
+        workspace = process.argv[2];
+    } else if(typeof process.argv[3] !== null && process.argv[3] !== undefined && !pattern.exec(process.argv[3])){
+        workspace = process.argv[3];
+    }
 
-  console.log("Setting workspace to: "+workspace);
-  console.log("Server has started on port: " + port);
-  handle.index.localhost = workspace;
-  return http.createServer(onRequest).listen(port);
+    console.log("Setting workspace to: "+workspace);
+    handle.index.localhost = workspace;
+
+    if (tlsOptions) {
+        console.log("Server has started on port: " + 443);
+        return https.createServer(tlsOptions, onRequest).listen(443);
+    } else {
+        console.log("Server has started on port: " + port);
+        return http.createServer(onRequest).listen(port);
+    }
 }
 
 exports.start = start;
 
-function proxy(client_req, client_res, proxy) {
-  console.log('Proxying to: ' + proxy.host + ':' + proxy.port + client_req.url);
-    var message = proxy.message || "Error, server is down.";
-
-  var options = {
-    host: proxy.host || "127.0.0.1",
-    port: proxy.port || 80,
-    path: client_req.url,
-    method: client_req.method,
-    headers: client_req.headers
-  };
-
-  var proxyServer = http.request(options, function (res) {
-      client_res.writeHeader(res.statusCode, res.headers);
-      res.pipe(client_res, {
-        end: true
-      });
-  });
-
-  proxyServer.on('error', function(err){
-    console.log(err);
-    client_res.write(message);
-    client_res.end();
-  });
-
-  client_req.pipe(proxyServer, {
-    end: true
-  });
-}
-
 function getDateTime() {
 //    var date = new Date();
-		var date = new Date(Date.now()+36000000);
-		//add 10 hours... such a shitty way to make it australian time...
+    var date = new Date(Date.now()+36000000);
+    //add 10 hours... such a shitty way to make it australian time...
 
     var hour = date.getHours();
     hour = (hour < 10 ? "0" : "") + hour;
@@ -101,3 +142,46 @@ function getDateTime() {
 
     return year + ":" + month + ":" + day + " " + hour + ":" + min;
 }
+
+function encodeBase64(string) {
+    "use strict";
+    const buff = new Buffer(string);
+    return buff.toString('base64');
+}
+
+function decodeBase64(data) {
+    "use strict";
+    if(data) {
+        const buff = new Buffer(data, 'base64');
+        return buff.toString('ascii');
+    } else {
+        return false;
+    }
+}
+
+const simpleLoginPage = `<html>
+<head>
+<title>Login</title>
+<style>
+div {
+    text-align: center;
+    width: 300px;
+    margin: 200px auto;
+    background: lightblue;
+    padding: 10px 20px;
+    border-radius: 15px;
+}
+</style>
+</head>
+<body>
+<div>
+    <h1>Enter Password</h1>
+    <form action="">
+        <input type="password" placeholder="Enter Password" name="password" autofocus required>
+        <button type="submit">Login</button>
+    </form>
+</div>
+</body>
+</html>`;
+
+

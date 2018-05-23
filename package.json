@@ -1,13 +1,18 @@
 {
   "name": "thalia",
   "private": true,
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Frostickle's server",
   "main": "index.js",
   "dependencies": {
+    "csv-parse": "^2.4.0",
+    "greenlock": "^2.2.19",
     "mime": "^1.6.0",
     "mysql": "^2.15.0",
-    "socket.io": "^1.7.4"
+    "npm": "^6.0.1",
+    "redirect-https": "^1.1.5",
+    "socket.io": "^1.7.4",
+    "zlib": "^1.0.5"
   },
   "devDependencies": {
     "browser-sync": "^2.11.1",

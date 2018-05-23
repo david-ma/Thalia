@@ -1,177 +1,258 @@
 var fs = require("fs");
 var mime = require('mime');
 var zlib = require('zlib');
+var parse = require('csv-parse');
 
-/**
- * The router should check what sort of route we're doing, and act appropriately.
- * Check:
- * - Security
- * - Redirects to outside websites
- * - Internal page alias
- * - Services / functions
- * - /data/ folder might have a file
- * - otherwise, we serve the file normally
- *
- * - When serving the file normally, we need to check the header to see if it can be zipped or should be zipped.
- */
-function route(website, pathname, response, request) {
-	var first, second;
-	try {
-		first = pathname.split("/")[1].toLowerCase();
-	} catch (err){}
-	try {
-		second = pathname.split("/")[2].toLowerCase();
-	} catch (err){}
+function router(website, pathname, response, request) {
 
-	if(typeof website.redirects[pathname] !== "undefined") {
-		redirect(response, request, website.redirects[pathname]);
-	} else if(typeof website.pages[first] !== "undefined") {
-		routeFile(response, request, website.folder.concat(website.pages[first]));
-	} else if(typeof website.services[first] === 'function') {
-		website.services[first](response, request, website.db, second);
-	} else if(website.data && fs.existsSync(website.data.concat(pathname.replace("data/", "")))) {
-		routeFile(response, request, website.data.concat(pathname.replace("data/", "")));
-	} else if(website.data && fs.existsSync(website.data.concat(pathname.replace("data/", "")).concat(".gz"))) {
-		response.setHeader('Content-Encoding', 'gzip');
-		routeFile(response, request, website.data.concat(pathname.replace("data/", "")).concat(".gz"));
-	} else {
-		routeFile(response, request, website.folder.concat(pathname));
-	}
-}
+    response.setHeader("Access-Control-Allow-Origin", "*");
 
-function redirect(response, request, url){
-	if (typeof(url) == "string") {
-		console.log("Forwarding user to: "+url);
-		response.writeHead(303, {"Content-Type": "text/html"});
-		response.end('<meta http-equiv="refresh" content="0; url='+url+'">');
-		return;
-		
-	} else {
-		console.log("Error, url missing");
-		response.writeHead(501, {"Content-Type": "text/plain"});
-		response.end("501 URL Not Found\n");
-		return;
-	}
-}
+    var route = new Promise(function(resolve, reject){
+        try {
+            var data = {
+                cookies: {},
+                words: []
+            };
 
-/**
- * Given a filename, serve it.
- *
- * Check that the file exists
- * Check the headers..?
- * zip/unzip if needed
- *
- * @param filename
- */
-function routeFile(response, request, filename){
-	fs.exists(filename, function(exists) {
-		if(!exists) {
-			console.log("No file found for " + filename);
-			response.writeHead(404, {"Content-Type": "text/plain"});
-			response.end("404 Not Found\n");
-			return;
-		}
-
-        var filetype = mime.lookup(filename);
-        var acceptedEncoding = request.headers['accept-encoding'];
-
-        var router = function(file) {
-            response.writeHead(200, {'Content-Type': filetype});
-            response.end(file, "binary");
-        };
-
-        fs.stat(filename, function(err, stats){
-            // Only zip stuff if it's bigger than 1400 bytes
-            if (stats.size > 1400) {
-                if (filetype.slice(0,4) === "text") {
-                    if(acceptedEncoding.indexOf('deflate') >= 0) {
-                        router = function(file) {
-                            response.writeHead(200, { 'content-encoding': 'deflate' });
-                            zlib.deflate(file, function(err, result){
-                                response.end(result);
-                            });
-                        };
-                    } else if(acceptedEncoding.indexOf('gzip') >= 0) {
-                        router = function(file) {
-                            response.writeHead(200, { 'content-encoding': 'gzip' });
-                            zlib.gzip(file, function(err, result){
-                                response.end(result);
-                            });
-                        };
-                    }
-                }
-
-                if (stats.size > 102400){ //cache files bigger than 100kb?
-                    //		console.log(stats.size);
-                    //		console.log(filename +" is a big file! Caching!");
-                    if (!response.getHeader('Cache-Control') || !response.getHeader('Expires')) {
-                        response.setHeader("Cache-Control", "public, max-age=604800"); // ex. 7 days in seconds.
-                        response.setHeader("Expires", new Date(Date.now() + 604800000).toUTCString());  // in ms.
-                    }
-                } else {
-                    // Cache smaller things for 3 mins?
-                    // Alternative is to use no-cache?
-                    // Probably should read this: https://jakearchibald.com/2016/caching-best-practices/
-                    if (!response.getHeader('Cache-Control') || !response.getHeader('Expires')) {
-                        response.setHeader("Cache-Control", "public, max-age=180"); // ex. 7 days in seconds.
-                        response.setHeader("Expires", new Date(Date.now() + 180000).toUTCString());  // in ms.
-                    }
-                }
+            if(request.headers.cookie) {
+                request.headers.cookie.split(";").forEach(function(d){
+                    data.cookies[d.split("=")[0].trim()] = d.substring(d.split("=")[0].length+1).trim();
+                });
             }
-        });
 
-        fs.readFile(filename, "binary", function(err,file) {
-			if(err) {
-			
-				fs.readdir(filename,function(e,d){
-					if(!e && d && d instanceof Array && d.indexOf("index.html") >= 0){
+            data.words = pathname
+                .split("/")
+                .map(function(d){
+                    return d.toLowerCase();
+                });
+
+            resolve(data);
+        } catch (err){
+            console.log(err);
+            reject(err);
+        }
+
+    });
+
+    /**
+     * The router should check what sort of route we're doing, and act appropriately.
+     * Check:
+     * - Security
+     * - Redirects to outside websites
+     * - Internal page alias
+     * - Services / functions
+     * - /data/ folder might have a file
+     * - otherwise, we serve the file normally
+     *
+     * - When serving the file normally, we need to check the header to see if it can be zipped or should be zipped.
+     */
+    route.then(function(d) {
+        if (typeof website.security !== "undefined" && website.security.loginNeeded(pathname, website.db, d.cookies)){
+            website.services.login(response, request, website.db);
+
+        } else {
+
+            // If there's a redirect, go to it
+            if (typeof website.redirects[pathname] !== "undefined") {
+                redirect(website.redirects[pathname]);
+
+                //	If there's a page, serve it
+            } else if (typeof website.pages[d.words[1]] !== "undefined") {
+                routeFile(website.folder.concat(website.pages[d.words[1]]));
+
+                //	if there's a function, perform it
+            } else if (typeof website.services[d.words[1]] === 'function') {
+                website.services[d.words[1]](response, request, website.db, d.words[2]);
+            } else if (website.data && fs.existsSync(website.data.concat(pathname.replace("data/", "")))) {
+                routeFile(website.data.concat(pathname.replace("data/", "")));
+            } else if (website.data && fs.existsSync(website.data.concat(pathname.replace("data/", "")).concat(".gz"))) {
+                response.setHeader('Content-Encoding', 'gzip');
+                routeFile(website.data.concat(pathname.replace("data/", "")).concat(".gz"));
+            } else {
+
+                // Otherwise, route as normal
+                routeFile(website.folder.concat(pathname));
+            }
+        }
+    }).catch(renderError);
+
+    function renderError(d){
+        console.log("Error?");
+        d = d || {
+            code: 500,
+            message: "500 Server Error"
+        };
+        response.writeHead(d.code, {
+            "Content-Type": "text/html"
+        });
+        response.end(d.message);
+    }
+
+
+    function redirect(url){
+        if (typeof(url) == "string") {
+            console.log("Forwarding user to: "+url);
+            response.writeHead(303, {"Content-Type": "text/html"});
+            response.end('<meta http-equiv="refresh" content="0; url='+url+'">');
+            return;
+
+        } else {
+            console.log("Error, url missing");
+            response.writeHead(501, {"Content-Type": "text/plain"});
+            response.end("501 URL Not Found\n");
+            return;
+        }
+    }
+
+    /**
+     * Given a filename, serve it.
+     *
+     * Check that the file exists
+     * Check the headers..?
+     * zip/unzip if needed
+     *
+     * @param filename
+     */
+    function routeFile(filename){
+        fs.exists(filename, function(exists) {
+            if(!exists) {
+                console.log("No file found for " + filename);
+                response.writeHead(404, {"Content-Type": "text/plain"});
+                response.end("404 Page Not Found\n");
+                return;
+            }
+
+            const acceptedEncoding = request.headers['accept-encoding'] || "";
+            const filetype = mime.lookup(filename);
+            response.setHeader('Content-Type', filetype);
+
+            let router = function(file) {
+                response.writeHeader(200);
+                response.end(file, "binary");
+            };
+
+            fs.stat(filename, function(err, stats){
+                // Only zip stuff if it's bigger than 1400 bytes
+                if (stats.size > 1400) {
+                    if (filetype.slice(0,4) === "text") {
+                        if(acceptedEncoding.indexOf('deflate') >= 0) {
+                            router = function(file) {
+                                response.writeHead(200, { 'content-encoding': 'deflate' });
+                                zlib.deflate(file, function(err, result){
+                                    response.end(result);
+                                });
+                            };
+                        } else if(acceptedEncoding.indexOf('gzip') >= 0) {
+                            router = function(file) {
+                                response.writeHead(200, { 'content-encoding': 'gzip' });
+                                zlib.gzip(file, function(err, result){
+                                    response.end(result);
+                                });
+                            };
+                        }
+                    }
+
+                    if (stats.size > 102400){ //cache files bigger than 100kb?
+                        //		console.log(stats.size);
+                        //		console.log(filename +" is a big file! Caching!");
+                        if (!response.getHeader('Cache-Control') || !response.getHeader('Expires')) {
+                            response.setHeader("Cache-Control", "public, max-age=604800"); // ex. 7 days in seconds.
+                            response.setHeader("Expires", new Date(Date.now() + 604800000).toUTCString());  // in ms.
+                        }
+                    } else {
+                        // Cache smaller things for 3 mins?
+                        // Alternative is to use no-cache?
+                        // Probably should read this: https://jakearchibald.com/2016/caching-best-practices/
+                        if (!response.getHeader('Cache-Control') || !response.getHeader('Expires')) {
+                            response.setHeader("Cache-Control", "public, max-age=180"); // ex. 7 days in seconds.
+                            response.setHeader("Expires", new Date(Date.now() + 180000).toUTCString());  // in ms.
+                        }
+                    }
+
+                }
+            });
+
+            fs.readFile(filename, "binary", function(err,file) {
+                if(err) {
+
+                    fs.readdir(filename,function(e,d){
+                        if(!e && d && d instanceof Array && d.indexOf("index.html") >= 0){
 //folder has index.html
 //console.log("folder has index");
-						if (filename.lastIndexOf("/") == filename.length - 1) {
-							routeFile(response, request, filename+"index.html");
-							return;
-						} else {
-							var url = request.url,
-									redirect = url+"/";
-							if (url.indexOf("?") != -1) {
-								var arr = url.split("?");
-								redirect = arr[0]+"/?"+arr[1];
-							}
-							response.writeHead(303, {Location: redirect});
-							response.end();
-						}
-					} else {
+                            if (filename.lastIndexOf("/") == filename.length - 1) {
+                                routeFile(filename+"index.html");
+                                return;
+                            } else {
+                                var url = request.url,
+                                    redirect = url+"/";
+                                if (url.indexOf("?") != -1) {
+                                    var arr = url.split("?");
+                                    redirect = arr[0]+"/?"+arr[1];
+                                }
+                                response.writeHead(303, {Location: redirect});
+                                response.end();
+                            }
+                        } else if (!e && d && d instanceof Array && d.indexOf("folder.csv") >= 0) {
+
+                            fs.readFile(filename.concat("/folder.csv"), "binary", function(err,file) {
+                                var files = [];
+
+                                d.filter(file => file !== "folder.csv")
+                                    .filter(file => file[0] !== ".")
+                                    .forEach(file => files.push(`<li><a download="${file}" href="${pathname}/${file}">${file}</a></li>`));
+
+                                var result = ``;
+
+                                var parser = parse({
+                                    delimiter: ':',
+                                    skip_lines_with_error: true,
+                                    skip_empty_lines: true,
+                                    ltrim: true
+                                });
+
+                                parse(file, function(err, d){
+                                    if(d.length > 1) {
+                                        var links = [];
+                                        d.forEach(row => links.push(`<li><a href="${row[1]}">${row[0]}</a></li>`));
+                                        links = links.slice(1);
+
+                                        result = result.concat(`
+<h1>Links</h1>
+<ul>
+${links.join("\n")}
+</ul>`);
+                                    }
+
+                                    result = result.concat(`
+
+<h1>Files</h1>
+<ul>
+${files.join("\n")}
+</ul>`);
+
+                                    response.writeHead(200, {"Content-Type": "text/html"});
+                                    response.end(result);
+                                });
+                            });
+                        } else {
 //folder without index.html
-						console.log("Error 500, content protected? "+filename);
-						response.writeHead(500, {"Content-Type": "text/plain"});
-						response.end("Error 500, content protected\n"+err);
-						return;
-					}
-				});
-			} else {
-				router(file);
-			}
-		});
-	});
+                            console.log("Error 500, content protected? "+filename);
+                            response.writeHead(500, {"Content-Type": "text/plain"});
+                            response.end("Error 500, content protected\n"+err);
+                            return;
+                        }
+                    });
+                } else {
+                    router(file);
+                }
+            });
+        });
+    }
 }
 
-function isPhoto(file){
-	var result = false;
-	var end = file.substring(file.lastIndexOf('.'),file.length).toLowerCase();
 
-	if (end == '.jpg' ||
-			end == '.jpeg' ||
-			end == '.png' ||
-			end == '.gif' ||
-			end == '.bmp') {
-		result = true;
-	}
-	
-	return result;
-}
-
-exports.route = route;
-exports.routeFile = routeFile;
+exports.router = router;
+//exports.routeFile = routeFile;
 
 
 

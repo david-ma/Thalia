@@ -206,7 +206,7 @@ gulp.task("staticCSS", ["confirm"], function(cb) {
 });
 
 // Stylesheets
-gulp.task("stylesheets", [], function() {
+gulp.task("stylesheets", ["confirm"], function() {
 	var out = gulp.src([
 			site+'/src/css/**/*.scss'
 		])

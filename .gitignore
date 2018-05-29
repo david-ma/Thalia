@@ -39,7 +39,12 @@ node_modules
 credentials.js
 *.dropbox
 bower_components
+Icon
+
 
 websites
 !websites/default
 !websites/example
+
+
+

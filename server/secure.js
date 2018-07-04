@@ -11,16 +11,16 @@ const handle = require("./requestHandlers").handle;
 handle.loadAllWebsites();
 
 const greenlock = Greenlock.create({
-    version: 'draft-11'
-    , server: 'https://acme-v02.api.letsencrypt.org/directory'
+    version: 'draft-11',
+    server: 'https://acme-v02.api.letsencrypt.org/directory',
 
     // approve a growing list of domains
-    , approveDomains: approveDomains
+    approveDomains: approveDomains,
 
     // If you wish to replace the default account and domain key storage plugin
-    , store: require('le-store-certbot').create({
-        configDir: path.join(os.homedir(), 'acme/etc')
-        , webrootPath: '/tmp/acme-challenges'
+    store: require('le-store-certbot').create({
+        configDir: path.join(os.homedir(), 'acme/etc'),
+        webrootPath: '/tmp/acme-challenges'
     })
 });
 

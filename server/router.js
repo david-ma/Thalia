@@ -1,15 +1,15 @@
-var fs = require("fs");
-var mime = require('mime');
-var zlib = require('zlib');
-var parse = require('csv-parse');
+const fs = require("fs");
+const mime = require('mime');
+const zlib = require('zlib');
+const parse = require('csv-parse');
 
 function router(website, pathname, response, request) {
 
     response.setHeader("Access-Control-Allow-Origin", "*");
 
-    var route = new Promise(function(resolve, reject){
+    const route = new Promise(function(resolve, reject){
         try {
-            var data = {
+            const data = {
                 cookies: {},
                 words: []
             };
@@ -123,7 +123,7 @@ function router(website, pathname, response, request) {
             }
 
             const acceptedEncoding = request.headers['accept-encoding'] || "";
-            const filetype = mime.lookup(filename);
+            const filetype = mime.getType(filename);
             response.setHeader('Content-Type', filetype);
 
             let router = function(file) {
@@ -183,10 +183,10 @@ function router(website, pathname, response, request) {
                                 routeFile(filename+"index.html");
                                 return;
                             } else {
-                                var url = request.url,
-                                    redirect = url+"/";
+                                const url = request.url;
+                                let   redirect = url+"/";
                                 if (url.indexOf("?") != -1) {
-                                    var arr = url.split("?");
+                                    const arr = url.split("?");
                                     redirect = arr[0]+"/?"+arr[1];
                                 }
                                 response.writeHead(303, {Location: redirect});
@@ -195,15 +195,15 @@ function router(website, pathname, response, request) {
                         } else if (!e && d && d instanceof Array && d.indexOf("folder.csv") >= 0) {
 
                             fs.readFile(filename.concat("/folder.csv"), "binary", function(err,file) {
-                                var files = [];
+                                const files = [];
 
                                 d.filter(file => file !== "folder.csv")
                                     .filter(file => file[0] !== ".")
                                     .forEach(file => files.push(`<li><a download="${file}" href="${pathname}/${file}">${file}</a></li>`));
 
-                                var result = ``;
+                                let result = ``;
 
-                                var parser = parse({
+                                const parser = parse({
                                     delimiter: ':',
                                     skip_lines_with_error: true,
                                     skip_empty_lines: true,
@@ -212,7 +212,7 @@ function router(website, pathname, response, request) {
 
                                 parse(file, function(err, d){
                                     if(d.length > 1) {
-                                        var links = [];
+                                        let links = [];
                                         d.forEach(row => links.push(`<li><a href="${row[1]}">${row[0]}</a></li>`));
                                         links = links.slice(1);
 

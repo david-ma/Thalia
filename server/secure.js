@@ -10,25 +10,18 @@ const http = require('http');
 const handle = require("./requestHandlers").handle;
 handle.loadAllWebsites();
 
-const domainSet = {"server.david-ma.net": true, "localhost": false};
-Object.keys(handle.index).forEach((domain) => domainSet[domain] = true);
-Object.keys(handle.proxies).forEach((domain) => domainSet[domain] = true);
-
-delete domainSet.localhost;
-const allDomains = Object.keys(domainSet);
-
-console.log("Registering SSL for these domains:", allDomains);
-
 const greenlock = Greenlock.create({
-    agreeTos: true                      // Accept Let's Encrypt v2 Agreement
-    , email: 'greenlock@david-ma.net'           // IMPORTANT: Change email and domains
-    , approveDomains: allDomains
-    // , approveDomains: [ 'david-ma.net']
-    , communityMember: false              // Optionally get important updates (security, api changes, etc)
-                                          // and submit stats to help make Greenlock better
-    , version: 'draft-11'
+    version: 'draft-11'
     , server: 'https://acme-v02.api.letsencrypt.org/directory'
-    , configDir: path.join(os.homedir(), 'acme/etc')
+
+    // approve a growing list of domains
+    , approveDomains: approveDomains
+
+    // If you wish to replace the default account and domain key storage plugin
+    , store: require('le-store-certbot').create({
+        configDir: path.join(os.homedir(), 'acme/etc')
+        , webrootPath: '/tmp/acme-challenges'
+    })
 });
 
 ////////////////////
@@ -36,15 +29,78 @@ const greenlock = Greenlock.create({
 ////////////////////
 
 const redir = require('redirect-https')();
-http.createServer(greenlock.middleware(redir)).listen(80);
+http.createServer(checkInsecureExceptions).listen(80);
 
 const server = require("./server");
 const router = require("./router");
-const socket = require("./socket");
 
-const s = server.start(router.router, handle, greenlock.tlsOptions);
-const io = require('socket.io').listen(s, {log:false});
-socket.init(io, handle);
+server.start(router.router, handle, greenlock.tlsOptions);
+
+const http01 = require('le-challenge-fs').create({ webrootPath: '/tmp/acme-challenges' });
+function approveDomains(opts, certs, cb) {
+    console.log("Approving domains...");
+    console.log("opts", opts);
+    console.log("certs", certs);
+
+    // This is where you check your database and associated
+    // email addresses with domains and agreements and such
+
+    // Opt-in to submit stats and get important updates
+    opts.communityMember = true;
+
+    // If you wish to replace the default challenge plugin, you may do so here
+    opts.challenges = { 'http-01': http01 };
+
+    // The domains being approved for the first time are listed in opts.domains
+    // Certs being renewed are listed in certs.altnames
+    if (certs) {
+        opts.domains = certs.altnames;
+    }
+    else {
+        opts.email = 'greenlock@david-ma.net';
+        opts.agreeTos = true;
+    }
+
+    // NOTE: you can also change other options such as `challengeType` and `challenge`
+    // opts.challengeType = 'http-01';
+    // opts.challenge = require('le-challenge-fs').create({});
+    cb(null, { options: opts, certs: certs });
+}
+
+function checkInsecureExceptions(request, response) {
+    "use strict";
+    const insecureAllowed = false;
+
+    // todo: allow insecure exceptions
+
+    if( insecureAllowed ) {
+        greenlock.middleware(redir)(request, response);
+    }
+}
+
+function iframePage(link, title) {
+    "use strict";
+    title = title || "iFrame proxy";
+    return `<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<title>${title}</title>
+<body>
+<style>
+	html, body, iframe {
+		margin: 0;
+		border: 0;
+		width: 100vw;
+		height: 100vh;
+	}
+</style>
+<iframe src="${link}">
+	<p>Your browser does not support iframes.</p>
+</iframe>
+</body>
+</html>`;
+}
+
 
 
 

@@ -1,9 +1,12 @@
 const https = require("https");
 const http  = require("http");
 const url   = require("url");
+const httpProxy = require('http-proxy');
 
 //This part of the server starts the server on port 80 and logs stuff to the std.out
 function start(router, handle, tlsOptions) {
+    let server = null;
+
     function onRequest(request, response) {
 
         const host = request.headers.host;
@@ -26,39 +29,35 @@ function start(router, handle, tlsOptions) {
             ) {
                 security( proxyConfig.passwords );
             } else {
-                proxy( proxyConfig );
+                webProxy( proxyConfig );
             }
         } else {
             router(site, url_object.pathname, response, request);
         }
 
-        function proxy( config ) {
+        function webProxy( config ) {
             const message = config.message || "Error, server is down.";
-            const options = {
-                host: config.host || "127.0.0.1",
-                port: config.port || 80,
-                path: request.url,
-                method: request.method,
-                headers: request.headers
-            };
-
-            console.log(`Proxying to: ${options.host}:${options.port}${request.url}`);
-            const proxyServer = http.request(options, function (res) {
-                response.writeHeader(res.statusCode, res.headers);
-                res.pipe(response, {
-                    end: true
-                });
+            const target = `http://${config.host || "127.0.0.1"}:${config.port || 80}`;
+            const proxyServer = httpProxy.createProxyServer({
+                // preserveHeaderKeyCase: true,
+                // autoRewrite: true,
+                // followRedirects: true,
+                // protocolRewrite: "http",
+                // changeOrigin: true,
+                target: target
             });
 
-            proxyServer.on('error', function(err){
+            proxyServer.on("error", function(err, req, res ){
+                "use strict";
                 console.log(err);
-                response.write(message);
-                response.end();
+
+                if(res) {
+                    res.writeHead(500);
+                    res.end(message);
+                }
             });
 
-            request.pipe(proxyServer, {
-                end: true
-            });
+            proxyServer.web(request, response);
         }
 
         function security( passwords ){
@@ -80,9 +79,9 @@ function start(router, handle, tlsOptions) {
             } else if( url_object.query.password && passwords.indexOf(url_object.query.password) >= 0) {
                 let password = encodeBase64(url_object.query.password);
                 response.setHeader('Set-Cookie', [`password=${password};path=/;expires=false`]);
-                proxy( proxyConfig );
+                webProxy( proxyConfig );
             } else if ( decodedCookiePassword && passwords.indexOf(decodedCookiePassword) >= 0) {
-                proxy( proxyConfig );
+                webProxy( proxyConfig );
             } else {
                 response.writeHead(200);
                 response.end(simpleLoginPage);
@@ -112,11 +111,28 @@ function start(router, handle, tlsOptions) {
 
     if (tlsOptions) {
         console.log("Server has started on port: " + 443);
-        return https.createServer(tlsOptions, onRequest).listen(443);
+        server = https.createServer(tlsOptions, onRequest).listen(443);
     } else {
         console.log("Server has started on port: " + port);
-        return http.createServer(onRequest).listen(port);
+        server = http.createServer(onRequest).listen(port);
     }
+
+    return server.on('upgrade', function(request, socket, head) {
+        "use strict";
+
+        const host = request.headers.host;
+        const proxyConfig = handle.proxies[host];
+
+        if(proxyConfig) {
+            httpProxy.createProxyServer({
+                ws: true,
+                target: {
+                    host: proxyConfig.host || "127.0.0.1",
+                    port: proxyConfig.port || 80
+                }
+            }).ws(request, socket, head);
+        }
+    });
 }
 
 exports.start = start;

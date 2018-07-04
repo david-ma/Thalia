@@ -9,7 +9,6 @@ const Website = function (site, config) {
         this.pages = typeof config.pages === "object" ? config.pages : {"": "/index.html"};
         this.redirects = typeof config.redirects === "object" ? config.redirects : {};
         this.services = typeof config.services === "object" ? config.services : {};
-        this.sockets = typeof config.sockets === "object" ? config.sockets : {emit:[], on:[]};
         this.proxies = typeof config.proxies === "object" ? config.proxies : {};
         this.security = typeof config.security === "object" ? config.security : {loginNeeded:function(){return false;}};
     } else {
@@ -99,6 +98,9 @@ const handle = {
     getWebsite: function(domain){
         var site = handle.index.localhost;
         if(domain) {
+            if(handle.index.hasOwnProperty(domain)) {
+                site = handle.index[domain];
+            }
             domain = domain.replace("www.","");
             if(handle.index.hasOwnProperty(domain)) {
                 site = handle.index[domain];

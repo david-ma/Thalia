@@ -134,7 +134,7 @@ function router(website, pathname, response, request) {
             fs.stat(filename, function(err, stats){
                 // Only zip stuff if it's bigger than 1400 bytes
                 if (stats.size > 1400) {
-                    if (filetype.slice(0,4) === "text") {
+                    if (filetype.slice(0,4) === "text" || filetype === "application/json") {
                         if(acceptedEncoding.indexOf('deflate') >= 0) {
                             router = function(file) {
                                 response.writeHead(200, { 'content-encoding': 'deflate' });

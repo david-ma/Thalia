@@ -1,8 +1,11 @@
 // We should probably write proper tests here.
 
 const handle = require("./requestHandlers").handle;
+const fs = require('fs');
 
 handle.loadAllWebsites();
+
+let srcWebsites = [];
 
 console.log("Sites that use websockets:");
 Object.keys(handle.websites).forEach(function(site){
@@ -16,11 +19,17 @@ Object.keys(handle.websites).forEach(function(site){
         }
     }
 
+    if(fs.existsSync(`websites/${site}/src`)) {
+        srcWebsites.push(site);
+    }
+
 });
 
 console.log("Sites with proxies:");
 console.log(Object.keys(handle.proxies));
 
+console.log("Sites that use src:");
+console.log(srcWebsites);
 
 // console.log(handle.websites);
 

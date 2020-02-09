@@ -5,7 +5,7 @@
   "description": "Frostickle's server",
   "main": "index.js",
   "dependencies": {
-    "csv-parse": "^2.4.0",
+    "csv-parse": "^4.4.6",
     "http-proxy": "^1.17.0",
     "mime": "^2.3.1",
     "mysql": "^2.15.0",

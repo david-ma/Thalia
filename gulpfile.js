@@ -140,7 +140,7 @@ function setSite(website){
         input: workspace+'/src/',
         output: workspace+'/dist/',
         scripts: {
-            input: workspace+'/src/**/*.js',
+            input: workspace+'/src/**/*(?<!\.min)\.js',
             polyfills: '.polyfill.js',
             output: workspace+'/dist/'
         },
@@ -396,12 +396,24 @@ var startServer = function (done) {
 	// Make sure this feature is activated before running
 	if (!settings.reload) return done();
 
-	// Initialize BrowserSync
-	browserSync.init({
+
+    var bs = {
 		server: {
 			baseDir: paths.reload
 		}
-	});
+	}
+
+    // Use the proxy thing, if we need the Thalia server
+    // Only necessary if you're doing complicated stuff?
+    if(argv.t) {
+        bs = {
+            proxy: "localhost:1337",
+            ghostMode: false
+        };
+    }
+
+	// Initialize BrowserSync
+	browserSync.init(bs);
 
 	// Signal completion
 	done();

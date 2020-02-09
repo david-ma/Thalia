@@ -1,376 +1,483 @@
-/* jshint node: true */
-/* global $: true */
-"use strict";
+/**
+ * Settings
+ * Turn on/off build features
+ */
 
-var gulp 		= require("gulp");
-var $ 			= require("gulp-load-plugins")({});
-var del 		= require("del");
-var envProd 	= false;
-var argv = require('yargs').argv;
-var confirm = require('gulp-confirm');
+var settings = {
+	clean: true,
+	scripts: true,
+	polyfills: true,
+	styles: true,
+	svgs: true,
+	copy: true,
+	typescript: true,
+	reload: true
+};
+
+
+// David's additions
 var fs = require('fs');
-const terser = require('gulp-terser');
+var readlineSync = require('readline-sync');
+var argv = require('yargs').argv;
+var babel = require('gulp-babel');
 
-// Editable - any file extensions added here will trigger the watch task and will be instantly copied to your /dist folder
-var staticSrc = "src/**/*.{eot,ttf,woff,woff2,otf,json,pdf,ico,xml,js,css,csv,tsv,png,jpg,jpeg,svg}";
-var browserSync = require('browser-sync').create();
-var dist = "websites/example/public";
-var site = "websites/example";
-var confirmation = argv.y;
+var websites = fs.readdirSync('./websites').filter( site => site.indexOf(".") == -1 ); // Websites available
 
-gulp.task("workspace", function(){
-    if (argv.s === true || argv.site === true) {
-        $.notify().write("You need to use -s or --site to specify which site you're using.");
-    } else if (argv.s || argv.site) {
-        var workspace = argv.s || argv.site;
-        site = "websites/"+workspace;
-        console.log("Getting input files from: "+workspace+"/src");
-    }
-});
-
-gulp.task("confirm", ["workspace"], function(){
-    try {
-        fs.statSync(site+"/src");
-        if(site !== 'websites/example' && !confirmation) {
-            return gulp.src('').pipe(confirm({
-                // Static text.
-                question: 'Delete and rebuild '+site+'/public? (type "yes" to confirm)',
-                proceed: function(answer) {
-                    confirmation = true;
-                    if(answer.toLowerCase() === "y" || answer.toLowerCase() === "yes") {
-                        dist = site+"/public";
-                        console.log("Setting file output to: "+dist);
-                        return true;
-                    } else {
-                        console.log("Ok, exiting without deleting anything");
-                        process.exit();
-                    }
-                }
-            }));
-        } else if(site !== 'websites/example') {
-            dist = site+"/public";
-            console.log("Setting file output to: "+dist);
-            return true;
-        }
-    } catch (err) {
-        console.log('ERROR! Could not find "'+site+"/src', do NOT build this project.");
-        console.log("Running gulp on your project will delete the public folder.");
-        process.exit();
-    }
-});
-
-// Clean
-gulp.task("clean", ["confirm"], function() {
-    return del.sync([ dist+"/**/*",
-        "!"+dist,
-        "!"+dist+"/.dropbox",
-        "!"+dist+"/Icon?",
-        "!"+dist+"/images",
-        "!"+dist+"/images/uploads",
-        "!"+dist+"/images/uploads/**/*"
-    ]);
-});
-
-gulp.task("cacheclear", function() {
-    $.cache.clearAll();
-});
-
-// Copy staticSrc
-gulp.task("copyThaliaSource", ["confirm"], function() {
-    return gulp.src(staticSrc, {
-        base: "src"
-    }).pipe( gulp.dest(dist) );
-});
-gulp.task("websiteCopy", ["copyThaliaSource", "confirm"], function(){
-    return gulp.src(site+"/"+staticSrc, {
-        base: site+"/src"
-    }).pipe( gulp.dest(dist) );
-});
-
-// Compile Partials
-gulp.task('html', ["confirm"], function() {
-    gulp.src(['src/**/*.html', site+'/src/**/*.html'])
-        .pipe($.fileInclude({
-            prefix: '@@',
-            basepath: 'src/partials/'
-        }))
-        .pipe($.htmlmin({
-            // Editable - see https://www.npmjs.com/package/gulp-minify-html#options for details
-            minifyJS: envProd
-        }))
-        .on('error', function(e) {
-            if(!envProd) {
-                console.log("Error in this HTML file:");
-                console.log(e.fileName);
-
-                $.notify().write("HTML Parse Error");
-            }
-        })
-        .pipe(gulp.dest(dist+'/'));
-});
-
-// Concatenate JS
-gulp.task("jsconcat", ["confirm"], function() {
-    return gulp.src([
-        // Editable - Add any additional paths to JS Bower components here
-
-        // Declare these first, so they are used in this order.
-        "src/js/vendor/d3.min.js",
-        "src/js/vendor/d3-selection-multi.v1.min.js",
-        "src/js/vendor/d3-fetch.v1.min.js",
-        "src/js/vendor/jquery.min.js",
-        'src/js/vendor/bootstrap.min.js',
-
-        "src/js/vendor/*.js"
-    ]).pipe( $.concat("vendor.min.js"))
-        .pipe( gulp.dest(dist+"/js"));
-});
-
-// JSHint
-gulp.task("jshint", function () {
-    // -l for lint
-    if (argv.l === true) {
-        return gulp.src(["src/js/*.js", site+'/src/js/*.js'])
-            .pipe( $.jshint() )
-            .pipe( $.jshint.reporter( "jshint-stylish" ) )
-            .pipe( $.jshint.reporter('fail') )
-            .on('error', function(e) {
-                if(!envProd) {
-                    $.notify().write(e);
-                }
-            });
-    } else {
-        return gulp.src(["src/js/*.js", site+'/src/js/*.js'])
-            .pipe( $.jshint() )
-            .on('error', function(e) {
-                if(!envProd) {
-                    $.notify().write(e);
-                }
-            });
-    }
-});
-
-// Compile JS
-gulp.task( "javascript", ["jshint", "confirm"], function() {
-    var out = gulp.src([
-            "src/js/plugins/*.js",
-            "src/js/*.js",
-            site+'/src/js/*.js'
-        ])
-        .pipe( $.concat( "scripts.min.js" ));
-
-    if(!envProd) {
-        out.pipe($.sourcemaps.init({loadMaps: true}))
-            .pipe($.sourcemaps.write());
-    } else {
-        out.pipe(terser());
-    }
-    return out.pipe( gulp.dest( dist+"/js" ) );
-});
+var site = null; // Name of the website
+var workspace = null; // Folder of the workspace
+var jsTasks = null; // Repeated JavaScript tasks
+var paths = null; // Paths related to workspace
 
 
-// Um... this isn't really needed... why not just copy all jpg, png, etc..?
-// Why have an images folder at all..?
-// Images
-gulp.task("images", ["confirm"], function(cb) {
-    return gulp.src([
-// 		'bower_components/jquery-ui/themes/cupertino/images/*',
-// 		'bower_components/datatables.net-dt/images/*'
-        site+'/src/images/**/*',
-        'src/images/**/*'
-    ]).pipe( gulp.dest( dist+"/images" ) );
-});
+/**
+ * Template for banner to add to file headers
+ */
 
-// Fonts
-gulp.task('fonts', ["websiteCopy", "confirm"], function() {
-    return gulp.src([
-        // 'bower_components/bootstrap-sass/assets/fonts/**/*',
-        // 'bower_components/font-awesome/fonts/**/*'
-        'src/fonts/**/*'
-    ]).pipe(gulp.dest(dist+'/fonts/'));
-});
+var banner = {
+	main:
+		'/*!' +
+		' <%= package.name %> v<%= package.version %>' +
+		' | (c) ' + new Date().getFullYear() + ' <%= package.author.name %>' +
+		' | <%= package.license %> License' +
+		' | <%= package.repository.url %>' +
+		' */\n'
+};
 
-// Static CSS
-gulp.task("staticCSS", ["confirm"], function(cb) {
-    return gulp.src([
-// These should not be on by default...
-// 		'bower_components/jquery-ui/themes/cupertino/jquery-ui.min.css',
-// 		'bower_components/datatables.net-dt/css/jquery.dataTables.min.css',
-// 		'bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css',
-// 		'bower_components/datatables.net-colreorder-dt/css/colReorder.dataTables.min.css',
-// 		'bower_components/datatables.net-select-dt/css/select.dataTables.min.css'
-    ]).pipe( gulp.dest( dist+"/css" ) );
-});
 
-// Stylesheets
-gulp.task("stylesheets", ["confirm"], function() {
-    var out = gulp.src([
-            site+'/src/css/**/*.scss'
-        ])
-        .pipe( $.sourcemaps.init() )
-        .pipe( $.cssGlobbing({
-            extensions: ['.scss']
-        }))
-        .pipe( $.sass({
-            style: 'expanded'
-        }))
-        .on('error', $.sass.logError)
-        .on('error', function(e) {
-            if(!envProd) {
-                $.notify().write(e);
-            }
-        })
-        .pipe( $.autoprefixer({
-                browsers: ['last 2 versions'], // Editable - see https://github.com/postcss/autoprefixer#options
-                cascade: false
-            })
-        );
+/**
+ * Gulp Packages
+ */
 
-    if(!envProd) {
-        out.pipe( $.sourcemaps.write() );
-    } else {
-        out.pipe( $.csso() );
-    }
 
-    return out.pipe( gulp.dest(dist+'/css') );
-});
+// General
+var {gulp, src, dest, watch, series, parallel} = require('gulp');
+var del = require('del');
+var flatmap = require('gulp-flatmap');
+var lazypipe = require('lazypipe');
+var rename = require('gulp-rename');
+var header = require('gulp-header');
+var package = require('./package.json');
 
-// mainCSS
-gulp.task("mainCSS", ["stylesheets"], function() {
-    var paths = [
-        'src/css/vendor/bootstrap',
-        'src/css/vendor/bootstrap/mixins',
-        'src/css/vendor'
-    ];
-    var out = gulp.src([
-            'src/css/main.scss',
-            site+'/src/css/main.scss'
-        ])
-        .pipe( $.concat('main.scss'))
-        .pipe( $.sourcemaps.init() )
-        .pipe( $.cssGlobbing({
-            extensions: ['.scss']
-        }))
-        .pipe( $.sass({
-            style: 'expanded',
-            includePaths: paths
-        }))
-        .on('error', $.sass.logError)
-        .on('error', function(e) {
-            if(!envProd) {
-                $.notify().write(e);
-            }
-        })
-        .pipe( $.autoprefixer({
-                browsers: ['last 2 versions'], // Editable - see https://github.com/postcss/autoprefixer#options
-                cascade: false
-            })
-        );
+// Scripts
+var jshint = require('gulp-jshint');
+var stylish = require('jshint-stylish');
+var concat = require('gulp-concat');
+var uglify = require('gulp-terser');
+var optimizejs = require('gulp-optimize-js');
 
-    if(!envProd) {
-        out.pipe( $.sourcemaps.write() );
-    } else {
-        out.pipe( $.csso() );
-    }
+// Styles
+var sass = require('gulp-sass');
+var postcss = require('gulp-postcss');
+var prefix = require('autoprefixer');
+var minify = require('cssnano');
 
-    return out.pipe( gulp.dest(dist+'/css') );
-});
+// SVGs
+var svgmin = require('gulp-svgmin');
 
-// Set Production Environment
-gulp.task( 'production_env', function() {
-    envProd = true;
-});
+// BrowserSync
+var browserSync = require('browser-sync');
 
-// Livereload
-gulp.task( "watch", [
-        "mainCSS",
-        "javascript",
-        "jsconcat",
-        // "images",
-        // "fonts",
-        "html",
-        "copyThaliaSource",
-        "websiteCopy",
-        "confirm"
-    ], function() {
-    $.livereload.listen();
+var staticSrc = ".{html,txt,min.js,eot,ttf,woff,woff2,otf,json,pdf,ico,xml,js,css,csv,tsv,png,jpg,jpeg}";
 
-    gulp.watch([site+"/"+staticSrc, staticSrc], ["copyThaliaSource", "websiteCopy"]);
-    gulp.watch([site+"/src/**/*.html","src/**/*.html"], ["html"]);
-    gulp.watch([site+"/src/js/vendor/*.js", "src/js/vendor/*.js"], ["jsconcat"]);
-    gulp.watch([site+"/src/css/**/*.scss", "src/css/**/*.scss"], ["mainCSS"]);
-    gulp.watch([site+"/src/js/**/*.js", "src/js/**/*.js"], ["javascript"]);
-    // gulp.watch([site+"/src/images/**/*.{jpg,png,svg}", "src/images/**/*.{jpg,png,svg}"], ["images"]);
 
-    gulp.watch([
-        dist+"/**/*.html",
-        dist+"/**/*.js",
-        dist+"/**/*.css",
-        dist+"/images/**/*"
-    ]).on( "change", function( file ) {
-        $.livereload.changed(file.path);
-    });
-});
+/**
+ * Gulp Tasks
+ */
+ 
+function compileBoilerplate(done){
+    console.log("compiling boilerplate... ");
 
-let oldtimeout = null;
-// Serve
-gulp.task('serve', [
-        "mainCSS",
-        "javascript",
-        "jsconcat",
-        // "images",
-        "html",
-        "copyThaliaSource",
-        "websiteCopy",
-        // "staticCSS",
-        "watch",
-        "confirm"
-    ], function() {
-    var bs = {
-        server: { baseDir: dist+"/" },
-        ghostMode: false
+    paths = {
+        input: 'src/',
+        output: workspace+'/dist/',
+        scripts: {
+            input: 'src/**/*(?<!\.min)\.js',
+            polyfills: '.polyfill.js',
+            output: workspace+'/dist/'
+        },
+        styles: {
+            input: 'src/**/*.{scss,sass}',
+            output: workspace+'/dist/'
+        },
+        svgs: {
+            input: 'src/**/*.svg',
+            output: workspace+'/dist/'
+        },
+        copy: {
+            input: 'src/**/*'+staticSrc,
+            output: workspace+'/dist/'
+        },
+        typescript: {
+            input: 'src/**/*.ts',
+            output: workspace+'/dist/'
+        },
+        reload: './'+workspace+'/dist/'
     };
 
-    // Use the proxy thing, if we need the Thalia server
-    // Only necessary if you're doing complicated stuff?
-    if(argv.t) {
-        bs = {
-            proxy: "localhost:1337",
-            ghostMode: false
-        };
+    jsTasks = lazypipe()
+        .pipe(header, banner.main, {package: package})
+        .pipe(optimizejs)
+        .pipe(dest, paths.scripts.output)
+        .pipe(rename, {suffix: '.min'})
+        .pipe(uglify)
+        .pipe(optimizejs)
+        .pipe(header, banner.main, {package: package})
+        .pipe(dest, paths.scripts.output);
+
+    build(done);
+}
+
+function setSite(website){
+    site = website;
+    workspace = "websites/"+site;
+    console.log(`Setting workspace to: ${workspace}`);
+
+    /**
+     * Paths to project folders
+     */
+
+    paths = {
+        input: workspace+'/src/',
+        output: workspace+'/dist/',
+        scripts: {
+            input: workspace+'/src/**/*.js',
+            polyfills: '.polyfill.js',
+            output: workspace+'/dist/'
+        },
+        styles: {
+            input: workspace+'/src/**/*.{scss,sass}',
+            output: workspace+'/dist/'
+        },
+        svgs: {
+            input: workspace+'/src/**/*.svg',
+            output: workspace+'/dist/'
+        },
+        copy: {
+            input: workspace+'/src/**/*'+staticSrc,
+            output: workspace+'/dist/'
+        },
+        typescript: {
+            input: workspace+'/src/**/*.ts',
+            output: workspace+'/dist/'
+        },
+        reload: './'+workspace+'/dist/'
+    };
+
+    jsTasks = lazypipe()
+        .pipe(header, banner.main, {package: package})
+        .pipe(optimizejs)
+        .pipe(dest, paths.scripts.output)
+        .pipe(rename, {suffix: '.min'})
+        .pipe(uglify)
+        .pipe(optimizejs)
+        .pipe(header, banner.main, {package: package})
+        .pipe(dest, paths.scripts.output);
+}
+
+var getWorkEnv = function (done) {
+    if (site) {
+        setSite(site);
+        return done();
+    } else {
+
+        if (argv.s === true || argv.site === true) {
+            console.log("When using -s or --site, you must specify which site you're using.");
+            process.exit(0);
+        } else if (argv.s || argv.site) {
+            site = argv.s || argv.site;
+            if ( websites.indexOf(site) == -1 ) {
+                console.log(`Website '${site}' does not exist.`);
+                console.log("Please use one of the following: " + websites.join(", "));
+                process.exit(0);
+            }
+        } else {
+            site = promptForSite();
+        }
+
+        setSite(site);
+        return done();
+    }
+}
+
+
+
+var promptForSite = function () {
+    websites = fs.readdirSync('./websites');
+    websites = websites.filter( site => site.indexOf(".") == -1 );
+
+    console.log("Here are the websites:");
+    websites.forEach(function(site, i){
+        console.log(`${i}) ${site}`);
+    });
+
+    site = readlineSync.question('Which site do you want to work on? ');
+
+    if (websites.indexOf(site) >= 0) {
+
+    } else if (websites[site] != undefined) {
+        site = websites[site];
+    } else {
+        site = 'default';
     }
 
-    browserSync.init(bs);
+    return site;
+}
 
-    gulp.watch([site+"/"+staticSrc, staticSrc], ["copyThaliaSource", "websiteCopy"]);
-    gulp.watch([site+"/src/js/vendor/*.js", "src/js/vendor/*.js"], ["jsconcat"]);
-    gulp.watch([site+"/src/css/**/*.scss", "src/css/**/*.scss"], ["mainCSS"]);
-    gulp.watch([site+"/src/js/**/*.js", "src/js/**/*.js"], ["javascript"]);
 
-    gulp.watch(dist+"/**/*.css").on("change", reload);
-    gulp.watch(dist+"/**/*.js").on("change", reload);
-    gulp.watch(dist+"/**/*.html").on("change", reload);
 
-    function reload() {
-        clearTimeout(oldtimeout);
-        oldtimeout = setTimeout(function(){
-            browserSync.reload();
-        }, 1000);
-    }
-});
 
-// Build
-gulp.task( "build", [
-    "production_env",
-    "clean",
-    "mainCSS",
-    "javascript",
-    "jsconcat",
-    // "images",
-    // "fonts",
-    "html",
-    "copyThaliaSource",
-    "websiteCopy"
-    // ,"staticCSS"
-], function () {});
+// Remove pre-existing content from output folders
+var cleanDist = function (done) {
+	// Make sure this feature is activated before running
+	if (!settings.clean) return done();
+
+	// Clean the dist folder
+	del.sync([
+		paths.output
+	]);
+
+	// Signal completion
+	return done();
+
+};
+
+
+
+// Can we use babel for this stuff..?
+// Lint, minify, and concatenate scripts
+var buildScripts = function (done) {
+
+	// Make sure this feature is activated before running
+	if (!settings.scripts) return done();
+
+	// Run tasks on script files
+	return src(paths.scripts.input)
+		.pipe(flatmap(function(stream, file) {
+
+			// If the file is a directory
+			if (file.isDirectory()) {
+
+				// Setup a suffix variable
+				var suffix = '';
+
+				// If separate polyfill files enabled
+				if (settings.polyfills) {
+
+					// Update the suffix
+					suffix = '.polyfills';
+
+					// Grab files that aren't polyfills, concatenate them, and process them
+					src([file.path + '/*.js', '!' + file.path + '/*' + paths.scripts.polyfills])
+						.pipe(concat(file.relative + '.js'))
+						.pipe(jsTasks());
+
+				}
+
+				// Grab all files and concatenate them
+				// If separate polyfills enabled, this will have .polyfills in the filename
+				src(file.path + '/*.js')
+					.pipe(concat(file.relative + suffix + '.js'))
+					.pipe(jsTasks());
+
+				return stream;
+
+			}
+
+			// Otherwise, process the file
+			return stream.pipe(jsTasks());
+
+		}));
+
+};
+
+// Lint scripts
+var lintScripts = function (done) {
+
+	// Make sure this feature is activated before running
+	if (!settings.scripts) return done();
+
+	// Lint scripts
+	return src(paths.scripts.input)
+		.pipe(jshint())
+		.pipe(jshint.reporter('jshint-stylish'));
+
+};
+
+// Process, lint, and minify Sass files
+var buildStyles = function (done) {
+console.log("building styles..");
+
+    var scssLoadPaths = [
+            'src/css/vendor/bootstrap',
+            'src/css/vendor/bootstrap/mixins',
+            'src/css/vendor'
+        ];
+
+	// Make sure this feature is activated before running
+	if (!settings.styles) return done();
+
+	// Run tasks on all Sass files
+	return src(paths.styles.input)
+		.pipe(sass({
+    		includePaths: scssLoadPaths,
+			outputStyle: 'expanded',
+			sourceComments: true
+		}))
+		.pipe(postcss([
+			prefix({
+				cascade: true,
+				remove: true
+			})
+		]))
+		.pipe(header(banner.main, {package: package}))
+		.pipe(dest(paths.styles.output))
+		.pipe(rename({suffix: '.min'}))
+		.pipe(postcss([
+			minify({
+				discardComments: {
+					removeAll: true
+				}
+			})
+		]))
+		.pipe(dest(paths.styles.output));
+
+};
+
+// Optimize SVG files
+var buildSVGs = function (done) {
+
+	// Make sure this feature is activated before running
+	if (!settings.svgs) return done();
+
+	// Optimize SVG files
+	return src(paths.svgs.input)
+		.pipe(svgmin())
+		.pipe(dest(paths.svgs.output));
+
+};
+
+
+
+
+// babel typescript stuff..???
+var typescript = function (done) {
+    if (!typescript) return done();
+
+    return src(paths.typescript.input)
+        .pipe(babel({
+//             presets: ['@babel/env']
+            "plugins": ["@babel/plugin-transform-typescript"]
+        }))
+        .pipe(dest(paths.typescript.output));
+};
+
+
+
+
+
+
+
+
+// Copy static files into output folder
+var copyFiles = function (done) {
+
+	// Make sure this feature is activated before running
+	if (!settings.copy) return done();
+
+	// Copy static files
+	return src(paths.copy.input)
+		.pipe(dest(paths.copy.output));
+
+};
+
+// Watch for changes to the src directory
+var startServer = function (done) {
+
+	// Make sure this feature is activated before running
+	if (!settings.reload) return done();
+
+	// Initialize BrowserSync
+	browserSync.init({
+		server: {
+			baseDir: paths.reload
+		}
+	});
+
+	// Signal completion
+	done();
+
+};
+
+// Reload the browser when files change
+var reloadBrowser = function (done) {
+	if (!settings.reload) return done();
+	browserSync.reload();
+	done();
+};
+
+// Watch for changes
+var watchSource = function (done) {
+	watch(paths.input, series(build, reloadBrowser));
+	done();
+};
+
+
+/**
+ * Export Tasks
+ */
+var build = parallel(
+		buildScripts,
+		lintScripts,
+		buildStyles,
+		buildSVGs,
+		typescript,
+		copyFiles
+	);
+
+var buildSequence = series(
+        setSite, cleanDist, build
+    );
+
+// Default task
+exports.default = exports.build = series(
+    getWorkEnv,
+	cleanDist,
+	compileBoilerplate,
+	getWorkEnv,
+	build
+);
+
+
+exports.buildAll = function(done) {
+    const tasks = websites.map(website => {
+    return function buildSite(taskDone) {
+            setSite(website);
+            series(cleanDist, compileBoilerplate, getWorkEnv, build)(taskDone);
+        }
+    });
+
+    return series(...tasks)(done);
+
+// In case you want to do something after doing everything
+//   return series(...tasks, (seriesDone) => {
+//     seriesDone();
+//     done();
+//   })();
+}
+
+
+// Watch and reload
+// gulp watch
+exports.watch = series(
+	exports.default,
+	startServer,
+	watchSource
+);
+
+
+
+
+
+
+
 

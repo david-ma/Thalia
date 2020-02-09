@@ -3,14 +3,14 @@ const fs = require('fs');
 
 const Website = function (site, config) {
     if(typeof config === "object") {
-        this.data = config.data ? "websites/"+site+"/data" : false ;
+        this.data = false ;
+        this.dist = false ;
         this.folder = typeof config.folder === "string" ? config.folder : "websites/"+site+"/public";
         this.domains = typeof config.domains === "object" ? config.domains : [];
         this.pages = typeof config.pages === "object" ? config.pages : {"": "/index.html"};
         this.redirects = typeof config.redirects === "object" ? config.redirects : {};
         this.services = typeof config.services === "object" ? config.services : {};
-        this.proxies = typeof config.proxies === "object" ? config.proxies : {};
-        this.security = typeof config.security === "object" ? config.security : {loginNeeded:function(){return false;}};
+        this.proxies = typeof config.proxies === "object" ? config.proxies : {};this.security = typeof config.security === "object" ? config.security : {loginNeeded:function(){return false;}};
     } else {
         console.log("Config isn't an object");
     }
@@ -72,6 +72,14 @@ const handle = {
     addWebsite: function(site, config, cred){
         config = config || {};
         handle.websites[site] = new Website(site, config);
+
+        // If dist or data exist, enable them.
+        if(fs.existsSync(`websites/${site}/data`)) {
+            handle.websites[site].data = "websites/"+site+"/data";
+        }
+        if(fs.existsSync(`websites/${site}/dist`)) {
+            handle.websites[site].dist = "websites/"+site+"/dist";
+        }
 
         Object.keys(handle.websites[site].proxies).forEach(function(proxy){
             handle.proxies[proxy] = handle.websites[site].proxies[proxy];

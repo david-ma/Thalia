@@ -63,11 +63,24 @@ function router(website, pathname, response, request) {
                 //	if there's a function, perform it
             } else if (typeof website.services[d.words[1]] === 'function') {
                 website.services[d.words[1]](response, request, website.db, d.words[2]);
-            } else if (website.data && fs.existsSync(website.data.concat(pathname.replace("data/", "")))) {
-                routeFile(website.data.concat(pathname.replace("data/", "")));
-            } else if (website.data && fs.existsSync(website.data.concat(pathname.replace("data/", "")).concat(".gz"))) {
+
+                // if there is a matching data file
+            } else if (website.data
+                        && fs.existsSync(website.data.concat(pathname))
+                        && fs.lstatSync(website.data.concat(pathname)).isFile()) {
+                routeFile(website.data.concat(pathname));
+
+                // if there is a matching .gz file in the data folder
+            } else if (website.data
+                        && fs.existsSync(website.data.concat(pathname).concat(".gz"))) {
                 response.setHeader('Content-Encoding', 'gzip');
-                routeFile(website.data.concat(pathname.replace("data/", "")).concat(".gz"));
+                routeFile(website.data.concat(pathname, ".gz"));
+
+                // if there is a matching compiled file
+            } else if (website.dist 
+                        && fs.existsSync(website.dist.concat(pathname))
+                        && fs.lstatSync(website.dist.concat(pathname)).isFile()) {
+                routeFile(website.dist.concat(pathname));
             } else {
 
                 // Otherwise, route as normal
@@ -134,7 +147,7 @@ function router(website, pathname, response, request) {
             fs.stat(filename, function(err, stats){
                 // Only zip stuff if it's bigger than 1400 bytes
                 if (stats.size > 1400) {
-                    if (filetype.slice(0,4) === "text" || filetype === "application/json") {
+                    if (filetype && (filetype.slice(0,4) === "text" || filetype === "application/json")) {
                         if(acceptedEncoding.indexOf('deflate') >= 0) {
                             router = function(file) {
                                 response.writeHead(200, { 'content-encoding': 'deflate' });

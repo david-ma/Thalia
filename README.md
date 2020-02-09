@@ -4,7 +4,7 @@ Thalia is a nodejs server, which allows for simple serving of multiple websites 
 
 This allows me to quickly create a new project folder and get to work. It contains a basic HTML5 boilerplate that sets you up with bootstrap, jquery, datatables & d3.js
 
-The project folders can be git repos or shared with Dropbox if you're collaborating with less technical people. I often share these folders with friends who are learning to code so we have a shared workspace, or in hackathons when work needs to be synced across the team quickly and put online instantly
+The project folders can be git repos or shared with Dropbox if you're collaborating with less technical people. I often share these folders with friends who are learning to code so we have a shared workspace, or in hackathons when work needs to be synced across the team quickly and put online instantly.
 
 Quickstart
 -
@@ -30,13 +30,13 @@ This will tell gulp to watch a single folder: websites/example/src, outputting a
 Features
 -
 Besides simple serving of a public folder, **Thalia** can also do:
-- **SSL** Use Let's Encrypt to secure your websites.
 - **Redirects** (e.g. [david-ma.net/publications](http://david-ma.net/publications) redirects you to my google scholar page.)
 - **Url Mapping** (e.g. [david-ma.net/hackers](http://david-ma.net/hackers) maps to the file hackers.txt)
 - **Services and REST** (e.g. [david-ma.net/reddit/questions](http://david-ma.net/reddit/questions) runs a function which checks my database for the latest "Official Questions Thread" on [/r/photography](http://reddit.com/r/photography) and then you there. Services can also be used for REST interfaces, e.g. [localstories.info/requestjson](http://localstories.info/requestjson) pulls a random file as JSON from the [ABC Local archive](http://www.abc.net.au/local/about/?ref=footer), which was part of [a project](http://localstories.info/) I did for the [GovHack](http://govhack.org/) hackathon once upon a time.
 - **Domains** (The same workspace can be served to as many different domains as you want. E.g. [localstories.info](http://localstories.info) and [localstories.com.au](http://localstories.com.au) both point at the same website)
 - **Reverse Proxy** (e.g. [slack.redditphotography.com](http://slack.redditphotography.com) proxies to [redditphotography.com:3000](http://redditphotography.com:3000), allowing me to have different things running on the same machine.), Proxies can also be filtered so only certain subdirectories are proxied. This is especially useful in conjunction with Tomcat web applications.
 - **Data** Files that don't belong in the codebase can be added to /data/ so they don't need to be commited or watched. Just set ```data: true`` in config.js and Thalia will serve files from that folder as if they were in public/data.
+- ~~**SSL** Use Let's Encrypt to secure your websites.~~ Nevermind. This was too much work for not much benifit. [Just use an nginx reverse proxy or something](https://www.digitalocean.com/community/tutorials/how-to-configure-nginx-with-ssl-as-a-reverse-proxy-for-jenkins).
 
 I should probably explain how to use those things, but I've written enough here and don't think anyone is going to read this anyway. If you want to know more about this ping me on Twitter asking for more documentation or raise a github issue.
 
@@ -45,4 +45,6 @@ I should probably explain how to use those things, but I've written enough here 
 Thanks
 -
 
-Thanks [@slavanossar](https://github.com/slavanossar/) for [Thirst Quencher](https://github.com/slavanossar/thirst-quencher), from which my gulp script has been adapted!
+Thanks [@cferdinandi](https://github.com/cferdinandi/) for [Gulp Boilerplate](https://github.com/cferdinandi/gulp-boilerplate), from which my gulp script for v3 was adapted.
+
+Thanks [@slavanossar](https://github.com/slavanossar/) for [Thirst Quencher](https://github.com/slavanossar/thirst-quencher), from which my gulp script for v2 was adapted.

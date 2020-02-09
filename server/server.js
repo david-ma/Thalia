@@ -3,36 +3,57 @@ const http  = require("http");
 const url   = require("url");
 const httpProxy = require('http-proxy');
 
+const blacklist = require("./../blacklist").blacklist || [];
+console.log("This is the blacklist:", blacklist);
+
 //This part of the server starts the server on port 80 and logs stuff to the std.out
 function start(router, handle, tlsOptions) {
     let server = null;
 
     function onRequest(request, response) {
+        let spam = false;
 
-        const host = request.headers.host;
-        const proxyConfig = handle.proxies[host];
-        const site = handle.getWebsite(host);
-        const url_object = url.parse(request.url, true);
+        const ip = request.headers['X-Real-IP'] || request.headers['x-real-ip'] || request.connection.remoteAddress;
 
-        console.log();
-        console.log("Request for "+ request.headers.host + url_object.href + " At " + getDateTime() +
-            " From " + request.connection.remoteAddress);
+        if ( ip ) {
+            blacklist.forEach(function(thing){
+                if(ip.includes(thing)) {
+                    spam = true;
+                    // console.log(`Spam request from ${ip}`);
 
-        if (proxyConfig &&
-            (
-                typeof proxyConfig.filter === 'undefined' ||
-                proxyConfig.filter === url.parse(request.url).pathname.split("/")[1]
-            )
-        ) {
-            if(typeof proxyConfig.passwords !== 'undefined' &&
-                Array.isArray(proxyConfig.passwords)
-            ) {
-                security( proxyConfig.passwords );
-            } else {
-                webProxy( proxyConfig );
+                    response.writeHead(403);
+                    response.end("Go away");
+                }
+            });
+        }
+
+        if (!spam) {
+            const host = request.headers.host;
+            const proxyConfig = handle.proxies[host];
+            const site = handle.getWebsite(host);
+            const url_object = url.parse(request.url, true);
+
+            if (host != 'www.monetiseyourwebsite.com') {
+                console.log();
+                console.log(`Request for ${request.headers.host}${url_object.href} At ${getDateTime()} From ${ip}`);
             }
-        } else {
-            router(site, url_object.pathname, response, request);
+
+            if (proxyConfig &&
+                (
+                    typeof proxyConfig.filter === 'undefined' ||
+                    proxyConfig.filter === url.parse(request.url).pathname.split("/")[1]
+                )
+            ) {
+                if(typeof proxyConfig.passwords !== 'undefined' &&
+                    Array.isArray(proxyConfig.passwords)
+                ) {
+                    security( proxyConfig.passwords );
+                } else {
+                    webProxy( proxyConfig );
+                }
+            } else {
+                router(site, url_object.pathname, response, request);
+            }
         }
 
         function webProxy( config ) {
@@ -50,10 +71,11 @@ function start(router, handle, tlsOptions) {
             proxyServer.on("error", function(err, req, res ){
                 "use strict";
                 console.log(err);
-
-                if(res) {
+                try {
                     res.writeHead(500);
                     res.end(message);
+                } catch (e) {
+                    console.log("Error doing proxy!", e);
                 }
             });
 

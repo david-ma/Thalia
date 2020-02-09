@@ -52,13 +52,14 @@ function router(website, pathname, response, request) {
 
         } else {
 
+            // If a page substitution exists, substitute it.
+            if (typeof website.pages[d.words[1]] !== "undefined") {
+                pathname = website.pages[d.words[1]];
+            }
+
             // If there's a redirect, go to it
             if (typeof website.redirects[pathname] !== "undefined") {
                 redirect(website.redirects[pathname]);
-
-                //	If there's a page, serve it
-            } else if (typeof website.pages[d.words[1]] !== "undefined") {
-                routeFile(website.folder.concat(website.pages[d.words[1]]));
 
                 //	if there's a function, perform it
             } else if (typeof website.services[d.words[1]] === 'function') {
@@ -78,12 +79,16 @@ function router(website, pathname, response, request) {
 
                 // if there is a matching compiled file
             } else if (website.dist 
-                        && fs.existsSync(website.dist.concat(pathname))
-                        && fs.lstatSync(website.dist.concat(pathname)).isFile()) {
+                && fs.existsSync(website.dist.concat(pathname))
+                && fs.lstatSync(website.dist.concat(pathname)).isFile()
+            || website.dist
+                && fs.existsSync(website.dist.concat(pathname, "/index.html"))
+                && fs.lstatSync(website.dist.concat(pathname, "/index.html")).isFile()
+            ) {
                 routeFile(website.dist.concat(pathname));
             } else {
 
-                // Otherwise, route as normal
+                // Otherwise, route as normal to the public folder
                 routeFile(website.folder.concat(pathname));
             }
         }

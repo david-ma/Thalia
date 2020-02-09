@@ -23,6 +23,10 @@ Object.keys(handle.websites).forEach(function(site){
         srcWebsites.push(site);
     }
 
+    if(handle.websites[site].pages) {
+        console.log(handle.websites[site].pages);
+    }
+
 });
 
 console.log("Sites with proxies:");

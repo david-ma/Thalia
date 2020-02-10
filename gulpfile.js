@@ -77,7 +77,7 @@ var svgmin = require('gulp-svgmin');
 // BrowserSync
 var browserSync = require('browser-sync');
 
-var staticSrc = ".{html,txt,min.js,eot,ttf,woff,woff2,otf,json,pdf,ico,xml,js,css,csv,tsv,png,jpg,jpeg}";
+var staticSrc = ".{html,txt,min.js,min.js.map,min.css.map,eot,ttf,woff,woff2,otf,json,pdf,ico,xml,js,css,csv,tsv,png,jpg,jpeg}";
 
 
 /**
@@ -429,7 +429,14 @@ var reloadBrowser = function (done) {
 
 // Watch for changes
 var watchSource = function (done) {
-	watch(paths.input, series(build, reloadBrowser));
+	// watch(paths.input, series(build, reloadBrowser));
+
+    watch(paths.copy.input, series(copyFiles, reloadBrowser));
+    watch(paths.scripts.input, series(lintScripts, buildScripts, reloadBrowser));
+    watch(paths.svgs.input, series(buildSVGs, reloadBrowser));
+    watch(paths.typescript.input, series(typescript, reloadBrowser));
+    watch(paths.styles.input, series(buildStyles, reloadBrowser));
+
 	done();
 };
 

@@ -77,7 +77,7 @@ var svgmin = require('gulp-svgmin');
 // BrowserSync
 var browserSync = require('browser-sync');
 
-var staticSrc = ".{html,txt,min.js,min.js.map,min.css.map,eot,ttf,woff,woff2,otf,json,pdf,ico,xml,js,css,csv,tsv,png,jpg,jpeg}";
+var staticSrc = ".{html,txt,min.js,min.js.map,min.css.map,eot,ttf,woff,woff2,otf,json,pdf,ico,xml,css,csv,tsv,png,jpg,jpeg}";
 
 
 /**

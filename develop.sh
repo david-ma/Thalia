@@ -6,5 +6,5 @@
 
 echo Hello user, running David Ma\'s nodejs server at localhost, and serving using gulp
 echo
-node server/index.js $1 $2 &
+nodemon --ignore dist/ --ignore public/ server/index.js $1 $2 &
 gulp watch -t -y -s $1

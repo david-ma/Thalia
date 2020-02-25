@@ -366,11 +366,19 @@ var typescript = function (done) {
     return src(paths.typescript.input)
         .pipe(babel({
             presets : [
-                [require("@babel/preset-env"), {
-                    modules: 'amd'
+                ["@babel/preset-typescript", {
+                    modules: 'umd'
                 }]
             ],
-            "plugins" : ["@babel/plugin-transform-typescript"]
+            "plugins" : [
+                "@babel/plugin-transform-typescript", 
+                ["@babel/plugin-transform-modules-umd", {
+                    globals: {
+                        '$': '$',
+                        'd3': 'd3'
+                    }
+                }]
+            ]
         }))
         .pipe(dest(paths.typescript.output));
 };

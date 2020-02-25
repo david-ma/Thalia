@@ -703,6 +703,14 @@
     levenary "^1.1.1"
     semver "^5.5.0"
 
+"@babel/preset-typescript@^7.8.3":
+  version "7.8.3"
+  resolved "https://registry.yarnpkg.com/@babel/preset-typescript/-/preset-typescript-7.8.3.tgz#90af8690121beecd9a75d0cc26c6be39d1595d13"
+  integrity sha512-qee5LgPGui9zQ0jR1TeU5/fP9L+ovoArklEqY12ek8P/wV5ZeM/VYSQYwICeoT6FfpJTekG9Ilay5PhwsOpMHA==
+  dependencies:
+    "@babel/helper-plugin-utils" "^7.8.3"
+    "@babel/plugin-transform-typescript" "^7.8.3"
+
 "@babel/template@^7.8.3":
   version "7.8.3"
   resolved "https://registry.yarnpkg.com/@babel/template/-/template-7.8.3.tgz#e02ad04fe262a657809327f578056ca15fd4d1b8"
@@ -977,7 +985,7 @@
   dependencies:
     "@types/jquery" "*"
 
-"@types/geojson@*", "@types/geojson@^7946.0.7":
+"@types/geojson@*":
   version "7946.0.7"
   resolved "https://registry.yarnpkg.com/@types/geojson/-/geojson-7946.0.7.tgz#c8fa532b60a0042219cdf173ca21a975ef0666ad"
   integrity sha512-wE2v81i4C4Ol09RtsWFAqg3BUitWbHSpSlIo+bNdsCJijO9sjme+zm+73ZMCa/qMC8UEERxzGbvmr1cffo2SiQ==
@@ -996,7 +1004,7 @@
   dependencies:
     "@types/sizzle" "*"
 
-"@types/node@*", "@types/node@>=8.0.0":
+"@types/node@*":
   version "13.7.4"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-13.7.4.tgz#76c3cb3a12909510f52e5dc04a6298cdf9504ffd"
   integrity sha512-oVeL12C6gQS/GAExndigSaLxTrKpQPxewx9bOcwfvJiJge4rr7wNaph4J+ns5hrmIV2as5qxqN8YKthn9qh0jw==
@@ -4225,7 +4233,7 @@ iconv-lite@0.4, iconv-lite@0.4.24:
   dependencies:
     safer-buffer ">= 2.1.2 < 3"
 
-iconv-lite@^0.5.0, iconv-lite@^0.5.1:
+iconv-lite@^0.5.0:
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/iconv-lite/-/iconv-lite-0.5.1.tgz#b2425d3c7b18f7219f2ca663d103bddb91718d64"
   integrity sha512-ONHr16SQvKZNSqjQT9gy5z24Jw+uqfO02/ngBSBoqChZ+W8qXX7GPRa1RoUnzGADw8K63R1BXUMzarCVQBpY8Q==
@@ -5350,18 +5358,6 @@ map-visit@^1.0.0:
   dependencies:
     object-visit "^1.0.0"
 
-mariadb@^2.2.0:
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/mariadb/-/mariadb-2.2.0.tgz#077e8c44ded718f2ecebef321c3703fe8d524504"
-  integrity sha512-YXPF11u4NVgm3FLetJoAbq9Fb0a/RSwNrDHdmAqpqgYErWAOes/IVbOfvWPWZQ0hI88j/81f15AGJZAVuR3bGg==
-  dependencies:
-    "@types/geojson" "^7946.0.7"
-    "@types/node" ">=8.0.0"
-    denque "^1.4.1"
-    iconv-lite "^0.5.1"
-    long "^4.0.0"
-    moment-timezone "^0.5.27"
-
 matchdep@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/matchdep/-/matchdep-2.0.0.tgz#c6f34834a0d8dbc3b37c27ee8bbcb27c7775582e"
@@ -5504,13 +5500,6 @@ moment-timezone@^0.5.21:
   version "0.5.28"
   resolved "https://registry.yarnpkg.com/moment-timezone/-/moment-timezone-0.5.28.tgz#f093d789d091ed7b055d82aa81a82467f72e4338"
   integrity sha512-TDJkZvAyKIVWg5EtVqRzU97w0Rb0YVbfpqyjgu6GwXCAohVRqwZjf4fOzDE6p1Ch98Sro/8hQQi65WDXW5STPw==
-  dependencies:
-    moment ">= 2.9.0"
-
-moment-timezone@^0.5.27:
-  version "0.5.27"
-  resolved "https://registry.yarnpkg.com/moment-timezone/-/moment-timezone-0.5.27.tgz#73adec8139b6fe30452e78f210f27b1f346b8877"
-  integrity sha512-EIKQs7h5sAsjhPCqN6ggx6cEbs94GK050254TIJySD1bzoM5JTYDwAU1IoVOeTOL6Gm27kYJ51/uuvq1kIlrbw==
   dependencies:
     moment ">= 2.9.0"
 

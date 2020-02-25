@@ -43,6 +43,9 @@ const handle = {
                 if(err.code !== 'MODULE_NOT_FOUND') {
                     console.log("Warning, your config script for "+site+" is broken!");
                     console.log();
+                } else {
+                    console.log(`Error in ${site} config!`);
+                    console.log(err);
                 }
             }
             try {

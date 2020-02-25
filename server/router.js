@@ -21,10 +21,11 @@ function router(website, pathname, response, request) {
             }
 
             data.words = pathname
-                .split("/")
-                .map(function(d){
-                    return d.toLowerCase();
-                });
+                .split("/");
+                // This should not be lowercase??? Keys are case sensitive!
+                // .map(function(d){
+                //     return d.toLowerCase();
+                // });
 
             resolve(data);
         } catch (err){
@@ -63,7 +64,7 @@ function router(website, pathname, response, request) {
 
                 //	if there's a function, perform it
             } else if (typeof website.services[d.words[1]] === 'function') {
-                website.services[d.words[1]](response, request, website.db, d.words[2]);
+                website.services[d.words[1]](response, request, website.db || website.seq , d.words[2]);
 
                 // if there is a matching data file
             } else if (website.data
@@ -95,8 +96,11 @@ function router(website, pathname, response, request) {
     }).catch(renderError);
 
     function renderError(d){
-        console.log("Error?");
-        d = d || {
+        console.log("Error?",d);
+        d = d ? {
+            code: 500,
+            message: JSON.stringify(d)
+        } : {
             code: 500,
             message: "500 Server Error"
         };

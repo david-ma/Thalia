@@ -5,10 +5,14 @@
   "description": "Frostickle's server",
   "main": "index.js",
   "dependencies": {
+    "async": "^3.2.0",
     "csv-parse": "^4.4.6",
     "http-proxy": "^1.17.0",
     "mime": "^2.3.1",
     "mysql": "^2.15.0",
+    "mysql2": "^2.1.0",
+    "sequelize": "^5.21.4",
+    "x-ray": "^2.3.4",
     "zlib": "^1.0.5"
   },
   "devDependencies": {
@@ -45,6 +49,7 @@
     "node-sass": "4.13.0",
     "nodemon": "^2.0.2",
     "readline-sync": "^1.4.10",
+    "sequelize-cli": "^5.5.1",
     "yargs": "^15.1.0"
   },
   "engines": {

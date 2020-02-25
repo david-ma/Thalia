@@ -36,7 +36,9 @@ const handle = {
             console.log("Adding site: "+site);
             var config, cred;
             try {
+                const start = Date.now();
                 config = require('../websites/'+site+'/config').config;
+                console.log(`${Date.now() - start} ms - config.js for ${site}`);
             } catch (err){
                 if(err.code !== 'MODULE_NOT_FOUND') {
                     console.log("Warning, your config script for "+site+" is broken!");
@@ -94,6 +96,17 @@ const handle = {
         // If DB credentials are provided, connect to the db and add to the site handle
         if(cred) {
             handle.websites[site].db = new db(cred);
+        }
+
+        // If sequelize is set up, add it.
+        if(fs.existsSync(`websites/${site}/db_bootstrap.js`)) {
+            try {
+                const start = Date.now();
+                handle.websites[site].seq = require(`../websites/${site}/db_bootstrap.js`).seq;
+                console.log(`${Date.now() - start} ms - Database bootstrap.js ${site}`);
+            } catch(e) {
+                console.log(e);
+            }
         }
 
         // If the site has any startup actions, do them

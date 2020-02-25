@@ -190,7 +190,6 @@ function router(website, pathname, response, request) {
                             response.setHeader("Expires", new Date(Date.now() + 180000).toUTCString());  // in ms.
                         }
                     }
-
                 }
             });
 

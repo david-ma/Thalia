@@ -111,6 +111,7 @@ function compileBoilerplate(done){
             input: 'src/**/*.ts',
             output: workspace+'/dist/'
         },
+        views: workspace+'/views',
         reload: './'+workspace+'/dist/'
     };
 
@@ -160,6 +161,7 @@ function setSite(website){
             input: workspace+'/src/**/*.ts',
             output: workspace+'/dist/'
         },
+        views: workspace+'/views',
         reload: './'+workspace+'/dist/'
     };
 
@@ -448,6 +450,7 @@ var watchSource = function (done) {
     watch(paths.svgs.input, series(buildSVGs, reloadBrowser));
     watch(paths.typescript.input, series(typescript, reloadBrowser));
     watch(paths.styles.input, series(buildStyles, reloadBrowser));
+    watch(paths.views, series(reloadBrowser));
 
 	done();
 };

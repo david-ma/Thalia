@@ -6,9 +6,9 @@
 var settings = {
 	clean: true,
 	scripts: true,
-	polyfills: true,
+	polyfills: false,
 	styles: true,
-	svgs: true,
+	svgs: false,
 	copy: true,
 	typescript: true,
 	reload: true

@@ -7,6 +7,7 @@
   "dependencies": {
     "async": "^3.2.0",
     "csv-parse": "^4.4.6",
+    "formidable": "^1.2.2",
     "http-proxy": "^1.17.0",
     "mime": "^2.3.1",
     "mustache": "^4.0.0",
@@ -64,6 +65,10 @@
     "build": "gulp build -s ",
     "develop": "./develop.sh",
     "inspect": "node server/inspect"
+  },
+  "nodemonConfig": {
+    "ignore": ["dist/*", "src/*", "views/*", "public/*", "gulpfile.js"],
+    "delay": "2500"
   },
   "repository": {
     "type": "git",

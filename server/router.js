@@ -62,6 +62,15 @@ function router(website, pathname, response, request) {
             if (typeof website.redirects[pathname] !== "undefined") {
                 redirect(website.redirects[pathname]);
 
+                //	if there's a controller, call it
+            } else if (typeof website.controller[d.words[1]] === 'function') {
+                website.controller[d.words[1]]({
+                    res: response,
+                    req: request,
+                    db: website.db || website.sq || null,
+                    path: d.words.slice(2)
+                });
+
                 //	if there's a function, perform it
             } else if (typeof website.services[d.words[1]] === 'function') {
                 website.services[d.words[1]](response, request, website.db || website.seq , d.words[2]);

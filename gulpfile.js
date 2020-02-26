@@ -367,20 +367,31 @@ var typescript = function (done) {
 
     return src(paths.typescript.input)
         .pipe(babel({
-            presets : [
-                ["@babel/preset-typescript", {
-                    modules: 'umd'
-                }]
-            ],
             "plugins" : [
-                "@babel/plugin-transform-typescript", 
+                ["@babel/plugin-transform-typescript", {
+                    // module: 'umd'
+                }],
                 ["@babel/plugin-transform-modules-umd", {
-                    globals: {
-                        '$': '$',
-                        'd3': 'd3'
-                    }
+// some of these options only work on amd or umd or something. read the docs.
+                    // globals: {
+                    //     '$': '$',
+                    //     'd3': 'original.d3',
+                    //     'd3-selection': 'asdf.d3',
+                    //     'd3-selection-multi': 'd3',
+                    //     'd3-transition': 'ff.d3'
+                    // }
+                    // ,exactGlobals: true
                 }]
             ]
+
+// presets are just collections of plugins
+            // ,
+            // "presets" : [
+            //     "@babel/preset-env"
+            //     // ["@babel/preset-typescript", {
+            //     //     // modules: 'umd'
+            //     // }]
+            // ]
         }))
         .pipe(dest(paths.typescript.output));
 };
@@ -479,6 +490,13 @@ exports.default = exports.build = series(
 	compileBoilerplate,
 	getWorkEnv,
 	build
+);
+
+exports.typescript = series(
+    getWorkEnv,
+    typescript,
+    copyFiles,
+    watchSource
 );
 
 

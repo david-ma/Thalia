@@ -1,5 +1,7 @@
 const db = require("./database").db;
 const fs = require('fs');
+const fsPromise = fs.promises;
+const mustache = require('mustache');
 
 const Website = function (site, config) {
     if(typeof config === "object") {
@@ -7,7 +9,7 @@ const Website = function (site, config) {
         this.dist = false ;
         this.folder = typeof config.folder === "string" ? config.folder : "websites/"+site+"/public";
         this.domains = typeof config.domains === "object" ? config.domains : [];
-        this.pages = typeof config.pages === "object" ? config.pages : {"": "/index.html"};
+        this.pages = typeof config.pages === "object" ? config.pages : {};
         this.redirects = typeof config.redirects === "object" ? config.redirects : {};
         this.services = typeof config.services === "object" ? config.services : {};
         this.controller = typeof config.controller === "object" ? config.controller : {};
@@ -74,6 +76,8 @@ const handle = {
             });
         }
     },
+
+    // TODO: Make all of this asynchronous?
     // Add a site to the handle
     addWebsite: function(site, config, cred){
         config = config || {};
@@ -113,6 +117,27 @@ const handle = {
             }
         }
 
+        // If website has views, load them.
+        if(fs.existsSync(`websites/${site}/views`)) {
+            readAllViews(`${__dirname}/../websites/${site}/views`).then(views => {
+                handle.websites[site].views = views;
+
+                fsPromise.readdir(`websites/${site}/views`)
+                .then(function(d){
+                    d.filter(d => d.indexOf('.mustache') > 0).forEach(file => {
+                        const webpage = file.split('.mustache')[0];
+                        if((config.mustacheIgnore && config.mustacheIgnore.indexOf(webpage) == -1) &&
+                            !handle.websites[site].controller[webpage]
+                        ) {
+                            handle.websites[site].controller[webpage] = function(router) {
+                                router.res.end(mustache.render(views[webpage], {}, views));
+                            }
+                        }
+                    });
+                }).catch(e => console.log(e));
+            });
+        }
+
         // If the site has any startup actions, do them
         if(config.startup){
             config.startup.forEach(function(action){
@@ -137,6 +162,36 @@ const handle = {
 };
 
 handle.addWebsite("default", {});
+
+async function readAllViews(folder) {
+    return new Promise((finish, reject) => {
+        fsPromise.readdir(folder).then( (directory) => {
+            Promise.all(directory.map(filename => new Promise((resolve, reject) =>{
+                if(filename.indexOf(".mustache") > 0) {                
+                    fsPromise.readFile(`${folder}/${filename}`, 'utf8')
+                        .then(file => {
+                            const name = filename.split('.mustache')[0];
+                            resolve({
+                                [name]: file
+                            })
+                        }).catch(e => console.log(e));
+                } else {
+                    fsPromise.lstat(`${folder}/${filename}`).then(d => {
+                        if(d.isDirectory()) {
+                            readAllViews(`${folder}/${filename}`)
+                            .then(d => resolve(d));
+                        } else {
+                            // console.log(`${filename} is not a folder`);
+                            resolve({});
+                        }
+                    })
+                }
+            }))).then((array) => {
+                finish(array.reduce((a, b) => Object.assign(a, b)))
+            });
+        }).catch(e => console.log(e));
+    })
+}
 
 exports.handle = handle;
 

@@ -183,20 +183,22 @@ function router(website, pathname, response, request) {
                         }
                     }
 
-                    if (stats.size > 102400){ //cache files bigger than 100kb?
-                        //		console.log(stats.size);
-                        //		console.log(filename +" is a big file! Caching!");
-                        if (!response.getHeader('Cache-Control') || !response.getHeader('Expires')) {
-                            response.setHeader("Cache-Control", "public, max-age=604800"); // ex. 7 days in seconds.
-                            response.setHeader("Expires", new Date(Date.now() + 604800000).toUTCString());  // in ms.
-                        }
-                    } else {
-                        // Cache smaller things for 3 mins?
-                        // Alternative is to use no-cache?
-                        // Probably should read this: https://jakearchibald.com/2016/caching-best-practices/
-                        if (!response.getHeader('Cache-Control') || !response.getHeader('Expires')) {
-                            response.setHeader("Cache-Control", "public, max-age=180"); // ex. 7 days in seconds.
-                            response.setHeader("Expires", new Date(Date.now() + 180000).toUTCString());  // in ms.
+                    if(website.cache) {
+                        if (stats.size > 102400){ //cache files bigger than 100kb?
+                            //		console.log(stats.size);
+                            //		console.log(filename +" is a big file! Caching!");
+                            if (!response.getHeader('Cache-Control') || !response.getHeader('Expires')) {
+                                response.setHeader("Cache-Control", "public, max-age=604800"); // ex. 7 days in seconds.
+                                response.setHeader("Expires", new Date(Date.now() + 604800000).toUTCString());  // in ms.
+                            }
+                        } else {
+                            // Cache smaller things for 3 mins?
+                            // Alternative is to use no-cache?
+                            // Probably should read this: https://jakearchibald.com/2016/caching-best-practices/
+                            if (!response.getHeader('Cache-Control') || !response.getHeader('Expires')) {
+                                response.setHeader("Cache-Control", "public, max-age=180"); // ex. 7 days in seconds.
+                                response.setHeader("Expires", new Date(Date.now() + 180000).toUTCString());  // in ms.
+                            }
                         }
                     }
                 }

@@ -7,6 +7,7 @@ const Website = function (site, config) {
     if(typeof config === "object") {
         this.data = false ;
         this.dist = false ;
+        this.cache = typeof config.cache === "boolean" ? config.cache : true;
         this.folder = typeof config.folder === "string" ? config.folder : "websites/"+site+"/public";
         this.domains = typeof config.domains === "object" ? config.domains : [];
         this.pages = typeof config.pages === "object" ? config.pages : {};
@@ -54,6 +55,7 @@ const handle = {
             try {
                 cred = JSON.parse(fs.readFileSync('websites/'+site+'/cred.json'));
             } catch (err){}
+            config.cache = false;
             handle.addWebsite(site, config, cred);
         } else {
             fs.readdirSync('websites/').forEach(function(site){

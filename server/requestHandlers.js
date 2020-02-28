@@ -132,7 +132,14 @@ const handle = {
                             !handle.websites[site].controller[webpage]
                         ) {
                             handle.websites[site].controller[webpage] = function(router) {
-                                router.res.end(mustache.render(views[webpage], {}, views));
+                                if(handle.websites[site].cache) {
+                                    router.res.end(mustache.render(views[webpage], {}, views));
+                                } else {
+                                    readAllViews(`${__dirname}/../websites/${site}/views`).then(views => {
+                                        handle.websites[site].views = views;
+                                        router.res.end(mustache.render(views[webpage], {}, views));
+                                    });
+                                }
                             }
                         }
                     });

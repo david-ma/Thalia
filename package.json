@@ -67,7 +67,13 @@
     "inspect": "node server/inspect"
   },
   "nodemonConfig": {
-    "ignore": ["dist/*", "src/*", "views/*", "public/*", "gulpfile.js"],
+    "ignore": [
+      "dist/*",
+      "src/*",
+      "views/*",
+      "public/*",
+      "gulpfile.js"
+    ],
     "delay": "2500"
   },
   "repository": {

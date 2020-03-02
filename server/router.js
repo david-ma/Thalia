@@ -69,8 +69,9 @@ function router(website, pathname, response, request) {
                         end: function(result){
                             const acceptedEncoding = request.headers['accept-encoding'] || "";
                             var input = Buffer.from(result, 'utf8');
-                            response.writeHead(200, { 'content-encoding': 'deflate' });
+                            response.setHeader("Content-Type", "text/html");
                             if(acceptedEncoding.indexOf('deflate') >= 0) {
+                                response.writeHead(200, { 'content-encoding': 'deflate' });
                                 zlib.deflate(input, function(err, result){
                                     response.end(result);
                                 });

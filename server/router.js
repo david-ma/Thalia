@@ -200,22 +200,25 @@ function router(website, pathname, response, request) {
                         }
                     }
 
+                    response.setHeader("Cache-Control", "no-cache");
                     if(website.cache) {
                         if (stats.size > 102400){ //cache files bigger than 100kb?
                             //		console.log(stats.size);
                             //		console.log(filename +" is a big file! Caching!");
                             if (!response.getHeader('Cache-Control') || !response.getHeader('Expires')) {
-                                response.setHeader("Cache-Control", "public, max-age=604800"); // ex. 7 days in seconds.
-                                response.setHeader("Expires", new Date(Date.now() + 604800000).toUTCString());  // in ms.
+                                response.setHeader("Cache-Control", "public, max-age=31536000"); // ex. 1 year in seconds
+                                response.setHeader("Expires", new Date(Date.now() + 31536000000).toUTCString());  // in ms.
                             }
                         } else {
-                            // Cache smaller things for 3 mins?
-                            // Alternative is to use no-cache?
-                            // Probably should read this: https://jakearchibald.com/2016/caching-best-practices/
-                            if (!response.getHeader('Cache-Control') || !response.getHeader('Expires')) {
-                                response.setHeader("Cache-Control", "public, max-age=180"); // ex. 7 days in seconds.
-                                response.setHeader("Expires", new Date(Date.now() + 180000).toUTCString());  // in ms.
-                            }
+                            // // Cache smaller things for 3 mins?
+                            // // Alternative is to use no-cache?
+                            // // Probably should read this: https://jakearchibald.com/2016/caching-best-practices/
+                            // if (!response.getHeader('Cache-Control') || !response.getHeader('Expires')) {
+                            //     response.setHeader("Cache-Control", "public, max-age=180"); // ex. 7 days in seconds.
+                            //     response.setHeader("Expires", new Date(Date.now() + 180000).toUTCString());  // in ms.
+                            // } else {
+                            //     response.setHeader("Cache-Control", "no-cache");
+                            // }
                         }
                     }
                 }

@@ -65,9 +65,26 @@ function router(website, pathname, response, request) {
                 //	if there's a controller, call it
             } else if (typeof website.controller[d.words[1]] === 'function') {
                 website.controller[d.words[1]]({
-                    res: response,
+                    res: {
+                        end: function(result){
+                            const acceptedEncoding = request.headers['accept-encoding'] || "";
+                            var input = new Buffer(result, 'utf8');
+                            response.writeHead(200, { 'content-encoding': 'deflate' });
+                            if(acceptedEncoding.indexOf('deflate') >= 0) {
+                                zlib.deflate(input, function(err, result){
+                                    response.end(result);
+                                });
+                            } else if(acceptedEncoding.indexOf('gzip') >= 0) {
+                                zlib.gzip(input, function(err, result){
+                                    response.end(result);
+                                });
+                            } else {
+                                response.end(result);
+                            }
+                        }
+                    },
                     req: request,
-                    db: website.db || website.sq || null,
+                    db: website.db || website.seq || null,
                     path: d.words.slice(2)
                 });
 

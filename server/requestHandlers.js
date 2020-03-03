@@ -128,7 +128,7 @@ const handle = {
                 .then(function(d){
                     d.filter(d => d.indexOf('.mustache') > 0).forEach(file => {
                         const webpage = file.split('.mustache')[0];
-                        if((config.mustacheIgnore && config.mustacheIgnore.indexOf(webpage) == -1) &&
+                        if((config.mustacheIgnore ? config.mustacheIgnore.indexOf(webpage) == -1 : true) &&
                             !handle.websites[site].controller[webpage]
                         ) {
                             handle.websites[site].controller[webpage] = function(router) {

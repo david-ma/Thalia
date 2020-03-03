@@ -1,7 +1,6 @@
 const fs = require("fs");
 const mime = require('mime');
 const zlib = require('zlib');
-const parse = require('csv-parse');
 
 function router(website, pathname, response, request) {
 
@@ -178,6 +177,7 @@ function router(website, pathname, response, request) {
             let router = function(file) {
                 response.writeHeader(200);
                 response.end(file, "binary");
+                return;
             };
 
             fs.stat(filename, function(err, stats){
@@ -190,6 +190,7 @@ function router(website, pathname, response, request) {
                             response.writeHead(200, { 'content-encoding': 'deflate' });
                             zlib.deflate(file, function(err, result){
                                 response.end(result);
+                                return;
                             });
                         };
                     } else if(acceptedEncoding.indexOf('gzip') >= 0) {
@@ -197,6 +198,7 @@ function router(website, pathname, response, request) {
                             response.writeHead(200, { 'content-encoding': 'gzip' });
                             zlib.gzip(file, function(err, result){
                                 response.end(result);
+                                return;
                             });
                         };
                     }
@@ -225,74 +227,51 @@ function router(website, pathname, response, request) {
                 }
             });
 
-            fs.readFile(filename, "binary", function(err,file) {
-                if(err) {
+            fs.readFile(filename, "binary", function (err, file) {
+                if (err) {
 
-                    fs.readdir(filename,function(e,d){
-                        if(!e && d && d instanceof Array && d.indexOf("index.html") >= 0){
-//folder has index.html
-//console.log("folder has index");
-                            if (filename.lastIndexOf("/") == filename.length - 1) {
-                                routeFile(filename+"index.html");
-                                return;
+                    fs.readdir(filename, function (e, dir) {
+                        if (!e && dir && dir instanceof Array && dir.indexOf("index.html") >= 0) {
+                            if (filename.lastIndexOf("/") === filename.length - 1) {
+                                filename += "index.html"
                             } else {
-                                const url = request.url;
-                                let   redirect = url+"/";
-                                if (url.indexOf("?") != -1) {
-                                    const arr = url.split("?");
-                                    redirect = arr[0]+"/?"+arr[1];
+                                if (filename.indexOf("?") !== -1) {
+                                    filename = filename.split("?")[0] + "/index.html";
+                                } else {
+                                    filename += "/index.html";
                                 }
-                                response.writeHead(303, {Location: redirect});
-                                response.end();
                             }
-                        } else if (!e && d && d instanceof Array && d.indexOf("folder.csv") >= 0) {
+                            fs.readFile(filename, 'binary', (e, file) => router(file));
+                            return;
+                        } else {
+                            let base = request.url.split("?")[0];
+                                base = base.slice(-1) === "/" ? base : `${base}/`;
+                                slug = base.split("/").slice(-2).slice(0, 1)[0];
 
-                            fs.readFile(filename.concat("/folder.csv"), "binary", function(err,file) {
-                                const files = [];
-
-                                d.filter(file => file !== "folder.csv")
-                                    .filter(file => file[0] !== ".")
-                                    .forEach(file => files.push(`<li><a download="${file}" href="${pathname}/${file}">${file}</a></li>`));
-
-                                let result = ``;
-
-                                const parser = parse({
-                                    delimiter: ':',
-                                    skip_lines_with_error: true,
-                                    skip_empty_lines: true,
-                                    ltrim: true
+                            if (website.viewableFolders ?
+                                website.viewableFolders instanceof Array ?
+                                    website.viewableFolders.indexOf(slug) !== -1
+                                    : true
+                                : false) {
+                                let links = [];
+                                dir.forEach(file => {
+                                    links.push(`<li><a href="${base + file}">${file}</a></li>`)
                                 });
 
-                                parse(file, function(err, d){
-                                    if(d.length > 1) {
-                                        let links = [];
-                                        d.forEach(row => links.push(`<li><a href="${row[1]}">${row[0]}</a></li>`));
-                                        links = links.slice(1);
-
-                                        result = result.concat(`
-<h1>Links</h1>
+                                let result = `<h1>Links</h1>
 <ul>
 ${links.join("\n")}
-</ul>`);
-                                    }
+</ul>`;
+                                response.writeHead(200, { "Content-Type": "text/html" });
+                                response.end(result);
+                                return;
+                            } else {
+                                console.log("Error 500, content protected? " + filename);
+                                response.writeHead(500, { "Content-Type": "text/plain" });
+                                response.end("Error 500, content protected\n" + err);
+                                return;
+                            }
 
-                                    result = result.concat(`
-
-<h1>Files</h1>
-<ul>
-${files.join("\n")}
-</ul>`);
-
-                                    response.writeHead(200, {"Content-Type": "text/html"});
-                                    response.end(result);
-                                });
-                            });
-                        } else {
-//folder without index.html
-                            console.log("Error 500, content protected? "+filename);
-                            response.writeHead(500, {"Content-Type": "text/plain"});
-                            response.end("Error 500, content protected\n"+err);
-                            return;
                         }
                     });
                 } else {

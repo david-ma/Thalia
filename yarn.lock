@@ -2438,11 +2438,6 @@ csso@^4.0.2:
   dependencies:
     css-tree "1.0.0-alpha.37"
 
-csv-parse@^4.4.6:
-  version "4.8.6"
-  resolved "https://registry.yarnpkg.com/csv-parse/-/csv-parse-4.8.6.tgz#e3e01c2c9593194f1b7aae6291c65304b35022c8"
-  integrity sha512-rSJlpgAjrB6pmlPaqiBAp3qVtQHN07VxI+ozs+knMsNvgh4bDQgENKLFYLFMvT+jn/wr/zvqsd7IVZ7Txdkr7w==
-
 currently-unhandled@^0.4.1:
   version "0.4.1"
   resolved "https://registry.yarnpkg.com/currently-unhandled/-/currently-unhandled-0.4.1.tgz#988df33feab191ef799a61369dd76c17adf957ea"

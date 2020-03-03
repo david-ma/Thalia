@@ -15,6 +15,7 @@ const Website = function (site, config) {
         this.services = typeof config.services === "object" ? config.services : {};
         this.controller = typeof config.controller === "object" ? config.controller : {};
         this.proxies = typeof config.proxies === "object" ? config.proxies : {};this.security = typeof config.security === "object" ? config.security : {loginNeeded:function(){return false;}};
+        this.viewableFolders = config.viewableFolders || false;
     } else {
         console.log("Config isn't an object");
     }

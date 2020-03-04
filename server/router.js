@@ -61,9 +61,9 @@ function router(website, pathname, response, request) {
             if (typeof website.redirects[pathname] !== "undefined") {
                 redirect(website.redirects[pathname]);
 
-                //	if there's a controller, call it
-            } else if (typeof website.controller[d.words[1]] === 'function') {
-                website.controller[d.words[1]]({
+                //	if there are controllers, call the right one
+            } else if (typeof website.controllers[d.words[1]] === 'function') {
+                website.controllers[d.words[1]]({
                     res: {
                         end: function(result){
                             const acceptedEncoding = request.headers['accept-encoding'] || "";
@@ -85,6 +85,7 @@ function router(website, pathname, response, request) {
                     },
                     req: request,
                     db: website.db || website.seq || null,
+                    views: website.views,
                     path: d.words.slice(2)
                 });
 

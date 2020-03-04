@@ -13,7 +13,7 @@ const Website = function (site, config) {
         this.pages = typeof config.pages === "object" ? config.pages : {};
         this.redirects = typeof config.redirects === "object" ? config.redirects : {};
         this.services = typeof config.services === "object" ? config.services : {};
-        this.controller = typeof config.controller === "object" ? config.controller : {};
+        this.controllers = typeof config.controllers === "object" ? config.controllers : {};
         this.proxies = typeof config.proxies === "object" ? config.proxies : {};this.security = typeof config.security === "object" ? config.security : {loginNeeded:function(){return false;}};
         this.viewableFolders = config.viewableFolders || false;
     } else {
@@ -130,9 +130,9 @@ const handle = {
                     d.filter(d => d.indexOf('.mustache') > 0).forEach(file => {
                         const webpage = file.split('.mustache')[0];
                         if((config.mustacheIgnore ? config.mustacheIgnore.indexOf(webpage) == -1 : true) &&
-                            !handle.websites[site].controller[webpage]
+                            !handle.websites[site].controllers[webpage]
                         ) {
-                            handle.websites[site].controller[webpage] = function(router) {
+                            handle.websites[site].controllers[webpage] = function(router) {
                                 if(handle.websites[site].cache) {
                                     router.res.end(mustache.render(views[webpage], {}, views));
                                 } else {

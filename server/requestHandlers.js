@@ -122,6 +122,11 @@ const handle = {
 
         // If website has views, load them.
         if(fs.existsSync(`websites/${site}/views`)) {
+            // Stupid hack for development if you don't want to cache the views :(
+            handle.websites[site].readAllViews = function(cb){
+                readAllViews(`${__dirname}/../websites/${site}/views`).then(d => cb(d));
+            };
+
             readAllViews(`${__dirname}/../websites/${site}/views`).then(views => {
                 handle.websites[site].views = views;
 

@@ -87,6 +87,7 @@ function router(website, pathname, response, request) {
                     db: website.db || website.seq || null,
                     views: website.views,
                     readAllViews: website.readAllViews,
+                    readTemplate: website.readTemplate,
                     path: d.words.slice(2)
                 });
 

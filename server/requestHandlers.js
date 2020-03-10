@@ -126,6 +126,9 @@ const handle = {
             handle.websites[site].readAllViews = function(cb){
                 readAllViews(`${__dirname}/../websites/${site}/views`).then(d => cb(d));
             };
+            handle.websites[site].readTemplate = function(template, content = '', cb){
+                readTemplate(template, `${__dirname}/../websites/${site}/views`, content).then(d => cb(d));
+            };
 
             readAllViews(`${__dirname}/../websites/${site}/views`).then(views => {
                 handle.websites[site].views = views;
@@ -177,6 +180,77 @@ const handle = {
 };
 
 handle.addWebsite("default", {});
+
+// TODO: handle rejection & errors?
+async function readTemplate(template, folder, content = '') {
+	return new Promise((resolve, reject) => {
+		const promises = [];
+		const filenames = ['template', 'content'];
+
+		// Load the mustache template (outer layer)
+		promises.push(
+			fsPromise.readFile(`${folder}/${template}`, {
+				encoding: 'utf8'
+			})
+        );
+
+        // Load the mustache content (innermost layer)
+		promises.push(
+            new Promise((resolve, reject) => {
+                if (Array.isArray(content) && content[0]) content = content[0];
+                fsPromise.readFile(`${folder}/content/${content}.mustache`, {
+                    encoding: 'utf8'
+                }).then(result => {
+                    var scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g,
+                        styleEx = /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/g;
+
+                    var scripts = [...result.matchAll(scriptEx)].map(d => d[0]),
+                        styles = [...result.matchAll(styleEx)].map(d => d[0]);
+
+                    resolve({
+                        content: result.replace(scriptEx, "").replace(styleEx, ""),
+                        scripts: scripts.join("\n"),
+                        styles: styles.join("\n")
+                    });
+                }).catch(e => {
+                    fsPromise.readFile(`${folder}/404.mustache`, {
+                        encoding: 'utf8'
+                    }).then(result => {
+                        resolve(result);
+                    });
+                });
+            })
+		);
+
+        // Load all the other partials we may need
+		fsPromise.readdir(`${folder}/partials/`)
+		.then( function(d){
+			d.forEach(function(filename){
+				if(filename.indexOf(".mustache" > 0)) {
+					filenames.push(filename.split(".mustache")[0]);
+					promises.push(
+						fsPromise.readFile(`${folder}/partials/${filename}`, {
+							encoding: 'utf8'
+						})
+					);
+				}
+			});
+
+			Promise.all(promises).then(function(array){
+				const results = {};
+                filenames.forEach((filename, i) => results[filename] = array[i]);
+
+                if(typeof results.content == 'object') {
+                    results.scripts = results.content.scripts;
+                    results.styles = results.content.styles;
+                    results.content = results.content.content;
+                }
+
+				resolve(results);
+			});
+		});
+	});
+}
 
 async function readAllViews(folder) {
     return new Promise((finish, reject) => {

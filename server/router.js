@@ -61,7 +61,14 @@ function router(website, pathname, response, request) {
             if (typeof website.redirects[pathname] !== "undefined") {
                 redirect(website.redirects[pathname]);
 
-                //	if there are controllers, call the right one
+
+                //	if there's a service, use it
+            } else if (typeof website.services[d.words[1]] === 'function') {
+                website.services[d.words[1]](response, request, website.db || website.seq , d.words[2]);
+
+
+                // if there are controllers, call the right one
+                // Note, this includes any top level mustache files, since they're loaded as generic, dataless controllers
             } else if (typeof website.controllers[d.words[1]] === 'function') {
                 website.controllers[d.words[1]]({
                     res: {
@@ -91,9 +98,6 @@ function router(website, pathname, response, request) {
                     path: d.words.slice(2)
                 });
 
-                //	if there's a function, perform it
-            } else if (typeof website.services[d.words[1]] === 'function') {
-                website.services[d.words[1]](response, request, website.db || website.seq , d.words[2]);
 
                 // if there is a matching data file
             } else if (website.data

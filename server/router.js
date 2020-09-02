@@ -183,7 +183,7 @@ function router(website, pathname, response, request) {
 
             let router = function(file) {
                 response.writeHeader(200);
-                response.end(file, "binary");
+                response.end(file);
                 return;
             };
 
@@ -200,6 +200,7 @@ function router(website, pathname, response, request) {
                 if (filetype && (filetype.slice(0,4) === "text" ||
                     filetype === "application/json" ||
                     filetype === "application/javascript")) {
+                    response.setHeader('Content-Type', `${filetype}; charset=UTF-8`);
 
                     if(acceptedEncoding.indexOf('deflate') >= 0) {
                         router = function(file) {
@@ -221,7 +222,7 @@ function router(website, pathname, response, request) {
                 }
             });
 
-            fs.readFile(filename, "binary", function (err, file) {
+            fs.readFile(filename, function (err, file) {
                 if (err) {
 
                     fs.readdir(filename, function (e, dir) {
@@ -236,7 +237,7 @@ function router(website, pathname, response, request) {
                                 }
                             }
 // Note we don't have content type, caching, or zipping!!!!
-                            fs.readFile(filename, 'binary', (e, file) => router(file));
+                            fs.readFile(filename, (e, file) => router(file));
                             return;
                         } else {
                             let base = request.url.split("?")[0];

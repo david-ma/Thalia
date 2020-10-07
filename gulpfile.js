@@ -112,6 +112,7 @@ function compileBoilerplate(done){
             output: workspace+'/dist/'
         },
         views: workspace+'/views',
+        public: workspace+'/public',
         reload: './'+workspace+'/dist/'
     };
 
@@ -162,6 +163,7 @@ function setSite(website){
             output: workspace+'/dist/'
         },
         views: workspace+'/views',
+        public: workspace+'/public',
         reload: './'+workspace+'/dist/'
     };
 
@@ -462,6 +464,7 @@ var watchSource = function (done) {
     watch(paths.typescript.input, series(typescript, reloadBrowser));
     watch(paths.styles.input, series(buildStyles, reloadBrowser));
     watch(paths.views, series(reloadBrowser));
+    watch(paths.public, series(reloadBrowser));
 
 	done();
 };

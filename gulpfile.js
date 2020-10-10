@@ -10,7 +10,6 @@ var settings = {
 	styles: true,
 	svgs: false,
 	copy: true,
-	typescript: true,
 	reload: true
 };
 
@@ -19,7 +18,6 @@ var settings = {
 var fs = require('fs');
 var readlineSync = require('readline-sync');
 var argv = require('yargs').argv;
-var babel = require('gulp-babel');
 
 var websites = fs.readdirSync('./websites').filter( site => site.indexOf(".") == -1 ); // Websites available
 
@@ -77,7 +75,7 @@ var svgmin = require('gulp-svgmin');
 // BrowserSync
 var browserSync = require('browser-sync');
 
-var staticSrc = ".{html,txt,min.js,min.js.map,min.css.map,eot,ttf,woff,woff2,otf,json,pdf,ico,xml,js,css,csv,tsv,png,jpg,jpeg}";
+const staticSrc = ".+(html|txt|min.js|min.js.map|min.css.map|eot|ttf|woff|woff2|otf|json|pdf|ico|xml|js|css|csv|tsv|png|jpg|jpeg)";
 
 
 /**
@@ -96,7 +94,7 @@ function compileBoilerplate(done){
             output: workspace+'/dist/'
         },
         styles: {
-            input: 'src/**/*.{scss,sass}',
+            input: 'src/**/*.+(scss|sass)',
             output: workspace+'/dist/'
         },
         svgs: {
@@ -112,7 +110,6 @@ function compileBoilerplate(done){
             output: workspace+'/dist/'
         },
         views: workspace+'/views',
-        public: workspace+'/public',
         reload: './'+workspace+'/dist/'
     };
 
@@ -147,7 +144,7 @@ function setSite(website){
             output: workspace+'/dist/'
         },
         styles: {
-            input: workspace+'/src/**/*.{scss,sass}',
+            input: workspace+'/src/**/*.+(scss|sass)',
             output: workspace+'/dist/'
         },
         svgs: {
@@ -247,7 +244,6 @@ var cleanDist = function (done) {
 
 
 
-// Can we use babel for this stuff..?
 // Lint, minify, and concatenate scripts
 var buildScripts = function (done) {
 
@@ -361,44 +357,36 @@ var buildSVGs = function (done) {
 };
 
 
+var browserify = require("browserify");
+var source = require("vinyl-source-stream");
+var tsify = require("tsify");
 
-
-// babel typescript stuff..???
 var typescript = function (done) {
-    if (!typescript) return done();
 
-    return src(paths.typescript.input)
-        .pipe(babel({
-            "plugins" : [
-                ["@babel/plugin-transform-typescript", {
-                    // module: 'umd'
-                }],
-                ["@babel/plugin-transform-modules-umd", {
-// some of these options only work on amd or umd or something. read the docs.
-                    // globals: {
-                    //     '$': '$',
-                    //     'd3': 'original.d3',
-                    //     'd3-selection': 'asdf.d3',
-                    //     'd3-selection-multi': 'd3',
-                    //     'd3-transition': 'ff.d3'
-                    // }
-                    // ,exactGlobals: true
-                }]
-            ]
-
-// presets are just collections of plugins
-            // ,
-            // "presets" : [
-            //     "@babel/preset-env"
-            //     // ["@babel/preset-typescript", {
-            //     //     // modules: 'umd'
-            //     // }]
-            // ]
-        }))
+    return browserify({
+        basedir: ".",
+        debug: true,
+        entries: ["src/js/typescriptTest.ts"],
+        cache: {},
+        packageCache: {},
+    })
+        .plugin(tsify)
+        .bundle()
+        .pipe(source("bundle.js"))
         .pipe(dest(paths.typescript.output));
+
 };
 
+var ts = require("gulp-typescript");
+var tsProject = ts.createProject("tsconfig.json");
 
+var typescript2 = function (done) {
+    console.log("Alternate typescript compilation");
+
+    return tsProject.src()
+        .pipe(tsProject())
+        .js.pipe(dest(paths.typescript.output));
+}
 
 
 
@@ -418,33 +406,15 @@ var copyFiles = function (done) {
 };
 
 // Watch for changes to the src directory
-var startServer = function (done) {
-
-	// Make sure this feature is activated before running
-	if (!settings.reload) return done();
-
-
-    var bs = {
-		server: {
-			baseDir: paths.reload
-		}
-	}
-
-    // Use the proxy thing, if we need the Thalia server
-    // Only necessary if you're doing complicated stuff?
-    if(argv.t) {
-        bs = {
-            proxy: "localhost:1337",
-            ghostMode: false
-        };
-    }
-
+var startBrowserSync = function (done) {
 	// Initialize BrowserSync
-	browserSync.init(bs);
+	browserSync.init({
+        proxy: "localhost:1337",
+        ghostMode: false
+    });
 
 	// Signal completion
 	done();
-
 };
 
 // Reload the browser when files change
@@ -456,15 +426,16 @@ var reloadBrowser = function (done) {
 
 // Watch for changes
 var watchSource = function (done) {
-	// watch(paths.input, series(build, reloadBrowser));
-
     watch(paths.copy.input, series(copyFiles, reloadBrowser));
+
     watch(paths.scripts.input, series(lintScripts, buildScripts, reloadBrowser));
     watch(paths.svgs.input, series(buildSVGs, reloadBrowser));
-    watch(paths.typescript.input, series(typescript, reloadBrowser));
     watch(paths.styles.input, series(buildStyles, reloadBrowser));
     watch(paths.views, series(reloadBrowser));
     watch(paths.public, series(reloadBrowser));
+
+    // watch(paths.typescript.input, series(typescript, reloadBrowser));
+    // watch('src/**/*.ts', series(typescript, reloadBrowser));
 
 	done();
 };
@@ -482,10 +453,6 @@ var build = parallel(
 		copyFiles
 	);
 
-var buildSequence = series(
-        setSite, cleanDist, build
-    );
-
 // Default task
 exports.default = exports.build = series(
     getWorkEnv,
@@ -494,14 +461,6 @@ exports.default = exports.build = series(
 	getWorkEnv,
 	build
 );
-
-exports.typescript = series(
-    getWorkEnv,
-    typescript,
-    copyFiles,
-    watchSource
-);
-
 
 exports.buildAll = function(done) {
     const tasks = websites.map(website => {
@@ -524,8 +483,10 @@ exports.buildAll = function(done) {
 // Watch and reload
 // gulp watch
 exports.watch = series(
-	exports.default,
-	startServer,
+    compileBoilerplate,
+    getWorkEnv,
+    build,
+	startBrowserSync,
 	watchSource
 );
 

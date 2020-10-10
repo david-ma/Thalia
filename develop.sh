@@ -6,5 +6,5 @@
 
 echo Hello user, running David Ma\'s nodejs server at localhost, and serving using gulp
 echo
-./node_modules/.bin/gulp watch -t -y -s $1 &
+./node_modules/.bin/gulp watch -s $1 &
 ./node_modules/.bin/nodemon server/index.js $1 $2

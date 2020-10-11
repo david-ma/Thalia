@@ -83,10 +83,14 @@ function compileBoilerplate(done){
     parallelBuildTasks(done);
 }
 
+var siteConfig = null;
+
 function setSite(website){
     site = website;
     workspace = "websites/"+site;
     console.log(`Setting workspace to: ${workspace}`);
+
+    siteConfig = require(`./websites/${site}/config`).config;
 
     /**
      * Paths to project folders
@@ -345,6 +349,18 @@ var watchSource = function (done) {
 	done();
 };
 
+/**
+ * Allow specification of dist files to be copied to the public folder.
+ */
+var publish = function (done) {
+    if(siteConfig && siteConfig.publish && siteConfig.publish.dist) {
+
+        return src(siteConfig.publish.dist.map(file => `websites/${site}/dist/${file}`),
+        {base: `websites/${site}/dist`})
+    		.pipe(dest(paths.public));
+    }
+    done();
+}
 
 /**
  * Export Tasks
@@ -363,7 +379,8 @@ exports.default = exports.build = series(
 	cleanDist,
     compileBoilerplate,
     getWorkEnv,
-	parallelBuildTasks
+    parallelBuildTasks,
+    publish
 );
 
 exports.buildAll = function(done) {
@@ -391,6 +408,7 @@ exports.watch = series(
     compileBoilerplate,
     getWorkEnv,
     parallelBuildTasks,
+    publish,
 	startBrowserSync,
 	watchSource
 );

@@ -48,14 +48,12 @@ const staticSrc = ".+(html|txt|min.js|min.js.map|min.css.map|eot|ttf|woff|woff2|
  */
  
 function compileBoilerplate(done){
-    console.log("compiling boilerplate... ");
 
     paths = {
         input: 'src/',
         output: workspace+'/dist/',
         scripts: {
             input: 'src/**/*(?<!\.min)\.js',
-            polyfills: '.polyfill.js',
             output: workspace+'/dist/'
         },
         styles: {
@@ -82,7 +80,7 @@ function compileBoilerplate(done){
         .pipe(optimizejs)
         .pipe(dest, paths.scripts.output);
 
-    build(done);
+    parallelBuildTasks(done);
 }
 
 function setSite(website){
@@ -99,7 +97,6 @@ function setSite(website){
         output: workspace+'/dist/',
         scripts: {
             input: workspace+'/src/**/*(?<!\.min)\.js',
-            polyfills: '.polyfill.js',
             output: workspace+'/dist/'
         },
         styles: {
@@ -263,7 +260,7 @@ var browserify = require("browserify");
 var source = require("vinyl-source-stream");
 var tsify = require("tsify");
 
-var typescript = function (done) {
+var typescript_bundle = function (done) {
 
     return browserify({
         basedir: ".",
@@ -280,14 +277,22 @@ var typescript = function (done) {
 };
 
 var ts = require("gulp-typescript");
-var tsProject = ts.createProject("tsconfig.json");
 
-var typescript2 = function (done) {
-    console.log("Alternate typescript compilation");
+var typescript = function (done) {
+    console.log("Typescript from folder");
+    console.log(paths.typescript.input);
 
-    return tsProject.src()
-        .pipe(tsProject())
-        .js.pipe(dest(paths.typescript.output));
+    // console.log(`using websites/${site}/tsconfig.json"`)
+
+    // var tsProject = ts.createProject(`websites/${site}/tsconfig.json`);
+
+    return src(paths.typescript.input)
+        .pipe(ts({
+            // outFile: 'output.js',
+            noImplicitAny: true
+        }))
+        .js
+        .pipe(dest(paths.typescript.output));
 }
 
 
@@ -327,9 +332,14 @@ var watchSource = function (done) {
     watch(paths.scripts.input, series(lintScripts, buildScripts, reloadBrowser));
     watch(paths.styles.input, series(buildStyles, reloadBrowser));
     watch(paths.views, series(reloadBrowser));
-    watch(paths.public, series(reloadBrowser));
 
-    // watch(paths.typescript.input, series(typescript, reloadBrowser));
+    try {
+        watch(paths.public, series(reloadBrowser));
+    } catch(e) {
+        console.log("No public folder", e);
+    };
+
+    watch(paths.typescript.input, series(typescript, reloadBrowser));
     // watch('src/**/*.ts', series(typescript, reloadBrowser));
 
 	done();
@@ -339,11 +349,11 @@ var watchSource = function (done) {
 /**
  * Export Tasks
  */
-var build = parallel(
+var parallelBuildTasks = parallel(
 		buildScripts,
 		lintScripts,
 		buildStyles,
-		// typescript,
+		typescript,
 		copyFiles
 	);
 
@@ -351,16 +361,16 @@ var build = parallel(
 exports.default = exports.build = series(
     getWorkEnv,
 	cleanDist,
-	compileBoilerplate,
-	getWorkEnv,
-	build
+    compileBoilerplate,
+    getWorkEnv,
+	parallelBuildTasks
 );
 
 exports.buildAll = function(done) {
     const tasks = websites.map(website => {
     return function buildSite(taskDone) {
             setSite(website);
-            series(cleanDist, compileBoilerplate, getWorkEnv, build)(taskDone);
+            series(cleanDist, compileBoilerplate, getWorkEnv, parallelBuildTasks)(taskDone);
         }
     });
 
@@ -380,7 +390,7 @@ exports.watch = series(
     getWorkEnv,
     compileBoilerplate,
     getWorkEnv,
-    build,
+    parallelBuildTasks,
 	startBrowserSync,
 	watchSource
 );

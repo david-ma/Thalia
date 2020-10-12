@@ -148,7 +148,7 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
                     handle.websites[site].views = views;
                     fsPromise.readdir(`websites/${site}/views`)
                         .then(function (d) {
-                        d.filter(d => d.indexOf('.mustache') > 0).forEach(file => {
+                        d.filter((d) => d.indexOf('.mustache') > 0).forEach((file) => {
                             const webpage = file.split('.mustache')[0];
                             if ((config.mustacheIgnore ? config.mustacheIgnore.indexOf(webpage) == -1 : true) &&
                                 !handle.websites[site].controllers[webpage]) {
@@ -165,7 +165,7 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
                                 };
                             }
                         });
-                    }).catch(e => console.log(e));
+                    }).catch((e) => console.log(e));
                 });
             }
             // If the site has any startup actions, do them
@@ -207,7 +207,7 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
                     content = content[0];
                 fsPromise.readFile(`${folder}/content/${content}.mustache`, {
                     encoding: 'utf8'
-                }).then(result => {
+                }).then((result) => {
                     var scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g, styleEx = /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/g;
                     var scripts = [...result.matchAll(scriptEx)].map(d => d[0]), styles = [...result.matchAll(styleEx)].map(d => d[0]);
                     resolve({
@@ -215,10 +215,10 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
                         scripts: scripts.join("\n"),
                         styles: styles.join("\n")
                     });
-                }).catch(e => {
+                }).catch((e) => {
                     fsPromise.readFile(`${folder}/404.mustache`, {
                         encoding: 'utf8'
-                    }).then(result => {
+                    }).then((result) => {
                         resolve(result);
                     });
                 });
@@ -250,18 +250,18 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
     async function readAllViews(folder) {
         return new Promise((finish, reject) => {
             fsPromise.readdir(folder).then((directory) => {
-                Promise.all(directory.map(filename => new Promise((resolve, reject) => {
+                Promise.all(directory.map((filename) => new Promise((resolve, reject) => {
                     if (filename.indexOf(".mustache") > 0) {
                         fsPromise.readFile(`${folder}/${filename}`, 'utf8')
-                            .then(file => {
+                            .then((file) => {
                             const name = filename.split('.mustache')[0];
                             resolve({
                                 [name]: file
                             });
-                        }).catch(e => console.log(e));
+                        }).catch((e) => console.log(e));
                     }
                     else {
-                        fsPromise.lstat(`${folder}/${filename}`).then(d => {
+                        fsPromise.lstat(`${folder}/${filename}`).then((d) => {
                             if (d.isDirectory()) {
                                 readAllViews(`${folder}/${filename}`)
                                     .then(d => resolve(d));
@@ -275,7 +275,7 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
                 }))).then((array) => {
                     finish(array.reduce((a, b) => Object.assign(a, b)));
                 });
-            }).catch(e => console.log(e));
+            }).catch((e) => console.log(e));
         });
     }
 });
@@ -451,7 +451,7 @@ define("router", ["require", "exports"], function (require, exports) {
                 const filetype = mime.getType(filename);
                 response.setHeader('Content-Type', filetype);
                 let router = function (file) {
-                    response.writeHeader(200);
+                    response.writeHead(200);
                     response.end(file);
                     return;
                 };
@@ -516,7 +516,7 @@ define("router", ["require", "exports"], function (require, exports) {
                                         : true
                                     : false) {
                                     let links = [];
-                                    dir.forEach(file => {
+                                    dir.forEach((file) => {
                                         links.push(`<li><a href="${base + file}">${file}</a></li>`);
                                     });
                                     let result = `<h1>Links</h1>

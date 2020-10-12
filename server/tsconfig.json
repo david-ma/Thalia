@@ -1,7 +1,10 @@
 {
     "compilerOptions": {
         "module":"AMD",
-        // "noImplicitAny": true,
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "noImplicitReturns": true,
+        "noUnusedLocals": true,
         "outFile": "thalia.js",
         "target": "ES2020"
     },

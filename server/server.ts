@@ -1,3 +1,5 @@
+import { IncomingMessage, ServerResponse } from "http";
+
 // server.ts
 const https = require("https");
 const http  = require("http");
@@ -8,16 +10,16 @@ const blacklist = require("./../blacklist").blacklist || [];
 console.log("This is the blacklist:", blacklist);
 
 //This part of the server starts the server on port 80 and logs stuff to the std.out
-function start(router, handle, tlsOptions) {
+function start(router:any, handle:any, tlsOptions:any) {
     let server = null;
 
-    function onRequest(request, response) {
+    function onRequest(request :IncomingMessage, response :ServerResponse) {
         let spam = false;
 
         const ip = request.headers['X-Real-IP'] || request.headers['x-real-ip'] || request.connection.remoteAddress;
 
         if ( ip ) {
-            blacklist.forEach(function(thing){
+            blacklist.forEach(function(thing:any){
                 if(ip.includes(thing)) {
                     spam = true;
                     // console.log(`Spam request from ${ip}`);
@@ -57,7 +59,7 @@ function start(router, handle, tlsOptions) {
             }
         }
 
-        function webProxy( config ) {
+        function webProxy( config :any ) {
             const message = config.message || "Error, server is down.";
             const target = `http://${config.host || "127.0.0.1"}:${config.port || 80}`;
             const proxyServer = httpProxy.createProxyServer({
@@ -69,7 +71,7 @@ function start(router, handle, tlsOptions) {
                 target: target
             });
 
-            proxyServer.on("error", function(err, req, res ){
+            proxyServer.on("error", function(err :any, req :any, res :any ){
                 "use strict";
                 console.log(err);
                 try {
@@ -83,12 +85,12 @@ function start(router, handle, tlsOptions) {
             proxyServer.web(request, response);
         }
 
-        function security( passwords ){
+        function security( passwords :any ){
             let decodedCookiePassword :any = false;
 
             const cookies :any = {};
             if(request.headers.cookie) {
-                request.headers.cookie.split(";").forEach(function(d){
+                request.headers.cookie.split(";").forEach(function(d :any){
                     cookies[d.split("=")[0].trim()] = d.substring(d.split("=")[0].length+1).trim();
                 });
 
@@ -144,7 +146,7 @@ function start(router, handle, tlsOptions) {
         server = http.createServer(onRequest).listen(port);
     }
 
-    return server.on('upgrade', function(request, socket, head) {
+    return server.on('upgrade', function(request :any, socket :any, head :any) {
         "use strict";
 
         const host = request.headers.host;
@@ -187,13 +189,13 @@ function getDateTime() {
     return year + ":" + month + ":" + day + " " + hour + ":" + min;
 }
 
-function encodeBase64(string) {
+function encodeBase64(string :string) {
     "use strict";
     const buff = new Buffer(string);
     return buff.toString('base64');
 }
 
-function decodeBase64(data) {
+function decodeBase64(data :any) {
     "use strict";
     if(data) {
         const buff = new Buffer(data, 'base64');

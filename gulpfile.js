@@ -292,8 +292,13 @@ var typescript = function (done) {
 
     return src(paths.typescript.input)
         .pipe(ts({
-            // outFile: 'output.js',
-            noImplicitAny: true
+
+// Don't enforce proper typescript at this level
+// Perhaps use tsconfig.json of each site?
+            "noImplicitAny": false,
+            "noImplicitThis": false,
+            "noImplicitReturns": false,
+            "noUnusedLocals":false
         }))
         .js
         .pipe(dest(paths.typescript.output));

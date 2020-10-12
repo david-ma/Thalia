@@ -4,7 +4,7 @@ const fs = require('fs');
 const fsPromise = fs.promises;
 const mustache = require('mustache');
 
-const Website = function (site, config) {
+const Website = function (this: any, site :string, config :any) {
     if(typeof config === "object") {
         this.data = false ;
         this.dist = false ;
@@ -15,14 +15,15 @@ const Website = function (site, config) {
         this.redirects = typeof config.redirects === "object" ? config.redirects : {};
         this.services = typeof config.services === "object" ? config.services : {};
         this.controllers = typeof config.controllers === "object" ? config.controllers : {};
-        this.proxies = typeof config.proxies === "object" ? config.proxies : {};this.security = typeof config.security === "object" ? config.security : {loginNeeded:function(){return false;}};
+        this.proxies = typeof config.proxies === "object" ? config.proxies : {};
+        this.security = typeof config.security === "object" ? config.security : {loginNeeded:function(){return false;}};
         this.viewableFolders = config.viewableFolders || false;
     } else {
         console.log("Config isn't an object");
     }
 };
 
-const handle = {
+const handle :any = {
     websites: {},
     index: {localhost: 'default'},
     loadAllWebsites: function (){
@@ -60,7 +61,7 @@ const handle = {
             config.cache = false;
             handle.addWebsite(site, config, cred);
         } else {
-            fs.readdirSync('websites/').forEach(function(site){
+            fs.readdirSync('websites/').forEach(function(site :string){
                 if(fs.lstatSync('websites/'+site).isDirectory()) {
                     console.log("Adding site: "+site);
                     var config, cred;
@@ -83,9 +84,9 @@ const handle = {
 
     // TODO: Make all of this asynchronous?
     // Add a site to the handle
-    addWebsite: function(site, config, cred){
+    addWebsite: function(site :string, config :any, cred :any){
         config = config || {};
-        handle.websites[site] = new Website(site, config);
+        handle.websites[site] = new (<any>Website)(site, config);
 
         // If dist or data exist, enable them.
         if(fs.existsSync(`websites/${site}/data`)) {
@@ -101,7 +102,7 @@ const handle = {
 
         // Add the site to the index
         handle.index[site+".david-ma.net"] = site;
-        handle.websites[site].domains.forEach(function(domain){
+        handle.websites[site].domains.forEach(function(domain :string){
             handle.index[domain] = site;
         });
 
@@ -124,10 +125,10 @@ const handle = {
         // If website has views, load them.
         if(fs.existsSync(`websites/${site}/views`)) {
             // Stupid hack for development if you don't want to cache the views :(
-            handle.websites[site].readAllViews = function(cb){
+            handle.websites[site].readAllViews = function(cb :Function){
                 readAllViews(`${__dirname}/../websites/${site}/views`).then(d => cb(d));
             };
-            handle.websites[site].readTemplate = function(template, content = '', cb){
+            handle.websites[site].readTemplate = function(template:string, content = '', cb :Function){
                 readTemplate(template, `${__dirname}/../websites/${site}/views`, content).then(d => cb(d));
             };
 
@@ -135,36 +136,36 @@ const handle = {
                 handle.websites[site].views = views;
 
                 fsPromise.readdir(`websites/${site}/views`)
-                .then(function(d){
-                    d.filter(d => d.indexOf('.mustache') > 0).forEach(file => {
+                .then(function(d:string[]){
+                    d.filter((d:string) => d.indexOf('.mustache') > 0).forEach((file:string) => {
                         const webpage = file.split('.mustache')[0];
                         if((config.mustacheIgnore ? config.mustacheIgnore.indexOf(webpage) == -1 : true) &&
                             !handle.websites[site].controllers[webpage]
                         ) {
-                            handle.websites[site].controllers[webpage] = function(router) {
+                            handle.websites[site].controllers[webpage] = function(router:any) {
                                 if(handle.websites[site].cache) {
-                                    router.res.end(mustache.render(views[webpage], {}, views));
+                                    router.res.end(mustache.render((<any>views)[webpage], {}, views));
                                 } else {
                                     readAllViews(`${__dirname}/../websites/${site}/views`).then(views => {
                                         handle.websites[site].views = views;
-                                        router.res.end(mustache.render(views[webpage], {}, views));
+                                        router.res.end(mustache.render((<any>views)[webpage], {}, views));
                                     });
                                 }
                             }
                         }
                     });
-                }).catch(e => console.log(e));
+                }).catch((e:any) => console.log(e));
             });
         }
 
         // If the site has any startup actions, do them
         if(config.startup){
-            config.startup.forEach(function(action){
+            config.startup.forEach(function(action:any){
                 action(handle.websites[site]);
             });
         }
     },
-    getWebsite: function(domain){
+    getWebsite: function(domain:any){
         var site = handle.index.localhost;
         if(domain) {
             if(handle.index.hasOwnProperty(domain)) {
@@ -183,9 +184,9 @@ const handle = {
 handle.addWebsite("default", {}, null);
 
 // TODO: handle rejection & errors?
-async function readTemplate(template, folder, content = '') {
+async function readTemplate(template :string, folder :string, content = '') {
 	return new Promise((resolve, reject) => {
-		const promises = [];
+		const promises :Promise<any>[] = [];
 		const filenames = ['template', 'content'];
 
 		// Load the mustache template (outer layer)
@@ -201,7 +202,7 @@ async function readTemplate(template, folder, content = '') {
                 if (Array.isArray(content) && content[0]) content = content[0];
                 fsPromise.readFile(`${folder}/content/${content}.mustache`, {
                     encoding: 'utf8'
-                }).then(result => {
+                }).then((result:any) => {
                     var scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g,
                         styleEx = /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/g;
 
@@ -213,10 +214,10 @@ async function readTemplate(template, folder, content = '') {
                         scripts: scripts.join("\n"),
                         styles: styles.join("\n")
                     });
-                }).catch(e => {
+                }).catch((e:any) => {
                     fsPromise.readFile(`${folder}/404.mustache`, {
                         encoding: 'utf8'
-                    }).then(result => {
+                    }).then((result:any) => {
                         resolve(result);
                     });
                 });
@@ -225,7 +226,7 @@ async function readTemplate(template, folder, content = '') {
 
         // Load all the other partials we may need
 		fsPromise.readdir(`${folder}/partials/`)
-		.then( function(d){
+		.then( function(d:string[]){
 			d.forEach(function(filename){
 				if(filename.indexOf(".mustache") > 0) {
 					filenames.push(filename.split(".mustache")[0]);
@@ -253,20 +254,20 @@ async function readTemplate(template, folder, content = '') {
 	});
 }
 
-async function readAllViews(folder) {
+async function readAllViews(folder:any) {
     return new Promise((finish, reject) => {
-        fsPromise.readdir(folder).then( (directory) => {
-            Promise.all(directory.map(filename => new Promise((resolve, reject) =>{
+        fsPromise.readdir(folder).then( (directory:any) => {
+            Promise.all(directory.map((filename:string) => new Promise((resolve, reject) =>{
                 if(filename.indexOf(".mustache") > 0) {                
                     fsPromise.readFile(`${folder}/${filename}`, 'utf8')
-                        .then(file => {
+                        .then((file:any) => {
                             const name = filename.split('.mustache')[0];
                             resolve({
                                 [name]: file
                             })
-                        }).catch(e => console.log(e));
+                        }).catch((e:any) => console.log(e));
                 } else {
-                    fsPromise.lstat(`${folder}/${filename}`).then(d => {
+                    fsPromise.lstat(`${folder}/${filename}`).then((d:any) => {
                         if(d.isDirectory()) {
                             readAllViews(`${folder}/${filename}`)
                             .then(d => resolve(d));
@@ -279,7 +280,7 @@ async function readAllViews(folder) {
             }))).then((array) => {
                 finish(array.reduce((a, b) => Object.assign(a, b)))
             });
-        }).catch(e => console.log(e));
+        }).catch((e:any) => console.log(e));
     })
 }
 

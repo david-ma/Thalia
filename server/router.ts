@@ -1,15 +1,17 @@
+import { IncomingMessage, ServerResponse } from "http";
+
 // router.ts
 const fs = require("fs");
 const mime = require('mime');
 const zlib = require('zlib');
 
-function router(website, pathname, response, request) {
+function router(website :any, pathname :any, response :ServerResponse, request :IncomingMessage) {
 
     response.setHeader("Access-Control-Allow-Origin", "*");
 
     const route = new Promise(function(resolve, reject){
         try {
-            const data = {
+            const data :any = {
                 cookies: {},
                 words: []
             };
@@ -73,17 +75,17 @@ function router(website, pathname, response, request) {
             } else if (typeof website.controllers[d.words[1]] === 'function') {
                 website.controllers[d.words[1]]({
                     res: {
-                        end: function(result){
+                        end: function(result :any){
                             const acceptedEncoding = request.headers['accept-encoding'] || "";
                             var input = Buffer.from(result, 'utf8');
                             response.setHeader("Content-Type", "text/html");
                             if(acceptedEncoding.indexOf('deflate') >= 0) {
                                 response.writeHead(200, { 'content-encoding': 'deflate' });
-                                zlib.deflate(input, function(err, result){
+                                zlib.deflate(input, function(err :any, result :any){
                                     response.end(result);
                                 });
                             } else if(acceptedEncoding.indexOf('gzip') >= 0) {
-                                zlib.gzip(input, function(err, result){
+                                zlib.gzip(input, function(err :any, result :any){
                                     response.end(result);
                                 });
                             } else {
@@ -129,7 +131,7 @@ function router(website, pathname, response, request) {
         }
     }).catch(renderError);
 
-    function renderError(d){
+    function renderError(d :any){
         console.log("Error?",d);
         d = d ? {
             code: 500,
@@ -145,7 +147,7 @@ function router(website, pathname, response, request) {
     }
 
 
-    function redirect(url){
+    function redirect(url :any){
         if (typeof(url) == "string") {
             console.log("Forwarding user to: "+url);
             response.writeHead(303, {"Content-Type": "text/html"});
@@ -169,8 +171,8 @@ function router(website, pathname, response, request) {
      *
      * @param filename
      */
-    function routeFile(filename){
-        fs.exists(filename, function(exists) {
+    function routeFile(filename :string){
+        fs.exists(filename, function(exists :any) {
             if(!exists) {
                 console.log("No file found for " + filename);
                 response.writeHead(404, {"Content-Type": "text/plain"});
@@ -182,13 +184,13 @@ function router(website, pathname, response, request) {
             const filetype = mime.getType(filename);
             response.setHeader('Content-Type', filetype);
 
-            let router = function(file) {
-                response.writeHeader(200);
+            let router = function(file :any) {
+                response.writeHead(200);
                 response.end(file);
                 return;
             };
 
-            fs.stat(filename, function(err, stats){
+            fs.stat(filename, function(err :any, stats :any){
 
                 response.setHeader("Cache-Control", "no-cache");
                 if(website.cache) {
@@ -206,7 +208,7 @@ function router(website, pathname, response, request) {
                     if(acceptedEncoding.indexOf('deflate') >= 0) {
                         router = function(file) {
                             response.writeHead(200, { 'content-encoding': 'deflate' });
-                            zlib.deflate(file, function(err, result){
+                            zlib.deflate(file, function(err :any, result :any){
                                 response.end(result);
                                 return;
                             });
@@ -214,7 +216,7 @@ function router(website, pathname, response, request) {
                     } else if(acceptedEncoding.indexOf('gzip') >= 0) {
                         router = function(file) {
                             response.writeHead(200, { 'content-encoding': 'gzip' });
-                            zlib.gzip(file, function(err, result){
+                            zlib.gzip(file, function(err :any, result :any){
                                 response.end(result);
                                 return;
                             });
@@ -223,10 +225,10 @@ function router(website, pathname, response, request) {
                 }
             });
 
-            fs.readFile(filename, function (err, file) {
+            fs.readFile(filename, function (err :any, file :any) {
                 if (err) {
 
-                    fs.readdir(filename, function (e, dir) {
+                    fs.readdir(filename, function (e :any, dir :any) {
                         if (!e && dir && dir instanceof Array && dir.indexOf("index.html") >= 0) {
                             if (filename.lastIndexOf("/") === filename.length - 1) {
                                 filename += "index.html"
@@ -238,7 +240,7 @@ function router(website, pathname, response, request) {
                                 }
                             }
 // Note we don't have content type, caching, or zipping!!!!
-                            fs.readFile(filename, (e, file) => router(file));
+                            fs.readFile(filename, (e :any, file :any) => router(file));
                             return;
                         } else {
                             let base = request.url.split("?")[0];
@@ -250,8 +252,8 @@ function router(website, pathname, response, request) {
                                     website.viewableFolders.indexOf(slug) !== -1
                                     : true
                                 : false) {
-                                let links = [];
-                                dir.forEach(file => {
+                                let links :any[] = [];
+                                dir.forEach((file :string) => {
                                     links.push(`<li><a href="${base + file}">${file}</a></li>`)
                                 });
 

@@ -579,7 +579,7 @@ define("server", ["require", "exports"], function (require, exports) {
     const httpProxy = require('http-proxy');
     let blacklist = [];
     try {
-        require("./../blacklist").blacklist || [];
+        blacklist = require("../blacklist").blacklist;
         console.log("This is the blacklist:", blacklist);
     }
     catch (e) { }

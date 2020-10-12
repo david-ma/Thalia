@@ -7,7 +7,7 @@ const httpProxy = require('http-proxy');
 
 let blacklist :any = [];
 try {
-    require("./../blacklist").blacklist || [];
+    blacklist = require("../blacklist").blacklist;
     console.log("This is the blacklist:", blacklist);
 } catch (e) {}
 

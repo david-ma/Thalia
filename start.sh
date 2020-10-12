@@ -6,4 +6,4 @@
 
 echo Hello user, running David Ma\'s nodejs server at localhost
 echo
-node server/index.js $1 $2
+node server/thalia.js $1 $2

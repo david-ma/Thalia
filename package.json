@@ -1,7 +1,7 @@
 {
   "name": "thalia",
   "private": true,
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Frostickle's server",
   "main": "index.js",
   "dependencies": {
@@ -13,6 +13,7 @@
     "mysql": "^2.15.0",
     "mysql2": "^2.1.0",
     "nodemailer": "^6.4.4",
+    "requirejs": "^2.3.6",
     "sequelize": "^6.3.5",
     "tabletojson": "^2.0.4",
     "x-ray": "^2.3.4",
@@ -67,8 +68,8 @@
   "scripts": {
     "start": "sudo ./start.sh 80",
     "build": "gulp build -s ",
-    "develop": "./develop.sh",
-    "inspect": "node server/inspect"
+    "buildServer": "cd server; tsc",
+    "develop": "./develop.sh"
   },
   "nodemonConfig": {
     "ignore": [

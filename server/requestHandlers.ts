@@ -1,3 +1,4 @@
+// requestHandlers.ts
 const db = require("./database").db;
 const fs = require('fs');
 const fsPromise = fs.promises;
@@ -179,7 +180,7 @@ const handle = {
     proxies: {}
 };
 
-handle.addWebsite("default", {});
+handle.addWebsite("default", {}, null);
 
 // TODO: handle rejection & errors?
 async function readTemplate(template, folder, content = '') {
@@ -226,7 +227,7 @@ async function readTemplate(template, folder, content = '') {
 		fsPromise.readdir(`${folder}/partials/`)
 		.then( function(d){
 			d.forEach(function(filename){
-				if(filename.indexOf(".mustache" > 0)) {
+				if(filename.indexOf(".mustache") > 0) {
 					filenames.push(filename.split(".mustache")[0]);
 					promises.push(
 						fsPromise.readFile(`${folder}/partials/${filename}`, {
@@ -237,7 +238,7 @@ async function readTemplate(template, folder, content = '') {
 			});
 
 			Promise.all(promises).then(function(array){
-				const results = {};
+				const results :any = {};
                 filenames.forEach((filename, i) => results[filename] = array[i]);
 
                 if(typeof results.content == 'object') {
@@ -282,70 +283,6 @@ async function readAllViews(folder) {
     })
 }
 
-exports.handle = handle;
+// exports.handle = handle;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+export { handle }

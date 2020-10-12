@@ -1,3 +1,4 @@
+// router.ts
 const fs = require("fs");
 const mime = require('mime');
 const zlib = require('zlib');
@@ -46,7 +47,7 @@ function router(website, pathname, response, request) {
      *
      * - When serving the file normally, we need to check the header to see if it can be zipped or should be zipped.
      */
-    route.then(function(d) {
+    route.then(function(d : any) {
         if (typeof website.security !== "undefined" && website.security.loginNeeded(pathname, website.db, d.cookies)){
             website.services.login(response, request, website.db);
 
@@ -242,7 +243,7 @@ function router(website, pathname, response, request) {
                         } else {
                             let base = request.url.split("?")[0];
                                 base = base.slice(-1) === "/" ? base : `${base}/`;
-                                slug = base.split("/").slice(-2).slice(0, 1)[0];
+                            let slug = base.split("/").slice(-2).slice(0, 1)[0];
 
                             if (website.viewableFolders ?
                                 website.viewableFolders instanceof Array ?
@@ -279,9 +280,10 @@ ${links.join("\n")}
 }
 
 
-exports.router = router;
+// exports.router = router;
 //exports.routeFile = routeFile;
 
+export { router }
 
 
 

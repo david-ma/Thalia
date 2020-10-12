@@ -137,13 +137,13 @@ var getWorkEnv = function (done) {
 
         if (argv.s === true || argv.site === true) {
             console.log("When using -s or --site, you must specify which site you're using.");
-            process.exit(0);
+            process.exit(1);
         } else if (argv.s || argv.site) {
             site = argv.s || argv.site;
             if ( websites.indexOf(site) == -1 ) {
                 console.log(`Website '${site}' does not exist.`);
                 console.log("Please use one of the following: " + websites.join(", "));
-                process.exit(0);
+                process.exit(1);
             }
         } else {
             site = promptForSite();
@@ -314,10 +314,21 @@ var copyFiles = function (done) {
 // Watch for changes to the src directory
 var startBrowserSync = function (done) {
 	// Initialize BrowserSync
-	browserSync.init({
-        proxy: "localhost:1337",
-        ghostMode: false
-    });
+    var bs = {
+		server: {
+			baseDir: paths.reload
+		}
+	}
+
+    // Use option t for Thalia, if we're running that server
+    if(argv.t) {
+        bs = {
+            proxy: "localhost:1337",
+            ghostMode: false
+        };
+    }
+
+    browserSync.init(bs);
 
 	// Signal completion
 	done();

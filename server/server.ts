@@ -1,3 +1,4 @@
+// server.ts
 const https = require("https");
 const http  = require("http");
 const url   = require("url");
@@ -83,9 +84,9 @@ function start(router, handle, tlsOptions) {
         }
 
         function security( passwords ){
-            let decodedCookiePassword = false;
+            let decodedCookiePassword :any = false;
 
-            const cookies = {};
+            const cookies :any = {};
             if(request.headers.cookie) {
                 request.headers.cookie.split(";").forEach(function(d){
                     cookies[d.split("=")[0].trim()] = d.substring(d.split("=")[0].length+1).trim();
@@ -93,6 +94,10 @@ function start(router, handle, tlsOptions) {
 
                 decodedCookiePassword = decodeBase64(cookies.password);
             }
+
+            const host = request.headers.host;
+            const url_object = url.parse(request.url, true);
+            const proxyConfig = handle.proxies[host];
 
             if ( url_object.query.logout ) {
                 response.setHeader('Set-Cookie', ["password=;path=/;max-age=1"]);
@@ -111,7 +116,7 @@ function start(router, handle, tlsOptions) {
         }
     }
 
-    let port = 1337; // change the port here?
+    let port :string = '1337'; // change the port here?
     const pattern = /^\d{0,5}$/;
     let workspace = 'default';
 
@@ -157,25 +162,26 @@ function start(router, handle, tlsOptions) {
     });
 }
 
-exports.start = start;
+// exports.start = start;
+export { start }
 
 function getDateTime() {
 //    var date = new Date();
     var date = new Date(Date.now()+36000000);
     //add 10 hours... such a shitty way to make it australian time...
 
-    var hour = date.getHours();
+    var hour :any = date.getHours();
     hour = (hour < 10 ? "0" : "") + hour;
 
-    var min  = date.getMinutes();
+    var min :any = date.getMinutes();
     min = (min < 10 ? "0" : "") + min;
 
     var year = date.getFullYear();
 
-    var month = date.getMonth() + 1;
+    var month :any = date.getMonth() + 1;
     month = (month < 10 ? "0" : "") + month;
 
-    var day  = date.getDate();
+    var day :any = date.getDate();
     day = (day < 10 ? "0" : "") + day;
 
     return year + ":" + month + ":" + day + " " + hour + ":" + min;

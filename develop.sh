@@ -3,8 +3,23 @@
 # Todo:
 # Allow different ports
 # Check that port isn't being used
-
-echo Hello user, running David Ma\'s nodejs server at localhost, and serving using gulp
+echo "\033[1;31mDeveloper mode for Thalia\033[0m"
+echo "Running Thalia server at http://localhost:1337"
+echo "gulp is running Browsersync at http://localhost:3000"
+echo "tsc will recompile thalia.js on changes to server/*.ts"
+echo "nodemon will restart the node server if thalia.js is changed"
 echo
-./node_modules/.bin/gulp watch -s $1 &
-./node_modules/.bin/nodemon server/index.js $1 $2
+
+SITE=$1
+PORT=$2
+
+# Run everything together
+# Exit everything together
+function everything()
+{
+    ./node_modules/.bin/gulp watch -t -s $SITE &
+    ./node_modules/.bin/nodemon server/thalia.js $SITE $PORT &
+    cd server; tsc --preserveWatchOutput --watch --pretty
+}
+
+trap everything EXIT

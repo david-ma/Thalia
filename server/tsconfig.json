@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "module":"AMD",
+        // "noImplicitAny": true,
+        "outFile": "thalia.js",
+        "target": "ES2020"
+    },
+    "files":[
+        "moduleShim.ts",
+        "requestHandlers.ts",
+        "router.ts",
+        "server.ts",
+        "index.ts"
+    ]
+}

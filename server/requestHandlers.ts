@@ -40,7 +40,7 @@ const handle :any = {
             try {
                 const start = Date.now();
                 config = require('../config').config;
-                console.log(`${Date.now() - start} ms - config.js`);
+                console.log(`Loading time: ${Date.now() - start} ms - config.js`);
             } catch (err){
                 if(err.code !== 'MODULE_NOT_FOUND') {
                     console.log("Warning, your config script is broken!");
@@ -55,10 +55,11 @@ const handle :any = {
             } catch (err){}
 
             config.standAlone = true;
+            config.folder = `${__dirname}/../public`;
 
             handle.addWebsite(site, config, cred);
 
-            console.log("Setting workspace to: "+workspace);
+            console.log("Setting workspace to current directory");
             handle.index.localhost = workspace;
 
         } else if(handle.index.localhost !== "default") {

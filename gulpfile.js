@@ -16,7 +16,7 @@ var paths = null; // Paths related to workspace
 
 
 // General
-var {gulp, src, dest, watch, series, parallel} = require('gulp');
+var {src, dest, watch, series, parallel} = require('gulp');
 var del = require('del');
 var flatmap = require('gulp-flatmap');
 var lazypipe = require('lazypipe');
@@ -25,10 +25,8 @@ var package = require('./package.json');
 
 // Scripts
 var jshint = require('gulp-jshint');
-var stylish = require('jshint-stylish');
 var concat = require('gulp-concat');
 var uglify = require('gulp-terser');
-var optimizejs = require('gulp-optimize-js');
 
 // Styles
 var sass = require('gulp-sass');
@@ -73,11 +71,9 @@ function compileBoilerplate(done){
     };
 
     jsTasks = lazypipe()
-        .pipe(optimizejs)
         .pipe(dest, paths.scripts.output)
         .pipe(rename, {suffix: '.min'})
         .pipe(uglify)
-        .pipe(optimizejs)
         .pipe(dest, paths.scripts.output);
 
     parallelBuildTasks(done);
@@ -121,11 +117,9 @@ function setSite(website){
     };
 
     jsTasks = lazypipe()
-        .pipe(optimizejs)
         .pipe(dest, paths.scripts.output)
         .pipe(rename, {suffix: '.min'})
         .pipe(uglify)
-        .pipe(optimizejs)
         .pipe(dest, paths.scripts.output);
 }
 

@@ -27,19 +27,43 @@ const handle :any = {
     websites: {},
     index: {localhost: 'default'},
     loadAllWebsites: function (){
-        let developing = "";
-        const pattern = /^\d{0,5}$/;
+        const standAlone :boolean = !fs.existsSync('websites');
 
-        // To do: we should check that the workspace exists, otherwise leave it as default
-        if (process.argv[2] !== null && process.argv[2] !== undefined && !pattern.exec(process.argv[2])) {
-            developing = process.argv[2];
-        } else if(typeof process.argv[3] !== null && process.argv[3] !== undefined && !pattern.exec(process.argv[3])){
-            developing = process.argv[3];
-        }
+        if (standAlone) {
+            console.log("Serving stand alone website");
+            let workspace = ".."
+            handle.index.localhost = workspace;
+            var site = workspace;
 
-        if(developing) {
-            console.log("Only load %s", developing);
-            var site = developing;
+            let config, cred;
+
+            try {
+                const start = Date.now();
+                config = require('../config').config;
+                console.log(`${Date.now() - start} ms - config.js`);
+            } catch (err){
+                if(err.code !== 'MODULE_NOT_FOUND') {
+                    console.log("Warning, your config script is broken!");
+                    console.log();
+                } else {
+                    console.log(`Error in config.js!`);
+                    console.log(err);
+                }
+            }
+            try {
+                cred = JSON.parse(fs.readFileSync('cred.json'));
+            } catch (err){}
+
+            config.standAlone = true;
+
+            handle.addWebsite(site, config, cred);
+
+            console.log("Setting workspace to: "+workspace);
+            handle.index.localhost = workspace;
+
+        } else if(handle.index.localhost !== "default") {
+            console.log("Only load %s", handle.index.localhost);
+            const site :string = handle.index.localhost;
             console.log("Adding site: "+site);
             var config, cred;
             try {
@@ -88,12 +112,14 @@ const handle :any = {
         config = config || {};
         handle.websites[site] = new (<any>Website)(site, config);
 
+        const baseUrl = config.standAlone ? `${__dirname}/../` : `${__dirname}/../websites/${site}/`;
+
         // If dist or data exist, enable them.
-        if(fs.existsSync(`websites/${site}/data`)) {
-            handle.websites[site].data = "websites/"+site+"/data";
+        if(fs.existsSync(`${baseUrl}data`)) {
+            handle.websites[site].data = `${baseUrl}data`;
         }
-        if(fs.existsSync(`websites/${site}/dist`)) {
-            handle.websites[site].dist = "websites/"+site+"/dist";
+        if(fs.existsSync(`${baseUrl}dist`)) {
+            handle.websites[site].dist = `${baseUrl}dist`;
         }
 
         Object.keys(handle.websites[site].proxies).forEach(function(proxy){
@@ -112,10 +138,10 @@ const handle :any = {
         }
 
         // If sequelize is set up, add it.
-        if(fs.existsSync(`websites/${site}/db_bootstrap.js`)) {
+        if(fs.existsSync(`${baseUrl}db_bootstrap.js`)) {
             try {
                 const start = Date.now();
-                handle.websites[site].seq = require(`../websites/${site}/db_bootstrap.js`).seq;
+                handle.websites[site].seq = require(`${baseUrl}db_bootstrap.js`).seq;
                 console.log(`${Date.now() - start} ms - Database bootstrap.js ${site}`);
             } catch(e) {
                 console.log(e);
@@ -123,19 +149,19 @@ const handle :any = {
         }
 
         // If website has views, load them.
-        if(fs.existsSync(`websites/${site}/views`)) {
+        if(fs.existsSync(`${baseUrl}views`)) {
             // Stupid hack for development if you don't want to cache the views :(
             handle.websites[site].readAllViews = function(cb :Function){
-                readAllViews(`${__dirname}/../websites/${site}/views`).then(d => cb(d));
+                readAllViews(`${baseUrl}views`).then(d => cb(d));
             };
             handle.websites[site].readTemplate = function(template:string, content = '', cb :Function){
-                readTemplate(template, `${__dirname}/../websites/${site}/views`, content).then(d => cb(d));
+                readTemplate(template, `${baseUrl}views`, content).then(d => cb(d));
             };
 
-            readAllViews(`${__dirname}/../websites/${site}/views`).then(views => {
+            readAllViews(`${baseUrl}views`).then(views => {
                 handle.websites[site].views = views;
 
-                fsPromise.readdir(`websites/${site}/views`)
+                fsPromise.readdir(`${baseUrl}views`)
                 .then(function(d:string[]){
                     d.filter((d:string) => d.indexOf('.mustache') > 0).forEach((file:string) => {
                         const webpage = file.split('.mustache')[0];
@@ -146,7 +172,7 @@ const handle :any = {
                                 if(handle.websites[site].cache) {
                                     router.res.end(mustache.render((<any>views)[webpage], {}, views));
                                 } else {
-                                    readAllViews(`${__dirname}/../websites/${site}/views`).then(views => {
+                                    readAllViews(`${baseUrl}views`).then(views => {
                                         handle.websites[site].views = views;
                                         router.res.end(mustache.render((<any>views)[webpage], {}, views));
                                     });

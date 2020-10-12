@@ -17,9 +17,12 @@ PORT=$2
 # Exit everything together
 function everything()
 {
+    cd server
+        tsc --preserveWatchOutput --watch &
+    cd ..
+
     ./node_modules/.bin/gulp watch -t -s $SITE &
-    ./node_modules/.bin/nodemon server/thalia.js $SITE $PORT &
-    cd server; tsc --preserveWatchOutput --watch --pretty
+    ./node_modules/.bin/nodemon server/thalia.js $SITE $PORT
 }
 
 trap everything EXIT

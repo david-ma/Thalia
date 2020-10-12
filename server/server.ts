@@ -1,16 +1,18 @@
 import { IncomingMessage, ServerResponse } from "http";
 
 // server.ts
-const https = require("https");
 const http  = require("http");
 const url   = require("url");
 const httpProxy = require('http-proxy');
 
-const blacklist = require("./../blacklist").blacklist || [];
-console.log("This is the blacklist:", blacklist);
+let blacklist :any = [];
+try {
+    require("./../blacklist").blacklist || [];
+    console.log("This is the blacklist:", blacklist);
+} catch (e) {}
 
 //This part of the server starts the server on port 80 and logs stuff to the std.out
-function start(router:any, handle:any, tlsOptions:any) {
+function start(router :any, handle :any, port :string) {
     let server = null;
 
     function onRequest(request :IncomingMessage, response :ServerResponse) {
@@ -118,33 +120,8 @@ function start(router:any, handle:any, tlsOptions:any) {
         }
     }
 
-    let port :string = '1337'; // change the port here?
-    const pattern = /^\d{0,5}$/;
-    let workspace = 'default';
-
-    if(typeof process.argv[2] !== null && pattern.exec(process.argv[2])){
-        port = process.argv[2];
-    } else if(typeof process.argv[3] !== null && pattern.exec(process.argv[3])){
-        port = process.argv[3];
-    }
-
-    // Todo: we should check that the workspace exists, otherwise leave it as default
-    if (process.argv[2] !== null && process.argv[2] !== undefined && !pattern.exec(process.argv[2])) {
-        workspace = process.argv[2];
-    } else if(typeof process.argv[3] !== null && process.argv[3] !== undefined && !pattern.exec(process.argv[3])){
-        workspace = process.argv[3];
-    }
-
-    console.log("Setting workspace to: "+workspace);
-    handle.index.localhost = workspace;
-
-    if (tlsOptions) {
-        console.log("Server has started on port: " + 443);
-        server = https.createServer(tlsOptions, onRequest).listen(443);
-    } else {
-        console.log("Server has started on port: " + port);
-        server = http.createServer(onRequest).listen(port);
-    }
+    console.log("Server has started on port: " + port);
+    server = http.createServer(onRequest).listen(port);
 
     return server.on('upgrade', function(request :any, socket :any, head :any) {
         "use strict";

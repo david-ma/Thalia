@@ -1,6 +1,8 @@
+// database.ts
+
 var mysql = require("mysql");
 
-var Database = function (cred) {
+var Database = function (this:any, cred :any) {
     this.cred = cred;
     this.connected = false;
 };
@@ -11,7 +13,7 @@ Database.prototype.connect = function(){
 
     var db = this.db = mysql.createConnection(cred);
 
-    db.connect(function(err) {
+    db.connect(function(err :any) {
         if(err) {
             console.log("Error in database!");
             console.log(err);
@@ -21,7 +23,7 @@ Database.prototype.connect = function(){
         }
     });
 
-    db.on('error', function(err) {
+    db.on('error', function(err :any) {
         console.log('db error: '+cred.database);
 
         /**
@@ -39,7 +41,7 @@ Database.prototype.connect = function(){
     return db;
 };
 
-Database.prototype.query = function(query, callback){
+Database.prototype.query = function(this :any, query :any, callback :any){
     if(this.connected) {
         this.db.query(query, callback);
     } else {
@@ -48,7 +50,7 @@ Database.prototype.query = function(query, callback){
     }
 };
 
-Database.prototype.queryVariables = function(query, variables, callback){
+Database.prototype.queryVariables = function(this :any, query :any, variables :any, callback :any){
     if(this.connected) {
         this.db.query(query, variables, callback);
     } else {
@@ -57,7 +59,7 @@ Database.prototype.queryVariables = function(query, variables, callback){
     }
 };
 
-exports.db = Database;
+export { Database as db}
 
 
 

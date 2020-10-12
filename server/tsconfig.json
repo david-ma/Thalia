@@ -13,6 +13,7 @@
         "requestHandlers.ts",
         "router.ts",
         "server.ts",
+        "database.ts",
         "index.ts"
     ]
 }

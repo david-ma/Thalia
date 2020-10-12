@@ -41,18 +41,40 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
         websites: {},
         index: { localhost: 'default' },
         loadAllWebsites: function () {
-            let developing = "";
-            const pattern = /^\d{0,5}$/;
-            // To do: we should check that the workspace exists, otherwise leave it as default
-            if (process.argv[2] !== null && process.argv[2] !== undefined && !pattern.exec(process.argv[2])) {
-                developing = process.argv[2];
+            const standAlone = !fs.existsSync('websites');
+            if (standAlone) {
+                console.log("Serving stand alone website");
+                let workspace = "..";
+                handle.index.localhost = workspace;
+                var site = workspace;
+                let config, cred;
+                try {
+                    const start = Date.now();
+                    config = require('../config').config;
+                    console.log(`${Date.now() - start} ms - config.js`);
+                }
+                catch (err) {
+                    if (err.code !== 'MODULE_NOT_FOUND') {
+                        console.log("Warning, your config script is broken!");
+                        console.log();
+                    }
+                    else {
+                        console.log(`Error in config.js!`);
+                        console.log(err);
+                    }
+                }
+                try {
+                    cred = JSON.parse(fs.readFileSync('cred.json'));
+                }
+                catch (err) { }
+                config.standAlone = true;
+                handle.addWebsite(site, config, cred);
+                console.log("Setting workspace to: " + workspace);
+                handle.index.localhost = workspace;
             }
-            else if (typeof process.argv[3] !== null && process.argv[3] !== undefined && !pattern.exec(process.argv[3])) {
-                developing = process.argv[3];
-            }
-            if (developing) {
-                console.log("Only load %s", developing);
-                var site = developing;
+            else if (handle.index.localhost !== "default") {
+                console.log("Only load %s", handle.index.localhost);
+                const site = handle.index.localhost;
                 console.log("Adding site: " + site);
                 var config, cred;
                 try {
@@ -105,12 +127,13 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
         addWebsite: function (site, config, cred) {
             config = config || {};
             handle.websites[site] = new Website(site, config);
+            const baseUrl = config.standAlone ? `${__dirname}/../` : `${__dirname}/../websites/${site}/`;
             // If dist or data exist, enable them.
-            if (fs.existsSync(`websites/${site}/data`)) {
-                handle.websites[site].data = "websites/" + site + "/data";
+            if (fs.existsSync(`${baseUrl}data`)) {
+                handle.websites[site].data = `${baseUrl}data`;
             }
-            if (fs.existsSync(`websites/${site}/dist`)) {
-                handle.websites[site].dist = "websites/" + site + "/dist";
+            if (fs.existsSync(`${baseUrl}dist`)) {
+                handle.websites[site].dist = `${baseUrl}dist`;
             }
             Object.keys(handle.websites[site].proxies).forEach(function (proxy) {
                 handle.proxies[proxy] = handle.websites[site].proxies[proxy];
@@ -125,10 +148,10 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
                 handle.websites[site].db = new db(cred);
             }
             // If sequelize is set up, add it.
-            if (fs.existsSync(`websites/${site}/db_bootstrap.js`)) {
+            if (fs.existsSync(`${baseUrl}db_bootstrap.js`)) {
                 try {
                     const start = Date.now();
-                    handle.websites[site].seq = require(`../websites/${site}/db_bootstrap.js`).seq;
+                    handle.websites[site].seq = require(`${baseUrl}db_bootstrap.js`).seq;
                     console.log(`${Date.now() - start} ms - Database bootstrap.js ${site}`);
                 }
                 catch (e) {
@@ -136,17 +159,17 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
                 }
             }
             // If website has views, load them.
-            if (fs.existsSync(`websites/${site}/views`)) {
+            if (fs.existsSync(`${baseUrl}views`)) {
                 // Stupid hack for development if you don't want to cache the views :(
                 handle.websites[site].readAllViews = function (cb) {
-                    readAllViews(`${__dirname}/../websites/${site}/views`).then(d => cb(d));
+                    readAllViews(`${baseUrl}views`).then(d => cb(d));
                 };
                 handle.websites[site].readTemplate = function (template, content = '', cb) {
-                    readTemplate(template, `${__dirname}/../websites/${site}/views`, content).then(d => cb(d));
+                    readTemplate(template, `${baseUrl}views`, content).then(d => cb(d));
                 };
-                readAllViews(`${__dirname}/../websites/${site}/views`).then(views => {
+                readAllViews(`${baseUrl}views`).then(views => {
                     handle.websites[site].views = views;
-                    fsPromise.readdir(`websites/${site}/views`)
+                    fsPromise.readdir(`${baseUrl}views`)
                         .then(function (d) {
                         d.filter((d) => d.indexOf('.mustache') > 0).forEach((file) => {
                             const webpage = file.split('.mustache')[0];
@@ -157,7 +180,7 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
                                         router.res.end(mustache.render(views[webpage], {}, views));
                                     }
                                     else {
-                                        readAllViews(`${__dirname}/../websites/${site}/views`).then(views => {
+                                        readAllViews(`${baseUrl}views`).then(views => {
                                             handle.websites[site].views = views;
                                             router.res.end(mustache.render(views[webpage], {}, views));
                                         });
@@ -550,14 +573,17 @@ define("server", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.start = void 0;
     // server.ts
-    const https = require("https");
     const http = require("http");
     const url = require("url");
     const httpProxy = require('http-proxy');
-    const blacklist = require("./../blacklist").blacklist || [];
-    console.log("This is the blacklist:", blacklist);
+    let blacklist = [];
+    try {
+        require("./../blacklist").blacklist || [];
+        console.log("This is the blacklist:", blacklist);
+    }
+    catch (e) { }
     //This part of the server starts the server on port 80 and logs stuff to the std.out
-    function start(router, handle, tlsOptions) {
+    function start(router, handle, port) {
         let server = null;
         function onRequest(request, response) {
             let spam = false;
@@ -651,32 +677,8 @@ define("server", ["require", "exports"], function (require, exports) {
                 }
             }
         }
-        let port = '1337'; // change the port here?
-        const pattern = /^\d{0,5}$/;
-        let workspace = 'default';
-        if (typeof process.argv[2] !== null && pattern.exec(process.argv[2])) {
-            port = process.argv[2];
-        }
-        else if (typeof process.argv[3] !== null && pattern.exec(process.argv[3])) {
-            port = process.argv[3];
-        }
-        // Todo: we should check that the workspace exists, otherwise leave it as default
-        if (process.argv[2] !== null && process.argv[2] !== undefined && !pattern.exec(process.argv[2])) {
-            workspace = process.argv[2];
-        }
-        else if (typeof process.argv[3] !== null && process.argv[3] !== undefined && !pattern.exec(process.argv[3])) {
-            workspace = process.argv[3];
-        }
-        console.log("Setting workspace to: " + workspace);
-        handle.index.localhost = workspace;
-        if (tlsOptions) {
-            console.log("Server has started on port: " + 443);
-            server = https.createServer(tlsOptions, onRequest).listen(443);
-        }
-        else {
-            console.log("Server has started on port: " + port);
-            server = http.createServer(onRequest).listen(port);
-        }
+        console.log("Server has started on port: " + port);
+        server = http.createServer(onRequest).listen(port);
         return server.on('upgrade', function (request, socket, head) {
             "use strict";
             const host = request.headers.host;
@@ -748,13 +750,90 @@ div {
 </body>
 </html>`;
 });
+// database.ts
+define("database", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.db = void 0;
+    var mysql = require("mysql");
+    var Database = function (cred) {
+        this.cred = cred;
+        this.connected = false;
+    };
+    exports.db = Database;
+    Database.prototype.connect = function () {
+        var that = this, cred = this.cred;
+        var db = this.db = mysql.createConnection(cred);
+        db.connect(function (err) {
+            if (err) {
+                console.log("Error in database!");
+                console.log(err);
+            }
+            else {
+                that.connected = true;
+                console.log('Database connected: ' + cred.database + ' as id: ' + db.threadId);
+            }
+        });
+        db.on('error', function (err) {
+            console.log('db error: ' + cred.database);
+            /**
+             * Connection to the MySQL server is usually lost due to either server restart, or a
+             * connnection idle timeout (the wait_timeoutserver variable configures this)
+             */
+            if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+                that.connected = false;
+                console.log('PROTOCOL_CONNECTION_LOST');
+            }
+            else {
+                console.log("Some sort of DB error...");
+                console.log(err);
+            }
+        });
+        return db;
+    };
+    Database.prototype.query = function (query, callback) {
+        if (this.connected) {
+            this.db.query(query, callback);
+        }
+        else {
+            this.connect();
+            this.db.query(query, callback);
+        }
+    };
+    Database.prototype.queryVariables = function (query, variables, callback) {
+        if (this.connected) {
+            this.db.query(query, variables, callback);
+        }
+        else {
+            this.connect();
+            this.db.query(query, variables, callback);
+        }
+    };
+});
 // index.ts
 if (typeof define !== 'function') {
     var define = require('amdefine')(module);
 }
 define(function (require) {
     require(['server', 'router', 'requestHandlers'], function (server, router, requestHandlers) {
+        let port = '1337'; // change the port here?
+        const pattern = /^\d{0,5}$/;
+        let workspace = 'default';
+        if (typeof process.argv[2] !== null && pattern.exec(process.argv[2])) {
+            port = process.argv[2];
+        }
+        else if (typeof process.argv[3] !== null && pattern.exec(process.argv[3])) {
+            port = process.argv[3];
+        }
+        // Todo: we should check that the workspace exists, otherwise leave it as default
+        if (process.argv[2] !== null && process.argv[2] !== undefined && !pattern.exec(process.argv[2])) {
+            workspace = process.argv[2];
+        }
+        else if (typeof process.argv[3] !== null && process.argv[3] !== undefined && !pattern.exec(process.argv[3])) {
+            workspace = process.argv[3];
+        }
+        requestHandlers.handle.index.localhost = workspace;
         requestHandlers.handle.loadAllWebsites();
-        server.start(router.router, requestHandlers.handle);
+        server.start(router.router, requestHandlers.handle, port);
     });
 });

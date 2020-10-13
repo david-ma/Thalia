@@ -5,6 +5,7 @@
   "description": "Frostickle's server",
   "main": "index.js",
   "dependencies": {
+    "amdefine": "^1.0.1",
     "async": "^3.2.0",
     "formidable": "^1.2.2",
     "http-proxy": "^1.17.0",

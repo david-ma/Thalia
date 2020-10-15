@@ -4,8 +4,8 @@ if (typeof define !== 'function') {
 }
 
 define(function (require:any) {
-    require(['server','router','requestHandlers'],
-    function(server:any, router:any, requestHandlers:any) {
+    require(['server','router','requestHandlers', 'fs'],
+    function(server:any, router:any, requestHandlers:any, fs:any) {
         let port :string = '1337'; // change the port here?
         const pattern = /^\d{0,5}$/;
         let workspace = 'default';
@@ -21,6 +21,11 @@ define(function (require:any) {
             workspace = process.argv[2];
         } else if(typeof process.argv[3] !== null && process.argv[3] !== undefined && !pattern.exec(process.argv[3])){
             workspace = process.argv[3];
+        }
+
+        if( !fs.existsSync(`websites/${workspace}`) ) {
+            console.error(`Error. ${workspace} is an invalid workspace`);
+            process.exit(1);
         }
 
         requestHandlers.handle.index.localhost = workspace;

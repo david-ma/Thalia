@@ -15,7 +15,7 @@ PORT=$2
 
 # Run everything together
 # Exit everything together
-function everything()
+function start_everything()
 {
     cd server
         tsc --preserveWatchOutput --watch &
@@ -25,4 +25,11 @@ function everything()
     ./node_modules/.bin/nodemon server/thalia.js $SITE $PORT
 }
 
-trap everything EXIT
+# set -e
+# function quit_everything()
+# {
+#     echo "Quit everything..."
+# }
+# trap quit_everything ERR
+
+start_everything

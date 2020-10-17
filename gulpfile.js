@@ -258,25 +258,38 @@ var browserify = require("browserify");
 var source = require("vinyl-source-stream");
 var tsify = require("tsify");
 
-var typescript_bundle = function (done) {
+var typescript = function (done) {
+    
+    var tsProject = ts.createProject(`websites/${site}/tsconfig.json`);
+    // console.log(tsProject);
+
+    var files = tsProject.config.files;
+    var outFile = "bundle.js"
+    try {
+        outFile = tsProject.config.compilerOptions.outFile;
+    } catch(e){}
+    console.log("files: ", files);
+    console.log("outfile: ", outFile);
+    // console.log("Raw config", tsProject.rawConfig);
 
     return browserify({
-        basedir: ".",
+        basedir: `websites/${site}/`,
         debug: true,
-        entries: ["src/js/typescriptTest.ts"],
+        entries: tsProject.rawConfig.files,
+        // entries: ["src/js/typescriptTest.ts"],
         cache: {},
         packageCache: {},
     })
         .plugin(tsify)
         .bundle()
-        .pipe(source("bundle.js"))
+        .pipe(source(outFile))
         .pipe(dest(paths.typescript.output));
 
 };
 
 var ts = require("gulp-typescript");
 
-var typescript = function (done) {
+var typescript_gulp = function (done) {
     console.log("Typescript from folder");
     console.log(paths.typescript.input);
 
@@ -415,12 +428,8 @@ exports.buildAll = function(done) {
 // gulp watch
 exports.watch = series(
     getWorkEnv,
-    compileBoilerplate,
-    getWorkEnv,
-    parallelBuildTasks,
-    publish,
-	startBrowserSync,
-	watchSource
+    startBrowserSync,
+    watchSource
 );
 
 

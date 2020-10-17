@@ -258,7 +258,7 @@ var browserify = require("browserify");
 var source = require("vinyl-source-stream");
 var tsify = require("tsify");
 
-var typescript = function (done) {
+var typescript_browserify = function (done) {
     
     var tsProject = ts.createProject(`websites/${site}/tsconfig.json`);
     // console.log(tsProject);
@@ -289,7 +289,7 @@ var typescript = function (done) {
 
 var ts = require("gulp-typescript");
 
-var typescript_gulp = function (done) {
+var typescript = function (done) {
     console.log("Typescript from folder");
     console.log(paths.typescript.input);
 
@@ -299,6 +299,10 @@ var typescript_gulp = function (done) {
 
     return src(paths.typescript.input)
         .pipe(ts({
+            "module": "AMD",
+
+            "allowSyntheticDefaultImports":  true,
+            "esModuleInterop": true,
 
 // Don't enforce proper typescript at this level
 // Perhaps use tsconfig.json of each site?

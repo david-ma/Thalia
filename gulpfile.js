@@ -254,68 +254,23 @@ var buildStyles = function (done) {
 };
 
 
-var browserify = require("browserify");
-var source = require("vinyl-source-stream");
-var tsify = require("tsify");
 
-var typescript_browserify = function (done) {
-    
-    var tsProject = ts.createProject(`websites/${site}/tsconfig.json`);
-    // console.log(tsProject);
-
-    var files = tsProject.config.files;
-    var outFile = "bundle.js"
-    try {
-        outFile = tsProject.config.compilerOptions.outFile;
-    } catch(e){}
-    console.log("files: ", files);
-    console.log("outfile: ", outFile);
-    // console.log("Raw config", tsProject.rawConfig);
-
-    return browserify({
-        basedir: `websites/${site}/`,
-        debug: true,
-        entries: tsProject.rawConfig.files,
-        // entries: ["src/js/typescriptTest.ts"],
-        cache: {},
-        packageCache: {},
-    })
-        .plugin(tsify)
-        .bundle()
-        .pipe(source(outFile))
-        .pipe(dest(paths.typescript.output));
-
-};
-
+/**
+ * Compile Typescript from src folder into dist folder
+ */
 var ts = require("gulp-typescript");
-
 var typescript = function (done) {
-    console.log("Typescript from folder");
-    console.log(paths.typescript.input);
+    var tsProject = ts.createProject(`websites/${site}/tsconfig.json`);
 
-    // console.log(`using websites/${site}/tsconfig.json"`)
-
-    // var tsProject = ts.createProject(`websites/${site}/tsconfig.json`);
+    // TODO: Use tsconfig input/output?
+    // var input = tsProject.config.files
+    // var output = tsProject.config.compilerOptions.outFile
 
     return src(paths.typescript.input)
-        .pipe(ts({
-            "module": "AMD",
-
-            "allowSyntheticDefaultImports":  true,
-            "esModuleInterop": true,
-
-// Don't enforce proper typescript at this level
-// Perhaps use tsconfig.json of each site?
-            "noImplicitAny": false,
-            "noImplicitThis": false,
-            "noImplicitReturns": false,
-            "noUnusedLocals":false
-        }))
+        .pipe(ts(tsProject.config.compilerOptions))
         .js
         .pipe(dest(paths.typescript.output));
 }
-
-
 
 
 
@@ -370,7 +325,7 @@ var watchSource = function (done) {
         console.log("No public folder", e);
     };
 
-    watch(paths.typescript.input, series(typescript, reloadBrowser));
+    watch([paths.typescript.input, `websites/${site}/tsconfig.json`], series(typescript, reloadBrowser));
     // watch('src/**/*.ts', series(typescript, reloadBrowser));
 
 	done();

@@ -79,6 +79,8 @@ function compileBoilerplate(done){
     parallelBuildTasks(done);
 }
 
+var ts = require("gulp-typescript");
+var tsProject = null;
 var siteConfig = null;
 
 function setSite(website){
@@ -86,6 +88,7 @@ function setSite(website){
     workspace = "websites/"+site;
     console.log(`Setting workspace to: ${workspace}`);
 
+    tsProject = ts.createProject(`websites/${site}/tsconfig.json`);
     siteConfig = require(`./websites/${site}/config`).config;
 
     /**
@@ -258,16 +261,14 @@ var buildStyles = function (done) {
 /**
  * Compile Typescript from src folder into dist folder
  */
-var ts = require("gulp-typescript");
 var typescript = function (done) {
-    var tsProject = ts.createProject(`websites/${site}/tsconfig.json`);
 
     // TODO: Use tsconfig input/output?
     // var input = tsProject.config.files
     // var output = tsProject.config.compilerOptions.outFile
 
     return src(paths.typescript.input)
-        .pipe(ts(tsProject.config.compilerOptions))
+        .pipe(tsProject())
         .js
         .pipe(dest(paths.typescript.output));
 }
@@ -311,9 +312,23 @@ var reloadBrowser = function (done) {
 	done();
 };
 
+var singleFile = {};
+var copySingleFile = function (done) {
+    return src(singleFile.src)
+        .pipe(singleFile.dest);
+}
+
 // Watch for changes
 var watchSource = function (done) {
-    watch(paths.copy.input, series(copyFiles, reloadBrowser));
+
+    // watch(paths.copy.input, series(copyFiles, reloadBrowser));
+    watch(paths.copy.input).on("change", function(path, stats){
+        console.log(`${path} changed, run typescript on that only?`);
+        singleFile.src = path;
+        singleFile.dest = path.match(/.*\//g)[0].replace("src","dist");
+
+        series(copySingleFile, reloadBrowser)();
+    });
 
     watch(paths.scripts.input, series(lintScripts, buildScripts, reloadBrowser));
     watch(paths.styles.input, series(buildStyles, reloadBrowser));

@@ -13,23 +13,8 @@ echo
 SITE=$1
 PORT=$2
 
-# Run everything together
-# Exit everything together
-function start_everything()
-{
-    cd server
-        tsc --preserveWatchOutput --watch &
-    cd ..
-
-    ./node_modules/.bin/gulp watch -t -s $SITE &
-    ./node_modules/.bin/nodemon server/thalia.js $SITE $PORT
-}
-
-# set -e
-# function quit_everything()
-# {
-#     echo "Quit everything..."
-# }
-# trap quit_everything ERR
-
-start_everything
+./node_modules/.bin/gulp watch -t -s $SITE &
+cd server
+    tsc --incremental --preserveWatchOutput --watch --assumeChangesOnlyAffectDirectDependencies &
+cd ..
+./node_modules/.bin/nodemon --delay 2 server/thalia.js $SITE $PORT

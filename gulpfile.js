@@ -323,7 +323,6 @@ var watchSource = function (done) {
 
     // watch(paths.copy.input, series(copyFiles, reloadBrowser));
     watch(paths.copy.input).on("change", function(path, stats){
-        console.log(`${path} changed, run typescript on that only?`);
         singleFile.src = path;
         singleFile.dest = path.match(/.*\//g)[0].replace("src","dist");
 
@@ -340,7 +339,8 @@ var watchSource = function (done) {
         console.log("No public folder", e);
     };
 
-    watch([paths.typescript.input, `websites/${site}/tsconfig.json`], series(typescript, reloadBrowser));
+    watch(`websites/${site}/dist/**/*.js`, series(reloadBrowser));
+    // watch([paths.typescript.input, `websites/${site}/tsconfig.json`], series(typescript, reloadBrowser));
     // watch('src/**/*.ts', series(typescript, reloadBrowser));
 
 	done();

@@ -17,4 +17,7 @@ PORT=$2
 cd server
     tsc --incremental --preserveWatchOutput --watch --assumeChangesOnlyAffectDirectDependencies &
 cd ..
+cd websites/$SITE
+    tsc --incremental --preserveWatchOutput --watch --assumeChangesOnlyAffectDirectDependencies &
+cd ../..
 ./node_modules/.bin/nodemon server/thalia.js $SITE $PORT

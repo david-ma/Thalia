@@ -18,7 +18,7 @@ cd server
     tsc --incremental --preserveWatchOutput --watch --assumeChangesOnlyAffectDirectDependencies &
 cd ..
 cd websites/$SITE
-    tsc --incremental --preserveWatchOutput --watch --assumeChangesOnlyAffectDirectDependencies &
+    tsc --preserveWatchOutput --watch --assumeChangesOnlyAffectDirectDependencies &
 
     if test -f "config/config.ts"; then
         echo "config.ts exists."

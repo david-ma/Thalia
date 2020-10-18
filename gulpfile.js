@@ -89,7 +89,12 @@ function setSite(website){
     console.log(`Setting workspace to: ${workspace}`);
 
     tsProject = ts.createProject(`websites/${site}/tsconfig.json`);
-    siteConfig = require(`./websites/${site}/config`).config;
+
+    if(fs.existsSync(`${__dirname}/websites/${site}/config.js`)) {
+        siteConfig = require(`${__dirname}/websites/${site}/config`).config;
+    } else {
+        siteConfig = require(`${__dirname}/websites/${site}/config/config`).config;
+    }
 
     /**
      * Paths to project folders

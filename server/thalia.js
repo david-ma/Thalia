@@ -50,7 +50,12 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
                 let config, cred;
                 try {
                     const start = Date.now();
-                    config = require('../config').config;
+                    if (fs.existsSync(`${__dirname}/../config.js`)) {
+                        config = require(`${__dirname}/../config`).config;
+                    }
+                    else {
+                        config = require(`${__dirname}/../config/config`).config;
+                    }
                     console.log(`Loading time: ${Date.now() - start} ms - config.js`);
                 }
                 catch (err) {
@@ -80,7 +85,12 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
                 var config, cred;
                 try {
                     const start = Date.now();
-                    config = require('../websites/' + site + '/config').config;
+                    if (fs.existsSync(`${__dirname}/../websites/${site}/config.js`)) {
+                        config = require(`${__dirname}/../websites/${site}/config`).config;
+                    }
+                    else {
+                        config = require(`${__dirname}/../websites/${site}/config/config`).config;
+                    }
                     console.log(`${Date.now() - start} ms - config.js for ${site}`);
                 }
                 catch (err) {
@@ -153,6 +163,16 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
                 try {
                     const start = Date.now();
                     handle.websites[site].seq = require(`${baseUrl}db_bootstrap.js`).seq;
+                    console.log(`${Date.now() - start} ms - Database bootstrap.js ${site}`);
+                }
+                catch (e) {
+                    console.log(e);
+                }
+            }
+            else if (fs.existsSync(`${baseUrl}config/db_bootstrap.js`)) {
+                try {
+                    const start = Date.now();
+                    handle.websites[site].seq = require(`${baseUrl}config/db_bootstrap.js`).seq;
                     console.log(`${Date.now() - start} ms - Database bootstrap.js ${site}`);
                 }
                 catch (e) {

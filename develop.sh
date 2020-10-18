@@ -19,5 +19,13 @@ cd server
 cd ..
 cd websites/$SITE
     tsc --incremental --preserveWatchOutput --watch --assumeChangesOnlyAffectDirectDependencies &
+
+    if test -f "config/config.ts"; then
+        echo "config.ts exists."
+        cd config
+            tsc --incremental --preserveWatchOutput --watch --assumeChangesOnlyAffectDirectDependencies &
+        cd ..
+    fi
+
 cd ../..
 ./node_modules/.bin/nodemon server/thalia.js $SITE $PORT

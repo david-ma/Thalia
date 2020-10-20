@@ -54,7 +54,7 @@
     "jshint-stylish": "2.2.1",
     "lazypipe": "1.0.2",
     "node-sass": "^4.14.1",
-    "nodemon": "^2.0.2",
+    "nodemon": "^2.0.6",
     "postcss": "^8.1.1",
     "readline-sync": "^1.4.10",
     "sequelize-cli": "^6.2.0",
@@ -75,14 +75,21 @@
     "develop": "./develop.sh"
   },
   "nodemonConfig": {
+    "verbose": true,
+    "watch": [
+        "./server/thalia.js",
+        "./websites/**/config.js",
+        "./websites/**/db_bootstrap.js"
+    ],
     "ignore": [
-      "dist/*",
-      "src/*",
-      "views/*",
-      "public/*",
-      "*.ts",
-      "tsconfig.json",
-      "gulpfile.js"
+        "node_modules/*",
+        "dist/*",
+        "src/*",
+        "views/*",
+        "public/*",
+        "*.ts",
+        "tsconfig.json",
+        "gulpfile.js"
     ],
     "delay": "500"
   },

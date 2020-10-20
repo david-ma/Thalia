@@ -66,7 +66,7 @@ function compileBoilerplate(done){
             input: 'src/**/*.ts',
             output: workspace+'/dist/'
         },
-        views: workspace+'/views',
+        views: workspace+'/views/**/*.mustache',
         reload: './'+workspace+'/dist/'
     };
 
@@ -119,7 +119,7 @@ function setSite(website){
             input: workspace+'/src/**/*.ts',
             output: workspace+'/dist/'
         },
-        views: workspace+'/views',
+        views: workspace+'/views/**/*.mustache',
         public: workspace+'/public',
         reload: './'+workspace+'/dist/'
     };
@@ -320,7 +320,7 @@ var reloadBrowser = function (done) {
 var singleFile = {};
 var copySingleFile = function (done) {
     return src(singleFile.src)
-        .pipe(singleFile.dest);
+        .pipe(dest(singleFile.dest));
 }
 
 // Watch for changes

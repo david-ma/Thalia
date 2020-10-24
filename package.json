@@ -9,6 +9,7 @@
     "async": "^3.2.0",
     "formidable": "^1.2.2",
     "http-proxy": "^1.17.0",
+    "lodash": "^4.17.20",
     "mime": "^2.3.1",
     "mustache": "^4.0.0",
     "mysql": "^2.15.0",
@@ -79,6 +80,7 @@
     "watch": [
         "./server/thalia.js",
         "./websites/**/config.js",
+        "./websites/**/config/*.js",
         "./websites/**/db_bootstrap.js"
     ],
     "ignore": [

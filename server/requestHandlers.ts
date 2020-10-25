@@ -103,7 +103,11 @@ const handle :any = {
                     console.log("Adding site: "+site);
                     var config, cred;
                     try {
-                        config = require('../websites/'+site+'/config').config;
+                        if(fs.existsSync(`${__dirname}/../websites/${site}/config.js`)) {
+                            config = require(`${__dirname}/../websites/${site}/config`).config;
+                        } else {
+                            config = require(`${__dirname}/../websites/${site}/config/config`).config;
+                        }
                     } catch (err){
                         if(err.code !== 'MODULE_NOT_FOUND') {
                             console.log("Warning, your config script for "+site+" is broken!");

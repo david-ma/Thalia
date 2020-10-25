@@ -50,6 +50,7 @@ const handle :any = {
             } catch (err){
                 if(err.code !== 'MODULE_NOT_FOUND') {
                     console.log("Warning, your config script is broken!");
+                    console.error(err);
                     console.log();
                 } else {
                     console.log(`Error in config.js!`);
@@ -84,6 +85,7 @@ const handle :any = {
             } catch (err){
                 if(err.code !== 'MODULE_NOT_FOUND') {
                     console.log("Warning, your config script for "+site+" is broken!");
+                    console.error(err);
                     console.log();
                 } else {
                     console.log(`Error in ${site} config!`);
@@ -105,6 +107,7 @@ const handle :any = {
                     } catch (err){
                         if(err.code !== 'MODULE_NOT_FOUND') {
                             console.log("Warning, your config script for "+site+" is broken!");
+                            console.error(err);
                             console.log();
                         }
                     }

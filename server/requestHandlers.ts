@@ -93,9 +93,10 @@ const handle :any = {
                 }
             }
             try {
-                cred = JSON.parse(fs.readFileSync(`websites/${site}/cred.json`).toString());
-                // console.log("Cred: ", cred);
-
+                if(fs.existsSync(`${__dirname}/../websites/${site}/cred.json`)) {
+                    cred = JSON.parse(fs.readFileSync(`${__dirname}/../websites/${site}/cred.json`).toString());
+                    console.log("Cred: ", cred);
+                }
             } catch (err){
                 console.log(err);
             }

@@ -9,15 +9,13 @@
 if (typeof define !== 'function') {
     var define = require('amdefine')(module);
 }
-define("requestHandlers", ["require", "exports"], function (require, exports) {
+define("requestHandlers", ["require", "exports", "fs", "mustache"], function (require, exports, fs, mustache) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.handle = void 0;
     // requestHandlers.ts
     const db = require("./database").db;
-    const fs = require('fs');
     const fsPromise = fs.promises;
-    const mustache = require('mustache');
     const Website = function (site, config) {
         if (typeof config === "object") {
             this.data = false;
@@ -70,7 +68,7 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
                     }
                 }
                 try {
-                    cred = JSON.parse(fs.readFileSync('cred.json'));
+                    cred = JSON.parse(fs.readFileSync('cred.json').toString());
                 }
                 catch (err) { }
                 config.standAlone = true;
@@ -106,9 +104,12 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
                     }
                 }
                 try {
-                    cred = JSON.parse(fs.readFileSync('websites/' + site + '/cred.json'));
+                    cred = JSON.parse(fs.readFileSync(`websites/${site}/cred.json`).toString());
+                    // console.log("Cred: ", cred);
                 }
-                catch (err) { }
+                catch (err) {
+                    console.log(err);
+                }
                 config.cache = false;
                 handle.addWebsite(site, config, cred);
             }
@@ -133,7 +134,7 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
                             }
                         }
                         try {
-                            cred = JSON.parse(fs.readFileSync('websites/' + site + '/cred.json'));
+                            cred = JSON.parse(fs.readFileSync(`websites/${site}/cred.json`).toString());
                         }
                         catch (err) { }
                         handle.addWebsite(site, config, cred);
@@ -331,14 +332,10 @@ define("requestHandlers", ["require", "exports"], function (require, exports) {
         });
     }
 });
-define("router", ["require", "exports"], function (require, exports) {
+define("router", ["require", "exports", "fs", "mime", "zlib"], function (require, exports, fs, mime, zlib) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.router = void 0;
-    // router.ts
-    const fs = require("fs");
-    const mime = require('mime');
-    const zlib = require('zlib');
     function router(website, pathname, response, request) {
         response.setHeader("Access-Control-Allow-Origin", "*");
         const route = new Promise(function (resolve, reject) {
@@ -597,14 +594,10 @@ ${links.join("\n")}
     }
     exports.router = router;
 });
-define("server", ["require", "exports"], function (require, exports) {
+define("server", ["require", "exports", "http", "url", "http-proxy"], function (require, exports, http, url, httpProxy) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.start = void 0;
-    // server.ts
-    const http = require("http");
-    const url = require("url");
-    const httpProxy = require('http-proxy');
     let blacklist = [];
     try {
         blacklist = require("../blacklist").blacklist;
@@ -693,7 +686,9 @@ define("server", ["require", "exports"], function (require, exports) {
                     response.end("Logged out.");
                 }
                 else if (url_object.query.password && passwords.indexOf(url_object.query.password) >= 0) {
-                    let password = encodeBase64(url_object.query.password);
+                    // console.log(url_object.query.password);
+                    let password = encodeBase64(url_object.query.password[0]);
+                    // let password = encodeBase64(url_object.query.password);
                     response.setHeader('Set-Cookie', [`password=${password};path=/;expires=false`]);
                     webProxy(proxyConfig);
                 }
@@ -780,11 +775,10 @@ div {
 </html>`;
 });
 // database.ts
-define("database", ["require", "exports"], function (require, exports) {
+define("database", ["require", "exports", "mysql"], function (require, exports, mysql) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.db = void 0;
-    var mysql = require("mysql");
     var Database = function (cred) {
         this.cred = cred;
         this.connected = false;

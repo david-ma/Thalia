@@ -1,6 +1,6 @@
 // database.ts
 
-var mysql = require("mysql");
+import mysql = require("mysql");
 
 var Database = function (this:any, cred :any) {
     this.cred = cred;

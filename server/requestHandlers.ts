@@ -1,8 +1,8 @@
 // requestHandlers.ts
 const db = require("./database").db;
-const fs = require('fs');
+import fs = require('fs');
 const fsPromise = fs.promises;
-const mustache = require('mustache');
+import mustache = require('mustache');
 
 const Website = function (this: any, site :string, config :any) {
     if(typeof config === "object") {
@@ -58,7 +58,7 @@ const handle :any = {
                 }
             }
             try {
-                cred = JSON.parse(fs.readFileSync('cred.json'));
+                cred = JSON.parse(fs.readFileSync('cred.json').toString());
             } catch (err){}
 
             config.standAlone = true;
@@ -93,8 +93,12 @@ const handle :any = {
                 }
             }
             try {
-                cred = JSON.parse(fs.readFileSync('websites/'+site+'/cred.json'));
-            } catch (err){}
+                cred = JSON.parse(fs.readFileSync(`websites/${site}/cred.json`).toString());
+                // console.log("Cred: ", cred);
+
+            } catch (err){
+                console.log(err);
+            }
             config.cache = false;
             handle.addWebsite(site, config, cred);
         } else {
@@ -116,7 +120,7 @@ const handle :any = {
                         }
                     }
                     try {
-                        cred = JSON.parse(fs.readFileSync('websites/'+site+'/cred.json'));
+                        cred = JSON.parse(fs.readFileSync(`websites/${site}/cred.json`).toString());
                     } catch (err){}
                     handle.addWebsite(site, config, cred);
                 }
@@ -196,11 +200,11 @@ const handle :any = {
                         ) {
                             handle.websites[site].controllers[webpage] = function(router:any) {
                                 if(handle.websites[site].cache) {
-                                    router.res.end(mustache.render((<any>views)[webpage], {}, views));
+                                    router.res.end((<any>mustache).render((<any>views)[webpage], {}, views));
                                 } else {
                                     readAllViews(`${baseUrl}views`).then(views => {
                                         handle.websites[site].views = views;
-                                        router.res.end(mustache.render((<any>views)[webpage], {}, views));
+                                        router.res.end((<any>mustache).render((<any>views)[webpage], {}, views));
                                     });
                                 }
                             }

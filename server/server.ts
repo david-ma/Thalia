@@ -1,9 +1,9 @@
 import { IncomingMessage, ServerResponse } from "http";
 
 // server.ts
-const http  = require("http");
-const url   = require("url");
-const httpProxy = require('http-proxy');
+import http  = require("http");
+import url   = require("url");
+import httpProxy = require('http-proxy');
 
 let blacklist :any = [];
 try {
@@ -99,8 +99,8 @@ function start(router :any, handle :any, port :string) {
                 decodedCookiePassword = decodeBase64(cookies.password);
             }
 
-            const host = request.headers.host;
-            const url_object = url.parse(request.url, true);
+            const host :string = request.headers.host;
+            const url_object :url.UrlWithParsedQuery = url.parse(request.url, true);
             const proxyConfig = handle.proxies[host];
 
             if ( url_object.query.logout ) {
@@ -108,7 +108,9 @@ function start(router :any, handle :any, port :string) {
                 response.writeHead(200);
                 response.end("Logged out.");
             } else if( url_object.query.password && passwords.indexOf(url_object.query.password) >= 0) {
-                let password = encodeBase64(url_object.query.password);
+                // console.log(url_object.query.password);
+                let password = encodeBase64(url_object.query.password[0]);
+                // let password = encodeBase64(url_object.query.password);
                 response.setHeader('Set-Cookie', [`password=${password};path=/;expires=false`]);
                 webProxy( proxyConfig );
             } else if ( decodedCookiePassword && passwords.indexOf(decodedCookiePassword) >= 0) {

@@ -1,9 +1,9 @@
 import { IncomingMessage, ServerResponse } from "http";
 
 // router.ts
-const fs = require("fs");
-const mime = require('mime');
-const zlib = require('zlib');
+import fs = require('fs');
+import mime = require('mime');
+import zlib = require('zlib');
 
 function router(website :any, pathname :any, response :ServerResponse, request :IncomingMessage) {
 

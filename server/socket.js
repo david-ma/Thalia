@@ -8,18 +8,30 @@
  */
 
 function init(io, handle){
+    console.log("Initialising Socket.io");
+
     //start the heartbeat...
-    function sendHeartbeat(){
-        setTimeout(sendHeartbeat, 8000);
-        io.sockets.emit('drip', { beat : 1 });
-    }
-    setTimeout(sendHeartbeat, 8000);
+    // function sendHeartbeat(){
+    //     setTimeout(sendHeartbeat, 8000);
+    //     io.sockets.emit('drip', { beat : 1 });
+    // }
+    // setTimeout(sendHeartbeat, 8000);
 
     //this stuff happens once, when the server starts:
+    let text = "dummytext"
 
 
     //this stuff happens every time a page is loaded:
     io.on('connection', function(socket){
+
+
+        socket.emit("text", {data: text});
+        socket.on("overwriteText", function(packet){
+            // console.log("overwriteText recieved.", packet);
+            text = packet.data;
+            socket.broadcast.emit("text", {data: text});
+
+        });
 
         // Heartbeat function to keep connections alive.
         socket.on("drop", function(data){console.log("drop");});

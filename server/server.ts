@@ -4,6 +4,8 @@ import { IncomingMessage, ServerResponse } from "http";
 import http  = require("http");
 import url   = require("url");
 import httpProxy = require('http-proxy');
+import SocketServer = require('socket.io');
+const socket = require('./socket');
 
 let blacklist :any = [];
 try {
@@ -124,6 +126,9 @@ function start(router :any, handle :any, port :string) {
 
     console.log("Server has started on port: " + port);
     server = http.createServer(onRequest).listen(port);
+
+    var io = new SocketServer.listen(server, {});
+    socket.init(io, handle);
 
     return server.on('upgrade', function(request :any, socket :any, head :any) {
         "use strict";

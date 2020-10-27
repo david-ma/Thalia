@@ -596,10 +596,11 @@ ${links.join("\n")}
     }
     exports.router = router;
 });
-define("server", ["require", "exports", "http", "url", "http-proxy"], function (require, exports, http, url, httpProxy) {
+define("server", ["require", "exports", "http", "url", "http-proxy", "socket.io"], function (require, exports, http, url, httpProxy, SocketServer) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.start = void 0;
+    const socket = require('./socket');
     let blacklist = [];
     try {
         blacklist = require("../blacklist").blacklist;
@@ -705,6 +706,8 @@ define("server", ["require", "exports", "http", "url", "http-proxy"], function (
         }
         console.log("Server has started on port: " + port);
         server = http.createServer(onRequest).listen(port);
+        var io = new SocketServer.listen(server, {});
+        socket.init(io, handle);
         return server.on('upgrade', function (request, socket, head) {
             "use strict";
             const host = request.headers.host;

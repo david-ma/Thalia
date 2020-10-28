@@ -619,22 +619,14 @@ define("socket", ["require", "exports"], function (require, exports) {
                 const website = handle.getWebsite(host);
                 // Simple logging
                 console.log("Socket connection " + socket.id + " from " + socket.handshake.headers.referer);
-                if (website.name == siteName) {
-                    if (website !== undefined && website.sockets !== undefined) {
-                        if (website.sockets.on instanceof Array) {
-                            website.sockets.on.forEach(function (d) {
-                                socket.on(d.name, function (data) {
-                                    d.callback(data, website.db || website.seq, socket);
-                                });
-                            });
-                        }
-                        if (website.sockets.emit instanceof Array) {
-                            website.sockets.emit.forEach(function (d) {
-                                socket.emit(d.name, d.data);
-                            });
-                        }
-                    }
-                }
+                website.sockets.on.forEach(function (d) {
+                    socket.on(d.name, function (data) {
+                        d.callback(socket, data, website.db || website.seq);
+                    });
+                });
+                website.sockets.emit.forEach((emitter) => {
+                    emitter(socket, website.db || website.seq);
+                });
             });
         });
     }

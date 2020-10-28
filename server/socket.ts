@@ -1,5 +1,6 @@
+import { Thalia } from './thalia'
 
-function socketInit(io :SocketIO.Server, handle :any){
+function socketInit(io :SocketIO.Server, handle :Thalia.handle){
     console.log("Initialising Socket.io");
 
     Object.keys(handle.websites).forEach((siteName :string) => {
@@ -19,22 +20,14 @@ function socketInit(io :SocketIO.Server, handle :any){
             // Simple logging
             console.log("Socket connection "+socket.id+" from "+socket.handshake.headers.referer);
 
-            if (website.name == siteName) {
-                if(website !== undefined && website.sockets !== undefined){
-                    if(website.sockets.on instanceof Array) {
-                        website.sockets.on.forEach(function(d :any){
-                            socket.on(d.name, function(data){
-                                d.callback(data, website.db || website.seq, socket);
-                            });
-                        });
-                    }
-                    if(website.sockets.emit instanceof Array) {
-                        website.sockets.emit.forEach(function(d :any){
-                            socket.emit(d.name, d.data);
-                        });
-                    }
-                }
-            }
+            website.sockets.on.forEach(function(d :Thalia.Receiver){
+                socket.on(d.name, function(data){
+                    d.callback(socket, data, website.db || website.seq );
+                });
+            });
+            website.sockets.emit.forEach( (emitter :Thalia.Emitter) => {
+                emitter(socket, website.db || website.seq)
+            });
         });
     })
 }

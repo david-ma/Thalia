@@ -6,6 +6,7 @@ import mustache = require('mustache');
 
 const Website = function (this: any, site :string, config :any) {
     if(typeof config === "object") {
+        this.name = site ;
         this.data = false ;
         this.dist = false ;
         this.cache = typeof config.cache === "boolean" ? config.cache : true;

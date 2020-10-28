@@ -5,7 +5,9 @@ function socketInit(io :SocketIO.Server, handle :any){
     Object.keys(handle.websites).forEach((siteName :string) => {
         io.of(`/${siteName}`).use((socket, next) => {
             const host = socket.handshake.headers.host;
-            if (host == siteName || host.indexOf('localhost') >= 0) {
+            const website = handle.getWebsite(host);
+
+            if (website.name == siteName) {
                 next()
             } else {
                 next(new Error("Wrong namespace for this site"))
@@ -17,7 +19,7 @@ function socketInit(io :SocketIO.Server, handle :any){
             // Simple logging
             console.log("Socket connection "+socket.id+" from "+socket.handshake.headers.referer);
 
-            if (host == siteName || host.indexOf('localhost') >= 0) {
+            if (website.name == siteName) {
                 if(website !== undefined && website.sockets !== undefined){
                     if(website.sockets.on instanceof Array) {
                         website.sockets.on.forEach(function(d :any){

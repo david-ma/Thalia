@@ -18,6 +18,7 @@ define("requestHandlers", ["require", "exports", "fs", "mustache"], function (re
     const fsPromise = fs.promises;
     const Website = function (site, config) {
         if (typeof config === "object") {
+            this.name = site;
             this.data = false;
             this.dist = false;
             this.cache = typeof config.cache === "boolean" ? config.cache : true;
@@ -606,7 +607,8 @@ define("socket", ["require", "exports"], function (require, exports) {
         Object.keys(handle.websites).forEach((siteName) => {
             io.of(`/${siteName}`).use((socket, next) => {
                 const host = socket.handshake.headers.host;
-                if (host == siteName || host.indexOf('localhost') >= 0) {
+                const website = handle.getWebsite(host);
+                if (website.name == siteName) {
                     next();
                 }
                 else {
@@ -617,7 +619,7 @@ define("socket", ["require", "exports"], function (require, exports) {
                 const website = handle.getWebsite(host);
                 // Simple logging
                 console.log("Socket connection " + socket.id + " from " + socket.handshake.headers.referer);
-                if (host == siteName || host.indexOf('localhost') >= 0) {
+                if (website.name == siteName) {
                     if (website !== undefined && website.sockets !== undefined) {
                         if (website.sockets.on instanceof Array) {
                             website.sockets.on.forEach(function (d) {

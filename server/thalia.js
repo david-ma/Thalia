@@ -28,6 +28,7 @@ define("requestHandlers", ["require", "exports", "fs", "mustache"], function (re
             this.services = typeof config.services === "object" ? config.services : {};
             this.controllers = typeof config.controllers === "object" ? config.controllers : {};
             this.proxies = typeof config.proxies === "object" ? config.proxies : {};
+            this.sockets = typeof config.sockets === "object" ? config.sockets : { on: [], emit: [] };
             this.security = typeof config.security === "object" ? config.security : { loginNeeded: function () { return false; } };
             this.viewableFolders = config.viewableFolders || false;
         }
@@ -596,11 +597,51 @@ ${links.join("\n")}
     }
     exports.router = router;
 });
-define("server", ["require", "exports", "http", "url", "http-proxy", "socket.io"], function (require, exports, http, url, httpProxy, SocketServer) {
+define("socket", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.socketInit = void 0;
+    function socketInit(io, handle) {
+        console.log("Initialising Socket.io");
+        Object.keys(handle.websites).forEach((siteName) => {
+            io.of(`/${siteName}`).use((socket, next) => {
+                const host = socket.handshake.headers.host;
+                if (host == siteName || host.indexOf('localhost') >= 0) {
+                    next();
+                }
+                else {
+                    next(new Error("Wrong namespace for this site"));
+                }
+            }).on('connection', function (socket) {
+                const host = socket.handshake.headers.host;
+                const website = handle.getWebsite(host);
+                // Simple logging
+                console.log("Socket connection " + socket.id + " from " + socket.handshake.headers.referer);
+                if (host == siteName || host.indexOf('localhost') >= 0) {
+                    if (website !== undefined && website.sockets !== undefined) {
+                        if (website.sockets.on instanceof Array) {
+                            website.sockets.on.forEach(function (d) {
+                                socket.on(d.name, function (data) {
+                                    d.callback(data, website.db || website.seq, socket);
+                                });
+                            });
+                        }
+                        if (website.sockets.emit instanceof Array) {
+                            website.sockets.emit.forEach(function (d) {
+                                socket.emit(d.name, d.data);
+                            });
+                        }
+                    }
+                }
+            });
+        });
+    }
+    exports.socketInit = socketInit;
+});
+define("server", ["require", "exports", "http", "url", "http-proxy", "socket.io", "socket"], function (require, exports, http, url, httpProxy, socketIO, socket_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.start = void 0;
-    const socket = require('./socket');
     let blacklist = [];
     try {
         blacklist = require("../blacklist").blacklist;
@@ -706,8 +747,8 @@ define("server", ["require", "exports", "http", "url", "http-proxy", "socket.io"
         }
         console.log("Server has started on port: " + port);
         server = http.createServer(onRequest).listen(port);
-        var io = new SocketServer.listen(server, {});
-        socket.init(io, handle);
+        var io = new socketIO.listen(server, {});
+        socket_1.socketInit(io, handle);
         return server.on('upgrade', function (request, socket, head) {
             "use strict";
             const host = request.headers.host;

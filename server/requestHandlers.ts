@@ -16,6 +16,7 @@ const Website = function (this: any, site :string, config :any) {
         this.services = typeof config.services === "object" ? config.services : {};
         this.controllers = typeof config.controllers === "object" ? config.controllers : {};
         this.proxies = typeof config.proxies === "object" ? config.proxies : {};
+        this.sockets = typeof config.sockets === "object" ? config.sockets : { on: [], emit: [] };
         this.security = typeof config.security === "object" ? config.security : {loginNeeded:function(){return false;}};
         this.viewableFolders = config.viewableFolders || false;
     } else {

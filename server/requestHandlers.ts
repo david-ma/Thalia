@@ -3,8 +3,9 @@ const db = require("./database").db;
 import fs = require('fs');
 const fsPromise = fs.promises;
 import mustache = require('mustache');
+import { Thalia } from './thalia';
 
-const Website = function (this: any, site :string, config :any) {
+const Website :Thalia.Website = function (this: any, site :string, config :any) {
     if(typeof config === "object") {
         this.name = site ;
         this.data = false ;
@@ -25,7 +26,7 @@ const Website = function (this: any, site :string, config :any) {
     }
 };
 
-const handle :any = {
+const handle :Thalia.handle = {
     websites: {},
     index: {localhost: 'default'},
     loadAllWebsites: function (){
@@ -135,7 +136,7 @@ const handle :any = {
     // Add a site to the handle
     addWebsite: function(site :string, config :any, cred :any){
         config = config || {};
-        handle.websites[site] = new (<any>Website)(site, config);
+        handle.websites[site] = new Website(site, config);
 
         const baseUrl = config.standAlone ? `${__dirname}/../` : `${__dirname}/../websites/${site}/`;
 

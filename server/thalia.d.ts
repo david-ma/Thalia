@@ -1,4 +1,3 @@
-
 export declare namespace Thalia {
 
     export interface Emitter {
@@ -11,12 +10,28 @@ export declare namespace Thalia {
         }
     }
 
+    export type Website = any;
+    export type Proxy = any;
 
     export interface handle {
-        websites: Array<any>;
-        getWebsite: {
-            (host:string) :any;
+        websites: {
+            [key:string]: Website;
         };
+        index: {
+            localhost :string;
+            [key:string]: string;
+        };
+        proxies: {
+            [key:string] :Proxy;
+        }
+
+        loadAllWebsites: { () :void; };
+        getWebsite: {
+            (host:string) :Website;
+        };
+        addWebsite: {
+            (site:Website, config: any, cred:any) :void;
+        }
     }
 
 

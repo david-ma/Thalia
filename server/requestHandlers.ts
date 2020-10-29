@@ -1,29 +1,40 @@
 // requestHandlers.ts
 const db = require("./database").db;
 import fs = require('fs');
+import { IncomingMessage, ServerResponse } from 'http';
 const fsPromise = fs.promises;
 import mustache = require('mustache');
 import { Thalia } from './thalia';
 
 
-class Website implements Thalia.Website {
+class Website {
     name: string;
-    data: boolean | string;
-    dist: boolean | string;
+    data: string;
+    dist: string;
     cache: boolean;
     folder: string;
     domains: Array<string>;
-    pages: {};
-    redirects: object;
-    services: {};
+    pages: {
+        [key:string] : string;
+    };
+    redirects: {
+        [key:string] : string;
+    };
+    services: {
+        login ?: any;
+        [key:string] :
+            (response: ServerResponse, request: IncomingMessage, db: Thalia.MysqlWrapper | Thalia.SequelizeWrapper, words: any) => void
+    };
     proxies: {
         [key:string] : Thalia.Proxy;
     };
     sockets: Thalia.Sockets;
-    security: {};
-    viewableFolders: boolean;
-    db: any;
-    seq: any;
+    security: {
+        loginNeeded: any;
+    };
+    viewableFolders: boolean | Array<any>;
+    db: Thalia.MysqlWrapper;
+    seq: Thalia.SequelizeWrapper;
     readAllViews :{
         (callback: any) :void;
     };
@@ -37,8 +48,8 @@ class Website implements Thalia.Website {
     constructor (site :string, config :any) {
         if(typeof config === "object") {
             this.name = site ;
-            this.data = false ;
-            this.dist = false ;
+            this.data = "" ; // Used to be false. Todo: Check if this is ok
+            this.dist = "" ; // Used to be false. Todo: Check if this is ok
             this.cache = typeof config.cache === "boolean" ? config.cache : true;
             this.folder = typeof config.folder === "string" ? config.folder : "websites/"+site+"/public";
             this.domains = typeof config.domains === "object" ? config.domains : [];
@@ -57,7 +68,7 @@ class Website implements Thalia.Website {
 }
 
 
-const handle :Thalia.handle = {
+const handle :Thalia.Handle = {
     websites: {},
     index: {localhost: 'default'},
     loadAllWebsites: function (){
@@ -376,6 +387,5 @@ async function readAllViews(folder:any) {
     })
 }
 
-// exports.handle = handle;
 
-export { handle }
+export { handle, Website }

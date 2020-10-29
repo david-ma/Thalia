@@ -12,7 +12,7 @@ if (typeof define !== 'function') {
 define("requestHandlers", ["require", "exports", "fs", "mustache"], function (require, exports, fs, mustache) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.handle = void 0;
+    exports.Website = exports.handle = void 0;
     // requestHandlers.ts
     const db = require("./database").db;
     const fsPromise = fs.promises;
@@ -20,8 +20,8 @@ define("requestHandlers", ["require", "exports", "fs", "mustache"], function (re
         constructor(site, config) {
             if (typeof config === "object") {
                 this.name = site;
-                this.data = false;
-                this.dist = false;
+                this.data = ""; // Used to be false. Todo: Check if this is ok
+                this.dist = ""; // Used to be false. Todo: Check if this is ok
                 this.cache = typeof config.cache === "boolean" ? config.cache : true;
                 this.folder = typeof config.folder === "string" ? config.folder : "websites/" + site + "/public";
                 this.domains = typeof config.domains === "object" ? config.domains : [];
@@ -40,6 +40,7 @@ define("requestHandlers", ["require", "exports", "fs", "mustache"], function (re
         }
         ;
     }
+    exports.Website = Website;
     const handle = {
         websites: {},
         index: { localhost: 'default' },
@@ -344,7 +345,7 @@ define("router", ["require", "exports", "fs", "mime", "zlib"], function (require
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.router = void 0;
-    function router(website, pathname, response, request) {
+    const router = function (website, pathname, response, request) {
         response.setHeader("Access-Control-Allow-Origin", "*");
         const route = new Promise(function (resolve, reject) {
             try {
@@ -599,7 +600,7 @@ ${links.join("\n")}
                 });
             });
         }
-    }
+    };
     exports.router = router;
 });
 define("socket", ["require", "exports"], function (require, exports) {

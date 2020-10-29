@@ -1,8 +1,9 @@
-import { any } from "bluebird";
-import { Sequelize } from "sequelize/types";
-
+import { IncomingMessage, ServerResponse } from "http";
 
 // https://www.typescriptlang.org/docs/handbook/declaration-files/templates/module-class-d-ts.html
+
+import { Website as requestHandlersWebsite } from "./requestHandlers";
+
 export declare namespace Thalia {
 
     export interface Emitter {
@@ -15,36 +16,10 @@ export declare namespace Thalia {
         }
     }
 
+    export type MysqlWrapper = any;
+    export type SequelizeWrapper = any;
     export type Proxy = any;
-    export class Website {
-        name: string;
-        data: boolean | string;
-        dist: boolean | string;
-        cache: boolean;
-        folder: string;
-        domains: Array<string>;
-        pages: {};
-        redirects: object;
-        services: {};
-        proxies: {
-            [key:string] : Proxy;
-        };
-        sockets: Sockets;
-        security: {};
-        viewableFolders: boolean;
-        db: any;
-        seq: any;
-        readAllViews :{
-            (callback: any) :void;
-        };
-        readTemplate :{
-            (template: string, content: string, callback: any) :void;
-        };
-        views: any;
-        controllers: {
-            [key:string] : any;
-        }
-    }
+    export class Website extends requestHandlersWebsite { }
 
     export interface WebsiteConfig {
         standAlone ?: boolean;
@@ -53,7 +28,11 @@ export declare namespace Thalia {
 
     export interface WebsiteCredentials { }
 
-    export interface handle {
+    export interface Router {
+        (site :Website, pathname :string, response :ServerResponse, request :IncomingMessage)
+    }
+
+    export interface Handle {
         websites: {
             [key:string]: Website;
         };

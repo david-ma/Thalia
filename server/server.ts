@@ -6,6 +6,7 @@ import url   = require("url");
 import httpProxy = require('http-proxy');
 import socketIO = require('socket.io');
 import { socketInit } from './socket';
+import { Thalia } from "./thalia";
 
 let blacklist :any = [];
 try {
@@ -14,7 +15,7 @@ try {
 } catch (e) {}
 
 //This part of the server starts the server on port 80 and logs stuff to the std.out
-function start(router :any, handle :any, port :string) {
+function start(router :Thalia.Router, handle :Thalia.Handle, port :string) {
     let server = null;
 
     function onRequest(request :IncomingMessage, response :ServerResponse) {

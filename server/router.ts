@@ -4,8 +4,9 @@ import { IncomingMessage, ServerResponse } from "http";
 import fs = require('fs');
 import mime = require('mime');
 import zlib = require('zlib');
+import { Thalia } from "./thalia";
 
-function router(website :any, pathname :any, response :ServerResponse, request :IncomingMessage) {
+const router : Thalia.Router = function(website :Thalia.Website, pathname :string, response :ServerResponse, request :IncomingMessage) {
 
     response.setHeader("Access-Control-Allow-Origin", "*");
 
@@ -147,7 +148,7 @@ function router(website :any, pathname :any, response :ServerResponse, request :
     }
 
 
-    function redirect(url :any){
+    function redirect(url :string){
         if (typeof(url) == "string") {
             console.log("Forwarding user to: "+url);
             response.writeHead(303, {"Content-Type": "text/html"});

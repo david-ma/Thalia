@@ -1,6 +1,6 @@
 import { Thalia } from './thalia'
 
-function socketInit(io :SocketIO.Server, handle :Thalia.handle){
+function socketInit(io :SocketIO.Server, handle :Thalia.Handle){
     console.log("Initialising Socket.io");
 
     Object.keys(handle.websites).forEach((siteName :string) => {

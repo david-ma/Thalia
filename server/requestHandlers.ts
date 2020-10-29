@@ -5,26 +5,57 @@ const fsPromise = fs.promises;
 import mustache = require('mustache');
 import { Thalia } from './thalia';
 
-const Website :Thalia.Website = function (this: any, site :string, config :any) {
-    if(typeof config === "object") {
-        this.name = site ;
-        this.data = false ;
-        this.dist = false ;
-        this.cache = typeof config.cache === "boolean" ? config.cache : true;
-        this.folder = typeof config.folder === "string" ? config.folder : "websites/"+site+"/public";
-        this.domains = typeof config.domains === "object" ? config.domains : [];
-        this.pages = typeof config.pages === "object" ? config.pages : {};
-        this.redirects = typeof config.redirects === "object" ? config.redirects : {};
-        this.services = typeof config.services === "object" ? config.services : {};
-        this.controllers = typeof config.controllers === "object" ? config.controllers : {};
-        this.proxies = typeof config.proxies === "object" ? config.proxies : {};
-        this.sockets = typeof config.sockets === "object" ? config.sockets : { on: [], emit: [] };
-        this.security = typeof config.security === "object" ? config.security : {loginNeeded:function(){return false;}};
-        this.viewableFolders = config.viewableFolders || false;
-    } else {
-        console.log("Config isn't an object");
+
+class Website implements Thalia.Website {
+    name: string;
+    data: boolean | string;
+    dist: boolean | string;
+    cache: boolean;
+    folder: string;
+    domains: Array<string>;
+    pages: {};
+    redirects: object;
+    services: {};
+    proxies: {
+        [key:string] : Thalia.Proxy;
+    };
+    sockets: Thalia.Sockets;
+    security: {};
+    viewableFolders: boolean;
+    db: any;
+    seq: any;
+    readAllViews :{
+        (callback: any) :void;
+    };
+    readTemplate :{
+        (template: string, content: string, callback: any) :void;
+    };
+    views: any;
+    controllers: {
+        [key:string] : any;
     }
-};
+    constructor (site :string, config :any) {
+        if(typeof config === "object") {
+            this.name = site ;
+            this.data = false ;
+            this.dist = false ;
+            this.cache = typeof config.cache === "boolean" ? config.cache : true;
+            this.folder = typeof config.folder === "string" ? config.folder : "websites/"+site+"/public";
+            this.domains = typeof config.domains === "object" ? config.domains : [];
+            this.pages = typeof config.pages === "object" ? config.pages : {};
+            this.redirects = typeof config.redirects === "object" ? config.redirects : {};
+            this.services = typeof config.services === "object" ? config.services : {};
+            this.controllers = typeof config.controllers === "object" ? config.controllers : {};
+            this.proxies = typeof config.proxies === "object" ? config.proxies : {};
+            this.sockets = typeof config.sockets === "object" ? config.sockets : { on: [], emit: [] };
+            this.security = typeof config.security === "object" ? config.security : {loginNeeded:function(){return false;}};
+            this.viewableFolders = config.viewableFolders || false;
+        } else {
+            console.log("Config isn't an object");
+        }
+    };
+}
+
 
 const handle :Thalia.handle = {
     websites: {},
@@ -134,7 +165,7 @@ const handle :Thalia.handle = {
 
     // TODO: Make all of this asynchronous?
     // Add a site to the handle
-    addWebsite: function(site :string, config :any, cred :any){
+    addWebsite: function(site :string, config :Thalia.WebsiteConfig, cred :Thalia.WebsiteCredentials){
         config = config || {};
         handle.websites[site] = new Website(site, config);
 
@@ -185,10 +216,10 @@ const handle :Thalia.handle = {
         // If website has views, load them.
         if(fs.existsSync(`${baseUrl}views`)) {
             // Stupid hack for development if you don't want to cache the views :(
-            handle.websites[site].readAllViews = function(cb :Function){
+            handle.websites[site].readAllViews = function(cb :any){
                 readAllViews(`${baseUrl}views`).then(d => cb(d));
             };
-            handle.websites[site].readTemplate = function(template:string, content = '', cb :Function){
+            handle.websites[site].readTemplate = function(template:string, content = '', cb :any){
                 readTemplate(template, `${baseUrl}views`, content).then(d => cb(d));
             };
 
@@ -218,12 +249,13 @@ const handle :Thalia.handle = {
             });
         }
 
+        // Unused feature? Commenting it out DKGM 2020-10-29
         // If the site has any startup actions, do them
-        if(config.startup){
-            config.startup.forEach(function(action:any){
-                action(handle.websites[site]);
-            });
-        }
+        // if(config.startup){
+        //     config.startup.forEach(function(action:any){
+        //         action(handle.websites[site]);
+        //     });
+        // }
     },
     getWebsite: function(domain:any){
         var site = handle.index.localhost;

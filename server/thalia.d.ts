@@ -1,3 +1,8 @@
+import { any } from "bluebird";
+import { Sequelize } from "sequelize/types";
+
+
+// https://www.typescriptlang.org/docs/handbook/declaration-files/templates/module-class-d-ts.html
 export declare namespace Thalia {
 
     export interface Emitter {
@@ -10,8 +15,43 @@ export declare namespace Thalia {
         }
     }
 
-    export type Website = any;
     export type Proxy = any;
+    export class Website {
+        name: string;
+        data: boolean | string;
+        dist: boolean | string;
+        cache: boolean;
+        folder: string;
+        domains: Array<string>;
+        pages: {};
+        redirects: object;
+        services: {};
+        proxies: {
+            [key:string] : Proxy;
+        };
+        sockets: Sockets;
+        security: {};
+        viewableFolders: boolean;
+        db: any;
+        seq: any;
+        readAllViews :{
+            (callback: any) :void;
+        };
+        readTemplate :{
+            (template: string, content: string, callback: any) :void;
+        };
+        views: any;
+        controllers: {
+            [key:string] : any;
+        }
+    }
+
+    export interface WebsiteConfig {
+        standAlone ?: boolean;
+        mustacheIgnore ?: Array<string>;
+    }
+
+    export interface WebsiteCredentials { }
 
     export interface handle {
         websites: {
@@ -30,17 +70,17 @@ export declare namespace Thalia {
             (host:string) :Website;
         };
         addWebsite: {
-            (site:Website, config: any, cred:any) :void;
+            (site:string, config: any, cred:any) :void;
         }
     }
 
 
-    export interface sockets {
-        
-        sockets: {
-            on :Array<Receiver>,
-            emit :Array<Emitter>
-        }
+    export interface Sockets {
+        on :Array<Receiver>,
+        emit :Array<Emitter>
+    }
+    export interface WebsiteConfig {
+        sockets ?: Thalia.Sockets
     }
 }
 

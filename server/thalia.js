@@ -16,27 +16,30 @@ define("requestHandlers", ["require", "exports", "fs", "mustache"], function (re
     // requestHandlers.ts
     const db = require("./database").db;
     const fsPromise = fs.promises;
-    const Website = function (site, config) {
-        if (typeof config === "object") {
-            this.name = site;
-            this.data = false;
-            this.dist = false;
-            this.cache = typeof config.cache === "boolean" ? config.cache : true;
-            this.folder = typeof config.folder === "string" ? config.folder : "websites/" + site + "/public";
-            this.domains = typeof config.domains === "object" ? config.domains : [];
-            this.pages = typeof config.pages === "object" ? config.pages : {};
-            this.redirects = typeof config.redirects === "object" ? config.redirects : {};
-            this.services = typeof config.services === "object" ? config.services : {};
-            this.controllers = typeof config.controllers === "object" ? config.controllers : {};
-            this.proxies = typeof config.proxies === "object" ? config.proxies : {};
-            this.sockets = typeof config.sockets === "object" ? config.sockets : { on: [], emit: [] };
-            this.security = typeof config.security === "object" ? config.security : { loginNeeded: function () { return false; } };
-            this.viewableFolders = config.viewableFolders || false;
+    class Website {
+        constructor(site, config) {
+            if (typeof config === "object") {
+                this.name = site;
+                this.data = false;
+                this.dist = false;
+                this.cache = typeof config.cache === "boolean" ? config.cache : true;
+                this.folder = typeof config.folder === "string" ? config.folder : "websites/" + site + "/public";
+                this.domains = typeof config.domains === "object" ? config.domains : [];
+                this.pages = typeof config.pages === "object" ? config.pages : {};
+                this.redirects = typeof config.redirects === "object" ? config.redirects : {};
+                this.services = typeof config.services === "object" ? config.services : {};
+                this.controllers = typeof config.controllers === "object" ? config.controllers : {};
+                this.proxies = typeof config.proxies === "object" ? config.proxies : {};
+                this.sockets = typeof config.sockets === "object" ? config.sockets : { on: [], emit: [] };
+                this.security = typeof config.security === "object" ? config.security : { loginNeeded: function () { return false; } };
+                this.viewableFolders = config.viewableFolders || false;
+            }
+            else {
+                console.log("Config isn't an object");
+            }
         }
-        else {
-            console.log("Config isn't an object");
-        }
-    };
+        ;
+    }
     const handle = {
         websites: {},
         index: { localhost: 'default' },
@@ -225,12 +228,13 @@ define("requestHandlers", ["require", "exports", "fs", "mustache"], function (re
                     }).catch((e) => console.log(e));
                 });
             }
+            // Unused feature? Commenting it out DKGM 2020-10-29
             // If the site has any startup actions, do them
-            if (config.startup) {
-                config.startup.forEach(function (action) {
-                    action(handle.websites[site]);
-                });
-            }
+            // if(config.startup){
+            //     config.startup.forEach(function(action:any){
+            //         action(handle.websites[site]);
+            //     });
+            // }
         },
         getWebsite: function (domain) {
             var site = handle.index.localhost;

@@ -2,7 +2,7 @@
     "compilerOptions": {
         "module":"AMD",
         "moduleResolution": "node",
-        "skipLibCheck": true,
+        "skipLibCheck": false,
         "noImplicitAny": true,
         "noImplicitThis": true,
         "noImplicitReturns": true,

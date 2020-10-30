@@ -57,10 +57,12 @@ export declare namespace Thalia {
         };
     }
 
+    export interface Service {
+        (response: ServerResponse, request: IncomingMessage, db: Thalia.MysqlWrapper | Thalia.SequelizeWrapper, words: any): void;
+    }
     export interface Services {
         login ?: any;
-        [key:string] :
-            (response: ServerResponse, request: IncomingMessage, db: Thalia.MysqlWrapper | Thalia.SequelizeWrapper, words: any) => void
+        [key:string] : Service;
     }
 
     export interface Controllers {
@@ -72,7 +74,7 @@ export declare namespace Thalia {
     export interface WebsiteCredentials { }
 
     export interface Router {
-        (site :Website, pathname :string, response :ServerResponse, request :IncomingMessage)
+        (site :Website, pathname :string, response :ServerResponse, request :IncomingMessage) :void;
     }
 
     export interface Controller {

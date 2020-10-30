@@ -22,14 +22,70 @@ export declare namespace Thalia {
     export class Website extends requestHandlersWebsite { }
 
     export interface WebsiteConfig {
+        
+        data    ?: string;
+        dist    ?: string;
+        sockets ?: Sockets;
+        cache   ?: boolean;
+        folder  ?: string;
+        domains ?: Array<string>;
+        services ?: Services;
+        controllers ?: Controllers;
         standAlone ?: boolean;
         mustacheIgnore ?: Array<string>;
+        pages ?: {
+            [key:string] : string;
+        };
+        redirects   ?: {
+            [key:string] : string;
+        };
+        proxies ?: {
+            [key:string] : Proxy;
+        };
+        sockets ?: Sockets;
+        security    ?: {
+            loginNeeded: any;
+        };
+        viewableFolders ?: boolean | Array<any>;
+        db  ?: MysqlWrapper;
+        seq ?: SequelizeWrapper;
+        readAllViews ?: {
+            (callback: any) :void;
+        };
+        readTemplate ?: {
+            (template: string, content: string, callback: any) :void;
+        };
+        views   ?: any;
+    }
+
+    export interface Services {
+        login ?: any;
+        [key:string] :
+            (response: ServerResponse, request: IncomingMessage, db: Thalia.MysqlWrapper | Thalia.SequelizeWrapper, words: any) => void
+    }
+
+    export interface Controllers {
+        [key:string] : {
+            (responder : Controller) : void;
+        }
     }
 
     export interface WebsiteCredentials { }
 
     export interface Router {
         (site :Website, pathname :string, response :ServerResponse, request :IncomingMessage)
+    }
+
+    export interface Controller {
+        res: ServerResponse | {
+            end: (result: any) => void;
+        };
+        req ?: IncomingMessage;
+        db ?: MysqlWrapper | SequelizeWrapper | null;
+        views ?: any;
+        readAllViews ?: any;
+        readTemplate ?: any;
+        path ?: any;
     }
 
     export interface Handle {
@@ -57,9 +113,6 @@ export declare namespace Thalia {
     export interface Sockets {
         on :Array<Receiver>,
         emit :Array<Emitter>
-    }
-    export interface WebsiteConfig {
-        sockets ?: Thalia.Sockets
     }
 }
 

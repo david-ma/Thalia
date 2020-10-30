@@ -1,13 +1,12 @@
 // requestHandlers.ts
 const db = require("./database").db;
 import fs = require('fs');
-import { IncomingMessage, ServerResponse } from 'http';
 const fsPromise = fs.promises;
 import mustache = require('mustache');
 import { Thalia } from './thalia';
 
 
-class Website {
+class Website implements Thalia.WebsiteConfig {
     name: string;
     data: string;
     dist: string;
@@ -20,11 +19,7 @@ class Website {
     redirects: {
         [key:string] : string;
     };
-    services: {
-        login ?: any;
-        [key:string] :
-            (response: ServerResponse, request: IncomingMessage, db: Thalia.MysqlWrapper | Thalia.SequelizeWrapper, words: any) => void
-    };
+    services: Thalia.Services;
     proxies: {
         [key:string] : Thalia.Proxy;
     };
@@ -42,10 +37,8 @@ class Website {
         (template: string, content: string, callback: any) :void;
     };
     views: any;
-    controllers: {
-        [key:string] : any;
-    }
-    constructor (site :string, config :any) {
+    controllers: Thalia.Controllers;
+    constructor (site :string, config :Thalia.WebsiteConfig) {
         if(typeof config === "object") {
             this.name = site ;
             this.data = "" ; // Used to be false. Todo: Check if this is ok
@@ -244,7 +237,7 @@ const handle :Thalia.Handle = {
                         if((config.mustacheIgnore ? config.mustacheIgnore.indexOf(webpage) == -1 : true) &&
                             !handle.websites[site].controllers[webpage]
                         ) {
-                            handle.websites[site].controllers[webpage] = function(router:any) {
+                            handle.websites[site].controllers[webpage] = function(router :Thalia.Controller) {
                                 if(handle.websites[site].cache) {
                                     router.res.end((<any>mustache).render((<any>views)[webpage], {}, views));
                                 } else {
@@ -382,6 +375,9 @@ async function readAllViews(folder:any) {
                 }
             }))).then((array) => {
                 finish(array.reduce((a, b) => Object.assign(a, b)))
+            }, (reason) => {
+                console.log("Error in readAllViews", reason);
+                reject(reason);
             });
         }).catch((e:any) => console.log(e));
     })

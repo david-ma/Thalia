@@ -336,6 +336,9 @@ define("requestHandlers", ["require", "exports", "fs", "mustache"], function (re
                     }
                 }))).then((array) => {
                     finish(array.reduce((a, b) => Object.assign(a, b)));
+                }, (reason) => {
+                    console.log("Error in readAllViews", reason);
+                    reject(reason);
                 });
             }).catch((e) => console.log(e));
         });

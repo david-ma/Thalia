@@ -42,10 +42,10 @@ export declare namespace Thalia {
         proxies ?: {
             [key:string] : Proxy;
         };
-        sockets ?: Sockets;
         security    ?: {
             loginNeeded: any;
         };
+        views   ?: any;
         viewableFolders ?: boolean | Array<any>;
         db  ?: MysqlWrapper;
         seq ?: SequelizeWrapper;
@@ -55,7 +55,6 @@ export declare namespace Thalia {
         readTemplate ?: {
             (template: string, content: string, callback: any) :void;
         };
-        views   ?: any;
     }
 
     export interface Services {
@@ -107,6 +106,13 @@ export declare namespace Thalia {
         addWebsite: {
             (site:string, config: any, cred:any) :void;
         }
+    }
+
+    export interface RouteData {
+        cookies : {
+            [key:string]: string;
+        };
+        words : Array<string>;
     }
 
 

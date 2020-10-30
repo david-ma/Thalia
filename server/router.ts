@@ -12,7 +12,7 @@ const router : Thalia.Router = function(website :Thalia.Website, pathname :strin
 
     const route = new Promise(function(resolve, reject){
         try {
-            const data :any = {
+            const data :Thalia.RouteData = {
                 cookies: {},
                 words: []
             };
@@ -50,7 +50,7 @@ const router : Thalia.Router = function(website :Thalia.Website, pathname :strin
      *
      * - When serving the file normally, we need to check the header to see if it can be zipped or should be zipped.
      */
-    route.then(function(d : any) {
+    route.then(function(d : Thalia.RouteData) {
         if (typeof website.security !== "undefined" && website.security.loginNeeded(pathname, website.db, d.cookies)){
             website.services.login(response, request, website.db);
 

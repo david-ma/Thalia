@@ -1,18 +1,15 @@
 #!/bin/sh
 
-# Todo:
-# Check that port isn't being used
-echo "\033[1;31mDeveloper mode for Thalia\033[0m"
-echo "Running Thalia server at http://localhost:1337"
+echo "\033[1;31mWatch mode for Thalia\033[0m"
 echo "gulp is running Browsersync at http://localhost:3000"
 echo "tsc will recompile thalia.js on changes to server/*.ts"
-echo "nodemon will restart the node server if thalia.js is changed"
 echo
 
-SITE="${1:-example}"
-PORT="${2:-1337}"
+SITE=$1
 
-echo "Developing $SITE"
+SITE="${1:-example}"
+
+echo "Watching $SITE"
 
 ./node_modules/.bin/gulp watch -t -s $SITE &
 cd server
@@ -46,4 +43,3 @@ cd websites/$SITE
     fi
 
 cd ../..
-./node_modules/.bin/nodemon server/thalia.js $SITE $PORT

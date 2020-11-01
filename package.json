@@ -76,7 +76,8 @@
   },
   "scripts": {
     "start": "sudo ./start.sh 80",
-    "build": "gulp build -s ",
+    "build": "./build.sh",
+    "watch": "./watch.sh",
     "buildServer": "cd server; tsc",
     "develop": "./develop.sh"
   },

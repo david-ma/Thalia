@@ -11,7 +11,6 @@ SITE="${1:-example}"
 
 echo "Watching $SITE"
 
-./node_modules/.bin/gulp watch -t -s $SITE &
 cd server
     tsc --incremental --preserveWatchOutput --watch --assumeChangesOnlyAffectDirectDependencies &
 cd ..
@@ -43,3 +42,5 @@ cd websites/$SITE
     fi
 
 cd ../..
+
+./node_modules/.bin/gulp watch -t -s $SITE

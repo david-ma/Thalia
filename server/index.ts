@@ -23,7 +23,11 @@ define(function (require:any) {
             workspace = process.argv[3];
         }
 
-        if( !fs.existsSync(`websites/${workspace}`) ) {
+        if( fs.existsSync(`websites/${workspace}`) ) {
+            console.log(`Setting workspace to websites/${workspace}`)
+        } else if (fs.existsSync(`config.js`) || fs.existsSync(`config/config.js`) ){
+            console.log("Thalia running in stand alone mode.");
+        } else {
             console.error(`Error. ${workspace} is an invalid workspace`);
             process.exit(1);
         }

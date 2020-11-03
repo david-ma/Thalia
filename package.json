@@ -21,6 +21,7 @@
     "socket.io": "^2.1.1",
     "tabletojson": "^2.0.4",
     "x-ray": "^2.3.4",
+    "xml2js": "^0.4.23",
     "zlib": "^1.0.5"
   },
   "devDependencies": {
@@ -32,6 +33,7 @@
     "@types/formidable": "^1.0.31",
     "@types/http-proxy": "^1.17.4",
     "@types/jquery": "^3.3.32",
+    "@types/lodash": "^4.14.164",
     "@types/mime": "^2.0.3",
     "@types/mustache": "^4.0.1",
     "@types/mysql": "^2.15.15",

@@ -350,13 +350,17 @@ async function readTemplate(template :string, folder :string, content = '') {
 	});
 }
 
-async function readAllViews(folder:any) {
+type Views = {
+    [key:string] :string;
+}
+
+async function readAllViews(folder:string) :Promise<Views> {
     return new Promise((finish, reject) => {
-        fsPromise.readdir(folder).then( (directory:any) => {
+        fsPromise.readdir(folder).then( (directory:Array<string>) => {
             Promise.all(directory.map((filename:string) => new Promise((resolve, reject) =>{
                 if(filename.indexOf(".mustache") > 0) {                
                     fsPromise.readFile(`${folder}/${filename}`, 'utf8')
-                        .then((file:any) => {
+                        .then((file:string) => {
                             const name = filename.split('.mustache')[0];
                             resolve({
                                 [name]: file
@@ -373,7 +377,7 @@ async function readAllViews(folder:any) {
                         }
                     })
                 }
-            }))).then((array) => {
+            }))).then((array :Array<Views>) => {
                 finish(array.reduce((a, b) => Object.assign(a, b)))
             }, (reason) => {
                 console.log("Error in readAllViews", reason);

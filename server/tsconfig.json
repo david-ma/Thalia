@@ -15,7 +15,6 @@
         "requestHandlers.ts",
         "router.ts",
         "server.ts",
-        "database.ts",
         "socket.ts",
         "index.ts"
     ]

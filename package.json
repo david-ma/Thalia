@@ -13,7 +13,6 @@
     "lodash": "^4.17.20",
     "mime": "^2.3.1",
     "mustache": "^4.0.0",
-    "mysql": "^2.15.0",
     "mysql2": "^2.1.0",
     "nodemailer": "^6.4.4",
     "requirejs": "^2.3.6",
@@ -42,6 +41,9 @@
     "@types/socket.io": "^2.1.11",
     "@types/socket.io-client": "^1.4.34",
     "@types/validator": "^13.1.0",
+    "@types/xml2js": "^0.4.5",
+    "@typescript-eslint/eslint-plugin": "^4.6.1",
+    "@typescript-eslint/parser": "^4.6.1",
     "autoprefixer": "10.0.1",
     "browser-sync": "2.26.13",
     "cssnano": "4.1.10",
@@ -49,6 +51,14 @@
     "d3-selection": "^2.0.0",
     "d3-selection-multi": "^1.0.1",
     "del": "6.0.0",
+    "eslint": "^7.12.1",
+    "eslint-config-standard": "^16.0.1",
+    "eslint-config-standard-jsx": "^10.0.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-react": "^7.21.5",
+    "eslint-plugin-standard": "^4.0.2",
     "gulp": "4.0.2",
     "gulp-cli": "^2.3.0",
     "gulp-concat": "2.6.1",
@@ -66,7 +76,9 @@
     "postcss": "^8.1.1",
     "readline-sync": "^1.4.10",
     "sequelize-cli": "^6.2.0",
+    "standardx": "^6.0.0",
     "typescript": "^4.0.3",
+    "typescript-eslint": "^0.0.1-alpha.0",
     "yargs": "^16.0.3"
   },
   "resolutions": {
@@ -102,6 +114,31 @@
       "gulpfile.js"
     ],
     "delay": "500"
+  },
+  "eslintConfig": {
+    "plugins": ["@typescript-eslint"],
+    "rules": {
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": ["error"],
+      "no-useless-constructor": "off",
+      "@typescript-eslint/no-useless-constructor": ["error"]
+    },
+    "parserOptions": {
+      "ecmaVersion": 2020
+    },
+    "env": {
+      "es6": true
+    }
+  },
+  "standardx": {
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint/eslint-plugin"
+    ],
+    "ignore": [
+      "server/index.ts",
+      "server/moduleShim.ts"
+    ]
   },
   "repository": {
     "type": "git",

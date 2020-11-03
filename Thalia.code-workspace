@@ -1,0 +1,41 @@
+{
+	"folders": [
+        {
+            "path": "."
+        }
+    ],
+	"settings": {
+        "javascript.validate.enable": false,
+        "standard.validate": [
+            "typescript"
+        ],
+        "standard.engine": "standard",
+        "standard.options": {
+            "globals": ["$", "d3", "jQuery"],
+            "ignore": [
+                "node_modules/**"
+            ],
+            "plugins": ["html"],
+            "parser": "babel-eslint",
+            "envs": ["jest"]
+        },        
+        "git.scanRepositories": [
+            "."
+        ],
+        "auto-close-tag.activationOnLanguage": [
+            "mustache"
+        ],
+        "extensions_that_I_use": {
+            "aeschli.vscode-css-formatter" : true,
+            "christian-kohler.path-intellisense" : true,
+            "dawhite.mustache" : true,
+            "dbaeumer.vscode-eslint" : true,
+            "formulahendry.auto-close-tag" : true,
+            "ionutvmi.path-autocomplete" : true,
+            "mrmlnc.vscode-scss" : true
+        }
+        },
+        "editor.tabSize": 2,
+        "eslint.packageManager": "yarn"
+    }
+}

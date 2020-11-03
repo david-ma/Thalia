@@ -7,5 +7,5 @@
  * DKGM 12-Oct-2020
  */
 if (typeof define !== 'function') {
-    var define = require('amdefine')(module);
+  var define = require('amdefine')(module)
 }

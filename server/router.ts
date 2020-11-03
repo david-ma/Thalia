@@ -68,10 +68,6 @@ const router : Thalia.Router = function (website :Thalia.Website, pathname :stri
         // if there are controllers, call the right one
         // Note, this includes any top level mustache files, since they're loaded as generic, dataless controllers
       } else if (typeof website.controllers[d.words[1]] === 'function') {
-        console.log('Hey, we have a controller here...')
-        console.log('read all views:', website.readAllViews)
-        console.log('read template:', website.readTemplate)
-
         website.controllers[d.words[1]]({
           res: {
             end: function (result :any) {

@@ -76,7 +76,7 @@
     "readline-sync": "^1.4.10",
     "sequelize-cli": "^6.2.0",
     "standardx": "^6.0.0",
-    "typescript": "^4.0.3",
+    "typescript": "^4.0.5",
     "typescript-eslint": "^0.0.1-alpha.0",
     "yargs": "^16.0.3"
   },
@@ -140,7 +140,12 @@
   },
   "standardx": {
     "globals": [
-      "d3"
+      "d3",
+      "$",
+      "JQuery",
+      "DataTables",
+      "showdown",
+      "io"
     ],
     "parser": "@typescript-eslint/parser",
     "plugins": [

@@ -1,23 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-/* global URL */
-const timeout = process.env.SLOWMO ? 30000 : 10000;
-// import puppeteer = require('puppeteer')
-// import { Page } from 'puppeteer'
-// var page = Page
-// import {*} from 'puppeteer'
-// const page = puppeteer.Fra
 const puppeteer = require("puppeteer");
-// import type {Config} from '@jest/types';
-// const {defaults} = require('jest-config');
-// import * as blah from "../jest.config";
+const timeout = process.env.SLOWMO ? 30000 : 10000;
 const jestConfig = require('../jest.config');
-var URL = jestConfig.globals.URL;
+const URL = jestConfig.globals.URL;
 let browser;
 let page;
 beforeAll(async () => {
     browser = await puppeteer.launch();
     page = await browser.newPage();
+    await page.setExtraHTTPHeaders({
+        'test-host': 'dataviz.david-ma.net'
+    });
     await page.goto(URL, { waitUntil: 'domcontentloaded' });
 });
 afterAll(async () => {
@@ -40,7 +34,6 @@ describe('Test header and title of the page', () => {
         await page.setViewport({ width: 375, height: 812, isMobile: true });
         await page.screenshot({
             path: './tmp/home-mobile.jpg',
-            fullpage: true,
             type: 'jpeg'
         });
     }, timeout);
@@ -52,7 +45,6 @@ describe('Test header and title of the page', () => {
         await page.waitForTimeout(1000);
         await page.screenshot({
             path: './tmp/breathe-mobile.jpg',
-            fullpage: true,
             type: 'jpeg'
         });
     }, timeout);

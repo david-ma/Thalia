@@ -4,11 +4,16 @@ const timeout = process.env.SLOWMO ? 30000 : 10000
 const jestConfig :any = require('../jest.config')
 const URL = jestConfig.globals.URL
 
-let browser :any
-let page : any
+let browser : puppeteer.Browser
+let page : puppeteer.Page
+
 beforeAll(async () => {
   browser = await puppeteer.launch()
   page = await browser.newPage()
+
+  await page.setExtraHTTPHeaders({
+    'test-host': 'dataviz.david-ma.net'
+  })
 
   await page.goto(URL, { waitUntil: 'domcontentloaded' })
 })
@@ -35,7 +40,6 @@ describe('Test header and title of the page', () => {
     await page.setViewport({ width: 375, height: 812, isMobile: true })
     await page.screenshot({
       path: './tmp/home-mobile.jpg',
-      fullpage: true,
       type: 'jpeg'
     })
   }, timeout)
@@ -48,7 +52,6 @@ describe('Test header and title of the page', () => {
     await page.waitForTimeout(1000)
     await page.screenshot({
       path: './tmp/breathe-mobile.jpg',
-      fullpage: true,
       type: 'jpeg'
     })
   }, timeout)

@@ -36,14 +36,15 @@ function start (router :Thalia.Router, handle :Thalia.Handle, port :string) {
     }
 
     if (!spam) {
-      const host = request.headers.host
+      const host :string = request.headers['test-host'] as string || request.headers.host
+
       const proxyConfig = handle.proxies[host]
       const site = handle.getWebsite(host)
       const urlObject :url.UrlWithParsedQuery = url.parse(request.url, true)
 
       if (host !== 'www.monetiseyourwebsite.com') {
         console.log()
-        console.log(`Request for ${request.headers.host}${urlObject.href} At ${getDateTime()} From ${ip}`)
+        console.log(`Request for ${host}${urlObject.href} At ${getDateTime()} From ${ip}`)
       }
 
       if (proxyConfig &&
@@ -102,7 +103,7 @@ function start (router :Thalia.Router, handle :Thalia.Handle, port :string) {
         decodedCookiePassword = decodeBase64(cookies.password)
       }
 
-      const host :string = request.headers.host
+      const host :string = request.headers['test-host'] as string || request.headers.host
       const urlObject :url.UrlWithParsedQuery = url.parse(request.url, true)
       const proxyConfig = handle.proxies[host]
 
@@ -135,7 +136,7 @@ function start (router :Thalia.Router, handle :Thalia.Handle, port :string) {
   return server.on('upgrade', function (request :any, socket :any, head :any) {
     'use strict'
 
-    const host = request.headers.host
+    const host :string = request.headers['test-host'] as string || request.headers.host
     const proxyConfig = handle.proxies[host]
 
     if (proxyConfig) {

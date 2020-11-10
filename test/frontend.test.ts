@@ -2,6 +2,7 @@ import * as puppeteer from 'puppeteer'
 import { describe, expect, test } from '@jest/globals'
 import fs = require('fs');
 import http = require('http');
+import https = require('https');
 const request = require('request')
 const xray = require('x-ray')()
 const jestConfig :any = require('../jest.config')
@@ -75,7 +76,7 @@ describe.each(websites)('Testing %s', (site) => {
     })
   })
 
-  test(`Check external links on ${site} homepage`, () => {
+  test(`Check external links on ${site} homepage using request`, () => {
     return new Promise((resolve, reject) => {
       asyncForEach(homepageLinks, function (link, done) {
         if (link.match(/^http/gi)) {
@@ -83,16 +84,54 @@ describe.each(websites)('Testing %s', (site) => {
             headers: {
               'test-host': `${site}.david-ma.net`
             }
-          }, function (err: any) {
+          }, function (err: any, response: http.IncomingMessage, html: any) {
             if (err) {
-              // console.error(`Link on ${site} broken: ${link}`)
               done(`Link on ${site} broken: ${link}`)
+            } else if (response.statusCode !== 200) {
+              done(`${response.statusCode} - ${link}`)
             } else {
               done()
             }
           })
         } else {
           done()
+        }
+      }).then((errors) => {
+        if (errors.length > 0) {
+          reject(errors)
+        } else {
+          resolve()
+        }
+      })
+    })
+  }, timeout * websites.length)
+
+  test(`Check external links on ${site} homepage using http`, () => {
+    return new Promise((resolve, reject) => {
+      asyncForEach(homepageLinks, function (link, done) {
+        let requester : typeof https | typeof http
+        if (link.match(/^https/gi)) {
+          requester = https
+        } else if (link.match(/^http/gi)) {
+          requester = http
+        } else {
+          done()
+        }
+
+        if (requester) {
+          requester.get(link, {
+            headers: {
+              'test-host': `${site}.david-ma.net`
+            }
+          }, function (response: http.IncomingMessage) {
+            if (response.statusCode !== 200) {
+              done(`${response.statusCode} - ${link}`)
+            } else {
+              done()
+            }
+          }).on('error', (e) => {
+            done(e.message)
+          })
         }
       }).then((errors) => {
         if (errors.length > 0) {

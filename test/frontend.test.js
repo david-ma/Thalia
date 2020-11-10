@@ -4,6 +4,7 @@ const puppeteer = require("puppeteer");
 const globals_1 = require("@jest/globals");
 const fs = require("fs");
 const http = require("http");
+const https = require("https");
 const request = require('request');
 const xray = require('x-ray')();
 const jestConfig = require('../jest.config');
@@ -73,7 +74,7 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
             });
         });
     });
-    globals_1.test(`Check external links on ${site} homepage`, () => {
+    globals_1.test(`Check external links on ${site} homepage using request`, () => {
         return new Promise((resolve, reject) => {
             asyncForEach(homepageLinks, function (link, done) {
                 if (link.match(/^http/gi)) {
@@ -81,10 +82,12 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
                         headers: {
                             'test-host': `${site}.david-ma.net`
                         }
-                    }, function (err) {
+                    }, function (err, response, html) {
                         if (err) {
-                            // console.error(`Link on ${site} broken: ${link}`)
                             done(`Link on ${site} broken: ${link}`);
+                        }
+                        else if (response.statusCode !== 200) {
+                            done(`${response.statusCode} - ${link}`);
                         }
                         else {
                             done();
@@ -93,6 +96,45 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
                 }
                 else {
                     done();
+                }
+            }).then((errors) => {
+                if (errors.length > 0) {
+                    reject(errors);
+                }
+                else {
+                    resolve();
+                }
+            });
+        });
+    }, timeout * websites.length);
+    globals_1.test(`Check external links on ${site} homepage using http`, () => {
+        return new Promise((resolve, reject) => {
+            asyncForEach(homepageLinks, function (link, done) {
+                let requester;
+                if (link.match(/^https/gi)) {
+                    requester = https;
+                }
+                else if (link.match(/^http/gi)) {
+                    requester = http;
+                }
+                else {
+                    done();
+                }
+                if (requester) {
+                    requester.get(link, {
+                        headers: {
+                            'test-host': `${site}.david-ma.net`
+                        }
+                    }, function (response) {
+                        if (response.statusCode !== 200) {
+                            done(`${response.statusCode} - ${link}`);
+                        }
+                        else {
+                            done();
+                        }
+                    }).on('error', (e) => {
+                        done(e.message);
+                    });
                 }
             }).then((errors) => {
                 if (errors.length > 0) {

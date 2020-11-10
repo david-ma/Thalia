@@ -353,6 +353,11 @@ var watchSource = function (done) {
 
     if (fs.existsSync(`websites/${site}/server/thalia.js`)) watch(`server/thalia.js`, series(copyThalia));
 
+    if(siteConfig && siteConfig.publish && siteConfig.publish.dist) {
+      console.log("watching for published files")
+      watch(siteConfig.publish.dist.map(file => `websites/${site}/dist/${file}`), series(publish));
+    }
+
 	done();
 };
 

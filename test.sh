@@ -1,10 +1,12 @@
 #!/bin/sh
 
-export SITE="${1:-all}"
 echo "Testing $SITE"
 
-export HEADLESS=false
-export SLOWMO=true
+export SITE="${1:-all}"
+# export HEADLESS=false
+# export SLOWMO=true
 
-jest --logHeapUsage --detectOpenHandles
+current_time=$(date "+%Y.%m.%d-%H.%M.%S")
+
+jest --logHeapUsage --noStackTrace --json --outputFile=./tmp/jest_$current_time.json
 

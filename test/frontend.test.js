@@ -74,40 +74,7 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
             });
         });
     });
-    globals_1.test(`Check external links on ${site} homepage using request`, () => {
-        return new Promise((resolve, reject) => {
-            asyncForEach(homepageLinks, function (link, done) {
-                if (link.match(/^http/gi)) {
-                    request.get(link, {
-                        headers: {
-                            'test-host': `${site}.david-ma.net`
-                        }
-                    }, function (err, response, html) {
-                        if (err) {
-                            done(`Link on ${site} broken: ${link}`);
-                        }
-                        else if (response.statusCode !== 200) {
-                            done(`${response.statusCode} - ${link}`);
-                        }
-                        else {
-                            done();
-                        }
-                    });
-                }
-                else {
-                    done();
-                }
-            }).then((errors) => {
-                if (errors.length > 0) {
-                    reject(errors);
-                }
-                else {
-                    resolve();
-                }
-            });
-        });
-    }, timeout * websites.length);
-    globals_1.test(`Check external links on ${site} homepage using http`, () => {
+    globals_1.test(`Check external links on ${site} homepage`, () => {
         return new Promise((resolve, reject) => {
             asyncForEach(homepageLinks, function (link, done) {
                 let requester;

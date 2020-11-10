@@ -20,23 +20,30 @@ if (process.env.SITE && process.env.SITE !== 'all') {
   websites = fs.readdirSync('websites/').filter( d => d !== '.DS_Store') //.map( d =>  [[d],[]]);
 }
 
-// Asynchronous for each, doing a limited number of things at a time.
-async function asyncForEach(array: Array<any>, limit: number, callback: Function) {
-  let i = 0
+// Asynchronous for each, doing a limited number of things at a time. Pool of resources.
+async function asyncForEach(array: Array<any>, limit: number,
+  callback: (item: any, index: number, arr: Array<any>, done: () => void) => void
+) {
+  return new Promise( (resolve, reject) => {
+    let i = 0
+    let happening = 0
 
-  for (; i < limit; i++) { // i++ here? Are you sure?
-    doNextThing(i)
-  }
-
-  function doNextThing(index: number) {
-    if (array[index]) {
-      callback(array[index], index, array, function done() {
-        doNextThing(i++)
-      })
+    for (; i < limit; i++) { // Launch a limited number of things
+      happening++
+      doNextThing(i)
     }
-  }
 
-  return 1
+    function doNextThing(index: number) { // Each thing calls back "done" and starts the next
+      if (array[index]) {
+        callback(array[index], index, array, function done() {
+          doNextThing(i++)
+        })
+      } else {
+        happening-- // When they're all done, resolve
+        if(happening == 0) resolve()
+      }
+    }
+  })
 }
 
 describe.each(websites)("Testing %s", (site) => {
@@ -67,11 +74,14 @@ describe.each(websites)("Testing %s", (site) => {
     })
   })
   
-  test(`Async limited check all ${site} links`, () => {
+  test(`Check links on ${site} homepage`, () => {
     return new Promise((resolve, reject) => {
-      asyncForEach(homepageLinks, 3, function(link :string){
+      asyncForEach(homepageLinks, 5, function(link, index, array, done){
+
+        console.log(link)
 
         if(link.match(/^http/gi)) {
+
           request.get(link, {
             headers: {
               'test-host': `${site}.david-ma.net`
@@ -79,14 +89,19 @@ describe.each(websites)("Testing %s", (site) => {
           }, function (err: any, response: any, html: any) {
             if (err) {
               console.error(`Link on ${site} broken: ${link}`)
-              reject(err)
+              done()
             }
+            done()
             // console.log("link is ok: ", link)
           })
+
+
         } else {
+          done()
           // console.info(`Link is not an outgoing url ${link}`)
         }
-      }).then(()=>{
+      })
+      .then(()=>{
         resolve()
       })
 

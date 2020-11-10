@@ -127,34 +127,31 @@ describe.each(websites)('Testing %s', (site) => {
             page.setViewport({ width: 414, height: 2500, isMobile: true })
           ]
 
-          Promise.all(promises)
-            .then(() => {
-              page.goto(URL, { waitUntil: 'domcontentloaded' })
-                .then(() => {
+          Promise.all(promises).then(() => {
+            page.goto(URL, { waitUntil: 'domcontentloaded' }).then(() => {
+              page.screenshot({
+                path: `./tmp/${site}-homepage-mobile.jpg`,
+                type: 'jpeg'
+              }).then(() => {
+                page.setViewport({ width: 1200, height: 2000, isMobile: false }).then(() => {
                   page.screenshot({
-                    path: `./tmp/${site}-homepage-mobile.jpg`,
+                    path: `./tmp/${site}-homepage-desktop.jpg`,
                     type: 'jpeg'
                   }).then(() => {
-                    page.setViewport({ width: 1200, height: 2000, isMobile: false })
-                      .then(() => {
-                        page.screenshot({
-                          path: `./tmp/${site}-homepage-desktop.jpg`,
-                          type: 'jpeg'
-                        }).then(() => {
-                          expect(true).toBeTruthy()
-                          browser.close()
-                          resolve()
-                        })
-                      })
-                  }).catch(error => {
+                    expect(true).toBeTruthy()
                     browser.close()
-                    reject(error)
+                    resolve()
                   })
                 })
-            }).catch(error => {
-              browser.close()
-              reject(error)
+              }).catch(error => {
+                browser.close()
+                reject(error)
+              })
             })
+          }).catch(error => {
+            browser.close()
+            reject(error)
+          })
         })
       })
     })

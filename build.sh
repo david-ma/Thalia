@@ -9,15 +9,14 @@ echo "\033[1;31mDeveloper mode for Thalia\033[0m"
 echo "Building $SITE"
 echo
 
-./node_modules/.bin/gulp build -s $SITE &
 cd server
-    tsc --incremental --assumeChangesOnlyAffectDirectDependencies &
+    tsc &
 cd ..
 cd websites/$SITE
 
     if test -f "tsconfig.json"; then
         echo "tsconfig.json exists."
-        tsc --incremental --assumeChangesOnlyAffectDirectDependencies &
+        tsc &
     else
         echo "No tsconfig.json in websites/$SITE"
     fi
@@ -25,7 +24,7 @@ cd websites/$SITE
     if test -f "config/tsconfig.json"; then
         echo "config/tsconfig.json exists."
         cd config
-            tsc --incremental --assumeChangesOnlyAffectDirectDependencies &
+            tsc &
         cd ..
     else
         echo "No $SITE/config/tsconfig.json"
@@ -34,10 +33,16 @@ cd websites/$SITE
     if test -f "models/tsconfig.json"; then
         echo "models/tsconfig.json exists."
         cd models
-            tsc --incremental --assumeChangesOnlyAffectDirectDependencies &
+            tsc &
         cd ..
     else
         echo "No $SITE/models/tsconfig.json"
     fi
 
 cd ../..
+
+./node_modules/.bin/gulp build -s $SITE
+
+echo "Finished building $SITE"
+
+# Run tests??

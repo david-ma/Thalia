@@ -12,13 +12,18 @@ SITE="${1:-example}"
 echo "Watching $SITE"
 
 cd server
-    tsc --incremental --preserveWatchOutput --watch --assumeChangesOnlyAffectDirectDependencies &
+    tsc --preserveWatchOutput --watch &
 cd ..
+
+cd test
+    tsc --preserveWatchOutput --watch &
+cd ..
+
 cd websites/$SITE
 
     if test -f "tsconfig.json"; then
         echo "tsconfig.json exists."
-        tsc --incremental --preserveWatchOutput --watch --assumeChangesOnlyAffectDirectDependencies &
+        tsc --preserveWatchOutput --watch &
     else
         echo "No tsconfig.json in websites/$SITE"
     fi
@@ -26,7 +31,7 @@ cd websites/$SITE
     if test -f "config/tsconfig.json"; then
         echo "config/tsconfig.json exists."
         cd config
-            tsc --incremental --preserveWatchOutput --watch --assumeChangesOnlyAffectDirectDependencies &
+            tsc --preserveWatchOutput --watch &
         cd ..
     else
         echo "No $SITE/config/tsconfig.json"
@@ -35,7 +40,7 @@ cd websites/$SITE
     if test -f "models/tsconfig.json"; then
         echo "models/tsconfig.json exists."
         cd models
-            tsc --incremental --preserveWatchOutput --watch --assumeChangesOnlyAffectDirectDependencies &
+            tsc --preserveWatchOutput --watch &
         cd ..
     else
         echo "No $SITE/models/tsconfig.json"

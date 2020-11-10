@@ -3,5 +3,8 @@
 export SITE="${1:-all}"
 echo "Testing $SITE"
 
-jest --logHeapUsage
+export HEADLESS=false
+export SLOWMO=true
+
+jest --logHeapUsage --detectOpenHandles
 

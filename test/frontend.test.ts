@@ -3,7 +3,6 @@ import { describe, expect, test } from '@jest/globals'
 import fs = require('fs');
 import http = require('http');
 import https = require('https');
-const request = require('request')
 const xray = require('x-ray')()
 const jestConfig :any = require('../jest.config')
 
@@ -51,28 +50,30 @@ async function asyncForEach (array: Array<any>,
 }
 
 describe.each(websites)('Testing %s', (site) => {
-  let homepageLinks : Array<string> = []
+  let homepageLinks: Array<string> = []
   beforeAll(() => {
     return new Promise((resolve, reject) => {
-      request.get(URL, {
+      http.get(URL, {
         headers: {
           'test-host': `${site}.david-ma.net`
         }
-      }, function (err: any, response: any, html: any) {
-        if (err) { throw (err) }
-        xray(html, ['a@href'])
-          .then(function (links: Array<string>) {
-            if (links) {
-              homepageLinks = links
-              resolve(links)
-            } else {
-              resolve()
-            }
-          }).catch((err :any) => {
-            reject(err)
-          // throw(err)
-          })
-      })
+      }, function (res: http.IncomingMessage) {
+        let rawData = ''
+        res.on('data', chunk => { rawData += chunk })
+        res.on('end', () => {
+          xray(rawData, ['a@href'])
+            .then(function (links: Array<string>) {
+              if (links) {
+                homepageLinks = links
+                resolve(links)
+              } else {
+                resolve()
+              }
+            }).catch((err: Error) => {
+              reject(err)
+            })
+        })
+      }).on('error', error => { throw error })
     })
   })
 
@@ -113,109 +114,30 @@ describe.each(websites)('Testing %s', (site) => {
     })
   }, timeout * websites.length)
 
-  test.skip(`Check all ${site} links`, () => {
-    return new Promise((resolve, reject) => {
-      homepageLinks.forEach(link => {
-        request.get(link, {
-          headers: {
-            'test-host': `${site}.david-ma.net`
-          }
-        }, function (err: any) {
-          if (err) {
-            console.error(`Link on ${site} broken: ${link}`)
-            reject(err)
-          }
-          // console.log("link is ok: ", link)
-        })
-      })
-      resolve()
-    })
-  }, timeout)
-
-  test.skip.each(homepageLinks)(`Check ${site} link: %s`, (link) => {
-    return new Promise((resolve, reject) => {
-      request.get(link, {
-        headers: {
-          'test-host': `${site}.david-ma.net`
-        }
-      }, function (err: any) {
-        if (err) { reject(err) }
-        resolve()
-      })
-    })
-  })
-
-  test.skip(`Grab all links for ${site}`, () => {
-    return new Promise((resolve, reject) => {
-      request.get(URL, {
-        headers: {
-          'test-host': `${site}.david-ma.net`
-        }
-      }, function (err: any, response: any, html: any) {
-        if (err) {
-          reject(err)
-          // expect(false).toBeTruthy()
-          // throw new Error('Error loading page')
-        }
-        xray(html, 'a')(function (err: any, links: Array<string>) {
-          if (err) {
-            throw new Error('Error parsing html')
-          }
-          // console.log(links)
-          if (links) {
-            test.each(links)(`Testing ${site} link: %s`, (link) => {
-              return new Promise((resolve) => {
-                console.log(link)
-                resolve()
-              })
-            })
-
-            expect(links.length).toBeGreaterThan(0)
-            resolve()
-          } else {
-            // expect(false).toBeTruthy().rejects.toEqual({
-            //   error: 'User with 3 not found.',
-            // });
-            // expect(false).reje
-            // throw new Error('No links')
-            // done.fail("no links");
-            // expect("Lololol").toBe("ggg")
-            // reject("No links found")
-            console.info(`No links found on ${site} homepage`)
-            resolve()
-          }
-        })
-      })
-    })
-  })
-
-  test.skip(`http.get the site ${site}`, (done) => {
-    http.get(URL, {
-      headers: {
-        'test-host': `${site}.david-ma.net`
-      }
-    }, (res) => {
-      // console.log("wooo")
-      expect(res).toBeTruthy()
-      done()
-    })
-  })
-
-  test.skip(`Puppeteer ${site}`, (done) => {
+  test(`Screenshot ${site}`, (done) => {
     puppeteer.launch().then(browser => {
       browser.newPage().then(page => {
         page.setExtraHTTPHeaders({
           'test-host': `${site}.david-ma.net`
+        }).then(()=> {
+          page.setViewport({ width: 375, height: 812, isMobile: true }).then(() => {
+            page.goto(URL, { waitUntil: 'domcontentloaded' })
+            .then(() => {
+              page.screenshot({
+                path: `./tmp/home-mobile-${site}.jpg`,
+                type: 'jpeg'
+              }).then(() => {
+                expect(true).toBeTruthy();
+                browser.close()
+                done()
+              })
+            })
+          })
         })
-        page.goto(URL, { waitUntil: 'domcontentloaded' })
-
-        expect(true).toBeTruthy()
-        // page.close()
-        browser.close()
-        done()
       })
     })
-  })
+  }, timeout)
+
 
   //       page.goto(URL, { waitUntil: 'domcontentloaded' }).then( () => {
   //         expect(true).toBeTruthy();
@@ -241,6 +163,7 @@ describe.each(websites)('Testing %s', (site) => {
   //   })
   // })
 })
+
 // describe('Test header and title of the page', () => {
 //   test('Title of the page', async () => {
 //     const title = await page.title()

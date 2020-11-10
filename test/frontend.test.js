@@ -5,7 +5,6 @@ const globals_1 = require("@jest/globals");
 const fs = require("fs");
 const http = require("http");
 const https = require("https");
-const request = require('request');
 const xray = require('x-ray')();
 const jestConfig = require('../jest.config');
 const timeout = process.env.SLOWMO ? 30000 : 10000;
@@ -50,28 +49,28 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
     let homepageLinks = [];
     beforeAll(() => {
         return new Promise((resolve, reject) => {
-            request.get(URL, {
+            http.get(URL, {
                 headers: {
                     'test-host': `${site}.david-ma.net`
                 }
-            }, function (err, response, html) {
-                if (err) {
-                    throw (err);
-                }
-                xray(html, ['a@href'])
-                    .then(function (links) {
-                    if (links) {
-                        homepageLinks = links;
-                        resolve(links);
-                    }
-                    else {
-                        resolve();
-                    }
-                }).catch((err) => {
-                    reject(err);
-                    // throw(err)
+            }, function (res) {
+                let rawData = '';
+                res.on('data', chunk => { rawData += chunk; });
+                res.on('end', () => {
+                    xray(rawData, ['a@href'])
+                        .then(function (links) {
+                        if (links) {
+                            homepageLinks = links;
+                            resolve(links);
+                        }
+                        else {
+                            resolve();
+                        }
+                    }).catch((err) => {
+                        reject(err);
+                    });
                 });
-            });
+            }).on('error', error => { throw error; });
         });
     });
     globals_1.test(`Check external links on ${site} homepage`, () => {
@@ -113,106 +112,29 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
             });
         });
     }, timeout * websites.length);
-    globals_1.test.skip(`Check all ${site} links`, () => {
-        return new Promise((resolve, reject) => {
-            homepageLinks.forEach(link => {
-                request.get(link, {
-                    headers: {
-                        'test-host': `${site}.david-ma.net`
-                    }
-                }, function (err) {
-                    if (err) {
-                        console.error(`Link on ${site} broken: ${link}`);
-                        reject(err);
-                    }
-                    // console.log("link is ok: ", link)
-                });
-            });
-            resolve();
-        });
-    }, timeout);
-    globals_1.test.skip.each(homepageLinks)(`Check ${site} link: %s`, (link) => {
-        return new Promise((resolve, reject) => {
-            request.get(link, {
-                headers: {
-                    'test-host': `${site}.david-ma.net`
-                }
-            }, function (err) {
-                if (err) {
-                    reject(err);
-                }
-                resolve();
-            });
-        });
-    });
-    globals_1.test.skip(`Grab all links for ${site}`, () => {
-        return new Promise((resolve, reject) => {
-            request.get(URL, {
-                headers: {
-                    'test-host': `${site}.david-ma.net`
-                }
-            }, function (err, response, html) {
-                if (err) {
-                    reject(err);
-                    // expect(false).toBeTruthy()
-                    // throw new Error('Error loading page')
-                }
-                xray(html, 'a')(function (err, links) {
-                    if (err) {
-                        throw new Error('Error parsing html');
-                    }
-                    // console.log(links)
-                    if (links) {
-                        globals_1.test.each(links)(`Testing ${site} link: %s`, (link) => {
-                            return new Promise((resolve) => {
-                                console.log(link);
-                                resolve();
-                            });
-                        });
-                        globals_1.expect(links.length).toBeGreaterThan(0);
-                        resolve();
-                    }
-                    else {
-                        // expect(false).toBeTruthy().rejects.toEqual({
-                        //   error: 'User with 3 not found.',
-                        // });
-                        // expect(false).reje
-                        // throw new Error('No links')
-                        // done.fail("no links");
-                        // expect("Lololol").toBe("ggg")
-                        // reject("No links found")
-                        console.info(`No links found on ${site} homepage`);
-                        resolve();
-                    }
-                });
-            });
-        });
-    });
-    globals_1.test.skip(`http.get the site ${site}`, (done) => {
-        http.get(URL, {
-            headers: {
-                'test-host': `${site}.david-ma.net`
-            }
-        }, (res) => {
-            // console.log("wooo")
-            globals_1.expect(res).toBeTruthy();
-            done();
-        });
-    });
-    globals_1.test.skip(`Puppeteer ${site}`, (done) => {
+    globals_1.test(`Screenshot ${site}`, (done) => {
         puppeteer.launch().then(browser => {
             browser.newPage().then(page => {
                 page.setExtraHTTPHeaders({
                     'test-host': `${site}.david-ma.net`
+                }).then(() => {
+                    page.setViewport({ width: 375, height: 812, isMobile: true }).then(() => {
+                        page.goto(URL, { waitUntil: 'domcontentloaded' })
+                            .then(() => {
+                            page.screenshot({
+                                path: `./tmp/home-mobile-${site}.jpg`,
+                                type: 'jpeg'
+                            }).then(() => {
+                                globals_1.expect(true).toBeTruthy();
+                                browser.close();
+                                done();
+                            });
+                        });
+                    });
                 });
-                page.goto(URL, { waitUntil: 'domcontentloaded' });
-                globals_1.expect(true).toBeTruthy();
-                // page.close()
-                browser.close();
-                done();
             });
         });
-    });
+    }, timeout);
     //       page.goto(URL, { waitUntil: 'domcontentloaded' }).then( () => {
     //         expect(true).toBeTruthy();
     //       })

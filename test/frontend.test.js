@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const puppeteer = require("puppeteer");
+const globals_1 = require("@jest/globals");
 const fs = require("fs");
 const http = require("http");
-const globals_1 = require("@jest/globals");
 const request = require('request');
 const xray = require('x-ray')();
 const jestConfig = require('../jest.config');
@@ -17,11 +17,11 @@ if (process.env.SITE && process.env.SITE !== 'all') {
     websites = [process.env.SITE];
 }
 else {
-    websites = fs.readdirSync('websites/').filter(d => d !== '.DS_Store'); //.map( d =>  [[d],[]]);
+    websites = fs.readdirSync('websites/').filter(d => d !== '.DS_Store'); // .map( d =>  [[d],[]]);
 }
 // Asynchronous for each, doing a limited number of things at a time. Pool of resources.
 async function asyncForEach(array, callback, limit = 5) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         let i = 0;
         let happening = 0;
         const errorMessages = [];
@@ -45,7 +45,7 @@ async function asyncForEach(array, callback, limit = 5) {
         }
     });
 }
-globals_1.describe.each(websites)("Testing %s", (site) => {
+globals_1.describe.each(websites)('Testing %s', (site) => {
     let homepageLinks = [];
     beforeAll(() => {
         return new Promise((resolve, reject) => {
@@ -81,19 +81,20 @@ globals_1.describe.each(websites)("Testing %s", (site) => {
                         headers: {
                             'test-host': `${site}.david-ma.net`
                         }
-                    }, function (err, response, html) {
+                    }, function (err) {
                         if (err) {
                             // console.error(`Link on ${site} broken: ${link}`)
                             done(`Link on ${site} broken: ${link}`);
                         }
-                        done();
+                        else {
+                            done();
+                        }
                     });
                 }
                 else {
                     done();
                 }
-            })
-                .then((errors) => {
+            }).then((errors) => {
                 if (errors.length > 0) {
                     reject(errors);
                 }
@@ -110,7 +111,7 @@ globals_1.describe.each(websites)("Testing %s", (site) => {
                     headers: {
                         'test-host': `${site}.david-ma.net`
                     }
-                }, function (err, response, html) {
+                }, function (err) {
                     if (err) {
                         console.error(`Link on ${site} broken: ${link}`);
                         reject(err);
@@ -127,9 +128,9 @@ globals_1.describe.each(websites)("Testing %s", (site) => {
                 headers: {
                     'test-host': `${site}.david-ma.net`
                 }
-            }, function (err, response, html) {
+            }, function (err) {
                 if (err) {
-                    reject();
+                    reject(err);
                 }
                 resolve();
             });
@@ -149,13 +150,13 @@ globals_1.describe.each(websites)("Testing %s", (site) => {
                 }
                 xray(html, 'a')(function (err, links) {
                     if (err) {
-                        // throw new Error('Error parsing html')
-                        fail();
+                        throw new Error('Error parsing html');
                     }
                     // console.log(links)
                     if (links) {
                         globals_1.test.each(links)(`Testing ${site} link: %s`, (link) => {
-                            return new Promise((resolve, reject) => {
+                            return new Promise((resolve) => {
+                                console.log(link);
                                 resolve();
                             });
                         });

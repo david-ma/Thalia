@@ -1,8 +1,8 @@
 import * as puppeteer from 'puppeteer'
+import { describe, expect, test } from '@jest/globals'
 import fs = require('fs');
 import http = require('http');
-import {describe, expect, test} from '@jest/globals'
-const request = require('request');
+const request = require('request')
 const xray = require('x-ray')()
 const jestConfig :any = require('../jest.config')
 
@@ -17,86 +17,85 @@ let websites :string[] = []
 if (process.env.SITE && process.env.SITE !== 'all') {
   websites = [process.env.SITE]
 } else {
-  websites = fs.readdirSync('websites/').filter( d => d !== '.DS_Store') //.map( d =>  [[d],[]]);
+  websites = fs.readdirSync('websites/').filter(d => d !== '.DS_Store') // .map( d =>  [[d],[]]);
 }
 
 // Asynchronous for each, doing a limited number of things at a time. Pool of resources.
-async function asyncForEach(array: Array<any>,
+async function asyncForEach (array: Array<any>,
   callback: (item: any, done: (errorMessage ?: string) => void, index: number, arr: Array<any>) => void,
   limit : number = 5
 ) :Promise<string[]> {
-  return new Promise( (resolve, reject) => {
+  return new Promise((resolve) => {
     let i = 0
     let happening = 0
     const errorMessages :string[] = []
 
-    for (; i < limit ; i++) { // Launch a limited number of things
+    for (; i < limit; i++) { // Launch a limited number of things
       happening++
       doNextThing(i)
     }
 
-    function doNextThing(index: number) { // Each thing calls back "done" and starts the next
+    function doNextThing (index: number) { // Each thing calls back "done" and starts the next
       if (array[index]) {
-        callback(array[index], function done(message ?: string) {
-          if(message) errorMessages.push(message)
+        callback(array[index], function done (message ?: string) {
+          if (message) errorMessages.push(message)
           doNextThing(i++)
         }, index, array)
       } else {
         happening-- // When they're all done, resolve
-        if(happening === 0) resolve(errorMessages)
+        if (happening === 0) resolve(errorMessages)
       }
     }
   })
 }
 
-describe.each(websites)("Testing %s", (site) => {
-
+describe.each(websites)('Testing %s', (site) => {
   let homepageLinks : Array<string> = []
-  beforeAll( () => {
+  beforeAll(() => {
     return new Promise((resolve, reject) => {
       request.get(URL, {
         headers: {
           'test-host': `${site}.david-ma.net`
         }
       }, function (err: any, response: any, html: any) {
-        if (err) { throw(err) }
+        if (err) { throw (err) }
         xray(html, ['a@href'])
-        .then(function (links: Array<string>) {
-          if (links) {
-            homepageLinks = links
-            resolve(links)
-          } else {
-            resolve()
-          }
-        }).catch((err :any) => {
-          reject(err)
+          .then(function (links: Array<string>) {
+            if (links) {
+              homepageLinks = links
+              resolve(links)
+            } else {
+              resolve()
+            }
+          }).catch((err :any) => {
+            reject(err)
           // throw(err)
-        })
+          })
       })
     })
   })
-  
+
   test(`Check external links on ${site} homepage`, () => {
     return new Promise((resolve, reject) => {
-      asyncForEach(homepageLinks, function(link, done){
-        if(link.match(/^http/gi)) {
+      asyncForEach(homepageLinks, function (link, done) {
+        if (link.match(/^http/gi)) {
           request.get(link, {
             headers: {
               'test-host': `${site}.david-ma.net`
             }
-          }, function (err: any, response: any, html: any) {
+          }, function (err: any) {
             if (err) {
               // console.error(`Link on ${site} broken: ${link}`)
               done(`Link on ${site} broken: ${link}`)
+            } else {
+              done()
             }
-            done()
           })
         } else {
           done()
         }
-      })
-      .then((errors)=>{
-        if(errors.length > 0) {
+      }).then((errors) => {
+        if (errors.length > 0) {
           reject(errors)
         } else {
           resolve()
@@ -105,10 +104,6 @@ describe.each(websites)("Testing %s", (site) => {
     })
   }, timeout * websites.length)
 
-
-
-
-
   test.skip(`Check all ${site} links`, () => {
     return new Promise((resolve, reject) => {
       homepageLinks.forEach(link => {
@@ -116,7 +111,7 @@ describe.each(websites)("Testing %s", (site) => {
           headers: {
             'test-host': `${site}.david-ma.net`
           }
-        }, function (err: any, response: any, html: any) {
+        }, function (err: any) {
           if (err) {
             console.error(`Link on ${site} broken: ${link}`)
             reject(err)
@@ -128,21 +123,18 @@ describe.each(websites)("Testing %s", (site) => {
     })
   }, timeout)
 
-
-
   test.skip.each(homepageLinks)(`Check ${site} link: %s`, (link) => {
     return new Promise((resolve, reject) => {
       request.get(link, {
         headers: {
           'test-host': `${site}.david-ma.net`
         }
-      }, function (err: any, response: any, html: any) {
-        if (err) { reject() }
+      }, function (err: any) {
+        if (err) { reject(err) }
         resolve()
       })
     })
   })
-
 
   test.skip(`Grab all links for ${site}`, () => {
     return new Promise((resolve, reject) => {
@@ -157,19 +149,17 @@ describe.each(websites)("Testing %s", (site) => {
           // throw new Error('Error loading page')
         }
         xray(html, 'a')(function (err: any, links: Array<string>) {
-          if(err) {
-            // throw new Error('Error parsing html')
-            fail()
+          if (err) {
+            throw new Error('Error parsing html')
           }
           // console.log(links)
           if (links) {
-            
-            test.each(links)(`Testing ${site} link: %s`, (link)=>{
-              return new Promise((resolve, reject) => {
+            test.each(links)(`Testing ${site} link: %s`, (link) => {
+              return new Promise((resolve) => {
+                console.log(link)
                 resolve()
               })
             })
-
 
             expect(links.length).toBeGreaterThan(0)
             resolve()
@@ -190,24 +180,19 @@ describe.each(websites)("Testing %s", (site) => {
     })
   })
 
-
   test.skip(`http.get the site ${site}`, (done) => {
-
     http.get(URL, {
       headers: {
         'test-host': `${site}.david-ma.net`
       }
     }, (res) => {
       // console.log("wooo")
-      expect(res).toBeTruthy();
+      expect(res).toBeTruthy()
       done()
-    });
+    })
   })
 
-
-
   test.skip(`Puppeteer ${site}`, (done) => {
-
     puppeteer.launch().then(browser => {
       browser.newPage().then(page => {
         page.setExtraHTTPHeaders({
@@ -215,22 +200,20 @@ describe.each(websites)("Testing %s", (site) => {
         })
         page.goto(URL, { waitUntil: 'domcontentloaded' })
 
-        expect(true).toBeTruthy();
+        expect(true).toBeTruthy()
         // page.close()
         browser.close()
         done()
-      });
+      })
     })
   })
 
-
-
-    //       page.goto(URL, { waitUntil: 'domcontentloaded' }).then( () => {
-    //         expect(true).toBeTruthy();
-    //       })
-    //     })
-    // console.log(site)
-    // expect(true).toBeTruthy();
+  //       page.goto(URL, { waitUntil: 'domcontentloaded' }).then( () => {
+  //         expect(true).toBeTruthy();
+  //       })
+  //     })
+  // console.log(site)
+  // expect(true).toBeTruthy();
   // }, timeout)
   // puppeteer.launch().then( browser => {
   //   browser.newPage().then( page => {
@@ -243,9 +226,8 @@ describe.each(websites)("Testing %s", (site) => {
   //         expect(true).toBeTruthy();
   //       })
   //     })
-  
-  //     browser.close()
 
+  //     browser.close()
 
   //   })
   // })
@@ -285,6 +267,4 @@ describe.each(websites)("Testing %s", (site) => {
 //   //   })
 //   // }, timeout)
 
-
 // })
-

@@ -96,7 +96,7 @@
     "start": "sudo ./start.sh 80",
     "build": "./build.sh",
     "watch": "./watch.sh",
-    "test": "jest",
+    "test": "./test.sh",
     "buildServer": "cd server; tsc",
     "watchTests": "cd test; tsc --preserveWatchOutput --watch",
     "cleanup": "ps -ef | grep 'jest\\|puppeteer\\|tsc --preserveWatchOutput --watch\\|nodemon\\|gulp\\|server/thalia.js\\|watchTests' | grep -v grep | awk '{print $2}' | xargs -t kill -9",

@@ -1,37 +1,24 @@
 import * as puppeteer from 'puppeteer'
 import fs = require('fs');
+import http = require('http');
 import {describe, expect, test} from '@jest/globals'
-const timeout = process.env.SLOWMO ? 30000 : 10000
-
+const request = require('request');
+const xray = require('x-ray')()
 const jestConfig :any = require('../jest.config')
+
+const timeout = process.env.SLOWMO ? 30000 : 10000
 const URL = jestConfig.globals.URL
 
+// import request from 'request'
 // let browser : puppeteer.Browser
 // let page : puppeteer.Page
-import http = require('http');
-// import request from 'request'
 
-const request = require('request');
-
-const xray = require('x-ray')()
-
-// beforeAll(async () => {
-//   browser = await puppeteer.launch()
-//   page = await browser.newPage()
-
-//   await page.setExtraHTTPHeaders({
-//     'test-host': 'dataviz.david-ma.net'
-//   })
-
-//   await page.goto(URL, { waitUntil: 'domcontentloaded' })
-// })
-
-// afterAll(async () => {
-//   browser.close()
-// })
-
-const table = fs.readdirSync('websites/').filter( d => d !== '.DS_Store') //.map( d =>  [[d],[]]);
-
+let websites :string[] = []
+if (process.env.SITE && process.env.SITE !== 'all') {
+  websites = [process.env.SITE]
+} else {
+  websites = fs.readdirSync('websites/').filter( d => d !== '.DS_Store') //.map( d =>  [[d],[]]);
+}
 
 // Asynchronous for each, doing a limited number of things at a time.
 async function asyncForEach(array: Array<any>, limit: number, callback: Function) {
@@ -52,16 +39,11 @@ async function asyncForEach(array: Array<any>, limit: number, callback: Function
   return 1
 }
 
-describe.each(table)("Testing %s", (site) => {
+describe.each(websites)("Testing %s", (site) => {
 
-  
   let homepageLinks : Array<string> = []
   beforeAll( () => {
     return new Promise((resolve, reject) => {
-
-      console.log("running beforeAll")
-
-
       request.get(URL, {
         headers: {
           'test-host': `${site}.david-ma.net`
@@ -71,7 +53,6 @@ describe.each(table)("Testing %s", (site) => {
         xray(html, ['a@href'])
         .then(function (links: Array<string>) {
           if (links) {
-            console.log(links)
             homepageLinks = links
             resolve(links)
           } else {
@@ -88,22 +69,27 @@ describe.each(table)("Testing %s", (site) => {
   
   test(`Async limited check all ${site} links`, () => {
     return new Promise((resolve, reject) => {
-
       asyncForEach(homepageLinks, 3, function(link :string){
-        request.get(link, {
-          headers: {
-            'test-host': `${site}.david-ma.net`
-          }
-        }, function (err: any, response: any, html: any) {
-          if (err) {
-            console.error(`Link on ${site} broken: ${link}`)
-            reject(err)
-          }
-          // console.log("link is ok: ", link)
-        })
+
+        if(link.match(/^http/gi)) {
+          request.get(link, {
+            headers: {
+              'test-host': `${site}.david-ma.net`
+            }
+          }, function (err: any, response: any, html: any) {
+            if (err) {
+              console.error(`Link on ${site} broken: ${link}`)
+              reject(err)
+            }
+            // console.log("link is ok: ", link)
+          })
+        } else {
+          // console.info(`Link is not an outgoing url ${link}`)
+        }
+      }).then(()=>{
+        resolve()
       })
 
-      resolve()
     })
   }, timeout)
 

@@ -114,30 +114,51 @@ describe.each(websites)('Testing %s', (site) => {
     })
   }, timeout * websites.length)
 
-  test(`Screenshot ${site}`, (done) => {
-    puppeteer.launch().then(browser => {
-      browser.newPage().then(page => {
-        page.setExtraHTTPHeaders({
-          'test-host': `${site}.david-ma.net`
-        }).then(()=> {
-          page.setViewport({ width: 375, height: 812, isMobile: true }).then(() => {
-            page.goto(URL, { waitUntil: 'domcontentloaded' })
+  test(`Screenshot ${site}`, () => {
+    return new Promise((resolve, reject) => {
+      let promises : Promise<any>[]
+
+      puppeteer.launch().then(browser => {
+        browser.newPage().then(page => {
+          promises = [
+            page.setExtraHTTPHeaders({
+              'test-host': `${site}.david-ma.net`
+            }),
+            page.setViewport({ width: 414, height: 2500, isMobile: true })
+          ]
+
+          Promise.all(promises)
             .then(() => {
-              page.screenshot({
-                path: `./tmp/home-mobile-${site}.jpg`,
-                type: 'jpeg'
-              }).then(() => {
-                expect(true).toBeTruthy();
-                browser.close()
-                done()
-              })
+              page.goto(URL, { waitUntil: 'domcontentloaded' })
+                .then(() => {
+                  page.screenshot({
+                    path: `./tmp/${site}-homepage-mobile.jpg`,
+                    type: 'jpeg'
+                  }).then(() => {
+                    page.setViewport({ width: 1200, height: 2000, isMobile: false })
+                      .then(() => {
+                        page.screenshot({
+                          path: `./tmp/${site}-homepage-desktop.jpg`,
+                          type: 'jpeg'
+                        }).then(() => {
+                          expect(true).toBeTruthy()
+                          browser.close()
+                          resolve()
+                        })
+                      })
+                  }).catch(error => {
+                    browser.close()
+                    reject(error)
+                  })
+                })
+            }).catch(error => {
+              browser.close()
+              reject(error)
             })
-          })
         })
       })
     })
   }, timeout)
-
 
   //       page.goto(URL, { waitUntil: 'domcontentloaded' }).then( () => {
   //         expect(true).toBeTruthy();

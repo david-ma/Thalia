@@ -21,25 +21,26 @@ if (process.env.SITE && process.env.SITE !== 'all') {
 }
 
 // Asynchronous for each, doing a limited number of things at a time. Pool of resources.
-async function asyncForEach(array: Array<any>, limit: number,
-  callback: (item: any, index: number, arr: Array<any>, done: (errorMessage ?: string) => void) => void
+async function asyncForEach(array: Array<any>,
+  callback: (item: any, done: (errorMessage ?: string) => void, index: number, arr: Array<any>) => void,
+  limit : number = 5
 ) :Promise<string[]> {
   return new Promise( (resolve, reject) => {
     let i = 0
     let happening = 0
     const errorMessages :string[] = []
 
-    for (; i < limit; i++) { // Launch a limited number of things
+    for (; i < limit ; i++) { // Launch a limited number of things
       happening++
       doNextThing(i)
     }
 
     function doNextThing(index: number) { // Each thing calls back "done" and starts the next
       if (array[index]) {
-        callback(array[index], index, array, function done(message ?: string) {
+        callback(array[index], function done(message ?: string) {
           if(message) errorMessages.push(message)
           doNextThing(i++)
-        })
+        }, index, array)
       } else {
         happening-- // When they're all done, resolve
         if(happening === 0) resolve(errorMessages)
@@ -65,7 +66,6 @@ describe.each(websites)("Testing %s", (site) => {
             homepageLinks = links
             resolve(links)
           } else {
-            console.log(`No links found on ${site} homepage`)
             resolve()
           }
         }).catch((err :any) => {
@@ -78,7 +78,7 @@ describe.each(websites)("Testing %s", (site) => {
   
   test(`Check external links on ${site} homepage`, () => {
     return new Promise((resolve, reject) => {
-      asyncForEach(homepageLinks, 10, function(link, index, array, done){
+      asyncForEach(homepageLinks, function(link, done){
         if(link.match(/^http/gi)) {
           request.get(link, {
             headers: {

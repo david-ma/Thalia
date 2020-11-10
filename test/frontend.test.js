@@ -20,7 +20,7 @@ else {
     websites = fs.readdirSync('websites/').filter(d => d !== '.DS_Store'); //.map( d =>  [[d],[]]);
 }
 // Asynchronous for each, doing a limited number of things at a time. Pool of resources.
-async function asyncForEach(array, limit, callback) {
+async function asyncForEach(array, callback, limit = 5) {
     return new Promise((resolve, reject) => {
         let i = 0;
         let happening = 0;
@@ -31,11 +31,11 @@ async function asyncForEach(array, limit, callback) {
         }
         function doNextThing(index) {
             if (array[index]) {
-                callback(array[index], index, array, function done(message) {
+                callback(array[index], function done(message) {
                     if (message)
                         errorMessages.push(message);
                     doNextThing(i++);
-                });
+                }, index, array);
             }
             else {
                 happening--; // When they're all done, resolve
@@ -64,7 +64,6 @@ globals_1.describe.each(websites)("Testing %s", (site) => {
                         resolve(links);
                     }
                     else {
-                        console.log(`No links found on ${site} homepage`);
                         resolve();
                     }
                 }).catch((err) => {
@@ -76,7 +75,7 @@ globals_1.describe.each(websites)("Testing %s", (site) => {
     });
     globals_1.test(`Check external links on ${site} homepage`, () => {
         return new Promise((resolve, reject) => {
-            asyncForEach(homepageLinks, 10, function (link, index, array, done) {
+            asyncForEach(homepageLinks, function (link, done) {
                 if (link.match(/^http/gi)) {
                     request.get(link, {
                         headers: {

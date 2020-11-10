@@ -22,11 +22,12 @@ if (process.env.SITE && process.env.SITE !== 'all') {
 
 // Asynchronous for each, doing a limited number of things at a time. Pool of resources.
 async function asyncForEach(array: Array<any>, limit: number,
-  callback: (item: any, index: number, arr: Array<any>, done: () => void) => void
-) {
+  callback: (item: any, index: number, arr: Array<any>, done: (errorMessage ?: string) => void) => void
+) :Promise<string[]> {
   return new Promise( (resolve, reject) => {
     let i = 0
     let happening = 0
+    const errorMessages :string[] = []
 
     for (; i < limit; i++) { // Launch a limited number of things
       happening++
@@ -35,12 +36,13 @@ async function asyncForEach(array: Array<any>, limit: number,
 
     function doNextThing(index: number) { // Each thing calls back "done" and starts the next
       if (array[index]) {
-        callback(array[index], index, array, function done() {
+        callback(array[index], index, array, function done(message ?: string) {
+          if(message) errorMessages.push(message)
           doNextThing(i++)
         })
       } else {
         happening-- // When they're all done, resolve
-        if(happening == 0) resolve()
+        if(happening === 0) resolve(errorMessages)
       }
     }
   })
@@ -74,39 +76,34 @@ describe.each(websites)("Testing %s", (site) => {
     })
   })
   
-  test(`Check links on ${site} homepage`, () => {
+  test(`Check external links on ${site} homepage`, () => {
     return new Promise((resolve, reject) => {
-      asyncForEach(homepageLinks, 5, function(link, index, array, done){
-
-        console.log(link)
-
+      asyncForEach(homepageLinks, 10, function(link, index, array, done){
         if(link.match(/^http/gi)) {
-
           request.get(link, {
             headers: {
               'test-host': `${site}.david-ma.net`
             }
           }, function (err: any, response: any, html: any) {
             if (err) {
-              console.error(`Link on ${site} broken: ${link}`)
-              done()
+              // console.error(`Link on ${site} broken: ${link}`)
+              done(`Link on ${site} broken: ${link}`)
             }
             done()
-            // console.log("link is ok: ", link)
           })
-
-
         } else {
           done()
-          // console.info(`Link is not an outgoing url ${link}`)
         }
       })
-      .then(()=>{
-        resolve()
+      .then((errors)=>{
+        if(errors.length > 0) {
+          reject(errors)
+        } else {
+          resolve()
+        }
       })
-
     })
-  }, timeout)
+  }, timeout * websites.length)
 
 
 

@@ -9,9 +9,6 @@ const xray = require('x-ray')();
 const jestConfig = require('../jest.config');
 const timeout = process.env.SLOWMO ? 30000 : 10000;
 const URL = jestConfig.globals.URL;
-// import request from 'request'
-// let browser : puppeteer.Browser
-// let page : puppeteer.Page
 let websites = [];
 if (process.env.SITE && process.env.SITE !== 'all') {
     websites = [process.env.SITE];
@@ -45,72 +42,89 @@ async function asyncForEach(array, callback, limit = 5) {
         }
     });
 }
+async function getLinks(site, page = '') {
+    // console.log(`Getting links on ${site} - ${URL} - ${page}`)
+    return new Promise((resolve, reject) => {
+        http.get(`${URL}/${page}`, {
+            headers: {
+                'test-host': `${site}.david-ma.net`
+            }
+        }, function (res) {
+            let rawData = '';
+            res.on('data', chunk => { rawData += chunk; });
+            res.on('end', () => {
+                xray(rawData, ['a@href'])
+                    .then(function (links) {
+                    if (links) {
+                        resolve(links);
+                    }
+                    else {
+                        resolve([]);
+                    }
+                }).catch((err) => {
+                    reject(err);
+                });
+            });
+        }).on('error', error => { throw error; });
+    });
+}
+async function checkLinks(site, links) {
+    return new Promise((resolve, reject) => {
+        asyncForEach(links, function (link, done) {
+            let requester;
+            if (link.match(/^https/gi)) {
+                requester = https;
+            }
+            else if (link.match(/^http/gi)) {
+                requester = http;
+            }
+            else {
+                done();
+            }
+            if (requester) {
+                requester.get(link, {
+                    headers: {
+                        'test-host': `${site}.david-ma.net`
+                    }
+                }, function (response) {
+                    if (response.statusCode !== 200) {
+                        done(`${response.statusCode} - ${link}`);
+                    }
+                    else {
+                        done();
+                    }
+                }).on('error', (e) => {
+                    done(e.message);
+                });
+            }
+        }).then((errors) => {
+            if (errors.length > 0) {
+                reject(errors);
+            }
+            else {
+                resolve();
+            }
+        });
+    });
+}
 globals_1.describe.each(websites)('Testing %s', (site) => {
     let homepageLinks = [];
+    let siteLinks = [];
     beforeAll(() => {
-        return new Promise((resolve, reject) => {
-            http.get(URL, {
-                headers: {
-                    'test-host': `${site}.david-ma.net`
-                }
-            }, function (res) {
-                let rawData = '';
-                res.on('data', chunk => { rawData += chunk; });
-                res.on('end', () => {
-                    xray(rawData, ['a@href'])
-                        .then(function (links) {
-                        if (links) {
-                            homepageLinks = links;
-                            resolve(links);
-                        }
-                        else {
-                            resolve();
-                        }
-                    }).catch((err) => {
-                        reject(err);
-                    });
-                });
-            }).on('error', error => { throw error; });
+        const promises = [
+            getLinks(site)
+        ];
+        if (process.env.PAGE)
+            promises.push(getLinks(site, process.env.PAGE));
+        return Promise.all(promises).then((array) => {
+            homepageLinks = array[0];
+            if (array[1]) {
+                siteLinks = array[1];
+            }
         });
     });
     globals_1.test(`Check external links on ${site} homepage`, () => {
-        return new Promise((resolve, reject) => {
-            asyncForEach(homepageLinks, function (link, done) {
-                let requester;
-                if (link.match(/^https/gi)) {
-                    requester = https;
-                }
-                else if (link.match(/^http/gi)) {
-                    requester = http;
-                }
-                else {
-                    done();
-                }
-                if (requester) {
-                    requester.get(link, {
-                        headers: {
-                            'test-host': `${site}.david-ma.net`
-                        }
-                    }, function (response) {
-                        if (response.statusCode !== 200) {
-                            done(`${response.statusCode} - ${link}`);
-                        }
-                        else {
-                            done();
-                        }
-                    }).on('error', (e) => {
-                        done(e.message);
-                    });
-                }
-            }).then((errors) => {
-                if (errors.length > 0) {
-                    reject(errors);
-                }
-                else {
-                    resolve();
-                }
-            });
-        });
+        return checkLinks(site, homepageLinks);
     }, timeout * websites.length);
     globals_1.test(`Screenshot ${site}`, () => {
         return new Promise((resolve, reject) => {
@@ -152,6 +166,9 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
             });
         });
     }, timeout);
+    globals_1.test(`Check external links on ${site} - ${process.env.PAGE || 'n/a'}`, () => {
+        return checkLinks(site, siteLinks);
+    }, timeout * websites.length);
     //       page.goto(URL, { waitUntil: 'domcontentloaded' }).then( () => {
     //         expect(true).toBeTruthy();
     //       })

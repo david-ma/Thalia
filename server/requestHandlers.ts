@@ -308,6 +308,7 @@ async function readTemplate (template :string, folder :string, content = '') {
     )
 
     // Load all the other partials we may need
+    // Todo: Check folder exists and is not empty?
     fsPromise.readdir(`${folder}/partials/`)
       .then(function (d:string[]) {
         d.forEach(function (filename) {

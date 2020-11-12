@@ -2,7 +2,7 @@ import { Thalia } from './thalia'
 import SocketIO = require('socket.io')
 
 function socketInit (io :SocketIO.Server, handle :Thalia.Handle) {
-  console.log('Initialising Socket.io')
+  // console.log('Initialising Socket.io for site: ') // Which sites?
 
   Object.keys(handle.websites).forEach((siteName :string) => {
     io.of(`/${siteName}`).use((socket, next) => {

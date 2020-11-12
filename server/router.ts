@@ -199,8 +199,13 @@ const router : Thalia.Router = function (website :Thalia.Website, pathname :stri
           response.setHeader('Cache-Control', 'no-cache')
           if (website.cache) {
             if (stats.size > 10240) { // cache files bigger than 10kb?
-              response.setHeader('Cache-Control', 'public, max-age=31536000') // ex. 1 year in seconds
-              response.setHeader('Expires', new Date(Date.now() + 31536000000).toUTCString()) // in ms.
+              // You should only use a 1 year cache for versioned resources!!! Not "everything over 10kb"
+              // response.setHeader('Cache-Control', 'public, max-age=31536000') // ex. 1 year in seconds
+              // response.setHeader('Expires', new Date(Date.now() + 31536000000).toUTCString()) // in ms.
+              // https://web.dev/http-cache/
+
+              response.setHeader('Cache-Control', 'public, max-age=600') // store for 10 mins
+              response.setHeader('Expires', new Date(Date.now() + 86400000).toUTCString()) // expire 1 day from now
             }
           }
 

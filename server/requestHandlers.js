@@ -116,6 +116,11 @@ const handle = {
                             console.error(err);
                             console.log();
                         }
+                        else {
+                            console.log(`Error loading config for ${site}`);
+                            console.log(err);
+                            console.log();
+                        }
                     }
                     handle.addWebsite(site, config);
                 }

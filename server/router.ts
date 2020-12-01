@@ -190,12 +190,14 @@ const router : Thalia.Router = function (website :Thalia.Website, pathname :stri
       let router = function (file :any) {
         response.writeHead(200)
         response.end(file)
+        return
       }
 
       fs.stat(filename, function (err :any, stats :any) {
         if (err) {
           response.writeHead(503)
           response.end(err)
+          return
         } else {
           response.setHeader('Cache-Control', 'no-cache')
           if (website.cache) {

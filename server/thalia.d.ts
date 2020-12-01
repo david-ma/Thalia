@@ -62,6 +62,9 @@ export declare namespace Thalia {
       controllers ?: Controllers;
       standAlone ?: boolean;
       mustacheIgnore ?: Array<string>;
+      publish ?: {
+        [key:string] : string[];
+      }
       pages ?: {
           [key:string] : string;
       };

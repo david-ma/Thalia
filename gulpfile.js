@@ -331,7 +331,7 @@ var copyThalia = function (done) {
 // Watch for changes
 var watchSource = function (done) {
 
-    // watch(paths.copy.input, series(copyFiles, reloadBrowser));
+    watch(paths.copy.input, series(copyFiles, reloadBrowser));
     watch(paths.copy.input).on("change", function(path, stats){
         singleFile.src = path;
         singleFile.dest = path.match(/.*\//g)[0].replace("src","dist");

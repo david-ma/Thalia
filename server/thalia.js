@@ -517,7 +517,12 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                 }
                 const acceptedEncoding = request.headers['accept-encoding'] || '';
                 const filetype = mime.getType(filename);
-                response.setHeader('Content-Type', filetype);
+                try {
+                    response.setHeader('Content-Type', filetype);
+                }
+                catch (e) {
+                    console.error(e);
+                }
                 let router = function (file) {
                     response.writeHead(200);
                     response.end(file);
@@ -530,13 +535,18 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                         return;
                     }
                     else {
-                        response.setHeader('Cache-Control', 'no-cache');
+                        try {
+                            response.setHeader('Cache-Control', 'no-cache');
+                        }
+                        catch (e) {
+                            console.error(e);
+                        }
                         if (website.cache) {
                             if (stats.size > 10240) { // cache files bigger than 10kb?
                                 // https://web.dev/http-cache/
-                                response.setHeader('Cache-Control', 'public, max-age=600'); // store for 10 mins
-                                response.setHeader('Expires', new Date(Date.now() + 86400000).toUTCString()); // expire 1 day from now
                                 try {
+                                    response.setHeader('Cache-Control', 'public, max-age=600'); // store for 10 mins
+                                    response.setHeader('Expires', new Date(Date.now() + 86400000).toUTCString()); // expire 1 day from now
                                     const queryObject = url.parse(request.url, true).query;
                                     if (queryObject.v) {
                                         // Set cache to 1 year if a cache busting query string is included
@@ -552,7 +562,12 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                         if (filetype && (filetype.slice(0, 4) === 'text' ||
                             filetype === 'application/json' ||
                             filetype === 'application/javascript')) {
-                            response.setHeader('Content-Type', `${filetype}; charset=UTF-8`);
+                            try {
+                                response.setHeader('Content-Type', `${filetype}; charset=UTF-8`);
+                            }
+                            catch (e) {
+                                console.error(e);
+                            }
                             router = function (file) {
                                 if (acceptedEncoding.indexOf('gzip') >= 0) {
                                     zlib.gzip(file, function (err, result) {

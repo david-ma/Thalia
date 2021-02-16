@@ -162,6 +162,8 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
             });
             // Add the site to the index
             handle.index[site + '.david-ma.net'] = site;
+            handle.index[`${site}.com`] = site;
+            handle.index[`${site}.net`] = site;
             handle.websites[site].domains.forEach(function (domain) {
                 handle.index[domain] = site;
             });

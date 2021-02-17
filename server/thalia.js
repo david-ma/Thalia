@@ -128,7 +128,7 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
                             else {
                                 // Note, we want this to be silent if config.js is missing, because we can just serve the public/dist folders.
                                 // but log an error if config.js requires something that is not available.
-                                if (err.requireStack[0].indexOf('thalia.js') > 0) {
+                                if (err.requireStack && err.requireStack[0].indexOf('thalia.js') > 0) {
                                     console.log(`${site} does not use config.js, just serve the public folder`);
                                 }
                                 else {

@@ -153,7 +153,7 @@ const handle :Thalia.Handle = {
               // Note, we want this to be silent if config.js is missing, because we can just serve the public/dist folders.
               // but log an error if config.js requires something that is not available.
 
-              if(err.requireStack[0].indexOf('thalia.js') > 0 ) {
+              if(err.requireStack && err.requireStack[0].indexOf('thalia.js') > 0 ) {
                 console.log(`${site} does not use config.js, just serve the public folder`)
               } else {
                 // Do we want errors to appear in standard error? Or standard log??? Both???

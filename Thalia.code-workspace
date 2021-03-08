@@ -6,7 +6,7 @@
   ],
   "settings": {
     "[handlebars]": {
-      "editor.defaultFormatter": "embertooling.prettier-for-handlebars-vscode"
+      "editor.defaultFormatter": "vscode.html-language-features"
     },
     "files.associations": {
       "*.mustache": "handlebars"

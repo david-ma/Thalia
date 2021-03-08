@@ -81,14 +81,17 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
                 console.log('Only load %s', handle.index.localhost);
                 const site = handle.index.localhost;
                 console.log('Adding site: ' + site);
-                let config;
+                let config = {};
                 try {
                     const start = Date.now();
                     if (fs.existsSync(path.resolve(__dirname, '..', 'websites', site, 'config.js'))) {
                         config = require(path.resolve(__dirname, '..', 'websites', site, 'config')).config;
                     }
-                    else {
+                    else if (fs.existsSync(path.resolve(__dirname, '..', 'websites', site, 'config', 'config.js'))) {
                         config = require(path.resolve(__dirname, '..', 'websites', site, 'config', 'config')).config;
+                    }
+                    else {
+                        console.log(`No config provided for ${site}, just serving the public folder`);
                     }
                     console.log(`${Date.now() - start} ms - config.js for ${site}`);
                 }
@@ -110,13 +113,16 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
                 fs.readdirSync('websites/').forEach(function (site) {
                     if (fs.lstatSync('websites/' + site).isDirectory()) {
                         console.log('Adding site: ' + site);
-                        let config;
+                        let config = {};
                         try {
                             if (fs.existsSync(path.resolve(__dirname, '..', 'websites', site, 'config.js'))) {
                                 config = require(path.resolve(__dirname, '..', 'websites', site, 'config')).config;
                             }
-                            else {
+                            else if (fs.existsSync(path.resolve(__dirname, '..', 'websites', site, 'config', 'config.js'))) {
                                 config = require(path.resolve(__dirname, '..', 'websites', site, 'config', 'config')).config;
+                            }
+                            else {
+                                console.log(`No config provided for ${site}, just serve the public folder`);
                             }
                         }
                         catch (err) {

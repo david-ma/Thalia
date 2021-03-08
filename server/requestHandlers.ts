@@ -110,14 +110,16 @@ const handle :Thalia.Handle = {
       console.log('Only load %s', handle.index.localhost)
       const site :string = handle.index.localhost
       console.log('Adding site: ' + site)
-      let config
+      let config: Thalia.WebsiteConfig = {}
       try {
         const start = Date.now()
 
         if (fs.existsSync(path.resolve(__dirname, '..', 'websites', site, 'config.js'))) {
           config = require(path.resolve(__dirname, '..', 'websites', site, 'config')).config
-        } else {
+        } else if (fs.existsSync(path.resolve(__dirname, '..', 'websites', site, 'config', 'config.js'))) {
           config = require(path.resolve(__dirname, '..', 'websites', site, 'config', 'config')).config
+        } else {
+          console.log(`No config provided for ${site}, just serving the public folder`);
         }
         console.log(`${Date.now() - start} ms - config.js for ${site}`)
       } catch (err) {
@@ -137,12 +139,14 @@ const handle :Thalia.Handle = {
       fs.readdirSync('websites/').forEach(function (site :string) {
         if (fs.lstatSync('websites/' + site).isDirectory()) {
           console.log('Adding site: ' + site)
-          let config
+          let config: Thalia.WebsiteConfig = {}
           try {
             if (fs.existsSync(path.resolve(__dirname, '..', 'websites', site, 'config.js'))) {
               config = require(path.resolve(__dirname, '..', 'websites', site, 'config')).config
-            } else {
+            } else if (fs.existsSync(path.resolve(__dirname, '..', 'websites', site, 'config', 'config.js'))) {
               config = require(path.resolve(__dirname, '..', 'websites', site, 'config', 'config')).config
+            } else {
+              console.log(`No config provided for ${site}, just serve the public folder`);
             }
           } catch (err) {
             if (err.code !== 'MODULE_NOT_FOUND') {

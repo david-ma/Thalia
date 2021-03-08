@@ -102,7 +102,7 @@ async function checkLinks (site : string, links : string[]) {
       if (errors.length > 0) {
         reject(errors)
       } else {
-        resolve()
+        resolve("okay?")
       }
     })
   })
@@ -156,7 +156,7 @@ describe.each(websites)('Testing %s', (site) => {
                   }).then(() => {
                     expect(true).toBeTruthy()
                     browser.close()
-                    resolve()
+                    resolve(site)
                   })
                 })
               }).catch(error => {

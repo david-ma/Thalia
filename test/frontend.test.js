@@ -102,7 +102,7 @@ async function checkLinks(site, links) {
                 reject(errors);
             }
             else {
-                resolve();
+                resolve("okay?");
             }
         });
     });
@@ -150,7 +150,7 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
                                     }).then(() => {
                                         globals_1.expect(true).toBeTruthy();
                                         browser.close();
-                                        resolve();
+                                        resolve(site);
                                     });
                                 });
                             }).catch(error => {

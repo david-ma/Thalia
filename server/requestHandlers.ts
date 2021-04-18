@@ -225,7 +225,6 @@ const handle :Thalia.Handle = {
           port: rawProxy.port || 80,
         }
       }
-      console.log('Proxy: ', rawProxy)
       return proxy
     }
 

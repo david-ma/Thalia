@@ -193,7 +193,6 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
                         port: rawProxy.port || 80,
                     };
                 }
-                console.log('Proxy: ', rawProxy);
                 return proxy;
             }
             // Add the site to the index

@@ -804,25 +804,18 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                 });
             }
             if (!spam) {
-                let host = request.headers['x-host'] || request.headers.host;
+                const host = request.headers['x-host'] || request.headers.host;
                 // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
-                host = host.split(':')[0];
-                let proxyConfig = handle.proxies[host];
-                const site = handle.getWebsite(host);
+                const hostname = host.split(':')[0];
+                const site = handle.getWebsite(hostname);
                 const urlObject = url.parse(request.url, true);
-                let filterWord = url.parse(request.url).pathname.split('/')[1];
-                if (proxyConfig &&
-                    (proxyConfig['*'] || (filterWord && proxyConfig[filterWord]))) {
-                    if (filterWord && proxyConfig[filterWord]) {
-                        if (!proxyConfig[filterWord].silent)
-                            log();
-                        webProxy(proxyConfig[filterWord]);
-                    }
-                    else {
-                        if (!proxyConfig['*'].silent)
-                            log();
-                        webProxy(proxyConfig['*']);
-                    }
+                const proxies = handle.proxies[hostname];
+                const filterWord = url.parse(request.url).pathname.split('/')[1];
+                const proxy = proxies[filterWord] || proxies['*'] || null;
+                if (proxy) {
+                    if (!proxy.silent)
+                        log();
+                    webProxy(proxy);
                 }
                 else {
                     log();
@@ -835,21 +828,9 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
             }
             function webProxy(config) {
                 if (config.password) {
-                    let decodedCookiePassword = false;
-                    const cookies = {};
-                    if (request.headers.cookie) {
-                        request.headers.cookie.split(';').forEach(function (d) {
-                            cookies[d.split('=')[0].trim()] = d
-                                .substring(d.split('=')[0].length + 1)
-                                .trim();
-                        });
-                        decodedCookiePassword = decodeBase64(cookies.password);
-                    }
-                    if (decodedCookiePassword === config.password) {
-                        // console.log("Correct password has been stored in cookies")
-                    }
-                    else {
-                        loginPage(config.password, config.filter, config);
+                    const cookies = getCookies(request);
+                    if (decodeBase64(cookies.password) !== config.password) {
+                        loginPage(config.password, config.filter);
                     }
                 }
                 const message = config.message || 'Error, server is down.';
@@ -875,7 +856,7 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                 });
                 proxyServer.web(request, response);
             }
-            function loginPage(password, filter, config) {
+            function loginPage(password, filter) {
                 if (request.url.indexOf('login') >= 0) {
                     const form = new formidable.IncomingForm();
                     form.parse(request, (err, fields) => {
@@ -949,6 +930,17 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
         let day = date.getDate();
         day = (day < 10 ? '0' : '') + day;
         return year + ':' + month + ':' + day + ' ' + hour + ':' + min;
+    }
+    function getCookies(request) {
+        const cookies = {};
+        if (request.headers.cookie) {
+            request.headers.cookie.split(';').forEach(function (d) {
+                cookies[d.split('=')[0].trim()] = d
+                    .substring(d.split('=')[0].length + 1)
+                    .trim();
+            });
+        }
+        return cookies;
     }
     function encodeBase64(string) {
         'use strict';

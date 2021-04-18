@@ -40,28 +40,21 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
     }
 
     if (!spam) {
-      let host: string =
+      const host: string =
         (request.headers['x-host'] as string) || request.headers.host
       // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
-      host = host.split(':')[0]
+      const hostname = host.split(':')[0]
 
-      let proxyConfig: Thalia.Proxies = handle.proxies[host]
-
-      const site = handle.getWebsite(host)
+      const site = handle.getWebsite(hostname)
       const urlObject: url.UrlWithParsedQuery = url.parse(request.url, true)
-      let filterWord = url.parse(request.url).pathname.split('/')[1]
 
-      if (
-        proxyConfig &&
-        (proxyConfig['*'] || (filterWord && proxyConfig[filterWord]))
-      ) {
-        if (filterWord && proxyConfig[filterWord]) {
-          if (!proxyConfig[filterWord].silent) log()
-          webProxy(proxyConfig[filterWord])
-        } else {
-          if (!proxyConfig['*'].silent) log()
-          webProxy(proxyConfig['*'])
-        }
+      const proxies: Thalia.Proxies = handle.proxies[hostname]
+      const filterWord = url.parse(request.url).pathname.split('/')[1]
+      const proxy: Thalia.Proxy = proxies[filterWord] || proxies['*'] || null
+
+      if (proxy) {
+        if (!proxy.silent) log()
+        webProxy(proxy)
       } else {
         log()
         router(site, urlObject.pathname, response, request)
@@ -77,21 +70,9 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
 
     function webProxy(config: Thalia.Proxy) {
       if (config.password) {
-        let decodedCookiePassword: any = false
-        const cookies: any = {}
-        if (request.headers.cookie) {
-          request.headers.cookie.split(';').forEach(function (d: any) {
-            cookies[d.split('=')[0].trim()] = d
-              .substring(d.split('=')[0].length + 1)
-              .trim()
-          })
-
-          decodedCookiePassword = decodeBase64(cookies.password)
-        }
-        if (decodedCookiePassword === config.password) {
-          // console.log("Correct password has been stored in cookies")
-        } else {
-          loginPage(config.password, config.filter, config)
+        const cookies: Cookies = getCookies(request)
+        if (decodeBase64(cookies.password) !== config.password) {
+          loginPage(config.password, config.filter)
         }
       }
 
@@ -120,7 +101,7 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
       proxyServer.web(request, response)
     }
 
-    function loginPage(password: string, filter: string, config: Thalia.Proxy) {
+    function loginPage(password: string, filter: string) {
       if (request.url.indexOf('login') >= 0) {
         const form = new formidable.IncomingForm()
         form.parse(request, (err, fields) => {
@@ -207,6 +188,22 @@ function getDateTime() {
   day = (day < 10 ? '0' : '') + day
 
   return year + ':' + month + ':' + day + ' ' + hour + ':' + min
+}
+
+type Cookies = {
+  [key: string]: string
+}
+
+function getCookies(request: IncomingMessage) {
+  const cookies: Cookies = {}
+  if (request.headers.cookie) {
+    request.headers.cookie.split(';').forEach(function (d: any) {
+      cookies[d.split('=')[0].trim()] = d
+        .substring(d.split('=')[0].length + 1)
+        .trim()
+    })
+  }
+  return cookies
 }
 
 function encodeBase64(string: string) {

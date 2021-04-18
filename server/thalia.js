@@ -185,6 +185,8 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
                         host: rawProxy.host || '127.0.0.1',
                         message: rawProxy.message || 'Error, server is down.',
                         port: rawProxy.port || 80,
+                        filter: rawProxy.filter,
+                        password: rawProxy.password,
                     };
                 }
                 else {
@@ -192,6 +194,8 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
                         host: rawProxy.host || '127.0.0.1',
                         message: rawProxy.message || 'Error, server is down.',
                         port: rawProxy.port || 80,
+                        filter: rawProxy.filter,
+                        password: rawProxy.password,
                     };
                 }
                 return proxy;
@@ -728,7 +732,7 @@ define("socket", ["require", "exports"], function (require, exports) {
     }
     exports.socketInit = socketInit;
 });
-define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "socket.io"], function (require, exports, socket_1, http, url, httpProxy, socketIO) {
+define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "socket.io", "formidable"], function (require, exports, socket_1, http, url, httpProxy, socketIO, formidable) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.start = void 0;
@@ -780,6 +784,22 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                 }
             }
             function webProxy(config) {
+                if (config.password) {
+                    let decodedCookiePassword = false;
+                    const cookies = {};
+                    if (request.headers.cookie) {
+                        request.headers.cookie.split(';').forEach(function (d) {
+                            cookies[d.split('=')[0].trim()] = d.substring(d.split('=')[0].length + 1).trim();
+                        });
+                        decodedCookiePassword = decodeBase64(cookies.password);
+                    }
+                    if (decodedCookiePassword === config.password) {
+                        // console.log("Correct password has been stored in cookies")
+                    }
+                    else {
+                        loginPage(config.password, config.filter, config);
+                    }
+                }
                 const message = config.message || 'Error, server is down.';
                 const target = `http://${config.host || '127.0.0.1'}:${config.port || 80}`;
                 const proxyServer = httpProxy.createProxyServer({
@@ -802,6 +822,30 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                     }
                 });
                 proxyServer.web(request, response);
+            }
+            function loginPage(password, filter, config) {
+                if (request.url.indexOf("login") >= 0) {
+                    const form = new formidable.IncomingForm();
+                    form.parse(request, (err, fields) => {
+                        if (fields.password && fields.password === password) {
+                            const encodedPassword = encodeBase64(password);
+                            response.setHeader('Set-Cookie', [`password=${encodedPassword};path=/;expires=false`]);
+                        }
+                        else {
+                            response.writeHead(403);
+                            response.end("Wrong password");
+                        }
+                    });
+                }
+                else {
+                    response.writeHead(200);
+                    if (filter) {
+                        response.end(simpleLoginPage.replace("/login", `/${filter}/login`));
+                    }
+                    else {
+                        response.end(simpleLoginPage);
+                    }
+                }
             }
         }
         console.log('Server has started on port: ' + port);
@@ -850,6 +894,47 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
         day = (day < 10 ? '0' : '') + day;
         return year + ':' + month + ':' + day + ' ' + hour + ':' + min;
     }
+    function encodeBase64(string) {
+        'use strict';
+        // const buff = new Buffer(string)
+        const buff = Buffer.from(string);
+        return buff.toString('base64');
+    }
+    function decodeBase64(data) {
+        'use strict';
+        if (data) {
+            // const buff = new Buffer(data, 'base64')
+            const buff = Buffer.from(data, 'base64');
+            return buff.toString('ascii');
+        }
+        else {
+            return false;
+        }
+    }
+    const simpleLoginPage = `<html>
+<head>
+<title>Login</title>
+<style>
+div {
+    text-align: center;
+    width: 300px;
+    margin: 200px auto;
+    background: lightblue;
+    padding: 10px 20px;
+    border-radius: 15px;
+}
+</style>
+</head>
+<body>
+<div>
+    <h1>Enter Password</h1>
+    <form action="/login" method="post">
+        <input type="password" placeholder="Enter Password" name="password" autofocus required>
+        <button type="submit">Login</button>
+    </form>
+</div>
+</body>
+</html>`;
 });
 // index.ts
 if (typeof define !== 'function') {

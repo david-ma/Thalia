@@ -23,6 +23,7 @@ export declare namespace Thalia {
         filter ?: string;
         message ?: string;
         port ?: number;
+        password ?: string;
     };
 
     export type Proxies = {
@@ -35,6 +36,7 @@ export declare namespace Thalia {
         filter ?: string;
         message ?: string;
         port ?: number;
+        password ?: string;
     }
 
 

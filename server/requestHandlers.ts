@@ -217,12 +217,16 @@ const handle :Thalia.Handle = {
           host: rawProxy.host || '127.0.0.1',
           message: rawProxy.message || 'Error, server is down.',
           port: rawProxy.port || 80,
+          filter: rawProxy.filter,
+          password: rawProxy.password,
         }
       } else {
         proxy['*'] = {
           host: rawProxy.host || '127.0.0.1',
           message: rawProxy.message || 'Error, server is down.',
           port: rawProxy.port || 80,
+          filter: rawProxy.filter,
+          password: rawProxy.password,
         }
       }
       return proxy

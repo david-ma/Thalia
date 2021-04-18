@@ -304,6 +304,7 @@ const handle: Thalia.Handle = {
         port: rawProxy.port || 80,
         filter: rawProxy.filter,
         password: rawProxy.password,
+        silent: rawProxy.silent || false,
       }
       if (rawProxy.filter) {
         proxies[rawProxy.filter] = proxy

@@ -204,6 +204,7 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
                     port: rawProxy.port || 80,
                     filter: rawProxy.filter,
                     password: rawProxy.password,
+                    silent: rawProxy.silent || false,
                 };
                 if (rawProxy.filter) {
                     proxies[rawProxy.filter] = proxy;
@@ -810,21 +811,26 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                 const site = handle.getWebsite(host);
                 const urlObject = url.parse(request.url, true);
                 let filterWord = url.parse(request.url).pathname.split('/')[1];
-                if (host !== 'www.monetiseyourwebsite.com') {
-                    console.log();
-                    console.log(`Request for ${host}${urlObject.href} At ${getDateTime()} From ${ip}`);
-                }
                 if (proxyConfig &&
                     (proxyConfig['*'] || (filterWord && proxyConfig[filterWord]))) {
                     if (filterWord && proxyConfig[filterWord]) {
+                        if (!proxyConfig[filterWord].silent)
+                            log();
                         webProxy(proxyConfig[filterWord]);
                     }
                     else {
+                        if (!proxyConfig['*'].silent)
+                            log();
                         webProxy(proxyConfig['*']);
                     }
                 }
                 else {
+                    log();
                     router(site, urlObject.pathname, response, request);
+                }
+                function log() {
+                    console.log();
+                    console.log(`Request for ${host}${urlObject.href} At ${getDateTime()} From ${ip}`);
                 }
             }
             function webProxy(config) {

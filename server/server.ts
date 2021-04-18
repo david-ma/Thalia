@@ -51,24 +51,27 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
       const urlObject: url.UrlWithParsedQuery = url.parse(request.url, true)
       let filterWord = url.parse(request.url).pathname.split('/')[1]
 
-      if (host !== 'www.monetiseyourwebsite.com') {
-        console.log()
-        console.log(
-          `Request for ${host}${urlObject.href} At ${getDateTime()} From ${ip}`
-        )
-      }
-
       if (
         proxyConfig &&
         (proxyConfig['*'] || (filterWord && proxyConfig[filterWord]))
       ) {
         if (filterWord && proxyConfig[filterWord]) {
+          if (!proxyConfig[filterWord].silent) log()
           webProxy(proxyConfig[filterWord])
         } else {
+          if (!proxyConfig['*'].silent) log()
           webProxy(proxyConfig['*'])
         }
       } else {
+        log()
         router(site, urlObject.pathname, response, request)
+      }
+
+      function log() {
+        console.log()
+        console.log(
+          `Request for ${host}${urlObject.href} At ${getDateTime()} From ${ip}`
+        )
       }
     }
 

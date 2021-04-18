@@ -23,6 +23,7 @@ export declare namespace Thalia {
     message?: string
     port?: number
     password?: string
+    silent?: boolean
   }
 
   export type Proxies = {
@@ -36,6 +37,7 @@ export declare namespace Thalia {
     message?: string
     port?: number
     password?: string
+    silent?: boolean
   }
 
   export class Website extends requestHandlersWebsite {}

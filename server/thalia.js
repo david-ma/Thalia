@@ -165,30 +165,31 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
             }
             if (Array.isArray(handle.websites[site].proxies)) {
                 handle.websites[site].proxies.forEach(function (proxy) {
-                    const hosts = Array.isArray(proxy.host) ? proxy.host : [proxy.host];
-                    hosts.forEach(host => {
-                        handle.proxies[host] = makeProxy(handle.proxies[host], proxy, host);
+                    // const hosts = Array.isArray(proxy.host) ? proxy.host : [proxy.host];
+                    const domains = proxy.domains;
+                    domains.forEach(domain => {
+                        handle.proxies[domain] = makeProxy(handle.proxies[domain], proxy);
                     });
                 });
             }
             else {
-                Object.keys(handle.websites[site].proxies).forEach(function (host) {
-                    const rawProxy = handle.websites[site].proxies[host];
-                    handle.proxies[host] = makeProxy(handle.proxies[host], rawProxy, host);
+                Object.keys(handle.websites[site].proxies).forEach(function (domain) {
+                    const rawProxy = handle.websites[site].proxies[domain];
+                    handle.proxies[domain] = makeProxy(handle.proxies[domain], rawProxy);
                 });
             }
-            function makeProxy(proxy, rawProxy, host) {
+            function makeProxy(proxy, rawProxy) {
                 proxy = proxy || {};
                 if (rawProxy.filter) {
                     proxy[rawProxy.filter] = {
-                        host: host || '127.0.0.1',
+                        host: rawProxy.host || '127.0.0.1',
                         message: rawProxy.message || 'Error, server is down.',
                         port: rawProxy.port || 80,
                     };
                 }
                 else {
                     proxy['*'] = {
-                        host: host || '127.0.0.1',
+                        host: rawProxy.host || '127.0.0.1',
                         message: rawProxy.message || 'Error, server is down.',
                         port: rawProxy.port || 80,
                     };

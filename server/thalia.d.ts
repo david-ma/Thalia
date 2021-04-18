@@ -30,7 +30,8 @@ export declare namespace Thalia {
     }
 
     export type rawProxy = {
-        host : string | string[];
+        host : string;
+        domains ?: string[];
         filter ?: string;
         message ?: string;
         port ?: number;

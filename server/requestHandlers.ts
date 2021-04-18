@@ -192,35 +192,35 @@ const handle :Thalia.Handle = {
 
     if (Array.isArray(handle.websites[site].proxies)) {
       (<Thalia.rawProxy[]>handle.websites[site].proxies).forEach(function(proxy :Thalia.rawProxy) {
-        const hosts = Array.isArray(proxy.host) ? proxy.host : [proxy.host];
+        // const hosts = Array.isArray(proxy.host) ? proxy.host : [proxy.host];
+        const domains = proxy.domains
 
-        hosts.forEach(host => {
-          handle.proxies[host] = makeProxy(handle.proxies[host], proxy, host)
+        domains.forEach(domain => {
+          handle.proxies[domain] = makeProxy(handle.proxies[domain], proxy)
         })
       })
     } else {
-      Object.keys(handle.websites[site].proxies).forEach(function (host) {
-        const rawProxy : Thalia.rawProxy = (<{ [key: string]: Thalia.rawProxy; }>handle.websites[site].proxies)[host]
+      Object.keys(handle.websites[site].proxies).forEach(function (domain) {
+        const rawProxy : Thalia.rawProxy = (<{ [key: string]: Thalia.rawProxy; }>handle.websites[site].proxies)[domain]
 
-        handle.proxies[host] = makeProxy(handle.proxies[host], rawProxy, host)
+        handle.proxies[domain] = makeProxy(handle.proxies[domain], rawProxy)
       })
     }
 
     function makeProxy(
       proxy: Thalia.Proxies,
-      rawProxy: Thalia.rawProxy,
-      host?: string
+      rawProxy: Thalia.rawProxy
     ) {
       proxy = proxy || {}
       if (rawProxy.filter) {
         proxy[rawProxy.filter] = {
-          host: host || '127.0.0.1',
+          host: rawProxy.host || '127.0.0.1',
           message: rawProxy.message || 'Error, server is down.',
           port: rawProxy.port || 80,
         }
       } else {
         proxy['*'] = {
-          host: host || '127.0.0.1',
+          host: rawProxy.host || '127.0.0.1',
           message: rawProxy.message || 'Error, server is down.',
           port: rawProxy.port || 80,
         }

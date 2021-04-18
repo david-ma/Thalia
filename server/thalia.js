@@ -21,22 +21,36 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
                 this.data = ''; // Used to be false. Todo: Check if this is ok
                 this.dist = ''; // Used to be false. Todo: Check if this is ok
                 this.cache = typeof config.cache === 'boolean' ? config.cache : true;
-                this.folder = typeof config.folder === 'string' ? config.folder : 'websites/' + site + '/public';
+                this.folder =
+                    typeof config.folder === 'string'
+                        ? config.folder
+                        : 'websites/' + site + '/public';
                 this.domains = typeof config.domains === 'object' ? config.domains : [];
                 this.pages = typeof config.pages === 'object' ? config.pages : {};
-                this.redirects = typeof config.redirects === 'object' ? config.redirects : {};
+                this.redirects =
+                    typeof config.redirects === 'object' ? config.redirects : {};
                 this.services = typeof config.services === 'object' ? config.services : {};
-                this.controllers = typeof config.controllers === 'object' ? config.controllers : {};
+                this.controllers =
+                    typeof config.controllers === 'object' ? config.controllers : {};
                 this.proxies = typeof config.proxies === 'object' ? config.proxies : {};
-                this.sockets = typeof config.sockets === 'object' ? config.sockets : { on: [], emit: [] };
-                this.security = typeof config.security === 'object' ? config.security : { loginNeeded: function () { return false; } };
+                this.sockets =
+                    typeof config.sockets === 'object'
+                        ? config.sockets
+                        : { on: [], emit: [] };
+                this.security =
+                    typeof config.security === 'object'
+                        ? config.security
+                        : {
+                            loginNeeded: function () {
+                                return false;
+                            },
+                        };
                 this.viewableFolders = config.viewableFolders || false;
             }
             else {
                 console.log("Config isn't an object");
             }
         }
-        ;
     }
     exports.Website = Website;
     const handle = {
@@ -56,7 +70,8 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
                         config = require(path.resolve(__dirname, '..', 'config')).config;
                     }
                     else {
-                        config = require(path.resolve(__dirname, '..', 'config', 'config')).config;
+                        config = require(path.resolve(__dirname, '..', 'config', 'config'))
+                            .config;
                     }
                     console.log(`Loading time: ${Date.now() - start} ms - config.js`);
                 }
@@ -134,7 +149,8 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
                             else {
                                 // Note, we want this to be silent if config.js is missing, because we can just serve the public/dist folders.
                                 // but log an error if config.js requires something that is not available.
-                                if (err.requireStack && err.requireStack[0].indexOf('thalia.js') > 0) {
+                                if (err.requireStack &&
+                                    err.requireStack[0].indexOf('thalia.js') > 0) {
                                     console.log(`${site} does not use config.js, just serve the public folder`);
                                 }
                                 else {
@@ -155,7 +171,9 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
         addWebsite: function (site, config) {
             config = config || {};
             handle.websites[site] = new Website(site, config);
-            const baseUrl = config.standAlone ? path.resolve(__dirname, '..') : path.resolve(__dirname, '..', 'websites', site);
+            const baseUrl = config.standAlone
+                ? path.resolve(__dirname, '..')
+                : path.resolve(__dirname, '..', 'websites', site);
             // If dist or data exist, enable them.
             if (fs.existsSync(path.resolve(baseUrl, 'data'))) {
                 handle.websites[site].data = path.resolve(baseUrl, 'data');
@@ -164,17 +182,18 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
                 handle.websites[site].dist = path.resolve(baseUrl, 'dist');
             }
             if (Array.isArray(handle.websites[site].proxies)) {
+                ;
                 handle.websites[site].proxies.forEach(function (proxy) {
                     // const hosts = Array.isArray(proxy.host) ? proxy.host : [proxy.host];
                     const domains = proxy.domains;
-                    domains.forEach(domain => {
+                    domains.forEach((domain) => {
                         handle.proxies[domain] = makeProxy(handle.proxies[domain], proxy);
                     });
                 });
             }
             else {
                 Object.keys(handle.websites[site].proxies).forEach(function (domain) {
-                    const rawProxy = handle.websites[site].proxies[domain];
+                    const rawProxy = (handle.websites[site].proxies)[domain];
                     handle.proxies[domain] = makeProxy(handle.proxies[domain], rawProxy);
                 });
             }
@@ -232,25 +251,28 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
             if (fs.existsSync(path.resolve(baseUrl, 'views'))) {
                 // Stupid hack for development if you don't want to cache the views :(
                 handle.websites[site].readAllViews = function (cb) {
-                    readAllViews(path.resolve(baseUrl, 'views')).then(d => cb(d));
+                    readAllViews(path.resolve(baseUrl, 'views')).then((d) => cb(d));
                 };
                 handle.websites[site].readTemplate = function (template, content, cb) {
-                    readTemplate(template, path.resolve(baseUrl, 'views'), content).then(d => cb(d));
+                    readTemplate(template, path.resolve(baseUrl, 'views'), content).then((d) => cb(d));
                 };
-                readAllViews(path.resolve(baseUrl, 'views')).then(views => {
+                readAllViews(path.resolve(baseUrl, 'views')).then((views) => {
                     handle.websites[site].views = views;
-                    fsPromise.readdir(path.resolve(baseUrl, 'views'))
+                    fsPromise
+                        .readdir(path.resolve(baseUrl, 'views'))
                         .then(function (d) {
                         d.filter((d) => d.indexOf('.mustache') > 0).forEach((file) => {
                             const webpage = file.split('.mustache')[0];
-                            if ((config.mustacheIgnore ? config.mustacheIgnore.indexOf(webpage) === -1 : true) &&
+                            if ((config.mustacheIgnore
+                                ? config.mustacheIgnore.indexOf(webpage) === -1
+                                : true) &&
                                 !handle.websites[site].controllers[webpage]) {
                                 handle.websites[site].controllers[webpage] = function (controller) {
                                     if (handle.websites[site].cache) {
                                         controller.res.end(mustache.render(views[webpage], {}, views));
                                     }
                                     else {
-                                        readAllViews(path.resolve(baseUrl, 'views')).then(views => {
+                                        readAllViews(path.resolve(baseUrl, 'views')).then((views) => {
                                             handle.websites[site].views = views;
                                             controller.res.end(mustache.render(views[webpage], {}, views));
                                         });
@@ -258,7 +280,8 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
                                 };
                             }
                         });
-                    }).catch((e) => console.log(e));
+                    })
+                        .catch((e) => console.log(e));
                 });
             }
             // Unused feature? Commenting it out DKGM 2020-10-29
@@ -284,7 +307,7 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
             }
             return handle.websites[site];
         },
-        proxies: {}
+        proxies: {},
     };
     exports.handle = handle;
     handle.addWebsite('default', {});
@@ -295,47 +318,53 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
             const filenames = ['template', 'content'];
             // Load the mustache template (outer layer)
             promises.push(fsPromise.readFile(`${folder}/${template}`, {
-                encoding: 'utf8'
+                encoding: 'utf8',
             }));
             // Load the mustache content (innermost layer)
             promises.push(new Promise((resolve) => {
                 if (Array.isArray(content) && content[0])
                     content = content[0];
-                fsPromise.readFile(`${folder}/content/${content}.mustache`, {
-                    encoding: 'utf8'
-                }).then((result) => {
+                fsPromise
+                    .readFile(`${folder}/content/${content}.mustache`, {
+                    encoding: 'utf8',
+                })
+                    .then((result) => {
                     const scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g;
                     const styleEx = /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/g;
-                    const scripts = [...result.matchAll(scriptEx)].map(d => d[0]);
-                    const styles = [...result.matchAll(styleEx)].map(d => d[0]);
+                    const scripts = [...result.matchAll(scriptEx)].map((d) => d[0]);
+                    const styles = [...result.matchAll(styleEx)].map((d) => d[0]);
                     resolve({
                         content: result.replace(scriptEx, '').replace(styleEx, ''),
                         scripts: scripts.join('\n'),
-                        styles: styles.join('\n')
+                        styles: styles.join('\n'),
                     });
-                }).catch(() => {
-                    fsPromise.readFile(`${folder}/404.mustache`, {
-                        encoding: 'utf8'
-                    }).then((result) => {
+                })
+                    .catch(() => {
+                    fsPromise
+                        .readFile(`${folder}/404.mustache`, {
+                        encoding: 'utf8',
+                    })
+                        .then((result) => {
                         resolve(result);
                     });
                 });
             }));
             // Load all the other partials we may need
             // Todo: Check folder exists and is not empty?
-            fsPromise.readdir(`${folder}/partials/`)
-                .then(function (d) {
+            fsPromise.readdir(`${folder}/partials/`).then(function (d) {
                 d.forEach(function (filename) {
                     if (filename.indexOf('.mustache') > 0) {
                         filenames.push(filename.split('.mustache')[0]);
                         promises.push(fsPromise.readFile(`${folder}/partials/${filename}`, {
-                            encoding: 'utf8'
+                            encoding: 'utf8',
                         }));
                     }
                 });
                 Promise.all(promises).then(function (array) {
                     const results = {};
-                    filenames.forEach((filename, i) => { results[filename] = array[i]; });
+                    filenames.forEach((filename, i) => {
+                        results[filename] = array[i];
+                    });
                     if (typeof results.content === 'object') {
                         results.scripts = results.content.scripts;
                         results.styles = results.content.styles;
@@ -348,22 +377,25 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
     }
     async function readAllViews(folder) {
         return new Promise((resolve, reject) => {
-            fsPromise.readdir(folder).then((directory) => {
+            fsPromise
+                .readdir(folder)
+                .then((directory) => {
                 Promise.all(directory.map((filename) => new Promise((resolve) => {
                     if (filename.indexOf('.mustache') > 0) {
-                        fsPromise.readFile(`${folder}/${filename}`, 'utf8')
+                        fsPromise
+                            .readFile(`${folder}/${filename}`, 'utf8')
                             .then((file) => {
                             const name = filename.split('.mustache')[0];
                             resolve({
-                                [name]: file
+                                [name]: file,
                             });
-                        }).catch((e) => console.log(e));
+                        })
+                            .catch((e) => console.log(e));
                     }
                     else {
                         fsPromise.lstat(`${folder}/${filename}`).then((d) => {
                             if (d.isDirectory()) {
-                                readAllViews(`${folder}/${filename}`)
-                                    .then(d => resolve(d));
+                                readAllViews(`${folder}/${filename}`).then((d) => resolve(d));
                             }
                             else {
                                 // console.log(`${filename} is not a folder`);
@@ -377,7 +409,8 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
                     console.log('Error in readAllViews', reason);
                     reject(reason);
                 });
-            }).catch((e) => console.log(e));
+            })
+                .catch((e) => console.log(e));
         });
     }
 });
@@ -391,15 +424,16 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
             try {
                 const data = {
                     cookies: {},
-                    words: []
+                    words: [],
                 };
                 if (request.headers.cookie) {
                     request.headers.cookie.split(';').forEach(function (d) {
-                        data.cookies[d.split('=')[0].trim()] = d.substring(d.split('=')[0].length + 1).trim();
+                        data.cookies[d.split('=')[0].trim()] = d
+                            .substring(d.split('=')[0].length + 1)
+                            .trim();
                     });
                 }
-                data.words = pathname
-                    .split('/');
+                data.words = pathname.split('/');
                 // This should not be lowercase??? Keys are case sensitive!
                 // .map(function(d){
                 //     return d.toLowerCase();
@@ -412,19 +446,21 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
             }
         });
         /**
-           * The router should check what sort of route we're doing, and act appropriately.
-           * Check:
-           * - Security
-           * - Redirects to outside websites
-           * - Internal page alias
-           * - Services / functions
-           * - /data/ folder might have a file
-           * - otherwise, we serve the file normally
-           *
-           * - When serving the file normally, we need to check the header to see if it can be zipped or should be zipped.
-           */
-        route.then(function (d) {
-            if (typeof website.security !== 'undefined' && website.security.loginNeeded(pathname, d.cookies)) {
+         * The router should check what sort of route we're doing, and act appropriately.
+         * Check:
+         * - Security
+         * - Redirects to outside websites
+         * - Internal page alias
+         * - Services / functions
+         * - /data/ folder might have a file
+         * - otherwise, we serve the file normally
+         *
+         * - When serving the file normally, we need to check the header to see if it can be zipped or should be zipped.
+         */
+        route
+            .then(function (d) {
+            if (typeof website.security !== 'undefined' &&
+                website.security.loginNeeded(pathname, d.cookies)) {
                 website.services.login(response, request);
             }
             else {
@@ -476,14 +512,14 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                                 else {
                                     response.end(result);
                                 }
-                            }
+                            },
                         },
                         req: request,
                         db: website.seq || null,
                         views: website.views,
                         readAllViews: website.readAllViews,
                         readTemplate: website.readTemplate,
-                        path: d.words.slice(2)
+                        path: d.words.slice(2),
                     });
                     // if there is a matching data file
                 }
@@ -501,9 +537,10 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                 }
                 else if ((website.dist &&
                     fs.existsSync(website.dist.concat(pathname)) &&
-                    fs.lstatSync(website.dist.concat(pathname)).isFile()) || (website.dist &&
-                    fs.existsSync(website.dist.concat(pathname, '/index.html')) &&
-                    fs.lstatSync(website.dist.concat(pathname, '/index.html')).isFile())) {
+                    fs.lstatSync(website.dist.concat(pathname)).isFile()) ||
+                    (website.dist &&
+                        fs.existsSync(website.dist.concat(pathname, '/index.html')) &&
+                        fs.lstatSync(website.dist.concat(pathname, '/index.html')).isFile())) {
                     routeFile(website.dist.concat(pathname));
                 }
                 else {
@@ -511,25 +548,26 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                     routeFile(website.folder.concat(pathname));
                 }
             }
-        }).catch(renderError);
+        })
+            .catch(renderError);
         function renderError(d) {
             console.log('Error?', d);
             d = d
                 ? {
                     code: 500,
-                    message: JSON.stringify(d)
+                    message: JSON.stringify(d),
                 }
                 : {
                     code: 500,
-                    message: '500 Server Error'
+                    message: '500 Server Error',
                 };
             response.writeHead(d.code, {
-                'Content-Type': 'text/html'
+                'Content-Type': 'text/html',
             });
             response.end(d.message);
         }
         function redirect(url) {
-            if (typeof (url) === 'string') {
+            if (typeof url === 'string') {
                 console.log('Forwarding user to: ' + url);
                 response.writeHead(303, { 'Content-Type': 'text/html' });
                 response.end('<meta http-equiv="refresh" content="0; url=' + url + '">');
@@ -541,14 +579,14 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
             }
         }
         /**
-           * Given a filename, serve it.
-           *
-           * Check that the file exists
-           * Check the headers..?
-           * zip/unzip if needed
-           *
-           * @param filename
-           */
+         * Given a filename, serve it.
+         *
+         * Check that the file exists
+         * Check the headers..?
+         * zip/unzip if needed
+         *
+         * @param filename
+         */
         function routeFile(filename) {
             fs.exists(filename, function (exists) {
                 if (!exists) {
@@ -584,7 +622,8 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                             console.error(e);
                         }
                         if (website.cache) {
-                            if (stats.size > 10240) { // cache files bigger than 10kb?
+                            if (stats.size > 10240) {
+                                // cache files bigger than 10kb?
                                 // https://web.dev/http-cache/
                                 try {
                                     response.setHeader('Cache-Control', 'public, max-age=600'); // store for 10 mins
@@ -601,9 +640,10 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                                 }
                             }
                         }
-                        if (filetype && (filetype.slice(0, 4) === 'text' ||
-                            filetype === 'application/json' ||
-                            filetype === 'application/javascript')) {
+                        if (filetype &&
+                            (filetype.slice(0, 4) === 'text' ||
+                                filetype === 'application/json' ||
+                                filetype === 'application/javascript')) {
                             try {
                                 response.setHeader('Content-Type', `${filetype}; charset=UTF-8`);
                             }
@@ -646,7 +686,10 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                 fs.readFile(filename, function (err, file) {
                     if (err) {
                         fs.readdir(filename, function (e, dir) {
-                            if (!e && dir && dir instanceof Array && dir.indexOf('index.html') >= 0) {
+                            if (!e &&
+                                dir &&
+                                dir instanceof Array &&
+                                dir.indexOf('index.html') >= 0) {
                                 if (filename.lastIndexOf('/') === filename.length - 1) {
                                     filename += 'index.html';
                                 }
@@ -705,7 +748,8 @@ define("socket", ["require", "exports"], function (require, exports) {
     function socketInit(io, handle) {
         // console.log('Initialising Socket.io for site: ') // Which sites?
         Object.keys(handle.websites).forEach((siteName) => {
-            io.of(`/${siteName}`).use((socket, next) => {
+            io.of(`/${siteName}`)
+                .use((socket, next) => {
                 const host = socket.handshake.headers.host;
                 const website = handle.getWebsite(host);
                 if (website.name === siteName) {
@@ -714,11 +758,15 @@ define("socket", ["require", "exports"], function (require, exports) {
                 else {
                     next(new Error('Wrong namespace for this site'));
                 }
-            }).on('connection', function (socket) {
+            })
+                .on('connection', function (socket) {
                 const host = socket.handshake.headers.host;
                 const website = handle.getWebsite(host);
                 // Simple logging
-                console.log('Socket connection ' + socket.id + ' from ' + socket.handshake.headers.referer);
+                console.log('Socket connection ' +
+                    socket.id +
+                    ' from ' +
+                    socket.handshake.headers.referer);
                 website.sockets.on.forEach(function (d) {
                     socket.on(d.name, function (data) {
                         d.callback(socket, data, website.seq);
@@ -747,7 +795,9 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
         let server = null;
         function onRequest(request, response) {
             let spam = false;
-            const ip = request.headers['X-Real-IP'] || request.headers['x-real-ip'] || request.connection.remoteAddress;
+            const ip = request.headers['X-Real-IP'] ||
+                request.headers['x-real-ip'] ||
+                request.connection.remoteAddress;
             if (ip) {
                 blacklist.forEach(function (thing) {
                     if (ip.includes(thing)) {
@@ -761,7 +811,7 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
             if (!spam) {
                 let host = request.headers['x-host'] || request.headers.host;
                 // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
-                host = host.split(":")[0];
+                host = host.split(':')[0];
                 let proxyConfig = handle.proxies[host];
                 const site = handle.getWebsite(host);
                 const urlObject = url.parse(request.url, true);
@@ -789,7 +839,9 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                     const cookies = {};
                     if (request.headers.cookie) {
                         request.headers.cookie.split(';').forEach(function (d) {
-                            cookies[d.split('=')[0].trim()] = d.substring(d.split('=')[0].length + 1).trim();
+                            cookies[d.split('=')[0].trim()] = d
+                                .substring(d.split('=')[0].length + 1)
+                                .trim();
                         });
                         decodedCookiePassword = decodeBase64(cookies.password);
                     }
@@ -808,7 +860,7 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                     // followRedirects: true,
                     // protocolRewrite: "http",
                     // changeOrigin: true,
-                    target: target
+                    target: target,
                 });
                 proxyServer.on('error', function (err, req, res) {
                     'use strict';
@@ -824,23 +876,25 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                 proxyServer.web(request, response);
             }
             function loginPage(password, filter, config) {
-                if (request.url.indexOf("login") >= 0) {
+                if (request.url.indexOf('login') >= 0) {
                     const form = new formidable.IncomingForm();
                     form.parse(request, (err, fields) => {
                         if (fields.password && fields.password === password) {
                             const encodedPassword = encodeBase64(password);
-                            response.setHeader('Set-Cookie', [`password=${encodedPassword};path=/;expires=false`]);
+                            response.setHeader('Set-Cookie', [
+                                `password=${encodedPassword};path=/;expires=false`,
+                            ]);
                         }
                         else {
                             response.writeHead(401);
-                            response.end("Wrong password");
+                            response.end('Wrong password');
                         }
                     });
                 }
                 else {
                     response.writeHead(200);
                     if (filter) {
-                        response.end(simpleLoginPage.replace("/login", `/${filter}/login`));
+                        response.end(simpleLoginPage.replace('/login', `/${filter}/login`));
                     }
                     else {
                         response.end(simpleLoginPage);
@@ -857,7 +911,7 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
             'use strict';
             let host = request.headers['x-host'] || request.headers.host;
             // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
-            host = host.split(":")[0];
+            host = host.split(':')[0];
             const proxies = handle.proxies[host];
             let filterWord = url.parse(request.url).pathname.split('/')[1];
             if (proxies) {
@@ -868,13 +922,15 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                 else {
                     proxyConfig = proxies['*'];
                 }
-                httpProxy.createProxyServer({
+                httpProxy
+                    .createProxyServer({
                     ws: true,
                     target: {
                         host: proxyConfig.host || '127.0.0.1',
-                        port: proxyConfig.port || 80
-                    }
-                }).ws(request, socket, head);
+                        port: proxyConfig.port || 80,
+                    },
+                })
+                    .ws(request, socket, head);
             }
         });
     }
@@ -952,16 +1008,21 @@ define(function (require) {
             port = process.argv[3];
         }
         // Todo: we should check that the workspace exists, otherwise leave it as default
-        if (process.argv[2] !== null && process.argv[2] !== undefined && !pattern.exec(process.argv[2])) {
+        if (process.argv[2] !== null &&
+            process.argv[2] !== undefined &&
+            !pattern.exec(process.argv[2])) {
             workspace = process.argv[2];
         }
-        else if (process.argv[3] !== null && process.argv[3] !== undefined && !pattern.exec(process.argv[3])) {
+        else if (process.argv[3] !== null &&
+            process.argv[3] !== undefined &&
+            !pattern.exec(process.argv[3])) {
             workspace = process.argv[3];
         }
         if (fs.existsSync(`websites/${workspace}`)) {
             console.log(`Setting workspace to websites/${workspace}`);
         }
-        else if (fs.existsSync('config.js') || fs.existsSync('config/config.js')) {
+        else if (fs.existsSync('config.js') ||
+            fs.existsSync('config/config.js')) {
             console.log('Thalia running in stand alone mode.');
         }
         else {

@@ -3,29 +3,32 @@ import { socketInit } from './socket'
 import { Thalia } from './thalia'
 
 // server.ts
-import http = require('http');
-import url = require('url');
-import httpProxy = require('http-proxy');
-import socketIO = require('socket.io');
-import formidable = require ('formidable');
+import http = require('http')
+import url = require('url')
+import httpProxy = require('http-proxy')
+import socketIO = require('socket.io')
+import formidable = require('formidable')
 
-let blacklist :any = []
+let blacklist: any = []
 try {
   blacklist = require('../blacklist').blacklist
   console.log('This is the blacklist:', blacklist)
 } catch (e) {}
 
 // This part of the server starts the server on port 80 and logs stuff to the std.out
-function start (router :Thalia.Router, handle :Thalia.Handle, port :string) {
+function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
   let server = null
 
-  function onRequest (request :IncomingMessage, response :ServerResponse) {
+  function onRequest(request: IncomingMessage, response: ServerResponse) {
     let spam = false
 
-    const ip = request.headers['X-Real-IP'] || request.headers['x-real-ip'] || request.connection.remoteAddress
+    const ip =
+      request.headers['X-Real-IP'] ||
+      request.headers['x-real-ip'] ||
+      request.connection.remoteAddress
 
     if (ip) {
-      blacklist.forEach(function (thing:any) {
+      blacklist.forEach(function (thing: any) {
         if (ip.includes(thing)) {
           spam = true
           // console.log(`Spam request from ${ip}`);
@@ -37,19 +40,22 @@ function start (router :Thalia.Router, handle :Thalia.Handle, port :string) {
     }
 
     if (!spam) {
-      let host :string = request.headers['x-host'] as string || request.headers.host
+      let host: string =
+        (request.headers['x-host'] as string) || request.headers.host
       // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
-      host = host.split(":")[0]
-  
-      let proxyConfig :Thalia.Proxies = handle.proxies[host]
+      host = host.split(':')[0]
+
+      let proxyConfig: Thalia.Proxies = handle.proxies[host]
 
       const site = handle.getWebsite(host)
-      const urlObject :url.UrlWithParsedQuery = url.parse(request.url, true)
+      const urlObject: url.UrlWithParsedQuery = url.parse(request.url, true)
       let filterWord = url.parse(request.url).pathname.split('/')[1]
 
       if (host !== 'www.monetiseyourwebsite.com') {
         console.log()
-        console.log(`Request for ${host}${urlObject.href} At ${getDateTime()} From ${ip}`)
+        console.log(
+          `Request for ${host}${urlObject.href} At ${getDateTime()} From ${ip}`
+        )
       }
 
       if (
@@ -66,14 +72,15 @@ function start (router :Thalia.Router, handle :Thalia.Handle, port :string) {
       }
     }
 
-    function webProxy (config :Thalia.Proxy) {
-
-      if(config.password){
-        let decodedCookiePassword :any = false
-        const cookies :any = {}
+    function webProxy(config: Thalia.Proxy) {
+      if (config.password) {
+        let decodedCookiePassword: any = false
+        const cookies: any = {}
         if (request.headers.cookie) {
-          request.headers.cookie.split(';').forEach(function (d :any) {
-            cookies[d.split('=')[0].trim()] = d.substring(d.split('=')[0].length + 1).trim()
+          request.headers.cookie.split(';').forEach(function (d: any) {
+            cookies[d.split('=')[0].trim()] = d
+              .substring(d.split('=')[0].length + 1)
+              .trim()
           })
 
           decodedCookiePassword = decodeBase64(cookies.password)
@@ -93,10 +100,10 @@ function start (router :Thalia.Router, handle :Thalia.Handle, port :string) {
         // followRedirects: true,
         // protocolRewrite: "http",
         // changeOrigin: true,
-        target: target
+        target: target,
       })
 
-      proxyServer.on('error', function (err :any, req :any, res :any) {
+      proxyServer.on('error', function (err: any, req: any, res: any) {
         'use strict'
         console.log(err)
         try {
@@ -110,25 +117,25 @@ function start (router :Thalia.Router, handle :Thalia.Handle, port :string) {
       proxyServer.web(request, response)
     }
 
-    function loginPage (password :string, filter :string, config :Thalia.Proxy) {
-      if (request.url.indexOf("login") >=0 )  {
+    function loginPage(password: string, filter: string, config: Thalia.Proxy) {
+      if (request.url.indexOf('login') >= 0) {
         const form = new formidable.IncomingForm()
-
         form.parse(request, (err, fields) => {
-          if(fields.password && fields.password === password) {
+          if (fields.password && fields.password === password) {
             const encodedPassword = encodeBase64(password)
-
-            response.setHeader('Set-Cookie', [`password=${encodedPassword};path=/;expires=false`])
+            response.setHeader('Set-Cookie', [
+              `password=${encodedPassword};path=/;expires=false`,
+            ])
           } else {
             response.writeHead(401)
-            response.end("Wrong password")
+            response.end('Wrong password')
           }
-        });
+        })
       } else {
         response.writeHead(200)
 
-        if(filter) {
-          response.end(simpleLoginPage.replace("/login", `/${filter}/login`))
+        if (filter) {
+          response.end(simpleLoginPage.replace('/login', `/${filter}/login`))
         } else {
           response.end(simpleLoginPage)
         }
@@ -143,30 +150,33 @@ function start (router :Thalia.Router, handle :Thalia.Handle, port :string) {
   const io = socketIO.listen(server, {})
   socketInit(io, handle)
 
-  return server.on('upgrade', function (request :any, socket :any, head :any) {
+  return server.on('upgrade', function (request: any, socket: any, head: any) {
     'use strict'
 
-    let host :string = request.headers['x-host'] as string || request.headers.host
+    let host: string =
+      (request.headers['x-host'] as string) || request.headers.host
     // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
-    host = host.split(":")[0]
+    host = host.split(':')[0]
 
-    const proxies :Thalia.Proxies = handle.proxies[host]
+    const proxies: Thalia.Proxies = handle.proxies[host]
     let filterWord = url.parse(request.url).pathname.split('/')[1]
 
     if (proxies) {
-      let proxyConfig :Thalia.Proxy = null
-      if(filterWord) {
+      let proxyConfig: Thalia.Proxy = null
+      if (filterWord) {
         proxyConfig = proxies[filterWord]
       } else {
         proxyConfig = proxies['*']
       }
-      httpProxy.createProxyServer({
-        ws: true,
-        target: {
-          host: proxyConfig.host || '127.0.0.1',
-          port: proxyConfig.port || 80
-        }
-      }).ws(request, socket, head)
+      httpProxy
+        .createProxyServer({
+          ws: true,
+          target: {
+            host: proxyConfig.host || '127.0.0.1',
+            port: proxyConfig.port || 80,
+          },
+        })
+        .ws(request, socket, head)
     }
   })
 }
@@ -174,36 +184,36 @@ function start (router :Thalia.Router, handle :Thalia.Handle, port :string) {
 // exports.start = start;
 export { start }
 
-function getDateTime () {
-//    var date = new Date();
+function getDateTime() {
+  //    var date = new Date();
   const date = new Date(Date.now() + 36000000)
   // add 10 hours... such a shitty way to make it australian time...
 
-  let hour :any = date.getHours()
+  let hour: any = date.getHours()
   hour = (hour < 10 ? '0' : '') + hour
 
-  let min :any = date.getMinutes()
+  let min: any = date.getMinutes()
   min = (min < 10 ? '0' : '') + min
 
   const year = date.getFullYear()
 
-  let month :any = date.getMonth() + 1
+  let month: any = date.getMonth() + 1
   month = (month < 10 ? '0' : '') + month
 
-  let day :any = date.getDate()
+  let day: any = date.getDate()
   day = (day < 10 ? '0' : '') + day
 
   return year + ':' + month + ':' + day + ' ' + hour + ':' + min
 }
 
-function encodeBase64 (string :string) {
+function encodeBase64(string: string) {
   'use strict'
   // const buff = new Buffer(string)
   const buff = Buffer.from(string)
   return buff.toString('base64')
 }
 
-function decodeBase64 (data :any) {
+function decodeBase64(data: any) {
   'use strict'
   if (data) {
     // const buff = new Buffer(data, 'base64')
@@ -238,4 +248,3 @@ div {
 </div>
 </body>
 </html>`
-

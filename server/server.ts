@@ -50,7 +50,9 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
 
       const proxies: Thalia.Proxies = handle.proxies[hostname]
       const filterWord = url.parse(request.url).pathname.split('/')[1]
-      const proxy: Thalia.Proxy = proxies[filterWord] || proxies['*'] || null
+      const proxy: Thalia.Proxy = proxies
+        ? proxies[filterWord] || proxies['*'] || null
+        : null
 
       if (proxy) {
         if (!proxy.silent) log()

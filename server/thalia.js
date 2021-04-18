@@ -811,7 +811,9 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                 const urlObject = url.parse(request.url, true);
                 const proxies = handle.proxies[hostname];
                 const filterWord = url.parse(request.url).pathname.split('/')[1];
-                const proxy = proxies[filterWord] || proxies['*'] || null;
+                const proxy = proxies
+                    ? proxies[filterWord] || proxies['*'] || null
+                    : null;
                 if (proxy) {
                     if (!proxy.silent)
                         log();

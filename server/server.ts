@@ -36,36 +36,36 @@ function start (router :Thalia.Router, handle :Thalia.Handle, port :string) {
     }
 
     if (!spam) {
-      const host :string = request.headers['test-host'] as string || request.headers.host
+      let host :string = request.headers['x-host'] as string || request.headers.host
+      // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
+      host = host.split(":")[0]
+  
+      let proxyConfig :Thalia.Proxies = handle.proxies[host]
 
-      const proxyConfig = handle.proxies[host]
       const site = handle.getWebsite(host)
       const urlObject :url.UrlWithParsedQuery = url.parse(request.url, true)
+      let filterWord = url.parse(request.url).pathname.split('/')[1]
 
       if (host !== 'www.monetiseyourwebsite.com') {
         console.log()
         console.log(`Request for ${host}${urlObject.href} At ${getDateTime()} From ${ip}`)
       }
 
-      if (proxyConfig &&
-                (
-                  typeof proxyConfig.filter === 'undefined' ||
-                    proxyConfig.filter === url.parse(request.url).pathname.split('/')[1]
-                )
+      if (
+        proxyConfig &&
+        (proxyConfig['*'] || (filterWord && proxyConfig[filterWord]))
       ) {
-        if (typeof proxyConfig.passwords !== 'undefined' &&
-                    Array.isArray(proxyConfig.passwords)
-        ) {
-          security(proxyConfig.passwords)
+        if (filterWord && proxyConfig[filterWord]) {
+          webProxy(proxyConfig[filterWord])
         } else {
-          webProxy(proxyConfig)
+          webProxy(proxyConfig['*'])
         }
       } else {
         router(site, urlObject.pathname, response, request)
       }
     }
 
-    function webProxy (config :any) {
+    function webProxy (config :Thalia.Proxy) {
       const message = config.message || 'Error, server is down.'
       const target = `http://${config.host || '127.0.0.1'}:${config.port || 80}`
       const proxyServer = httpProxy.createProxyServer({
@@ -91,39 +91,6 @@ function start (router :Thalia.Router, handle :Thalia.Handle, port :string) {
       proxyServer.web(request, response)
     }
 
-    function security (passwords :any) {
-      let decodedCookiePassword :any = false
-
-      const cookies :any = {}
-      if (request.headers.cookie) {
-        request.headers.cookie.split(';').forEach(function (d :any) {
-          cookies[d.split('=')[0].trim()] = d.substring(d.split('=')[0].length + 1).trim()
-        })
-
-        decodedCookiePassword = decodeBase64(cookies.password)
-      }
-
-      const host :string = request.headers['test-host'] as string || request.headers.host
-      const urlObject :url.UrlWithParsedQuery = url.parse(request.url, true)
-      const proxyConfig = handle.proxies[host]
-
-      if (urlObject.query.logout) {
-        response.setHeader('Set-Cookie', ['password=;path=/;max-age=1'])
-        response.writeHead(200)
-        response.end('Logged out.')
-      } else if (urlObject.query.password && passwords.indexOf(urlObject.query.password) >= 0) {
-        // console.log(url_object.query.password);
-        const password = encodeBase64(urlObject.query.password[0])
-        // let password = encodeBase64(url_object.query.password);
-        response.setHeader('Set-Cookie', [`password=${password};path=/;expires=false`])
-        webProxy(proxyConfig)
-      } else if (decodedCookiePassword && passwords.indexOf(decodedCookiePassword) >= 0) {
-        webProxy(proxyConfig)
-      } else {
-        response.writeHead(200)
-        response.end(simpleLoginPage)
-      }
-    }
   }
 
   console.log('Server has started on port: ' + port)
@@ -136,10 +103,20 @@ function start (router :Thalia.Router, handle :Thalia.Handle, port :string) {
   return server.on('upgrade', function (request :any, socket :any, head :any) {
     'use strict'
 
-    const host :string = request.headers['test-host'] as string || request.headers.host
-    const proxyConfig = handle.proxies[host]
+    let host :string = request.headers['x-host'] as string || request.headers.host
+    // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
+    host = host.split(":")[0]
 
-    if (proxyConfig) {
+    const proxies :Thalia.Proxies = handle.proxies[host]
+    let filterWord = url.parse(request.url).pathname.split('/')[1]
+
+    if (proxies) {
+      let proxyConfig :Thalia.Proxy = null
+      if(filterWord) {
+        proxyConfig = proxies[filterWord]
+      } else {
+        proxyConfig = proxies['*']
+      }
       httpProxy.createProxyServer({
         ws: true,
         target: {
@@ -175,46 +152,3 @@ function getDateTime () {
 
   return year + ':' + month + ':' + day + ' ' + hour + ':' + min
 }
-
-function encodeBase64 (string :string) {
-  'use strict'
-  // const buff = new Buffer(string)
-  const buff = Buffer.from(string)
-  return buff.toString('base64')
-}
-
-function decodeBase64 (data :any) {
-  'use strict'
-  if (data) {
-    // const buff = new Buffer(data, 'base64')
-    const buff = Buffer.from(data, 'base64')
-    return buff.toString('ascii')
-  } else {
-    return false
-  }
-}
-
-const simpleLoginPage = `<html>
-<head>
-<title>Login</title>
-<style>
-div {
-    text-align: center;
-    width: 300px;
-    margin: 200px auto;
-    background: lightblue;
-    padding: 10px 20px;
-    border-radius: 15px;
-}
-</style>
-</head>
-<body>
-<div>
-    <h1>Enter Password</h1>
-    <form action="">
-        <input type="password" placeholder="Enter Password" name="password" autofocus required>
-        <button type="submit">Login</button>
-    </form>
-</div>
-</body>
-</html>`

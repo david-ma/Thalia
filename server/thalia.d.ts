@@ -17,7 +17,26 @@ export declare namespace Thalia {
 
     export type MysqlWrapper = unknown;
     export type SequelizeWrapper = any;
-    export type Proxy = any;
+
+    export type Proxy = {
+        host ?: string;
+        filter ?: string;
+        message ?: string;
+        port ?: number;
+    };
+
+    export type Proxies = {
+        [key:string]: Proxy
+    }
+
+    export type rawProxy = {
+        host : string | string[];
+        filter ?: string;
+        message ?: string;
+        port ?: number;
+    }
+
+
     export class Website extends requestHandlersWebsite { }
 
     export interface Sockets {
@@ -73,7 +92,8 @@ export declare namespace Thalia {
       };
       proxies ?: {
           [key:string] : Proxy;
-      };
+      } | rawProxy[];
+
       security ?: {
           loginNeeded: any;
       };
@@ -102,7 +122,7 @@ export declare namespace Thalia {
             [key:string]: string;
         };
         proxies: {
-            [key:string] :Proxy;
+            [key:string] :Proxies;
         }
 
         loadAllWebsites: { () :void; };

@@ -163,9 +163,39 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path"], func
             if (fs.existsSync(path.resolve(baseUrl, 'dist'))) {
                 handle.websites[site].dist = path.resolve(baseUrl, 'dist');
             }
-            Object.keys(handle.websites[site].proxies).forEach(function (proxy) {
-                handle.proxies[proxy] = handle.websites[site].proxies[proxy];
-            });
+            if (Array.isArray(handle.websites[site].proxies)) {
+                handle.websites[site].proxies.forEach(function (proxy) {
+                    const hosts = Array.isArray(proxy.host) ? proxy.host : [proxy.host];
+                    hosts.forEach(host => {
+                        handle.proxies[host] = makeProxy(handle.proxies[host], proxy, host);
+                    });
+                });
+            }
+            else {
+                Object.keys(handle.websites[site].proxies).forEach(function (host) {
+                    const rawProxy = handle.websites[site].proxies[host];
+                    handle.proxies[host] = makeProxy(handle.proxies[host], rawProxy, host);
+                });
+            }
+            function makeProxy(proxy, rawProxy, host) {
+                proxy = proxy || {};
+                if (rawProxy.filter) {
+                    proxy[rawProxy.filter] = {
+                        host: host || '127.0.0.1',
+                        message: rawProxy.message || 'Error, server is down.',
+                        port: rawProxy.port || 80,
+                    };
+                }
+                else {
+                    proxy['*'] = {
+                        host: host || '127.0.0.1',
+                        message: rawProxy.message || 'Error, server is down.',
+                        port: rawProxy.port || 80,
+                    };
+                }
+                console.log('Proxy: ', rawProxy);
+                return proxy;
+            }
             // Add the site to the index
             handle.index[site + '.david-ma.net'] = site;
             handle.index[`${site}.com`] = site;
@@ -725,23 +755,24 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                 });
             }
             if (!spam) {
-                const host = request.headers['test-host'] || request.headers.host;
-                const proxyConfig = handle.proxies[host];
+                let host = request.headers['x-host'] || request.headers.host;
+                // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
+                host = host.split(":")[0];
+                let proxyConfig = handle.proxies[host];
                 const site = handle.getWebsite(host);
                 const urlObject = url.parse(request.url, true);
+                let filterWord = url.parse(request.url).pathname.split('/')[1];
                 if (host !== 'www.monetiseyourwebsite.com') {
                     console.log();
                     console.log(`Request for ${host}${urlObject.href} At ${getDateTime()} From ${ip}`);
                 }
                 if (proxyConfig &&
-                    (typeof proxyConfig.filter === 'undefined' ||
-                        proxyConfig.filter === url.parse(request.url).pathname.split('/')[1])) {
-                    if (typeof proxyConfig.passwords !== 'undefined' &&
-                        Array.isArray(proxyConfig.passwords)) {
-                        security(proxyConfig.passwords);
+                    (proxyConfig['*'] || (filterWord && proxyConfig[filterWord]))) {
+                    if (filterWord && proxyConfig[filterWord]) {
+                        webProxy(proxyConfig[filterWord]);
                     }
                     else {
-                        webProxy(proxyConfig);
+                        webProxy(proxyConfig['*']);
                     }
                 }
                 else {
@@ -772,38 +803,6 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                 });
                 proxyServer.web(request, response);
             }
-            function security(passwords) {
-                let decodedCookiePassword = false;
-                const cookies = {};
-                if (request.headers.cookie) {
-                    request.headers.cookie.split(';').forEach(function (d) {
-                        cookies[d.split('=')[0].trim()] = d.substring(d.split('=')[0].length + 1).trim();
-                    });
-                    decodedCookiePassword = decodeBase64(cookies.password);
-                }
-                const host = request.headers['test-host'] || request.headers.host;
-                const urlObject = url.parse(request.url, true);
-                const proxyConfig = handle.proxies[host];
-                if (urlObject.query.logout) {
-                    response.setHeader('Set-Cookie', ['password=;path=/;max-age=1']);
-                    response.writeHead(200);
-                    response.end('Logged out.');
-                }
-                else if (urlObject.query.password && passwords.indexOf(urlObject.query.password) >= 0) {
-                    // console.log(url_object.query.password);
-                    const password = encodeBase64(urlObject.query.password[0]);
-                    // let password = encodeBase64(url_object.query.password);
-                    response.setHeader('Set-Cookie', [`password=${password};path=/;expires=false`]);
-                    webProxy(proxyConfig);
-                }
-                else if (decodedCookiePassword && passwords.indexOf(decodedCookiePassword) >= 0) {
-                    webProxy(proxyConfig);
-                }
-                else {
-                    response.writeHead(200);
-                    response.end(simpleLoginPage);
-                }
-            }
         }
         console.log('Server has started on port: ' + port);
         server = http.createServer(onRequest).listen(port);
@@ -812,9 +811,19 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
         socket_1.socketInit(io, handle);
         return server.on('upgrade', function (request, socket, head) {
             'use strict';
-            const host = request.headers['test-host'] || request.headers.host;
-            const proxyConfig = handle.proxies[host];
-            if (proxyConfig) {
+            let host = request.headers['x-host'] || request.headers.host;
+            // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
+            host = host.split(":")[0];
+            const proxies = handle.proxies[host];
+            let filterWord = url.parse(request.url).pathname.split('/')[1];
+            if (proxies) {
+                let proxyConfig = null;
+                if (filterWord) {
+                    proxyConfig = proxies[filterWord];
+                }
+                else {
+                    proxyConfig = proxies['*'];
+                }
                 httpProxy.createProxyServer({
                     ws: true,
                     target: {
@@ -841,47 +850,6 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
         day = (day < 10 ? '0' : '') + day;
         return year + ':' + month + ':' + day + ' ' + hour + ':' + min;
     }
-    function encodeBase64(string) {
-        'use strict';
-        // const buff = new Buffer(string)
-        const buff = Buffer.from(string);
-        return buff.toString('base64');
-    }
-    function decodeBase64(data) {
-        'use strict';
-        if (data) {
-            // const buff = new Buffer(data, 'base64')
-            const buff = Buffer.from(data, 'base64');
-            return buff.toString('ascii');
-        }
-        else {
-            return false;
-        }
-    }
-    const simpleLoginPage = `<html>
-<head>
-<title>Login</title>
-<style>
-div {
-    text-align: center;
-    width: 300px;
-    margin: 200px auto;
-    background: lightblue;
-    padding: 10px 20px;
-    border-radius: 15px;
-}
-</style>
-</head>
-<body>
-<div>
-    <h1>Enter Password</h1>
-    <form action="">
-        <input type="password" placeholder="Enter Password" name="password" autofocus required>
-        <button type="submit">Login</button>
-    </form>
-</div>
-</body>
-</html>`;
 });
 // index.ts
 if (typeof define !== 'function') {

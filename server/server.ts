@@ -71,7 +71,7 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
     function webProxy(config: Thalia.Proxy) {
       if (config.password) {
         const cookies: Cookies = getCookies(request)
-        if (decodeBase64(cookies.password) !== config.password) {
+        if (cookies.password !== encode(config.password)) {
           loginPage(config.password, config.filter)
         }
       }
@@ -106,9 +106,9 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
         const form = new formidable.IncomingForm()
         form.parse(request, (err, fields) => {
           if (fields.password && fields.password === password) {
-            const encodedPassword = encodeBase64(password)
+            const encodedPassword = encode(password)
             response.setHeader('Set-Cookie', [
-              `password=${encodedPassword};path=/;expires=false`,
+              `password=${encodedPassword};path=/;expires=${24*60*60}`,
             ])
           } else {
             response.writeHead(401)
@@ -206,22 +206,12 @@ function getCookies(request: IncomingMessage) {
   return cookies
 }
 
-function encodeBase64(string: string) {
+const salt = Math.floor(Math.random() * 999)
+function encode(string: string) {
   'use strict'
   // const buff = new Buffer(string)
   const buff = Buffer.from(string)
-  return buff.toString('base64')
-}
-
-function decodeBase64(data: any) {
-  'use strict'
-  if (data) {
-    // const buff = new Buffer(data, 'base64')
-    const buff = Buffer.from(data, 'base64')
-    return buff.toString('ascii')
-  } else {
-    return false
-  }
+  return buff.toString('base64')+salt
 }
 
 const simpleLoginPage = `<html>

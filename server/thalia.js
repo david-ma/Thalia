@@ -829,7 +829,7 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
             function webProxy(config) {
                 if (config.password) {
                     const cookies = getCookies(request);
-                    if (decodeBase64(cookies.password) !== config.password) {
+                    if (cookies.password !== encode(config.password)) {
                         loginPage(config.password, config.filter);
                     }
                 }
@@ -861,9 +861,9 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                     const form = new formidable.IncomingForm();
                     form.parse(request, (err, fields) => {
                         if (fields.password && fields.password === password) {
-                            const encodedPassword = encodeBase64(password);
+                            const encodedPassword = encode(password);
                             response.setHeader('Set-Cookie', [
-                                `password=${encodedPassword};path=/;expires=false`,
+                                `password=${encodedPassword};path=/;expires=${24 * 60 * 60}`,
                             ]);
                         }
                         else {
@@ -942,22 +942,12 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
         }
         return cookies;
     }
-    function encodeBase64(string) {
+    const salt = Math.floor(Math.random() * 999);
+    function encode(string) {
         'use strict';
         // const buff = new Buffer(string)
         const buff = Buffer.from(string);
-        return buff.toString('base64');
-    }
-    function decodeBase64(data) {
-        'use strict';
-        if (data) {
-            // const buff = new Buffer(data, 'base64')
-            const buff = Buffer.from(data, 'base64');
-            return buff.toString('ascii');
-        }
-        else {
-            return false;
-        }
+        return buff.toString('base64') + salt;
     }
     const simpleLoginPage = `<html>
 <head>

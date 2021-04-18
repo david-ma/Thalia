@@ -9,7 +9,7 @@ import httpProxy = require('http-proxy')
 import socketIO = require('socket.io')
 import formidable = require('formidable')
 
-let blacklist: any = []
+let blacklist: string[] = []
 try {
   blacklist = require('../blacklist').blacklist
   console.log('This is the blacklist:', blacklist)
@@ -20,6 +20,9 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
   let server = null
 
   function onRequest(request: IncomingMessage, response: ServerResponse) {
+    const host: string =
+      (request.headers['x-host'] as string) || request.headers.host
+
     let spam = false
 
     const ip =
@@ -28,20 +31,16 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
       request.connection.remoteAddress
 
     if (ip) {
-      blacklist.forEach(function (thing: any) {
-        if (ip.includes(thing)) {
-          spam = true
-          // console.log(`Spam request from ${ip}`);
+      if (!host || blacklist.some((thing) => ip.includes(thing))) {
+        spam = true
+        // console.log(`Spam request from ${ip}`);
 
-          response.writeHead(403)
-          response.end('Go away')
-        }
-      })
+        response.writeHead(403)
+        response.end('Go away')
+      }
     }
 
     if (!spam) {
-      const host: string =
-        (request.headers['x-host'] as string) || request.headers.host
       // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
       const hostname = host.split(':')[0]
 

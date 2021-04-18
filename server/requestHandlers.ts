@@ -277,14 +277,12 @@ const handle: Thalia.Handle = {
       handle.websites[site].dist = path.resolve(baseUrl, 'dist')
     }
 
+    // Proxy things
     if (Array.isArray(handle.websites[site].proxies)) {
       ;(<Thalia.rawProxy[]>handle.websites[site].proxies).forEach(function (
         proxy: Thalia.rawProxy
       ) {
-        // const hosts = Array.isArray(proxy.host) ? proxy.host : [proxy.host];
-        const domains = proxy.domains
-
-        domains.forEach((domain) => {
+        proxy.domains.forEach((domain) => {
           handle.proxies[domain] = makeProxy(handle.proxies[domain], proxy)
         })
       })
@@ -298,26 +296,21 @@ const handle: Thalia.Handle = {
       })
     }
 
-    function makeProxy(proxy: Thalia.Proxies, rawProxy: Thalia.rawProxy) {
-      proxy = proxy || {}
-      if (rawProxy.filter) {
-        proxy[rawProxy.filter] = {
-          host: rawProxy.host || '127.0.0.1',
-          message: rawProxy.message || 'Error, server is down.',
-          port: rawProxy.port || 80,
-          filter: rawProxy.filter,
-          password: rawProxy.password,
-        }
-      } else {
-        proxy['*'] = {
-          host: rawProxy.host || '127.0.0.1',
-          message: rawProxy.message || 'Error, server is down.',
-          port: rawProxy.port || 80,
-          filter: rawProxy.filter,
-          password: rawProxy.password,
-        }
+    function makeProxy(proxies: Thalia.Proxies, rawProxy: Thalia.rawProxy) {
+      proxies = proxies || {}
+      const proxy: Thalia.Proxy = {
+        host: rawProxy.host || '127.0.0.1',
+        message: rawProxy.message || 'Error, server is down.',
+        port: rawProxy.port || 80,
+        filter: rawProxy.filter,
+        password: rawProxy.password,
       }
-      return proxy
+      if (rawProxy.filter) {
+        proxies[rawProxy.filter] = proxy
+      } else {
+        proxies['*'] = proxy
+      }
+      return proxies
     }
 
     // Add the site to the index

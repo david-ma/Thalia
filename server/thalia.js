@@ -863,7 +863,7 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                         if (fields.password && fields.password === password) {
                             const encodedPassword = encode(password);
                             response.setHeader('Set-Cookie', [
-                                `password=${encodedPassword};path=/;expires=${24 * 60 * 60}`,
+                                `password=${encodedPassword};path=/;max-age=${24 * 60 * 60}`,
                             ]);
                         }
                         else {

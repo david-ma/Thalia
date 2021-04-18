@@ -108,7 +108,7 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
           if (fields.password && fields.password === password) {
             const encodedPassword = encode(password)
             response.setHeader('Set-Cookie', [
-              `password=${encodedPassword};path=/;expires=${24*60*60}`,
+              `password=${encodedPassword};path=/;max-age=${24 * 60 * 60}`,
             ])
           } else {
             response.writeHead(401)
@@ -211,7 +211,7 @@ function encode(string: string) {
   'use strict'
   // const buff = new Buffer(string)
   const buff = Buffer.from(string)
-  return buff.toString('base64')+salt
+  return buff.toString('base64') + salt
 }
 
 const simpleLoginPage = `<html>

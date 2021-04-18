@@ -120,7 +120,7 @@ function start (router :Thalia.Router, handle :Thalia.Handle, port :string) {
 
             response.setHeader('Set-Cookie', [`password=${encodedPassword};path=/;expires=false`])
           } else {
-            response.writeHead(403)
+            response.writeHead(401)
             response.end("Wrong password")
           }
         });

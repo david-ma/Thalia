@@ -832,7 +832,7 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                             response.setHeader('Set-Cookie', [`password=${encodedPassword};path=/;expires=false`]);
                         }
                         else {
-                            response.writeHead(403);
+                            response.writeHead(401);
                             response.end("Wrong password");
                         }
                     });

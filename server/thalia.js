@@ -830,7 +830,7 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
             function webProxy(config) {
                 if (config.password) {
                     const cookies = getCookies(request);
-                    if (cookies.password !== encode(config.password)) {
+                    if (cookies[`password${config.filter || ''}`] !== encode(config.password)) {
                         loginPage(config.password, config.filter);
                         return;
                     }
@@ -865,7 +865,7 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                         if (fields.password && fields.password === password) {
                             const encodedPassword = encode(password);
                             response.setHeader('Set-Cookie', [
-                                `password=${encodedPassword};path=/;max-age=${24 * 60 * 60}`,
+                                `password${filter || ''}=${encodedPassword};path=/;max-age=${24 * 60 * 60}`,
                             ]);
                             const url = `//${host}/${filter || ''}`;
                             response.writeHead(303, { 'Content-Type': 'text/html' });

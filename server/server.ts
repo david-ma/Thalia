@@ -72,7 +72,7 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
     function webProxy(config: Thalia.Proxy) {
       if (config.password) {
         const cookies: Cookies = getCookies(request)
-        if (cookies.password !== encode(config.password)) {
+        if (cookies[`password${config.filter || ''}`] !== encode(config.password)) {
           loginPage(config.password, config.filter)
           return
         }
@@ -110,7 +110,7 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
           if (fields.password && fields.password === password) {
             const encodedPassword = encode(password)
             response.setHeader('Set-Cookie', [
-              `password=${encodedPassword};path=/;max-age=${24 * 60 * 60}`,
+              `password${filter || ''}=${encodedPassword};path=/;max-age=${24 * 60 * 60}`,
             ])
             const url = `//${host}/${filter || ''}`
 

@@ -565,7 +565,8 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
             if (typeof url === 'string') {
                 console.log('Forwarding user to: ' + url);
                 response.writeHead(303, { 'Content-Type': 'text/html' });
-                response.end('<meta http-equiv="refresh" content="0; url=' + url + '">');
+                response.end(`<html><head><meta http-equiv="refresh" content="0;url='${url}'"></head>
+<body>Redirecting to: <a href='${url}'>${url}</a></body></html>`);
             }
             else {
                 console.log('Error, url missing');
@@ -789,22 +790,20 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
     function start(router, handle, port) {
         let server = null;
         function onRequest(request, response) {
+            const host = request.headers['x-host'] || request.headers.host;
             let spam = false;
             const ip = request.headers['X-Real-IP'] ||
                 request.headers['x-real-ip'] ||
                 request.connection.remoteAddress;
             if (ip) {
-                blacklist.forEach(function (thing) {
-                    if (ip.includes(thing)) {
-                        spam = true;
-                        // console.log(`Spam request from ${ip}`);
-                        response.writeHead(403);
-                        response.end('Go away');
-                    }
-                });
+                if (!host || blacklist.some((thing) => ip.includes(thing))) {
+                    spam = true;
+                    // console.log(`Spam request from ${ip}`);
+                    response.writeHead(403);
+                    response.end('Go away');
+                }
             }
             if (!spam) {
-                const host = request.headers['x-host'] || request.headers.host;
                 // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
                 const hostname = host.split(':')[0];
                 const site = handle.getWebsite(hostname);
@@ -833,6 +832,7 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                     const cookies = getCookies(request);
                     if (cookies.password !== encode(config.password)) {
                         loginPage(config.password, config.filter);
+                        return;
                     }
                 }
                 const message = config.message || 'Error, server is down.';
@@ -867,6 +867,10 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                             response.setHeader('Set-Cookie', [
                                 `password=${encodedPassword};path=/;max-age=${24 * 60 * 60}`,
                             ]);
+                            const url = `//${host}/${filter || ''}`;
+                            response.writeHead(303, { 'Content-Type': 'text/html' });
+                            response.end(`<html><head><meta http-equiv="refresh" content="0;url='${url}'"></head>
+<body>Login Successful, redirecting to: <a href='${url}'>${url}</a></body></html>`);
                         }
                         else {
                             response.writeHead(401);

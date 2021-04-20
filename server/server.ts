@@ -74,6 +74,7 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
         const cookies: Cookies = getCookies(request)
         if (cookies.password !== encode(config.password)) {
           loginPage(config.password, config.filter)
+          return
         }
       }
 
@@ -111,6 +112,13 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
             response.setHeader('Set-Cookie', [
               `password=${encodedPassword};path=/;max-age=${24 * 60 * 60}`,
             ])
+            const url = `//${host}/${filter || ''}`
+
+            response.writeHead(303, { 'Content-Type': 'text/html' })
+            response.end(
+              `<html><head><meta http-equiv="refresh" content="0;url='${url}'"></head>
+<body>Login Successful, redirecting to: <a href='${url}'>${url}</a></body></html>`
+            )
           } else {
             response.writeHead(401)
             response.end('Wrong password')

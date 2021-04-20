@@ -179,7 +179,10 @@ const router: Thalia.Router = function (
     if (typeof url === 'string') {
       console.log('Forwarding user to: ' + url)
       response.writeHead(303, { 'Content-Type': 'text/html' })
-      response.end('<meta http-equiv="refresh" content="0; url=' + url + '">')
+      response.end(
+        `<html><head><meta http-equiv="refresh" content="0;url='${url}'"></head>
+<body>Redirecting to: <a href='${url}'>${url}</a></body></html>`
+      )
     } else {
       console.log('Error, url missing')
       response.writeHead(501, { 'Content-Type': 'text/plain' })

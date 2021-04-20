@@ -47,6 +47,7 @@ async function getLinks(site, page = '') {
     return new Promise((resolve, reject) => {
         http.get(`${URL}/${page}`, {
             headers: {
+                'x-host': `${site}.david-ma.net`,
                 'test-host': `${site}.david-ma.net`
             }
         }, function (res) {
@@ -84,6 +85,7 @@ async function checkLinks(site, links) {
             if (requester) {
                 requester.get(link, {
                     headers: {
+                        'x-host': `${site}.david-ma.net`,
                         'test-host': `${site}.david-ma.net`
                     }
                 }, function (response) {
@@ -133,6 +135,7 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
                 browser.newPage().then(page => {
                     promises = [
                         page.setExtraHTTPHeaders({
+                            'x-host': `${site}.david-ma.net`,
                             'test-host': `${site}.david-ma.net`
                         }),
                         page.setViewport({ width: 414, height: 2500, isMobile: true })

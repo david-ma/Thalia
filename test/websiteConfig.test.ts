@@ -7,7 +7,12 @@ const xray = require('x-ray')()
 const jestConfig: any = require('../jest.config')
 
 import type { Thalia } from '../server/thalia'
-import { Website } from '../server/requestHandlers'
+
+const consoleLog = console.log
+console.log = jest.fn()
+import { handle } from '../server/requestHandlers'
+handle.loadAllWebsites()
+console.log = consoleLog
 
 const URL = jestConfig.globals.URL
 
@@ -42,21 +47,26 @@ Object.keys(configPaths)
     try {
       const configPath = configPaths[site]
       websites[site] = require('../' + configPath).config
+      // handle.addWebsite(site, websites[site])
     } catch (e) {
+      console.log(`Error in ${site}!`)
       console.error(e)
     }
   })
 
 // Tests:
 const itif = (condition: any) => (condition ? it : it.skip)
+const xitif = (condition: any) => (condition ? it.skip : it.skip)
 describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   let config: Thalia.WebsiteConfig
   test(`Config.js can be opened?`, () => {
     return new Promise((resolve, reject) => {
       try {
-        const configPath = configPaths[site]
-        config = require('../' + configPath).config
-        config = new Website(site, config)
+        config = handle.websites[site]
+        // config = handle.websites[site]
+        // const configPath = configPaths[site]
+        // config = require('../' + configPath).config
+        // config = new Website(site, config)
         resolve(true)
       } catch (e) {
         reject()
@@ -65,7 +75,7 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   })
 
   itif(websites[site].domains)(`Website Domains`, () => {
-    websites[site].domains.forEach((domain) => {
+    config.domains.forEach((domain) => {
       expect(validURL(domain)).toBe(true)
     })
 
@@ -83,7 +93,7 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     }
   })
 
-  test(`public folder`, () => {
+  test(`Public Folder`, () => {
     return new Promise((resolve, reject) => {
       fs.access(config.folder, (err) => {
         if (err) reject(`Can't access public folder for ${site}`)
@@ -92,18 +102,58 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     })
   })
 
-  itif(websites[site].data)(`${site} data folder`, () => {
+  // Audit usage of features?
+  itif(websites[site].sockets)(`Sockets Used`, () => {})
+  itif(websites[site].proxies)(`Proxies Used`, () => {})
+  itif(websites[site].pages)(`Pages Used`, () => {})
+  itif(websites[site].redirects)(`Redirects Used`, () => {})
+  itif(handle.websites[site].views)(`Views Used`, () => {
+    console.log(`This website ${site} uses views`)
+  })
+  it('views used', () => {
+    console.log(`${site} views: `, handle.websites[site].views)
+  })
+
+  // itif(websites[site].viewableFolders)(`viewable Folders`, () => {})
+
+  /**
+   * To do:
+   * - Proxies
+   * - Redirects
+   * - Pages
+   * - Publish
+   * - Sockets
+   * - publish??? Only used in truestores. Possibly remove it?
+   * - views
+   * security
+   * sequalize????
+   *
+   *
+   *  */
+
+  // Dist should depend on src
+  // itif(websites[site].dist)(`${site} dist folder`, () => {
+  //   return new Promise((resolve, reject) => {
+  //     fs.access(`websites/${site}/dist`, (err) => {
+  //       if (err) reject(`No dist folder for ${site}`)
+  //       resolve(true)
+  //     })
+  //   })
+  // })
+
+  // itif(handle.getWebsite(site).data)(`${site} data folder`, () => {
+  itif(handle.websites[site].data)(`${site} data folder`, () => {
     return new Promise((resolve, reject) => {
       fs.access(`websites/${site}/data`, (err) => {
-        if (err) reject(`Can't access folder for ${site}`)
+        if (err) reject(`Can't access data folder for ${site}`)
         resolve(true)
       })
     })
   })
 })
 
-describe("unused stuff", () => {
-  it("always pass", () => {
+describe('unused stuff', () => {
+  it('always pass', () => {
     expect(true).toBe(true)
   })
 
@@ -117,7 +167,6 @@ describe("unused stuff", () => {
     asyncForEach([], function () {})
   })
 })
-
 
 function findSiteConfig(site: string): string {
   if (fs.existsSync(`websites/${site}/config.js`))

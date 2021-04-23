@@ -110,7 +110,7 @@ export declare namespace Thalia {
       loginNeeded: any
     }
     views?: any
-    viewableFolders?: boolean | Array<any>
+    viewableFolders?: boolean | Array<string>
     seq?: SequelizeWrapper
     readAllViews?: {
       (callback: any): void

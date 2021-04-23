@@ -7,7 +7,11 @@ const http = require("http");
 const https = require("https");
 const xray = require('x-ray')();
 const jestConfig = require('../jest.config');
+const consoleLog = console.log;
+console.log = jest.fn();
 const requestHandlers_1 = require("../server/requestHandlers");
+requestHandlers_1.handle.loadAllWebsites();
+console.log = consoleLog;
 const URL = jestConfig.globals.URL;
 let configPaths = {};
 let websites = {};
@@ -32,21 +36,26 @@ Object.keys(configPaths)
     try {
         const configPath = configPaths[site];
         websites[site] = require('../' + configPath).config;
+        // handle.addWebsite(site, websites[site])
     }
     catch (e) {
+        console.log(`Error in ${site}!`);
         console.error(e);
     }
 });
 // Tests:
 const itif = (condition) => (condition ? it : it.skip);
+const xitif = (condition) => (condition ? it.skip : it.skip);
 globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     let config;
     globals_1.test(`Config.js can be opened?`, () => {
         return new Promise((resolve, reject) => {
             try {
-                const configPath = configPaths[site];
-                config = require('../' + configPath).config;
-                config = new requestHandlers_1.Website(site, config);
+                config = requestHandlers_1.handle.websites[site];
+                // config = handle.websites[site]
+                // const configPath = configPaths[site]
+                // config = require('../' + configPath).config
+                // config = new Website(site, config)
                 resolve(true);
             }
             catch (e) {
@@ -55,7 +64,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
         });
     });
     itif(websites[site].domains)(`Website Domains`, () => {
-        websites[site].domains.forEach((domain) => {
+        config.domains.forEach((domain) => {
             globals_1.expect(validURL(domain)).toBe(true);
         });
         function validURL(str) {
@@ -68,7 +77,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
             return !!pattern.test(str);
         }
     });
-    globals_1.test(`public folder`, () => {
+    globals_1.test(`Public Folder`, () => {
         return new Promise((resolve, reject) => {
             fs.access(config.folder, (err) => {
                 if (err)
@@ -77,18 +86,54 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
             });
         });
     });
-    itif(websites[site].data)(`${site} data folder`, () => {
+    // Audit usage of features?
+    itif(websites[site].sockets)(`Sockets Used`, () => { });
+    itif(websites[site].proxies)(`Proxies Used`, () => { });
+    itif(websites[site].pages)(`Pages Used`, () => { });
+    itif(websites[site].redirects)(`Redirects Used`, () => { });
+    itif(requestHandlers_1.handle.websites[site].views)(`Views Used`, () => {
+        console.log(`This website ${site} uses views`);
+    });
+    it('views used', () => {
+        console.log(`${site} views: `, requestHandlers_1.handle.websites[site].views);
+    });
+    // itif(websites[site].viewableFolders)(`viewable Folders`, () => {})
+    /**
+     * To do:
+     * - Proxies
+     * - Redirects
+     * - Pages
+     * - Publish
+     * - Sockets
+     * - publish??? Only used in truestores. Possibly remove it?
+     * - views
+     * security
+     * sequalize????
+     *
+     *
+     *  */
+    // Dist should depend on src
+    // itif(websites[site].dist)(`${site} dist folder`, () => {
+    //   return new Promise((resolve, reject) => {
+    //     fs.access(`websites/${site}/dist`, (err) => {
+    //       if (err) reject(`No dist folder for ${site}`)
+    //       resolve(true)
+    //     })
+    //   })
+    // })
+    // itif(handle.getWebsite(site).data)(`${site} data folder`, () => {
+    itif(requestHandlers_1.handle.websites[site].data)(`${site} data folder`, () => {
         return new Promise((resolve, reject) => {
             fs.access(`websites/${site}/data`, (err) => {
                 if (err)
-                    reject(`Can't access folder for ${site}`);
+                    reject(`Can't access data folder for ${site}`);
                 resolve(true);
             });
         });
     });
 });
-globals_1.describe("unused stuff", () => {
-    it("always pass", () => {
+globals_1.describe('unused stuff', () => {
+    it('always pass', () => {
         globals_1.expect(true).toBe(true);
     });
     xit('Avoid unused stuff', () => {

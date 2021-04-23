@@ -33,7 +33,7 @@ class Website implements Thalia.WebsiteConfig {
     loginNeeded: any
   }
 
-  viewableFolders: boolean | Array<any>
+  viewableFolders: boolean | Array<string>
   seq: Thalia.SequelizeWrapper
   readAllViews: {
     (callback: any): void

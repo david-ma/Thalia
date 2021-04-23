@@ -52,6 +52,20 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
             }
         });
     });
+    itif(websites[site].domains)(`Website Domains`, () => {
+        websites[site].domains.forEach((domain) => {
+            globals_1.expect(validURL(domain)).toBe(true);
+        });
+        function validURL(str) {
+            var pattern = new RegExp('^(https?:\\/\\/)?' + // protocol
+                '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
+                '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
+                '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
+                '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
+                '(\\#[-a-z\\d_]*)?$', 'i'); // fragment locator
+            return !!pattern.test(str);
+        }
+    });
     itif(websites[site].data)(`${site} data folder`, () => {
         return new Promise((resolve, reject) => {
             fs.access(`websites/${site}/data`, (err) => {

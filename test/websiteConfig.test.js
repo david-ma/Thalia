@@ -209,7 +209,8 @@ async function checkLinks(links) {
             if (requester) {
                 requester
                     .get(link, {}, function (response) {
-                    if (response.statusCode !== 200) {
+                    const allowedStatusCodes = [200, 301, 302, 303];
+                    if (allowedStatusCodes.indexOf(response.statusCode) === -1) {
                         done(`${response.statusCode} - ${link}`);
                     }
                     else {

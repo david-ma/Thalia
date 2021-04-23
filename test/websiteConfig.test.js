@@ -8,12 +8,27 @@ const https = require("https");
 const xray = require('x-ray')();
 const jestConfig = require('../jest.config');
 const URL = jestConfig.globals.URL;
-let websites = [];
+let websites = {};
 if (process.env.SITE && process.env.SITE !== 'all') {
-    websites = [process.env.SITE];
+    websites = {
+        [process.env.SITE]: findSiteConfig(process.env.SITE),
+    };
 }
 else {
-    websites = fs.readdirSync('websites/').filter(d => d !== '.DS_Store'); // .map( d =>  [[d],[]]);
+    const websiteArray = fs
+        .readdirSync('websites/')
+        .filter((d) => d !== '.DS_Store');
+    websites = websiteArray.reduce((acc, site) => {
+        acc[site] = findSiteConfig(site);
+        return acc;
+    }, {});
+}
+function findSiteConfig(site) {
+    if (fs.existsSync(`websites/${site}/config.js`))
+        return `websites/${site}/config.js`;
+    if (fs.existsSync(`websites/${site}/config/config.js`))
+        `websites/${site}/config/config.js`;
+    return '';
 }
 // Asynchronous for each, doing a limited number of things at a time. Pool of resources.
 async function asyncForEach(array, callback, limit = 5) {
@@ -21,11 +36,13 @@ async function asyncForEach(array, callback, limit = 5) {
         let i = 0;
         let happening = 0;
         const errorMessages = [];
-        for (; i < limit; i++) { // Launch a limited number of things
+        for (; i < limit; i++) {
+            // Launch a limited number of things
             happening++;
             doNextThing(i);
         }
         function doNextThing(index) {
+            // Each thing calls back "done" and starts the next
             if (array[index]) {
                 callback(array[index], function done(message) {
                     if (message)
@@ -42,10 +59,10 @@ async function asyncForEach(array, callback, limit = 5) {
     });
 }
 let storage = {};
-const itif = (condition) => condition ? it : it.skip;
-globals_1.describe.each(websites)('Testing config of %s', (site) => {
-    let config = false;
-    it(`${site} has a config?`, () => {
+const itif = (condition) => (condition ? it : it.skip);
+globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) => {
+    let config;
+    xit(`${site} has a config?`, () => {
         return new Promise((resolve, reject) => {
             if (fs.existsSync(`websites/${site}/config.js`)) {
                 config = storage[site] = `websites/${site}/config.js`;
@@ -62,13 +79,9 @@ globals_1.describe.each(websites)('Testing config of %s', (site) => {
             }
         });
     });
-    globals_1.test(`${site} config`, () => {
+    itif(websites[site])(`${site} config`, () => {
         return new Promise((resolve, reject) => {
-            if (!config) {
-                it.skip("asdf", () => { });
-                console.warn("Skipping test");
-                resolve("SKIP");
-            }
+            const config = websites[site];
             console.log(config);
             globals_1.expect(true).toBe(true);
             // expect(storage[site])

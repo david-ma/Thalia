@@ -612,7 +612,7 @@
         "affectsGlobalScope": false
       },
       "./websiteconfig.test.ts": {
-        "version": "61464112eae069de94c64d4adcc5dc0179853a264c2a55bc3f0f12155bb60873",
+        "version": "f65692303ec0663eec6b6b6044b2803bcd8777f099ab4fffd4c76ba26add8c7f",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
         "affectsGlobalScope": false
       },
@@ -2728,9 +2728,9 @@
         [
           {
             "file": "./websiteconfig.test.ts",
-            "start": 1504,
-            "length": 4,
-            "messageText": "'itif' is declared but its value is never read.",
+            "start": 2204,
+            "length": 6,
+            "messageText": "'config' is declared but its value is never read.",
             "category": 1,
             "code": 6133,
             "reportsUnnecessary": true

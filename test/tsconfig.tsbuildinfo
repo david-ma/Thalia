@@ -611,8 +611,38 @@
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
         "affectsGlobalScope": false
       },
+      "../node_modules/@types/mustache/index.d.ts": {
+        "version": "e02e9cd5036228fc8b1273da2979179b39cfb9490982d2219445c812cf590797",
+        "signature": "e02e9cd5036228fc8b1273da2979179b39cfb9490982d2219445c812cf590797",
+        "affectsGlobalScope": false
+      },
+      "../server/requesthandlers.ts": {
+        "version": "c65772ea4fe8d81db9d86549274cf9b405446279c9c4ae5a0a081b96f1e16fc8",
+        "signature": "1bd9b3c513315b721c0cea60e37362fcc2ea157f6c9e77ca42c5933d59d37d19",
+        "affectsGlobalScope": false
+      },
+      "../node_modules/@types/engine.io/index.d.ts": {
+        "version": "854089953b8bdf60437d229c41544eb8fd374206b49f99647298ff7824f4932e",
+        "signature": "854089953b8bdf60437d229c41544eb8fd374206b49f99647298ff7824f4932e",
+        "affectsGlobalScope": false
+      },
+      "../node_modules/@types/socket.io-parser/index.d.ts": {
+        "version": "8487571622eefb9421499874014fa1cc0898bd15724565002a27b67d8e285072",
+        "signature": "8487571622eefb9421499874014fa1cc0898bd15724565002a27b67d8e285072",
+        "affectsGlobalScope": false
+      },
+      "../node_modules/@types/socket.io/index.d.ts": {
+        "version": "bed35c3ddd0ffc1a8e0fe9dcf83c7b2e0e2900de26405012aaf3724e8fd1a42d",
+        "signature": "bed35c3ddd0ffc1a8e0fe9dcf83c7b2e0e2900de26405012aaf3724e8fd1a42d",
+        "affectsGlobalScope": false
+      },
+      "../server/thalia.d.ts": {
+        "version": "23b6f7cbb52b918d72692e7e9d01549ac492626598992c2d805ab352e6c98a3e",
+        "signature": "23b6f7cbb52b918d72692e7e9d01549ac492626598992c2d805ab352e6c98a3e",
+        "affectsGlobalScope": false
+      },
       "./websiteconfig.test.ts": {
-        "version": "f65692303ec0663eec6b6b6044b2803bcd8777f099ab4fffd4c76ba26add8c7f",
+        "version": "8ca46252ba3c7da69c8a29d46edb3269b2434f284f64e980324cdefb4d17e5c6",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
         "affectsGlobalScope": false
       },
@@ -891,11 +921,6 @@
         "signature": "310c4f4f0ea7174f45ff9451409dd6dbb7ffad13a368c8480ad79190c26038d7",
         "affectsGlobalScope": true
       },
-      "../node_modules/@types/engine.io/index.d.ts": {
-        "version": "854089953b8bdf60437d229c41544eb8fd374206b49f99647298ff7824f4932e",
-        "signature": "854089953b8bdf60437d229c41544eb8fd374206b49f99647298ff7824f4932e",
-        "affectsGlobalScope": false
-      },
       "../node_modules/@types/formidable/index.d.ts": {
         "version": "8b0ce3abe306a564d0b5e7f1c07c9347515c500bcb7e0786edfbeef6f55b05b8",
         "signature": "8b0ce3abe306a564d0b5e7f1c07c9347515c500bcb7e0786edfbeef6f55b05b8",
@@ -1006,11 +1031,6 @@
         "signature": "be27a64e821a3e5af838650e4aa25805c60f057d0c37a9762c378d19d364b3e6",
         "affectsGlobalScope": false
       },
-      "../node_modules/@types/mustache/index.d.ts": {
-        "version": "e02e9cd5036228fc8b1273da2979179b39cfb9490982d2219445c812cf590797",
-        "signature": "e02e9cd5036228fc8b1273da2979179b39cfb9490982d2219445c812cf590797",
-        "affectsGlobalScope": false
-      },
       "../node_modules/@types/normalize-package-data/index.d.ts": {
         "version": "c9ad058b2cc9ce6dc2ed92960d6d009e8c04bef46d3f5312283debca6869f613",
         "signature": "c9ad058b2cc9ce6dc2ed92960d6d009e8c04bef46d3f5312283debca6869f613",
@@ -1044,16 +1064,6 @@
       "../node_modules/@types/showdown/index.d.ts": {
         "version": "2f5663a907b70a487ca1541607b72fb58a627d78d1a3b94ec6df15fa9a4266b3",
         "signature": "2f5663a907b70a487ca1541607b72fb58a627d78d1a3b94ec6df15fa9a4266b3",
-        "affectsGlobalScope": false
-      },
-      "../node_modules/@types/socket.io-parser/index.d.ts": {
-        "version": "8487571622eefb9421499874014fa1cc0898bd15724565002a27b67d8e285072",
-        "signature": "8487571622eefb9421499874014fa1cc0898bd15724565002a27b67d8e285072",
-        "affectsGlobalScope": false
-      },
-      "../node_modules/@types/socket.io/index.d.ts": {
-        "version": "bed35c3ddd0ffc1a8e0fe9dcf83c7b2e0e2900de26405012aaf3724e8fd1a42d",
-        "signature": "bed35c3ddd0ffc1a8e0fe9dcf83c7b2e0e2900de26405012aaf3724e8fd1a42d",
         "affectsGlobalScope": false
       },
       "../node_modules/@types/socket.io-client/index.d.ts": {
@@ -1789,6 +1799,17 @@
         "../node_modules/@types/node/child_process.d.ts",
         "../node_modules/@types/node/index.d.ts"
       ],
+      "../server/requesthandlers.ts": [
+        "../node_modules/@types/mustache/index.d.ts",
+        "../node_modules/@types/node/fs.d.ts",
+        "../node_modules/@types/node/path.d.ts",
+        "../server/thalia.d.ts"
+      ],
+      "../server/thalia.d.ts": [
+        "../node_modules/@types/node/http.d.ts",
+        "../node_modules/@types/socket.io/index.d.ts",
+        "../server/requesthandlers.ts"
+      ],
       "./frontend.test.ts": [
         "../node_modules/@jest/globals/build/index.d.ts",
         "../node_modules/@types/node/fs.d.ts",
@@ -1804,7 +1825,8 @@
         "../node_modules/@types/node/fs.d.ts",
         "../node_modules/@types/node/http.d.ts",
         "../node_modules/@types/node/https.d.ts",
-        "../node_modules/puppeteer/lib/types.d.ts"
+        "../node_modules/puppeteer/lib/types.d.ts",
+        "../server/thalia.d.ts"
       ]
     },
     "exportedModulesMap": {
@@ -2506,6 +2528,14 @@
       "../node_modules/puppeteer/lib/types.d.ts": [
         "../node_modules/@types/node/child_process.d.ts",
         "../node_modules/@types/node/index.d.ts"
+      ],
+      "../server/requesthandlers.ts": [
+        "../server/thalia.d.ts"
+      ],
+      "../server/thalia.d.ts": [
+        "../node_modules/@types/node/http.d.ts",
+        "../node_modules/@types/socket.io/index.d.ts",
+        "../server/requesthandlers.ts"
       ]
     },
     "semanticDiagnosticsPerFile": [
@@ -2721,6 +2751,8 @@
       "../node_modules/pretty-format/build/index.d.ts",
       "../node_modules/pretty-format/build/types.d.ts",
       "../node_modules/puppeteer/lib/types.d.ts",
+      "../server/requesthandlers.ts",
+      "../server/thalia.d.ts",
       "./frontend.test.ts",
       "./puppeteer.ts",
       [
@@ -2728,7 +2760,7 @@
         [
           {
             "file": "./websiteconfig.test.ts",
-            "start": 2204,
+            "start": 1009,
             "length": 6,
             "messageText": "'config' is declared but its value is never read.",
             "category": 1,

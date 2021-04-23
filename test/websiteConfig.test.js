@@ -8,9 +8,9 @@ const https = require("https");
 const xray = require('x-ray')();
 const jestConfig = require('../jest.config');
 const URL = jestConfig.globals.URL;
-let websites = {};
+let configPaths = {};
 if (process.env.SITE && process.env.SITE !== 'all') {
-    websites = {
+    configPaths = {
         [process.env.SITE]: findSiteConfig(process.env.SITE),
     };
 }
@@ -18,11 +18,43 @@ else {
     const websiteArray = fs
         .readdirSync('websites/')
         .filter((d) => d !== '.DS_Store');
-    websites = websiteArray.reduce((acc, site) => {
+    configPaths = websiteArray.reduce((acc, site) => {
         acc[site] = findSiteConfig(site);
         return acc;
     }, {});
 }
+// const itif = (condition: any) => (condition ? it : it.skip)
+globals_1.describe.each(Object.keys(configPaths).filter((site) => configPaths[site]))('Testing config of %s', (site) => {
+    let config;
+    globals_1.test(`Read ${site} config?`, () => {
+        return new Promise((resolve, reject) => {
+            try {
+                const configPath = configPaths[site];
+                config = require('../' + configPath).config;
+                resolve(true);
+            }
+            catch (e) {
+                reject();
+            }
+        });
+    });
+    xtest(`${site} config`, () => {
+        return new Promise((resolve, reject) => {
+            globals_1.expect(true).toBe(true);
+            // expect(storage[site])
+            resolve(true);
+        });
+    });
+    xit('asdf', () => {
+        console.log(URL);
+        console.log(xray);
+        console.log(puppeteer);
+        console.log(http);
+        console.log(https);
+        console.log(globals_1.test);
+        asyncForEach([], function () { });
+    });
+});
 function findSiteConfig(site) {
     if (fs.existsSync(`websites/${site}/config.js`))
         return `websites/${site}/config.js`;
@@ -58,47 +90,3 @@ async function asyncForEach(array, callback, limit = 5) {
         }
     });
 }
-let storage = {};
-const itif = (condition) => (condition ? it : it.skip);
-globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) => {
-    let config;
-    xit(`${site} has a config?`, () => {
-        return new Promise((resolve, reject) => {
-            if (fs.existsSync(`websites/${site}/config.js`)) {
-                config = storage[site] = `websites/${site}/config.js`;
-                resolve(true);
-            }
-            else {
-                if (fs.existsSync(`websites/${site}/config/config.js`)) {
-                    config = storage[site] = `websites/${site}/config/config.js`;
-                    resolve(true);
-                }
-                else {
-                    resolve(true);
-                }
-            }
-        });
-    });
-    itif(websites[site])(`${site} config`, () => {
-        return new Promise((resolve, reject) => {
-            const config = websites[site];
-            console.log(config);
-            globals_1.expect(true).toBe(true);
-            // expect(storage[site])
-            resolve(true);
-        });
-    });
-    // itif(true)(`blahhh ${site} xxx`, () => {
-    //   expect(true).toBe(true)
-    //   // expect(storage[site])
-    // })
-    xit('asdf', () => {
-        console.log(URL);
-        console.log(xray);
-        console.log(puppeteer);
-        console.log(http);
-        console.log(https);
-        console.log(globals_1.test);
-        asyncForEach([], function () { });
-    });
-});

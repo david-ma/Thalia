@@ -642,7 +642,7 @@
         "affectsGlobalScope": false
       },
       "./websiteconfig.test.ts": {
-        "version": "8ca46252ba3c7da69c8a29d46edb3269b2434f284f64e980324cdefb4d17e5c6",
+        "version": "db083c5f81b3fcae2b7c2e19b2db39d7e7a76a436c14acfd95030193de28688e",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
         "affectsGlobalScope": false
       },
@@ -2760,7 +2760,16 @@
         [
           {
             "file": "./websiteconfig.test.ts",
-            "start": 1009,
+            "start": 58,
+            "length": 6,
+            "messageText": "'expect' is declared but its value is never read.",
+            "category": 1,
+            "code": 6133,
+            "reportsUnnecessary": true
+          },
+          {
+            "file": "./websiteconfig.test.ts",
+            "start": 1291,
             "length": 6,
             "messageText": "'config' is declared but its value is never read.",
             "category": 1,

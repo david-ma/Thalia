@@ -9,6 +9,8 @@ const xray = require('x-ray')();
 const jestConfig = require('../jest.config');
 const URL = jestConfig.globals.URL;
 let configPaths = {};
+let websites = {};
+// Setup:
 if (process.env.SITE && process.env.SITE !== 'all') {
     configPaths = {
         [process.env.SITE]: findSiteConfig(process.env.SITE),
@@ -23,10 +25,22 @@ else {
         return acc;
     }, {});
 }
-// const itif = (condition: any) => (condition ? it : it.skip)
-globals_1.describe.each(Object.keys(configPaths).filter((site) => configPaths[site]))('Testing config of %s', (site) => {
+Object.keys(configPaths)
+    .filter((site) => configPaths[site])
+    .forEach((site) => {
+    try {
+        const configPath = configPaths[site];
+        websites[site] = require('../' + configPath).config;
+    }
+    catch (e) {
+        console.error(e);
+    }
+});
+// Tests:
+const itif = (condition) => (condition ? it : it.skip);
+globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     let config;
-    globals_1.test(`Read ${site} config?`, () => {
+    globals_1.test(`Config.js can be opened?`, () => {
         return new Promise((resolve, reject) => {
             try {
                 const configPath = configPaths[site];
@@ -38,28 +52,30 @@ globals_1.describe.each(Object.keys(configPaths).filter((site) => configPaths[si
             }
         });
     });
-    xtest(`${site} config`, () => {
+    itif(websites[site].data)(`${site} data folder`, () => {
         return new Promise((resolve, reject) => {
-            globals_1.expect(true).toBe(true);
-            // expect(storage[site])
-            resolve(true);
+            fs.access(`websites/${site}/data`, (err) => {
+                if (err)
+                    reject(`No data folder for ${site}`);
+                resolve(true);
+            });
         });
     });
-    xit('asdf', () => {
-        console.log(URL);
-        console.log(xray);
-        console.log(puppeteer);
-        console.log(http);
-        console.log(https);
-        console.log(globals_1.test);
-        asyncForEach([], function () { });
-    });
+});
+xit('Avoid unused stuff', () => {
+    console.log(URL);
+    console.log(xray);
+    console.log(puppeteer);
+    console.log(http);
+    console.log(https);
+    console.log(globals_1.test);
+    asyncForEach([], function () { });
 });
 function findSiteConfig(site) {
     if (fs.existsSync(`websites/${site}/config.js`))
         return `websites/${site}/config.js`;
     if (fs.existsSync(`websites/${site}/config/config.js`))
-        `websites/${site}/config/config.js`;
+        return `websites/${site}/config/config.js`;
     return '';
 }
 // Asynchronous for each, doing a limited number of things at a time. Pool of resources.

@@ -7,6 +7,7 @@ const xray = require('x-ray')()
 const jestConfig: any = require('../jest.config')
 
 import type { Thalia } from '../server/thalia'
+import { Website } from '../server/requestHandlers'
 
 const URL = jestConfig.globals.URL
 
@@ -55,6 +56,7 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
       try {
         const configPath = configPaths[site]
         config = require('../' + configPath).config
+        config = new Website(site, config)
         resolve(true)
       } catch (e) {
         reject()
@@ -81,25 +83,41 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     }
   })
 
+  test(`public folder`, () => {
+    return new Promise((resolve, reject) => {
+      fs.access(config.folder, (err) => {
+        if (err) reject(`Can't access public folder for ${site}`)
+        resolve(true)
+      })
+    })
+  })
+
   itif(websites[site].data)(`${site} data folder`, () => {
     return new Promise((resolve, reject) => {
       fs.access(`websites/${site}/data`, (err) => {
-        if (err) reject(`No data folder for ${site}`)
+        if (err) reject(`Can't access folder for ${site}`)
         resolve(true)
       })
     })
   })
 })
 
-xit('Avoid unused stuff', () => {
-  console.log(URL)
-  console.log(xray)
-  console.log(puppeteer)
-  console.log(http)
-  console.log(https)
-  console.log(test)
-  asyncForEach([], function () {})
+describe("unused stuff", () => {
+  it("always pass", () => {
+    expect(true).toBe(true)
+  })
+
+  xit('Avoid unused stuff', () => {
+    console.log(URL)
+    console.log(xray)
+    console.log(puppeteer)
+    console.log(http)
+    console.log(https)
+    console.log(test)
+    asyncForEach([], function () {})
+  })
 })
+
 
 function findSiteConfig(site: string): string {
   if (fs.existsSync(`websites/${site}/config.js`))

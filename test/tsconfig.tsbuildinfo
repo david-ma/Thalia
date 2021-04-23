@@ -642,7 +642,7 @@
         "affectsGlobalScope": false
       },
       "./websiteconfig.test.ts": {
-        "version": "c383ffb490b407ef15e1b6150cd1db220873b50bc485832dc9e887d5bb6e92e2",
+        "version": "9ed187380bfd642007902c33e0c0aa30cbe342e73913afb56f439aa549047929",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
         "affectsGlobalScope": false
       },
@@ -1826,6 +1826,7 @@
         "../node_modules/@types/node/http.d.ts",
         "../node_modules/@types/node/https.d.ts",
         "../node_modules/puppeteer/lib/types.d.ts",
+        "../server/requesthandlers.ts",
         "../server/thalia.d.ts"
       ]
     },
@@ -2755,20 +2756,7 @@
       "../server/thalia.d.ts",
       "./frontend.test.ts",
       "./puppeteer.ts",
-      [
-        "./websiteconfig.test.ts",
-        [
-          {
-            "file": "./websiteconfig.test.ts",
-            "start": 1291,
-            "length": 6,
-            "messageText": "'config' is declared but its value is never read.",
-            "category": 1,
-            "code": 6133,
-            "reportsUnnecessary": true
-          }
-        ]
-      ]
+      "./websiteconfig.test.ts"
     ]
   },
   "version": "4.2.3"

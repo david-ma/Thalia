@@ -7,6 +7,7 @@ const http = require("http");
 const https = require("https");
 const xray = require('x-ray')();
 const jestConfig = require('../jest.config');
+const requestHandlers_1 = require("../server/requestHandlers");
 const URL = jestConfig.globals.URL;
 let configPaths = {};
 let websites = {};
@@ -45,6 +46,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
             try {
                 const configPath = configPaths[site];
                 config = require('../' + configPath).config;
+                config = new requestHandlers_1.Website(site, config);
                 resolve(true);
             }
             catch (e) {
@@ -66,24 +68,38 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
             return !!pattern.test(str);
         }
     });
+    globals_1.test(`public folder`, () => {
+        return new Promise((resolve, reject) => {
+            fs.access(config.folder, (err) => {
+                if (err)
+                    reject(`Can't access public folder for ${site}`);
+                resolve(true);
+            });
+        });
+    });
     itif(websites[site].data)(`${site} data folder`, () => {
         return new Promise((resolve, reject) => {
             fs.access(`websites/${site}/data`, (err) => {
                 if (err)
-                    reject(`No data folder for ${site}`);
+                    reject(`Can't access folder for ${site}`);
                 resolve(true);
             });
         });
     });
 });
-xit('Avoid unused stuff', () => {
-    console.log(URL);
-    console.log(xray);
-    console.log(puppeteer);
-    console.log(http);
-    console.log(https);
-    console.log(globals_1.test);
-    asyncForEach([], function () { });
+globals_1.describe("unused stuff", () => {
+    it("always pass", () => {
+        globals_1.expect(true).toBe(true);
+    });
+    xit('Avoid unused stuff', () => {
+        console.log(URL);
+        console.log(xray);
+        console.log(puppeteer);
+        console.log(http);
+        console.log(https);
+        console.log(globals_1.test);
+        asyncForEach([], function () { });
+    });
 });
 function findSiteConfig(site) {
     if (fs.existsSync(`websites/${site}/config.js`))

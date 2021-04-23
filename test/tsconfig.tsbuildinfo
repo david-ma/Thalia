@@ -642,7 +642,7 @@
         "affectsGlobalScope": false
       },
       "./websiteconfig.test.ts": {
-        "version": "0162e39f8a0d8e5d93ba276a787a10ab42a3d9ace2753955dc099e8046aa3595",
+        "version": "845d94998c5f60b53d35092d73ee276047562dfd8a7088f64cb02f1d72287cb4",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
         "affectsGlobalScope": false
       },

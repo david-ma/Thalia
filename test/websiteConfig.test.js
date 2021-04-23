@@ -58,6 +58,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
                 resolve(true);
             }
             catch (e) {
+                console.error(e);
                 reject();
             }
         });
@@ -66,15 +67,6 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
         config.domains.forEach((domain) => {
             globals_1.expect(validURL(domain)).toBe(true);
         });
-        function validURL(str) {
-            var pattern = new RegExp('^(https?:\\/\\/)?' + // protocol
-                '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
-                '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
-                '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
-                '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
-                '(\\#[-a-z\\d_]*)?$', 'i'); // fragment locator
-            return !!pattern.test(str);
-        }
     });
     globals_1.test(`Public Folder`, () => {
         return new Promise((resolve, reject) => {
@@ -89,7 +81,26 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
     itif(websites[site].sockets)(`Sockets Used`, () => { });
     itif(websites[site].proxies)(`Proxies Used`, () => { });
     itif(websites[site].pages)(`Pages Used`, () => { });
-    itif(websites[site].redirects)(`Redirects Used`, () => { });
+    let validLinks = [];
+    itif(websites[site].redirects)(`Redirects are valid`, () => {
+        const invalid = {};
+        validLinks = Object.keys(websites[site].redirects)
+            .map((redirect) => {
+            const link = websites[site].redirects[redirect];
+            if (!validURL(link)) {
+                invalid[redirect] = link;
+                return null;
+            }
+            else {
+                return link;
+            }
+        })
+            .filter((d) => d !== null);
+        globals_1.expect(invalid).toStrictEqual({});
+    });
+    itif(websites[site].redirects)(`All valid redirect links work`, () => {
+        return checkLinks(validLinks);
+    });
     itif(requestHandlers_1.handle.websites[site].views)(`Views Used`, () => { });
     // itif(websites[site].viewableFolders)(`viewable Folders`, () => {})
     /**
@@ -138,6 +149,15 @@ globals_1.describe('unused stuff', () => {
         asyncForEach([], function () { });
     });
 });
+function validURL(str) {
+    var pattern = new RegExp('^(https?:\\/\\/)?' + // protocol
+        '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
+        '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
+        '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
+        '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
+        '(\\#[-a-z\\d_]*)?$', 'i'); // fragment locator
+    return !!pattern.test(str);
+}
 function findSiteConfig(site) {
     if (fs.existsSync(`websites/${site}/config.js`))
         return `websites/${site}/config.js`;
@@ -171,5 +191,42 @@ async function asyncForEach(array, callback, limit = 5) {
                     resolve(errorMessages);
             }
         }
+    });
+}
+async function checkLinks(links) {
+    return new Promise((resolve, reject) => {
+        asyncForEach(links, function (link, done) {
+            let requester;
+            if (link.match(/^https/gi)) {
+                requester = https;
+            }
+            else if (link.match(/^http/gi)) {
+                requester = http;
+            }
+            else {
+                done();
+            }
+            if (requester) {
+                requester
+                    .get(link, {}, function (response) {
+                    if (response.statusCode !== 200) {
+                        done(`${response.statusCode} - ${link}`);
+                    }
+                    else {
+                        done();
+                    }
+                })
+                    .on('error', (e) => {
+                    done(e.message);
+                });
+            }
+        }).then((errors) => {
+            if (errors.length > 0) {
+                reject(errors);
+            }
+            else {
+                resolve('okay?');
+            }
+        });
     });
 }

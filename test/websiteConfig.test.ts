@@ -68,6 +68,7 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
         // config = new Website(site, config)
         resolve(true)
       } catch (e) {
+        console.error(e)
         reject()
       }
     })
@@ -77,19 +78,6 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     config.domains.forEach((domain) => {
       expect(validURL(domain)).toBe(true)
     })
-
-    function validURL(str: string) {
-      var pattern = new RegExp(
-        '^(https?:\\/\\/)?' + // protocol
-          '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
-          '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
-          '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
-          '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
-          '(\\#[-a-z\\d_]*)?$',
-        'i'
-      ) // fragment locator
-      return !!pattern.test(str)
-    }
   })
 
   test(`Public Folder`, () => {
@@ -105,7 +93,30 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   itif(websites[site].sockets)(`Sockets Used`, () => {})
   itif(websites[site].proxies)(`Proxies Used`, () => {})
   itif(websites[site].pages)(`Pages Used`, () => {})
-  itif(websites[site].redirects)(`Redirects Used`, () => {})
+
+  let validLinks: string[] = []
+  itif(websites[site].redirects)(`Redirects are valid`, () => {
+    const invalid: { [key: string]: string } = {}
+
+    validLinks = Object.keys(websites[site].redirects)
+      .map((redirect) => {
+        const link = websites[site].redirects[redirect]
+        if (!validURL(link)) {
+          invalid[redirect] = link
+          return null
+        } else {
+          return link
+        }
+      })
+      .filter((d) => d !== null)
+
+    expect(invalid).toStrictEqual({})
+  })
+
+  itif(websites[site].redirects)(`All valid redirect links work`, () => {
+    return checkLinks(validLinks)
+  })
+
   itif(handle.websites[site].views)(`Views Used`, () => {})
 
   // itif(websites[site].viewableFolders)(`viewable Folders`, () => {})
@@ -160,6 +171,19 @@ describe('unused stuff', () => {
   })
 })
 
+function validURL(str: string) {
+  var pattern = new RegExp(
+    '^(https?:\\/\\/)?' + // protocol
+      '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
+      '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
+      '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
+      '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
+      '(\\#[-a-z\\d_]*)?$',
+    'i'
+  ) // fragment locator
+  return !!pattern.test(str)
+}
+
 function findSiteConfig(site: string): string {
   if (fs.existsSync(`websites/${site}/config.js`))
     return `websites/${site}/config.js`
@@ -207,5 +231,40 @@ async function asyncForEach(
         if (happening === 0) resolve(errorMessages)
       }
     }
+  })
+}
+
+async function checkLinks(links: string[]) {
+  return new Promise((resolve, reject) => {
+    asyncForEach(links, function (link, done) {
+      let requester: typeof https | typeof http
+      if (link.match(/^https/gi)) {
+        requester = https
+      } else if (link.match(/^http/gi)) {
+        requester = http
+      } else {
+        done()
+      }
+
+      if (requester) {
+        requester
+          .get(link, {}, function (response: http.IncomingMessage) {
+            if (response.statusCode !== 200) {
+              done(`${response.statusCode} - ${link}`)
+            } else {
+              done()
+            }
+          })
+          .on('error', (e) => {
+            done(e.message)
+          })
+      }
+    }).then((errors) => {
+      if (errors.length > 0) {
+        reject(errors)
+      } else {
+        resolve('okay?')
+      }
+    })
   })
 }

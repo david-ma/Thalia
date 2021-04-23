@@ -45,7 +45,6 @@ Object.keys(configPaths)
 });
 // Tests:
 const itif = (condition) => (condition ? it : it.skip);
-const xitif = (condition) => (condition ? it.skip : it.skip);
 globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     let config;
     globals_1.test(`Config.js can be opened?`, () => {
@@ -91,24 +90,17 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
     itif(websites[site].proxies)(`Proxies Used`, () => { });
     itif(websites[site].pages)(`Pages Used`, () => { });
     itif(websites[site].redirects)(`Redirects Used`, () => { });
-    itif(requestHandlers_1.handle.websites[site].views)(`Views Used`, () => {
-        console.log(`This website ${site} uses views`);
-    });
-    it('views used', () => {
-        console.log(`${site} views: `, requestHandlers_1.handle.websites[site].views);
-    });
+    itif(requestHandlers_1.handle.websites[site].views)(`Views Used`, () => { });
     // itif(websites[site].viewableFolders)(`viewable Folders`, () => {})
     /**
      * To do:
-     * - Proxies
-     * - Redirects
-     * - Pages
+     * Check proxies are valid, and running?
+     * Check Pages exist
+     * Check redirects are valid
      * - Publish
-     * - Sockets
      * - publish??? Only used in truestores. Possibly remove it?
-     * - views
-     * security
-     * sequalize????
+     * - security
+     * - sequalize????
      *
      *
      *  */

@@ -617,7 +617,7 @@
         "affectsGlobalScope": false
       },
       "../server/requesthandlers.ts": {
-        "version": "3fc700d70ba160259ccebe25279c0366452eed2f015e6fe13306b2f28c86f482",
+        "version": "4d475aac7995564e7239c67d52949178918cad8a48139271da980a59bb884b85",
         "signature": "fa78b16975be4f93193cc23c60d226ccf0078f01d43fafd717fc6b0690048a14",
         "affectsGlobalScope": false
       },
@@ -642,7 +642,7 @@
         "affectsGlobalScope": false
       },
       "./websiteconfig.test.ts": {
-        "version": "19f104fc98c5656c9ba9deb9f2c0032c7410e025d8346c2a3704a2dcf9fcf195",
+        "version": "0162e39f8a0d8e5d93ba276a787a10ab42a3d9ace2753955dc099e8046aa3595",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
         "affectsGlobalScope": false
       },
@@ -2756,20 +2756,7 @@
       "../server/thalia.d.ts",
       "./frontend.test.ts",
       "./puppeteer.ts",
-      [
-        "./websiteconfig.test.ts",
-        [
-          {
-            "file": "./websiteconfig.test.ts",
-            "start": 1463,
-            "length": 5,
-            "messageText": "'xitif' is declared but its value is never read.",
-            "category": 1,
-            "code": 6133,
-            "reportsUnnecessary": true
-          }
-        ]
-      ]
+      "./websiteconfig.test.ts"
     ]
   },
   "version": "4.2.3"

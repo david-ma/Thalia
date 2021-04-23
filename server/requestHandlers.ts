@@ -76,6 +76,7 @@ class Website implements Thalia.WebsiteConfig {
               },
             }
       this.viewableFolders = config.viewableFolders || false
+      this.views = false
     } else {
       console.log("Config isn't an object")
     }
@@ -314,14 +315,6 @@ const handle: Thalia.Handle = {
       return proxies
     }
 
-    // Add the site to the index
-    handle.index[site + '.david-ma.net'] = site
-    handle.index[`${site}.com`] = site
-    handle.index[`${site}.net`] = site
-    handle.websites[site].domains.forEach(function (domain: string) {
-      handle.index[domain] = site
-    })
-
     // If sequelize is set up, add it.
     if (fs.existsSync(path.resolve(baseUrl, 'db_bootstrap.js'))) {
       try {
@@ -352,6 +345,8 @@ const handle: Thalia.Handle = {
 
     // If website has views, load them.
     if (fs.existsSync(path.resolve(baseUrl, 'views'))) {
+      handle.websites[site].views = true
+
       // Stupid hack for development if you don't want to cache the views :(
       handle.websites[site].readAllViews = function (cb: any) {
         readAllViews(path.resolve(baseUrl, 'views')).then((d) => cb(d))
@@ -420,6 +415,14 @@ const handle: Thalia.Handle = {
     //         action(handle.websites[site]);
     //     });
     // }
+
+    // Add the site to the index
+    handle.index[site + '.david-ma.net'] = site
+    handle.index[`${site}.com`] = site
+    handle.index[`${site}.net`] = site
+    handle.websites[site].domains.forEach(function (domain: string) {
+      handle.index[domain] = site
+    })
   },
   getWebsite: function (domain: any) {
     let site = handle.index.localhost

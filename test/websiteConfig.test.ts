@@ -56,7 +56,6 @@ Object.keys(configPaths)
 
 // Tests:
 const itif = (condition: any) => (condition ? it : it.skip)
-const xitif = (condition: any) => (condition ? it.skip : it.skip)
 describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   let config: Thalia.WebsiteConfig
   test(`Config.js can be opened?`, () => {
@@ -107,26 +106,19 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   itif(websites[site].proxies)(`Proxies Used`, () => {})
   itif(websites[site].pages)(`Pages Used`, () => {})
   itif(websites[site].redirects)(`Redirects Used`, () => {})
-  itif(handle.websites[site].views)(`Views Used`, () => {
-    console.log(`This website ${site} uses views`)
-  })
-  it('views used', () => {
-    console.log(`${site} views: `, handle.websites[site].views)
-  })
+  itif(handle.websites[site].views)(`Views Used`, () => {})
 
   // itif(websites[site].viewableFolders)(`viewable Folders`, () => {})
 
   /**
    * To do:
-   * - Proxies
-   * - Redirects
-   * - Pages
+   * Check proxies are valid, and running?
+   * Check Pages exist
+   * Check redirects are valid
    * - Publish
-   * - Sockets
    * - publish??? Only used in truestores. Possibly remove it?
-   * - views
-   * security
-   * sequalize????
+   * - security
+   * - sequalize????
    *
    *
    *  */

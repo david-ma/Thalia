@@ -602,12 +602,17 @@
         "affectsGlobalScope": false
       },
       "./frontend.test.ts": {
-        "version": "8a1780938a32e8063743852f91571411bdba43e440fa33d8660a71bc89dee4fb",
+        "version": "0c8a2672afe010e6d2c53e3b9a07e7802a732e8142d69e119c0217b9ce551f18",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
         "affectsGlobalScope": false
       },
       "./puppeteer.ts": {
         "version": "39074b66897f660fedc5e01867e3fd32422017c0a587d79f4303620587dec38b",
+        "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+        "affectsGlobalScope": false
+      },
+      "./websiteconfig.test.ts": {
+        "version": "61464112eae069de94c64d4adcc5dc0179853a264c2a55bc3f0f12155bb60873",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
         "affectsGlobalScope": false
       },
@@ -666,24 +671,9 @@
         "signature": "73c05cca1bb5aa8e93efd089af51643b7ff005e47064a0e624a74ee20480a2eb",
         "affectsGlobalScope": false
       },
-      "../node_modules/@types/component-emitter/index.d.ts": {
-        "version": "a3a88c1869ba1022dfaefac47ff7a984ec62510e9b4d60988f91d5e523266c34",
-        "signature": "a3a88c1869ba1022dfaefac47ff7a984ec62510e9b4d60988f91d5e523266c34",
-        "affectsGlobalScope": false
-      },
       "../node_modules/@types/continuation-local-storage/index.d.ts": {
         "version": "fec05bdb75bfc1586a6587734da493918f4415a1c3b824eb78ba7d07df88ff3f",
         "signature": "fec05bdb75bfc1586a6587734da493918f4415a1c3b824eb78ba7d07df88ff3f",
-        "affectsGlobalScope": false
-      },
-      "../node_modules/@types/cookie/index.d.ts": {
-        "version": "405ad6db8aa3d5618c3be21cde8125de28a3e40690eb05136c123f420c05c082",
-        "signature": "405ad6db8aa3d5618c3be21cde8125de28a3e40690eb05136c123f420c05c082",
-        "affectsGlobalScope": false
-      },
-      "../node_modules/@types/cors/index.d.ts": {
-        "version": "a68969f643e0cb091046a9437b64cb1880a081fc07c70a4717b0edef2a38bc85",
-        "signature": "a68969f643e0cb091046a9437b64cb1880a081fc07c70a4717b0edef2a38bc85",
         "affectsGlobalScope": false
       },
       "../node_modules/@types/d3-array/index.d.ts": {
@@ -1067,8 +1057,8 @@
         "affectsGlobalScope": false
       },
       "../node_modules/@types/socket.io-client/index.d.ts": {
-        "version": "1f2aeddad94bedd84380217ed8d64bba9566d20a87360617f2616013e1e77540",
-        "signature": "1f2aeddad94bedd84380217ed8d64bba9566d20a87360617f2616013e1e77540",
+        "version": "3fab06880dca03fb8dd2e9780de71196a66f743d995ec9427c47837efd816ce3",
+        "signature": "3fab06880dca03fb8dd2e9780de71196a66f743d995ec9427c47837efd816ce3",
         "affectsGlobalScope": true
       },
       "../node_modules/@types/xml2js/lib/processors.d.ts": {
@@ -1180,9 +1170,6 @@
       ],
       "../node_modules/@types/continuation-local-storage/index.d.ts": [
         "../node_modules/@types/node/index.d.ts"
-      ],
-      "../node_modules/@types/cors/index.d.ts": [
-        "../node_modules/@types/node/http.d.ts"
       ],
       "../node_modules/@types/d3-axis/index.d.ts": [
         "../node_modules/@types/d3-selection/index.d.ts"
@@ -1811,6 +1798,13 @@
       ],
       "./puppeteer.ts": [
         "../node_modules/puppeteer/lib/types.d.ts"
+      ],
+      "./websiteconfig.test.ts": [
+        "../node_modules/@jest/globals/build/index.d.ts",
+        "../node_modules/@types/node/fs.d.ts",
+        "../node_modules/@types/node/http.d.ts",
+        "../node_modules/@types/node/https.d.ts",
+        "../node_modules/puppeteer/lib/types.d.ts"
       ]
     },
     "exportedModulesMap": {
@@ -1891,9 +1885,6 @@
       ],
       "../node_modules/@types/continuation-local-storage/index.d.ts": [
         "../node_modules/@types/node/index.d.ts"
-      ],
-      "../node_modules/@types/cors/index.d.ts": [
-        "../node_modules/@types/node/http.d.ts"
       ],
       "../node_modules/@types/d3-axis/index.d.ts": [
         "../node_modules/@types/d3-axis/node_modules/@types/d3-selection/index.d.ts"
@@ -2580,10 +2571,7 @@
       "../node_modules/@types/babel__traverse/index.d.ts",
       "../node_modules/@types/bluebird/index.d.ts",
       "../node_modules/@types/cacheable-request/index.d.ts",
-      "../node_modules/@types/component-emitter/index.d.ts",
       "../node_modules/@types/continuation-local-storage/index.d.ts",
-      "../node_modules/@types/cookie/index.d.ts",
-      "../node_modules/@types/cors/index.d.ts",
       "../node_modules/@types/d3-array/index.d.ts",
       "../node_modules/@types/d3-axis/index.d.ts",
       "../node_modules/@types/d3-brush/index.d.ts",
@@ -2734,7 +2722,21 @@
       "../node_modules/pretty-format/build/types.d.ts",
       "../node_modules/puppeteer/lib/types.d.ts",
       "./frontend.test.ts",
-      "./puppeteer.ts"
+      "./puppeteer.ts",
+      [
+        "./websiteconfig.test.ts",
+        [
+          {
+            "file": "./websiteconfig.test.ts",
+            "start": 1504,
+            "length": 4,
+            "messageText": "'itif' is declared but its value is never read.",
+            "category": 1,
+            "code": 6133,
+            "reportsUnnecessary": true
+          }
+        ]
+      ]
     ]
   },
   "version": "4.2.3"

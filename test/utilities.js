@@ -91,7 +91,7 @@ async function checkLinks(site, links) {
                     },
                 }, function (response) {
                     // TODO: Follow 3xx links and see if they're valid?
-                    const allowedStatusCodes = [200, 301, 302, 303];
+                    const allowedStatusCodes = [200, 301, 302, 303, 307, 999];
                     if (allowedStatusCodes.indexOf(response.statusCode) === -1) {
                         done(`${response.statusCode} - ${link}`);
                     }
@@ -100,7 +100,7 @@ async function checkLinks(site, links) {
                     }
                 })
                     .on('error', (e) => {
-                    done(e.message);
+                    done(`${e.message} - ${link}`);
                 });
             }
         }).then((errors) => {

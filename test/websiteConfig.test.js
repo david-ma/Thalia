@@ -132,16 +132,12 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
         });
     });
 });
-globals_1.describe('unused stuff', () => {
-    it('always pass', () => {
-        globals_1.expect(true).toBe(true);
-    });
-    xit('Avoid unused stuff', () => {
-        console.log(jestURL);
-        console.log(globals_1.test);
-        utilities_1.asyncForEach([], function () { });
-    });
-});
+if (false) {
+    // I don't want eslint complaining about unused things.
+    console.log(jestURL);
+    console.log(globals_1.test);
+    utilities_1.asyncForEach([], function () { });
+}
 function validURL(str) {
     var pattern = new RegExp('^(https?:\\/\\/)?' + // protocol
         '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name

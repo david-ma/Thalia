@@ -108,7 +108,7 @@ async function checkLinks(site: string, links: string[]) {
             },
             function (response: http.IncomingMessage) {
               // TODO: Follow 3xx links and see if they're valid?
-              const allowedStatusCodes = [200, 301, 302, 303]
+              const allowedStatusCodes = [200, 301, 302, 303, 307, 999]
               if (allowedStatusCodes.indexOf(response.statusCode) === -1) {
                 done(`${response.statusCode} - ${link}`)
               } else {
@@ -117,7 +117,7 @@ async function checkLinks(site: string, links: string[]) {
             }
           )
           .on('error', (e) => {
-            done(e.message)
+            done(`${e.message} - ${link}`)
           })
       }
     }).then((errors) => {

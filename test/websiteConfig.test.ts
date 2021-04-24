@@ -152,17 +152,12 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   })
 })
 
-describe('unused stuff', () => {
-  it('always pass', () => {
-    expect(true).toBe(true)
-  })
-
-  xit('Avoid unused stuff', () => {
-    console.log(jestURL)
-    console.log(test)
-    asyncForEach([], function () {})
-  })
-})
+if(false) {
+  // I don't want eslint complaining about unused things.
+  console.log(jestURL)
+  console.log(test)
+  asyncForEach([], function () {})
+}
 
 function validURL(str: string) {
   var pattern = new RegExp(

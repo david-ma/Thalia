@@ -1,12 +1,7 @@
-import * as puppeteer from 'puppeteer'
 import { describe, expect, test } from '@jest/globals'
 import fs = require('fs')
-import http = require('http')
-import https = require('https')
-const xray = require('x-ray')()
-const jestConfig: any = require('../jest.config')
-
 import type { Thalia } from '../server/thalia'
+import { asyncForEach, checkLinks } from './utilities'
 
 const consoleLog = console.log
 console.log = jest.fn()
@@ -14,7 +9,8 @@ import { handle } from '../server/requestHandlers'
 handle.loadAllWebsites()
 console.log = consoleLog
 
-const URL = jestConfig.globals.URL
+const jestConfig: any = require('../jest.config')
+const jestURL = jestConfig.globals.URL
 
 type SiteConfigPaths = {
   [key: string]: string
@@ -92,7 +88,6 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   // Audit usage of features?
   itif(websites[site].sockets)(`Sockets Used`, () => {})
   itif(websites[site].proxies)(`Proxies Used`, () => {})
-  itif(websites[site].pages)(`Pages Used`, () => {})
 
   let validLinks: string[] = []
   itif(websites[site].redirects)(`Redirects are valid`, () => {
@@ -114,8 +109,10 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   })
 
   itif(websites[site].redirects)(`All valid redirect links work`, () => {
-    return checkLinks(validLinks)
+    return checkLinks(site, validLinks)
   })
+
+  itif(websites[site].pages)(`Pages Used`, () => {})
 
   itif(handle.websites[site].views)(`Views Used`, () => {})
 
@@ -161,11 +158,7 @@ describe('unused stuff', () => {
   })
 
   xit('Avoid unused stuff', () => {
-    console.log(URL)
-    console.log(xray)
-    console.log(puppeteer)
-    console.log(http)
-    console.log(https)
+    console.log(jestURL)
     console.log(test)
     asyncForEach([], function () {})
   })
@@ -190,92 +183,4 @@ function findSiteConfig(site: string): string {
   if (fs.existsSync(`websites/${site}/config/config.js`))
     return `websites/${site}/config/config.js`
   return ''
-}
-
-// Asynchronous for each, doing a limited number of things at a time. Pool of resources.
-async function asyncForEach(
-  array: Array<any>,
-  callback: (
-    item: any,
-    done: (errorMessage?: string) => void,
-    index: number,
-    arr: Array<any>
-  ) => void,
-  limit: number = 5
-): Promise<string[]> {
-  return new Promise((resolve) => {
-    let i = 0
-    let happening = 0
-    const errorMessages: string[] = []
-
-    for (; i < limit; i++) {
-      // Launch a limited number of things
-      happening++
-      doNextThing(i)
-    }
-
-    function doNextThing(index: number) {
-      // Each thing calls back "done" and starts the next
-      if (array[index]) {
-        callback(
-          array[index],
-          function done(message?: string) {
-            if (message) errorMessages.push(message)
-            doNextThing(i++)
-          },
-          index,
-          array
-        )
-      } else {
-        happening-- // When they're all done, resolve
-        if (happening === 0) resolve(errorMessages)
-      }
-    }
-  })
-}
-
-async function checkLinks(links: string[]) {
-  return new Promise((resolve, reject) => {
-    asyncForEach(links, function (link, done) {
-      let requester: typeof https | typeof http
-      if (link.match(/^https/gi)) {
-        requester = https
-      } else if (link.match(/^http/gi)) {
-        requester = http
-      } else {
-        done()
-      }
-
-      if (requester) {
-        requester
-          .get(
-            link,
-            {
-              headers: {
-                'user-agent':
-                  'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36',
-              },
-            },
-            function (response: http.IncomingMessage) {
-              // TODO: Follow 3xx links and see if they're valid?
-              const allowedStatusCodes = [200, 301, 302, 303]
-              if (allowedStatusCodes.indexOf(response.statusCode) === -1) {
-                done(`${response.statusCode} - ${link}`)
-              } else {
-                done()
-              }
-            }
-          )
-          .on('error', (e) => {
-            done(e.message)
-          })
-      }
-    }).then((errors) => {
-      if (errors.length > 0) {
-        reject(errors)
-      } else {
-        resolve('okay?')
-      }
-    })
-  })
 }

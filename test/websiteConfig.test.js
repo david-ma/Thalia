@@ -1,18 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const puppeteer = require("puppeteer");
 const globals_1 = require("@jest/globals");
 const fs = require("fs");
-const http = require("http");
-const https = require("https");
-const xray = require('x-ray')();
-const jestConfig = require('../jest.config');
+const utilities_1 = require("./utilities");
 const consoleLog = console.log;
 console.log = jest.fn();
 const requestHandlers_1 = require("../server/requestHandlers");
 requestHandlers_1.handle.loadAllWebsites();
 console.log = consoleLog;
-const URL = jestConfig.globals.URL;
+const jestConfig = require('../jest.config');
+const jestURL = jestConfig.globals.URL;
 let configPaths = {};
 let websites = {};
 // Setup:
@@ -80,7 +77,6 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
     // Audit usage of features?
     itif(websites[site].sockets)(`Sockets Used`, () => { });
     itif(websites[site].proxies)(`Proxies Used`, () => { });
-    itif(websites[site].pages)(`Pages Used`, () => { });
     let validLinks = [];
     itif(websites[site].redirects)(`Redirects are valid`, () => {
         const invalid = {};
@@ -99,8 +95,9 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
         globals_1.expect(invalid).toStrictEqual({});
     });
     itif(websites[site].redirects)(`All valid redirect links work`, () => {
-        return checkLinks(validLinks);
+        return utilities_1.checkLinks(site, validLinks);
     });
+    itif(websites[site].pages)(`Pages Used`, () => { });
     itif(requestHandlers_1.handle.websites[site].views)(`Views Used`, () => { });
     // itif(websites[site].viewableFolders)(`viewable Folders`, () => {})
     /**
@@ -140,13 +137,9 @@ globals_1.describe('unused stuff', () => {
         globals_1.expect(true).toBe(true);
     });
     xit('Avoid unused stuff', () => {
-        console.log(URL);
-        console.log(xray);
-        console.log(puppeteer);
-        console.log(http);
-        console.log(https);
+        console.log(jestURL);
         console.log(globals_1.test);
-        asyncForEach([], function () { });
+        utilities_1.asyncForEach([], function () { });
     });
 });
 function validURL(str) {
@@ -164,75 +157,4 @@ function findSiteConfig(site) {
     if (fs.existsSync(`websites/${site}/config/config.js`))
         return `websites/${site}/config/config.js`;
     return '';
-}
-// Asynchronous for each, doing a limited number of things at a time. Pool of resources.
-async function asyncForEach(array, callback, limit = 5) {
-    return new Promise((resolve) => {
-        let i = 0;
-        let happening = 0;
-        const errorMessages = [];
-        for (; i < limit; i++) {
-            // Launch a limited number of things
-            happening++;
-            doNextThing(i);
-        }
-        function doNextThing(index) {
-            // Each thing calls back "done" and starts the next
-            if (array[index]) {
-                callback(array[index], function done(message) {
-                    if (message)
-                        errorMessages.push(message);
-                    doNextThing(i++);
-                }, index, array);
-            }
-            else {
-                happening--; // When they're all done, resolve
-                if (happening === 0)
-                    resolve(errorMessages);
-            }
-        }
-    });
-}
-async function checkLinks(links) {
-    return new Promise((resolve, reject) => {
-        asyncForEach(links, function (link, done) {
-            let requester;
-            if (link.match(/^https/gi)) {
-                requester = https;
-            }
-            else if (link.match(/^http/gi)) {
-                requester = http;
-            }
-            else {
-                done();
-            }
-            if (requester) {
-                requester
-                    .get(link, {
-                    headers: {
-                        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36',
-                    },
-                }, function (response) {
-                    // TODO: Follow 3xx links and see if they're valid?
-                    const allowedStatusCodes = [200, 301, 302, 303];
-                    if (allowedStatusCodes.indexOf(response.statusCode) === -1) {
-                        done(`${response.statusCode} - ${link}`);
-                    }
-                    else {
-                        done();
-                    }
-                })
-                    .on('error', (e) => {
-                    done(e.message);
-                });
-            }
-        }).then((errors) => {
-            if (errors.length > 0) {
-                reject(errors);
-            }
-            else {
-                resolve('okay?');
-            }
-        });
-    });
 }

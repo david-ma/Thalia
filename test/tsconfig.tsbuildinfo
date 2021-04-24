@@ -601,8 +601,13 @@
         "signature": "0cee5b30f4300e628927dde7e7ae7b5bc32250a685242474d069b9346da8a2b1",
         "affectsGlobalScope": false
       },
+      "./utilities.ts": {
+        "version": "d2743950eb30c41ed935d8dd536352a2479f113071b21582b12ef1198fad0c44",
+        "signature": "e4d3239a233ec6a65ddfbf478351fa2552f9ae998252ba454683f132e3d0e650",
+        "affectsGlobalScope": false
+      },
       "./frontend.test.ts": {
-        "version": "0c8a2672afe010e6d2c53e3b9a07e7802a732e8142d69e119c0217b9ce551f18",
+        "version": "3691998b672cf5c628f6f12a163253375b9a28b64bda3dbe96974f3e3a70500a",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
         "affectsGlobalScope": false
       },
@@ -642,7 +647,7 @@
         "affectsGlobalScope": false
       },
       "./websiteconfig.test.ts": {
-        "version": "528373e31adc7bf7bf4904ceed9b333583630598a25be737a0536170f824e01f",
+        "version": "cfb13b2b88c7e96e4bd02885b57ff3ea77f20aa5124fd5b763e8c8afc47172bf",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
         "affectsGlobalScope": false
       },
@@ -1812,21 +1817,22 @@
       "./frontend.test.ts": [
         "../node_modules/@jest/globals/build/index.d.ts",
         "../node_modules/@types/node/fs.d.ts",
-        "../node_modules/@types/node/http.d.ts",
-        "../node_modules/@types/node/https.d.ts",
-        "../node_modules/puppeteer/lib/types.d.ts"
+        "../node_modules/puppeteer/lib/types.d.ts",
+        "./utilities.ts"
       ],
       "./puppeteer.ts": [
         "../node_modules/puppeteer/lib/types.d.ts"
       ],
+      "./utilities.ts": [
+        "../node_modules/@types/node/http.d.ts",
+        "../node_modules/@types/node/https.d.ts"
+      ],
       "./websiteconfig.test.ts": [
         "../node_modules/@jest/globals/build/index.d.ts",
         "../node_modules/@types/node/fs.d.ts",
-        "../node_modules/@types/node/http.d.ts",
-        "../node_modules/@types/node/https.d.ts",
-        "../node_modules/puppeteer/lib/types.d.ts",
         "../server/requesthandlers.ts",
-        "../server/thalia.d.ts"
+        "../server/thalia.d.ts",
+        "./utilities.ts"
       ]
     },
     "exportedModulesMap": {
@@ -2755,6 +2761,7 @@
       "../server/thalia.d.ts",
       "./frontend.test.ts",
       "./puppeteer.ts",
+      "./utilities.ts",
       "./websiteconfig.test.ts"
     ]
   },

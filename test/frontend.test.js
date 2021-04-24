@@ -3,12 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const puppeteer = require("puppeteer");
 const globals_1 = require("@jest/globals");
 const fs = require("fs");
-const http = require("http");
-const https = require("https");
-const xray = require('x-ray')();
+const utilities_1 = require("./utilities");
 const jestConfig = require('../jest.config');
+const jestURL = jestConfig.globals.URL;
 const timeout = process.env.SLOWMO ? 30000 : 10000;
-const URL = jestConfig.globals.URL;
 let websites = [];
 if (process.env.SITE && process.env.SITE !== 'all') {
     websites = [process.env.SITE];
@@ -16,108 +14,15 @@ if (process.env.SITE && process.env.SITE !== 'all') {
 else {
     websites = fs.readdirSync('websites/').filter(d => d !== '.DS_Store'); // .map( d =>  [[d],[]]);
 }
-// Asynchronous for each, doing a limited number of things at a time. Pool of resources.
-async function asyncForEach(array, callback, limit = 5) {
-    return new Promise((resolve) => {
-        let i = 0;
-        let happening = 0;
-        const errorMessages = [];
-        for (; i < limit; i++) { // Launch a limited number of things
-            happening++;
-            doNextThing(i);
-        }
-        function doNextThing(index) {
-            if (array[index]) {
-                callback(array[index], function done(message) {
-                    if (message)
-                        errorMessages.push(message);
-                    doNextThing(i++);
-                }, index, array);
-            }
-            else {
-                happening--; // When they're all done, resolve
-                if (happening === 0)
-                    resolve(errorMessages);
-            }
-        }
-    });
-}
-async function getLinks(site, page = '') {
-    // console.log(`Getting links on ${site} - ${URL} - ${page}`)
-    return new Promise((resolve, reject) => {
-        http.get(`${URL}/${page}`, {
-            headers: {
-                'x-host': `${site}.david-ma.net`,
-                'test-host': `${site}.david-ma.net`
-            }
-        }, function (res) {
-            let rawData = '';
-            res.on('data', chunk => { rawData += chunk; });
-            res.on('end', () => {
-                xray(rawData, ['a@href'])
-                    .then(function (links) {
-                    if (links) {
-                        resolve(links);
-                    }
-                    else {
-                        resolve([]);
-                    }
-                }).catch((err) => {
-                    reject(err);
-                });
-            });
-        }).on('error', error => { throw error; });
-    });
-}
-async function checkLinks(site, links) {
-    return new Promise((resolve, reject) => {
-        asyncForEach(links, function (link, done) {
-            let requester;
-            if (link.match(/^https/gi)) {
-                requester = https;
-            }
-            else if (link.match(/^http/gi)) {
-                requester = http;
-            }
-            else {
-                done();
-            }
-            if (requester) {
-                requester.get(link, {
-                    headers: {
-                        'x-host': `${site}.david-ma.net`,
-                        'test-host': `${site}.david-ma.net`
-                    }
-                }, function (response) {
-                    if (response.statusCode !== 200) {
-                        done(`${response.statusCode} - ${link}`);
-                    }
-                    else {
-                        done();
-                    }
-                }).on('error', (e) => {
-                    done(e.message);
-                });
-            }
-        }).then((errors) => {
-            if (errors.length > 0) {
-                reject(errors);
-            }
-            else {
-                resolve("okay?");
-            }
-        });
-    });
-}
 globals_1.describe.each(websites)('Testing %s', (site) => {
     let homepageLinks = [];
     let siteLinks = [];
     beforeAll(() => {
         const promises = [
-            getLinks(site)
+            utilities_1.getLinks(site)
         ];
         if (process.env.PAGE)
-            promises.push(getLinks(site, process.env.PAGE));
+            promises.push(utilities_1.getLinks(site, process.env.PAGE));
         return Promise.all(promises).then((array) => {
             homepageLinks = array[0];
             if (array[1]) {
@@ -126,7 +31,7 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
         });
     });
     globals_1.test(`Check external links on ${site} homepage`, () => {
-        return checkLinks(site, homepageLinks);
+        return utilities_1.checkLinks(site, homepageLinks);
     }, timeout * websites.length);
     globals_1.test(`Screenshot ${site}`, () => {
         return new Promise((resolve, reject) => {
@@ -135,13 +40,12 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
                 browser.newPage().then(page => {
                     promises = [
                         page.setExtraHTTPHeaders({
-                            'x-host': `${site}.david-ma.net`,
-                            'test-host': `${site}.david-ma.net`
+                            'x-host': `${site}.com`
                         }),
                         page.setViewport({ width: 414, height: 2500, isMobile: true })
                     ];
                     Promise.all(promises).then(() => {
-                        page.goto(URL, { waitUntil: 'domcontentloaded' }).then(() => {
+                        page.goto(jestURL, { waitUntil: 'domcontentloaded' }).then(() => {
                             page.screenshot({
                                 path: `./tmp/${site}-homepage-mobile.jpg`,
                                 type: 'jpeg'
@@ -170,7 +74,7 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
         });
     }, timeout);
     globals_1.test(`Check external links on ${site} - ${process.env.PAGE || 'n/a'}`, () => {
-        return checkLinks(site, siteLinks);
+        return utilities_1.checkLinks(site, siteLinks);
     }, timeout * websites.length);
     //       page.goto(URL, { waitUntil: 'domcontentloaded' }).then( () => {
     //         expect(true).toBeTruthy();

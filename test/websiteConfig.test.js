@@ -208,7 +208,12 @@ async function checkLinks(links) {
             }
             if (requester) {
                 requester
-                    .get(link, {}, function (response) {
+                    .get(link, {
+                    headers: {
+                        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36',
+                    },
+                }, function (response) {
+                    // TODO: Follow 3xx links and see if they're valid?
                     const allowedStatusCodes = [200, 301, 302, 303];
                     if (allowedStatusCodes.indexOf(response.statusCode) === -1) {
                         done(`${response.statusCode} - ${link}`);

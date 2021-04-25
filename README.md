@@ -10,9 +10,9 @@ Quickstart
 -
 To install, download the repository then run:
 ```
-npm install
-gulp build
-npm start
+yarn install
+yarn gulp build
+yarn start
 ```
 
 Note that ```npm start``` needs your admin password because it will start serving the website on port 80
@@ -20,6 +20,11 @@ Note that ```npm start``` needs your admin password because it will start servin
 Use gulp serve if you want to develop stuff.
 
 If you want to start a new project, just copy the example folder and rename it. run ```gulp serve --site "folder_name"``` to start developing in that site. Note that running gulp will delete and rebuild the ```public``` folder from the ```src``` folder so I recommend only developing this way if all your developers know what the're doing. If it's just a simple Dropbox-shared project with a bunch of non-developers on your team, maybe stay away from using gulp.
+
+To test, run:
+```
+yarn test
+```
 
 To develop, run:
 ```
@@ -30,17 +35,22 @@ This will tell gulp to watch a single folder: websites/example/src, outputting a
 Features
 -
 Besides simple serving of a public folder, **Thalia** can also do:
-- **Redirects** (e.g. [david-ma.net/publications](http://david-ma.net/publications) redirects you to my google scholar page.)
-- **Url Mapping** (e.g. [david-ma.net/hackers](http://david-ma.net/hackers) maps to the file hackers.txt)
-- **Services and REST** (e.g. [david-ma.net/reddit/questions](http://david-ma.net/reddit/questions) runs a function which checks my database for the latest "Official Questions Thread" on [/r/photography](http://reddit.com/r/photography) and then you there. Services can also be used for REST interfaces, e.g. [localstories.info/requestjson](http://localstories.info/requestjson) pulls a random file as JSON from the [ABC Local archive](http://www.abc.net.au/local/about/?ref=footer), which was part of [a project](http://localstories.info/) I did for the [GovHack](http://govhack.org/) hackathon once upon a time.
-- **Domains** (The same workspace can be served to as many different domains as you want. E.g. [localstories.info](http://localstories.info) and [localstories.com.au](http://localstories.com.au) both point at the same website)
-- **Reverse Proxy** (e.g. [slack.redditphotography.com](http://slack.redditphotography.com) proxies to [redditphotography.com:3000](http://redditphotography.com:3000), allowing me to have different things running on the same machine.), Proxies can also be filtered so only certain subdirectories are proxied. This is especially useful in conjunction with Tomcat web applications.
+- **Redirects** (e.g. [david-ma.net/publications](https://david-ma.net/publications) redirects you to my google scholar page.)
+- **Url Mapping** (e.g. [david-ma.net/hackers](https://david-ma.net/hackers) maps to the file hackers.txt)
+- **Services and REST** (e.g. [david-ma.net/reddit/questions](https://david-ma.net/reddit/questions) runs a function which checks my database for the latest "Official Questions Thread" on [/r/photography](https://reddit.com/r/photography) and then you there. Services can also be used for REST interfaces, e.g. [localstories.info/requestjson](https://localstories.info/requestjson) pulls a random file as JSON from the [ABC Local archive](https://www.abc.net.au/local/about/?ref=footer), which was part of [a project](https://localstories.info/) I did for the [GovHack](https://govhack.org/) hackathon once upon a time.
+- **Domains** (The same workspace can be served to as many different domains as you want. E.g. [localstories.info](https://localstories.info) and [truestories.david-ma.net](https://truestories.david-ma.net) both point at the same website)
+- **Reverse Proxy** (e.g. [slack.redditphotography.com](http://slack.redditphotography.com) proxies to [redditphotography.com:3000](http://redditphotography.david-ma.net:3000/), allowing me to have different things running on the same machine.), Proxies can also be filtered so only certain subdirectories are proxied. This is especially useful in conjunction with Tomcat web applications.
 - **Data** Files that don't belong in the codebase can be added to /data/ so they don't need to be commited or watched. Just set ```data: true`` in config.js and Thalia will serve files from that folder as if they were in public/data.
+- Supports databases using [Sequelize ORM](https://sequelize.org/).
 - ~~**SSL** Use Let's Encrypt to secure your websites.~~ Nevermind. This was too much work for not much benifit. [Just use an nginx reverse proxy or something](https://www.digitalocean.com/community/tutorials/how-to-configure-nginx-with-ssl-as-a-reverse-proxy-for-jenkins).
 
 I should probably explain how to use those things, but I've written enough here and don't think anyone is going to read this anyway. If you want to know more about this ping me on Twitter asking for more documentation or raise a github issue.
 
 -David [@Frostickle](https://twitter.com/frostickle)
+
+To do:
+- Add more tests
+- Write an init script to start a new project
 
 Thanks
 -

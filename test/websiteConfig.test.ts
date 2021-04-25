@@ -11,6 +11,7 @@ console.log = consoleLog
 
 const jestConfig: any = require('../jest.config')
 const jestURL = jestConfig.globals.URL
+const timeout = process.env.SLOWMO ? 30000 : 10000
 
 type SiteConfigPaths = {
   [key: string]: string
@@ -22,6 +23,8 @@ let websites: {
 } = {}
 
 // Setup:
+// process.env.SITE = 'david-ma' // Uncomment to test just one site
+
 if (process.env.SITE && process.env.SITE !== 'all') {
   configPaths = {
     [process.env.SITE]: findSiteConfig(process.env.SITE),
@@ -52,6 +55,8 @@ Object.keys(configPaths)
 
 // Tests:
 const itif = (condition: any) => (condition ? it : it.skip)
+const xitif = (condition: any) => (condition ? it.skip : it.skip)
+
 describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   let config: Thalia.WebsiteConfig
   test(`Config.js can be opened?`, () => {
@@ -87,7 +92,28 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
 
   // Audit usage of features?
   itif(websites[site].sockets)(`Sockets Used`, () => {})
-  itif(websites[site].proxies)(`Proxies Used`, () => {})
+  itif(websites[site].proxies)(
+    `Proxies Used`,
+    () => {
+      const proxies: Thalia.rawProxy[] = websites[site]
+        .proxies as Thalia.rawProxy[]
+      const links: string[] = proxies.map((proxy: Thalia.rawProxy) => {
+        let link: string =
+          (proxy.host || '127.0.0.1') +
+          (':' + proxy.port || 80) +
+          (proxy.filter ? `/${proxy.filter}` : '')
+
+        if (link.indexOf('http') !== 0) {
+          link = (proxy.port === 443 ? 'https://' : 'http://') + link
+        }
+
+        return link
+      })
+
+      return checkLinks(site, links)
+    },
+    timeout
+  )
 
   let validLinks: string[] = []
   itif(websites[site].redirects)(`Redirects are valid`, () => {
@@ -108,9 +134,13 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     expect(invalid).toStrictEqual({})
   })
 
-  itif(websites[site].redirects)(`All valid redirect links work`, () => {
-    return checkLinks(site, validLinks)
-  })
+  itif(websites[site].redirects)(
+    `All valid redirect links work`,
+    () => {
+      return checkLinks(site, validLinks)
+    },
+    timeout
+  )
 
   itif(websites[site].pages)(`Pages Used`, () => {})
 
@@ -152,11 +182,12 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   })
 })
 
-if(false) {
+if (false) {
   // I don't want eslint complaining about unused things.
   console.log(jestURL)
   console.log(test)
   asyncForEach([], function () {})
+  console.log(xitif)
 }
 
 function validURL(str: string) {

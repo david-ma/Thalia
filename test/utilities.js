@@ -72,19 +72,14 @@ exports.getLinks = getLinks;
 async function checkLinks(site, links) {
     return new Promise((resolve, reject) => {
         asyncForEach(links, function (link, done) {
-            let requester;
+            let requester = http;
             if (link.match(/^https/gi)) {
                 requester = https;
-            }
-            else if (link.match(/^http/gi)) {
-                requester = http;
-            }
-            else {
-                done();
             }
             if (requester) {
                 requester
                     .get(link, {
+                    timeout: 2000,
                     headers: {
                         'x-host': `${site}.com`,
                         'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36',
@@ -92,24 +87,34 @@ async function checkLinks(site, links) {
                 }, function (response) {
                     // TODO: Follow 3xx links and see if they're valid?
                     const allowedStatusCodes = [200, 301, 302, 303, 307, 999];
-                    if (allowedStatusCodes.indexOf(response.statusCode) === -1) {
-                        done(`${response.statusCode} - ${link}`);
-                    }
-                    else {
-                        done();
-                    }
+                    response.on('end', function () {
+                        if (allowedStatusCodes.indexOf(response.statusCode) === -1) {
+                            done(`${response.statusCode} - ${link}`);
+                        }
+                        else {
+                            done();
+                        }
+                    });
+                    response.on('data', function (chunk) { });
+                    response.on('error', function (e) {
+                        done(`${e.message} - ${link}`);
+                    });
                 })
                     .on('error', (e) => {
                     done(`${e.message} - ${link}`);
                 });
             }
-        }).then((errors) => {
+        })
+            .then((errors) => {
             if (errors.length > 0) {
                 reject(errors);
             }
             else {
                 resolve('okay?');
             }
+        })
+            .catch((e) => {
+            reject(e);
         });
     });
 }

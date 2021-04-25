@@ -4,7 +4,6 @@ import fs = require('fs');
 import { getLinks, checkLinks } from './utilities'
 const jestConfig :any = require('../jest.config')
 const jestURL = jestConfig.globals.URL
-
 const timeout = process.env.SLOWMO ? 30000 : 10000
 
 let websites :string[] = []

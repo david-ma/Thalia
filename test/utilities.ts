@@ -86,13 +86,9 @@ async function getLinks(site: string, page: string = ''): Promise<string[]> {
 async function checkLinks(site: string, links: string[]) {
   return new Promise((resolve, reject) => {
     asyncForEach(links, function (link, done) {
-      let requester: typeof https | typeof http
+      let requester: typeof https | typeof http = http
       if (link.match(/^https/gi)) {
         requester = https
-      } else if (link.match(/^http/gi)) {
-        requester = http
-      } else {
-        done()
       }
 
       if (requester) {
@@ -100,6 +96,7 @@ async function checkLinks(site: string, links: string[]) {
           .get(
             link,
             {
+              timeout: 2000,
               headers: {
                 'x-host': `${site}.com`,
                 'user-agent':
@@ -109,24 +106,35 @@ async function checkLinks(site: string, links: string[]) {
             function (response: http.IncomingMessage) {
               // TODO: Follow 3xx links and see if they're valid?
               const allowedStatusCodes = [200, 301, 302, 303, 307, 999]
-              if (allowedStatusCodes.indexOf(response.statusCode) === -1) {
-                done(`${response.statusCode} - ${link}`)
-              } else {
-                done()
-              }
+
+              response.on('end', function () {
+                if (allowedStatusCodes.indexOf(response.statusCode) === -1) {
+                  done(`${response.statusCode} - ${link}`)
+                } else {
+                  done()
+                }
+              })
+              response.on('data', function (chunk) {})
+              response.on('error', function (e) {
+                done(`${e.message} - ${link}`)
+              })
             }
           )
           .on('error', (e) => {
             done(`${e.message} - ${link}`)
           })
       }
-    }).then((errors) => {
-      if (errors.length > 0) {
-        reject(errors)
-      } else {
-        resolve('okay?')
-      }
     })
+      .then((errors) => {
+        if (errors.length > 0) {
+          reject(errors)
+        } else {
+          resolve('okay?')
+        }
+      })
+      .catch((e) => {
+        reject(e)
+      })
   })
 }
 

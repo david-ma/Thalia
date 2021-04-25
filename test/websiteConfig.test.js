@@ -10,9 +10,11 @@ requestHandlers_1.handle.loadAllWebsites();
 console.log = consoleLog;
 const jestConfig = require('../jest.config');
 const jestURL = jestConfig.globals.URL;
+const timeout = process.env.SLOWMO ? 30000 : 10000;
 let configPaths = {};
 let websites = {};
 // Setup:
+// process.env.SITE = 'david-ma' // Uncomment to test just one site
 if (process.env.SITE && process.env.SITE !== 'all') {
     configPaths = {
         [process.env.SITE]: findSiteConfig(process.env.SITE),
@@ -42,6 +44,7 @@ Object.keys(configPaths)
 });
 // Tests:
 const itif = (condition) => (condition ? it : it.skip);
+const xitif = (condition) => (condition ? it.skip : it.skip);
 globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     let config;
     globals_1.test(`Config.js can be opened?`, () => {
@@ -76,7 +79,20 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
     });
     // Audit usage of features?
     itif(websites[site].sockets)(`Sockets Used`, () => { });
-    itif(websites[site].proxies)(`Proxies Used`, () => { });
+    itif(websites[site].proxies)(`Proxies Used`, () => {
+        const proxies = websites[site]
+            .proxies;
+        const links = proxies.map((proxy) => {
+            let link = (proxy.host || '127.0.0.1') +
+                (':' + proxy.port || 80) +
+                (proxy.filter ? `/${proxy.filter}` : '');
+            if (link.indexOf('http') !== 0) {
+                link = (proxy.port === 443 ? 'https://' : 'http://') + link;
+            }
+            return link;
+        });
+        return utilities_1.checkLinks(site, links);
+    }, timeout);
     let validLinks = [];
     itif(websites[site].redirects)(`Redirects are valid`, () => {
         const invalid = {};
@@ -96,7 +112,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
     });
     itif(websites[site].redirects)(`All valid redirect links work`, () => {
         return utilities_1.checkLinks(site, validLinks);
-    });
+    }, timeout);
     itif(websites[site].pages)(`Pages Used`, () => { });
     itif(requestHandlers_1.handle.websites[site].views)(`Views Used`, () => { });
     // itif(websites[site].viewableFolders)(`viewable Folders`, () => {})
@@ -137,6 +153,7 @@ if (false) {
     console.log(jestURL);
     console.log(globals_1.test);
     utilities_1.asyncForEach([], function () { });
+    console.log(xitif);
 }
 function validURL(str) {
     var pattern = new RegExp('^(https?:\\/\\/)?' + // protocol

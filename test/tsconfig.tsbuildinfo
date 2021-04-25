@@ -216,6 +216,16 @@
         "signature": "f58c6d0669d1ee04b2fcb0e87fb949b6828602f3f29c7bf6c76a214f16fd50d5",
         "affectsGlobalScope": false
       },
+      "./utilities.ts": {
+        "version": "caf1272ec175ea4259a5878d880c4b17fd2c971947606482e9a8371875c19e7d",
+        "signature": "e4d3239a233ec6a65ddfbf478351fa2552f9ae998252ba454683f132e3d0e650",
+        "affectsGlobalScope": false
+      },
+      "./blah.ts": {
+        "version": "74ef2edf7938d2f159c002f1d970e2448fe1f6090653faa73b5207534813e7ab",
+        "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+        "affectsGlobalScope": false
+      },
       "../node_modules/@types/node/globals.d.ts": {
         "version": "583b4bd4e441916be4bf152ee323c4ffa6e178fd25df2ee2215ef05c7feb5ad4",
         "signature": "583b4bd4e441916be4bf152ee323c4ffa6e178fd25df2ee2215ef05c7feb5ad4",
@@ -601,13 +611,8 @@
         "signature": "0cee5b30f4300e628927dde7e7ae7b5bc32250a685242474d069b9346da8a2b1",
         "affectsGlobalScope": false
       },
-      "./utilities.ts": {
-        "version": "183e38e0fb338548715631488e0a8c16d96d2b409bd3316368eb6a1706e63b5c",
-        "signature": "e4d3239a233ec6a65ddfbf478351fa2552f9ae998252ba454683f132e3d0e650",
-        "affectsGlobalScope": false
-      },
       "./frontend.test.ts": {
-        "version": "3691998b672cf5c628f6f12a163253375b9a28b64bda3dbe96974f3e3a70500a",
+        "version": "bfc9037087ef69421b6ddf1260934a290643c6e859f7387c1a9f7803629b97f3",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
         "affectsGlobalScope": false
       },
@@ -647,7 +652,7 @@
         "affectsGlobalScope": false
       },
       "./websiteconfig.test.ts": {
-        "version": "1875a0bac8f4f77fa5e65e354e04b3af0b19c62ca7ef769a67be284a821ad8c5",
+        "version": "5bca74b07316b5ffb1e9a0d97d33c0fb2388fda9545ec46609de8fd58f595ce5",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
         "affectsGlobalScope": false
       },
@@ -1103,6 +1108,7 @@
       "assumeChangesOnlyAffectDirectDependencies": true,
       "incremental": true,
       "target": 7,
+      "preserveWatchOutput": true,
       "watch": true,
       "configFilePath": "./tsconfig.json"
     },
@@ -1813,6 +1819,9 @@
         "../node_modules/@types/node/http.d.ts",
         "../node_modules/@types/socket.io/index.d.ts",
         "../server/requesthandlers.ts"
+      ],
+      "./blah.ts": [
+        "./utilities.ts"
       ],
       "./frontend.test.ts": [
         "../node_modules/@jest/globals/build/index.d.ts",
@@ -2759,6 +2768,7 @@
       "../node_modules/puppeteer/lib/types.d.ts",
       "../server/requesthandlers.ts",
       "../server/thalia.d.ts",
+      "./blah.ts",
       "./frontend.test.ts",
       "./puppeteer.ts",
       "./utilities.ts",

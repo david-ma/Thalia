@@ -1,7 +1,7 @@
 import * as puppeteer from 'puppeteer'
 import { describe, expect, test } from '@jest/globals'
 import fs = require('fs');
-import { getLinks, checkLinks } from './utilities'
+import { getLinks, checkLinks, validURL } from './utilities'
 const jestConfig :any = require('../jest.config')
 const jestURL = jestConfig.globals.URL
 const timeout = process.env.SLOWMO ? 30000 : 10000
@@ -32,10 +32,16 @@ describe.each(websites)('Testing %s', (site) => {
   })
 
   test(`Check external links on ${site} homepage`, () => {
-    return checkLinks(site, homepageLinks)
-  }, timeout * websites.length)
+    return checkLinks(site, homepageLinks.filter(link => validURL(link)))
+  })
 
-  test(`Screenshot ${site}`, () => {
+  test(`Check internal links on ${site} homepage`, () => {
+    // TO DO: Write test here
+    // return checkLinks(site, homepageLinks.filter(link => validURL(link)))
+  })
+
+
+  xtest(`Screenshot ${site}`, () => {
     return new Promise((resolve, reject) => {
       let promises : Promise<any>[]
 
@@ -78,9 +84,10 @@ describe.each(websites)('Testing %s', (site) => {
     })
   }, timeout)
 
-  test(`Check external links on ${site} - ${process.env.PAGE || 'n/a'}`, () => {
+  xtest(`Check external links on ${site} - ${process.env.PAGE || 'n/a'}`, () => {
+    // console.log(`${site} links:`,siteLinks)
     return checkLinks(site, siteLinks)
-  }, timeout * websites.length)
+  }, timeout)
 
   //       page.goto(URL, { waitUntil: 'domcontentloaded' }).then( () => {
   //         expect(true).toBeTruthy();

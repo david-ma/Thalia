@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkLinks = exports.getLinks = exports.asyncForEach = void 0;
+exports.validURL = exports.checkLinks = exports.getLinks = exports.asyncForEach = void 0;
 const http = require("http");
 const https = require("https");
 const xray = require('x-ray')();
@@ -76,7 +76,7 @@ async function checkLinks(site, links) {
             if (link.match(/^https/gi)) {
                 requester = https;
             }
-            if (requester) {
+            try {
                 requester
                     .get(link, {
                     timeout: 2000,
@@ -104,6 +104,9 @@ async function checkLinks(site, links) {
                     done(`${e.message} - ${link}`);
                 });
             }
+            catch (e) {
+                done(`${e.message} - ${link}`);
+            }
         })
             .then((errors) => {
             if (errors.length > 0) {
@@ -119,3 +122,13 @@ async function checkLinks(site, links) {
     });
 }
 exports.checkLinks = checkLinks;
+function validURL(str) {
+    var pattern = new RegExp('^(https?:\\/\\/)?' + // protocol
+        '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
+        '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
+        '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
+        '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
+        '(\\#[-a-z\\d_]*)?$', 'i'); // fragment locator
+    return !!pattern.test(str);
+}
+exports.validURL = validURL;

@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const globals_1 = require("@jest/globals");
 const fs = require("fs");
 const utilities_1 = require("./utilities");
+const _ = require("lodash");
 const consoleLog = console.log;
 console.log = jest.fn();
 const requestHandlers_1 = require("../server/requestHandlers");
@@ -65,7 +66,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
     });
     itif(websites[site].domains)(`Website Domains`, () => {
         config.domains.forEach((domain) => {
-            globals_1.expect(validURL(domain)).toBe(true);
+            globals_1.expect(utilities_1.validURL(domain)).toBe(true);
         });
     });
     globals_1.test(`Public Folder`, () => {
@@ -79,7 +80,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
     });
     // Audit usage of features?
     itif(websites[site].sockets)(`Sockets Used`, () => { });
-    itif(websites[site].proxies)(`Proxies Used`, () => {
+    itif(websites[site].proxies)(`Proxy hosts are online`, () => {
         const proxies = websites[site]
             .proxies;
         const links = proxies.map((proxy) => {
@@ -93,13 +94,24 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
         });
         return utilities_1.checkLinks(site, links);
     }, timeout);
+    itif(websites[site].proxies)(`Proxy domains are working`, () => {
+        const proxies = websites[site]
+            .proxies;
+        const links = _.flatten(proxies.map((proxy) => proxy.domains.map((link) => {
+            if (link.indexOf('http') !== 0) {
+                link = (proxy.port === 443 ? 'https://' : 'http://') + link;
+            }
+            return link;
+        })));
+        return utilities_1.checkLinks(site, links);
+    });
     let validLinks = [];
     itif(websites[site].redirects)(`Redirects are valid`, () => {
         const invalid = {};
         validLinks = Object.keys(websites[site].redirects)
             .map((redirect) => {
             const link = websites[site].redirects[redirect];
-            if (!validURL(link)) {
+            if (!utilities_1.validURL(link)) {
                 invalid[redirect] = link;
                 return null;
             }
@@ -154,15 +166,6 @@ if (false) {
     console.log(globals_1.test);
     utilities_1.asyncForEach([], function () { });
     console.log(xitif);
-}
-function validURL(str) {
-    var pattern = new RegExp('^(https?:\\/\\/)?' + // protocol
-        '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
-        '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
-        '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
-        '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
-        '(\\#[-a-z\\d_]*)?$', 'i'); // fragment locator
-    return !!pattern.test(str);
 }
 function findSiteConfig(site) {
     if (fs.existsSync(`websites/${site}/config.js`))

@@ -1,7 +1,8 @@
 import { describe, expect, test } from '@jest/globals'
 import fs = require('fs')
 import type { Thalia } from '../server/thalia'
-import { asyncForEach, checkLinks } from './utilities'
+import { asyncForEach, checkLinks, validURL } from './utilities'
+import * as _ from 'lodash'
 
 const consoleLog = console.log
 console.log = jest.fn()
@@ -93,7 +94,7 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   // Audit usage of features?
   itif(websites[site].sockets)(`Sockets Used`, () => {})
   itif(websites[site].proxies)(
-    `Proxies Used`,
+    `Proxy hosts are online`,
     () => {
       const proxies: Thalia.rawProxy[] = websites[site]
         .proxies as Thalia.rawProxy[]
@@ -114,6 +115,24 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     },
     timeout
   )
+
+  itif(websites[site].proxies)(`Proxy domains are working`, () => {
+    const proxies: Thalia.rawProxy[] = websites[site]
+      .proxies as Thalia.rawProxy[]
+
+    const links = _.flatten(
+      proxies.map((proxy) =>
+        proxy.domains.map((link) => {
+          if (link.indexOf('http') !== 0) {
+            link = (proxy.port === 443 ? 'https://' : 'http://') + link
+          }
+          return link
+        })
+      )
+    )
+
+    return checkLinks(site, links)
+  })
 
   let validLinks: string[] = []
   itif(websites[site].redirects)(`Redirects are valid`, () => {
@@ -188,19 +207,6 @@ if (false) {
   console.log(test)
   asyncForEach([], function () {})
   console.log(xitif)
-}
-
-function validURL(str: string) {
-  var pattern = new RegExp(
-    '^(https?:\\/\\/)?' + // protocol
-      '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
-      '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
-      '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
-      '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
-      '(\\#[-a-z\\d_]*)?$',
-    'i'
-  ) // fragment locator
-  return !!pattern.test(str)
 }
 
 function findSiteConfig(site: string): string {

@@ -31,9 +31,13 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
         });
     });
     globals_1.test(`Check external links on ${site} homepage`, () => {
-        return utilities_1.checkLinks(site, homepageLinks);
-    }, timeout * websites.length);
-    globals_1.test(`Screenshot ${site}`, () => {
+        return utilities_1.checkLinks(site, homepageLinks.filter(link => utilities_1.validURL(link)));
+    });
+    globals_1.test(`Check internal links on ${site} homepage`, () => {
+        // TO DO: Write test here
+        // return checkLinks(site, homepageLinks.filter(link => validURL(link)))
+    });
+    xtest(`Screenshot ${site}`, () => {
         return new Promise((resolve, reject) => {
             let promises;
             puppeteer.launch().then(browser => {
@@ -73,9 +77,10 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
             });
         });
     }, timeout);
-    globals_1.test(`Check external links on ${site} - ${process.env.PAGE || 'n/a'}`, () => {
+    xtest(`Check external links on ${site} - ${process.env.PAGE || 'n/a'}`, () => {
+        // console.log(`${site} links:`,siteLinks)
         return utilities_1.checkLinks(site, siteLinks);
-    }, timeout * websites.length);
+    }, timeout);
     //       page.goto(URL, { waitUntil: 'domcontentloaded' }).then( () => {
     //         expect(true).toBeTruthy();
     //       })

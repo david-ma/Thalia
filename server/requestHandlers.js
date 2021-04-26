@@ -9,8 +9,8 @@ class Website {
     constructor(site, config) {
         if (typeof config === 'object') {
             this.name = site;
-            this.data = ''; // Used to be false. Todo: Check if this is ok
-            this.dist = ''; // Used to be false. Todo: Check if this is ok
+            this.data = '';
+            this.dist = '';
             this.cache = typeof config.cache === 'boolean' ? config.cache : true;
             this.folder =
                 typeof config.folder === 'string'
@@ -139,14 +139,11 @@ const handle = {
                             console.log();
                         }
                         else {
-                            // Note, we want this to be silent if config.js is missing, because we can just serve the public/dist folders.
-                            // but log an error if config.js requires something that is not available.
                             if (err.requireStack &&
                                 err.requireStack[0].indexOf('thalia.js') > 0) {
                                 console.log(`${site} does not use config.js, just serve the public folder`);
                             }
                             else {
-                                // Do we want errors to appear in standard error? Or standard log??? Both???
                                 console.error(`Error loading config for ${site}`);
                                 console.log(err);
                                 console.log();
@@ -158,22 +155,18 @@ const handle = {
             });
         }
     },
-    // TODO: Make all of this asynchronous?
-    // Add a site to the handle
     addWebsite: function (site, config) {
         config = config || {};
         handle.websites[site] = new Website(site, config);
         const baseUrl = config.standAlone
             ? path.resolve(__dirname, '..')
             : path.resolve(__dirname, '..', 'websites', site);
-        // If dist or data exist, enable them.
         if (fs.existsSync(path.resolve(baseUrl, 'data'))) {
             handle.websites[site].data = path.resolve(baseUrl, 'data');
         }
         if (fs.existsSync(path.resolve(baseUrl, 'dist'))) {
             handle.websites[site].dist = path.resolve(baseUrl, 'dist');
         }
-        // Proxy things
         if (Array.isArray(handle.websites[site].proxies)) {
             ;
             handle.websites[site].proxies.forEach(function (proxy) {
@@ -206,7 +199,6 @@ const handle = {
             }
             return proxies;
         }
-        // If sequelize is set up, add it.
         if (fs.existsSync(path.resolve(baseUrl, 'db_bootstrap.js'))) {
             try {
                 const start = Date.now();
@@ -227,10 +219,8 @@ const handle = {
                 console.log(e);
             }
         }
-        // If website has views, load them.
         if (fs.existsSync(path.resolve(baseUrl, 'views'))) {
             handle.websites[site].views = true;
-            // Stupid hack for development if you don't want to cache the views :(
             handle.websites[site].readAllViews = function (cb) {
                 readAllViews(path.resolve(baseUrl, 'views')).then((d) => cb(d));
             };
@@ -265,14 +255,6 @@ const handle = {
                     .catch((e) => console.log(e));
             });
         }
-        // Unused feature? Commenting it out DKGM 2020-10-29
-        // If the site has any startup actions, do them
-        // if(config.startup){
-        //     config.startup.forEach(function(action:any){
-        //         action(handle.websites[site]);
-        //     });
-        // }
-        // Add the site to the index
         handle.index[site + '.david-ma.net'] = site;
         handle.index[`${site}.com`] = site;
         handle.index[`${site}.net`] = site;
@@ -283,12 +265,10 @@ const handle = {
     getWebsite: function (domain) {
         let site = handle.index.localhost;
         if (domain) {
-            // if (handle.index.hasOwnProperty(domain)) {
             if (Object.prototype.hasOwnProperty.call(handle.index, domain)) {
                 site = handle.index[domain];
             }
             domain = domain.replace('www.', '');
-            // if (handle.index.hasOwnProperty(domain)) {
             if (Object.prototype.hasOwnProperty.call(handle.index, domain)) {
                 site = handle.index[domain];
             }
@@ -299,16 +279,13 @@ const handle = {
 };
 exports.handle = handle;
 handle.addWebsite('default', {});
-// TODO: handle rejection & errors?
 async function readTemplate(template, folder, content = '') {
     return new Promise((resolve) => {
         const promises = [];
         const filenames = ['template', 'content'];
-        // Load the mustache template (outer layer)
         promises.push(fsPromise.readFile(`${folder}/${template}`, {
             encoding: 'utf8',
         }));
-        // Load the mustache content (innermost layer)
         promises.push(new Promise((resolve) => {
             if (Array.isArray(content) && content[0])
                 content = content[0];
@@ -337,8 +314,6 @@ async function readTemplate(template, folder, content = '') {
                 });
             });
         }));
-        // Load all the other partials we may need
-        // Todo: Check folder exists and is not empty?
         fsPromise.readdir(`${folder}/partials/`).then(function (d) {
             d.forEach(function (filename) {
                 if (filename.indexOf('.mustache') > 0) {
@@ -386,7 +361,6 @@ async function readAllViews(folder) {
                             readAllViews(`${folder}/${filename}`).then((d) => resolve(d));
                         }
                         else {
-                            // console.log(`${filename} is not a folder`);
                             resolve({});
                         }
                     });

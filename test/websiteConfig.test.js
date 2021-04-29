@@ -9,6 +9,7 @@ console.log = jest.fn();
 const requestHandlers_1 = require("../server/requestHandlers");
 requestHandlers_1.handle.loadAllWebsites();
 console.log = consoleLog;
+const testserver = 'http://127.0.0.1:1337';
 const jestConfig = require('../jest.config');
 const jestURL = jestConfig.globals.URL;
 const timeout = process.env.SLOWMO ? 30000 : 10000;
@@ -45,7 +46,7 @@ Object.keys(configPaths)
 });
 // Tests:
 const itif = (condition) => (condition ? it : it.skip);
-const xitif = (condition) => (condition ? it.skip : it.skip);
+const xitif = (condition) => it.skip;
 globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     let config;
     globals_1.test(`Config.js can be opened?`, () => {
@@ -80,7 +81,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
     });
     // Audit usage of features?
     itif(websites[site].sockets)(`Sockets Used`, () => { });
-    itif(websites[site].proxies)(`Proxy hosts are online`, () => {
+    xitif(websites[site].proxies)(`Proxy hosts are online`, () => {
         const proxies = websites[site]
             .proxies;
         const links = proxies.map((proxy) => {
@@ -125,7 +126,12 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
     itif(websites[site].redirects)(`All valid redirect links work`, () => {
         return utilities_1.checkLinks(site, validLinks);
     }, timeout);
-    itif(websites[site].pages)(`Pages Used`, () => { });
+    itif(websites[site].pages)(`Pages Used`, () => {
+        const pages = Object.keys(websites[site].pages).map((key) => {
+            return `${testserver}${websites[site].pages[key]}`;
+        });
+        return utilities_1.checkLinks(site, pages);
+    });
     itif(requestHandlers_1.handle.websites[site].views)(`Views Used`, () => { });
     // itif(websites[site].viewableFolders)(`viewable Folders`, () => {})
     /**

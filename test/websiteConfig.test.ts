@@ -10,6 +10,7 @@ import { handle } from '../server/requestHandlers'
 handle.loadAllWebsites()
 console.log = consoleLog
 
+const testserver: string = 'http://127.0.0.1:1337'
 const jestConfig: any = require('../jest.config')
 const jestURL = jestConfig.globals.URL
 const timeout = process.env.SLOWMO ? 30000 : 10000
@@ -56,7 +57,7 @@ Object.keys(configPaths)
 
 // Tests:
 const itif = (condition: any) => (condition ? it : it.skip)
-const xitif = (condition: any) => (condition ? it.skip : it.skip)
+const xitif = (condition: any) => it.skip
 
 describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   let config: Thalia.WebsiteConfig
@@ -93,7 +94,7 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
 
   // Audit usage of features?
   itif(websites[site].sockets)(`Sockets Used`, () => {})
-  itif(websites[site].proxies)(
+  xitif(websites[site].proxies)(
     `Proxy hosts are online`,
     () => {
       const proxies: Thalia.rawProxy[] = websites[site]
@@ -161,7 +162,13 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     timeout
   )
 
-  itif(websites[site].pages)(`Pages Used`, () => {})
+  itif(websites[site].pages)(`Pages Used`, () => {
+    const pages: string[] = Object.keys(websites[site].pages).map((key) => {
+      return `${testserver}${websites[site].pages[key]}`
+    })
+
+    return checkLinks(site, pages)
+  })
 
   itif(handle.websites[site].views)(`Views Used`, () => {})
 

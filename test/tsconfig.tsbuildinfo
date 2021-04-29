@@ -717,7 +717,7 @@
         "affectsGlobalScope": true
       },
       "./websiteconfig.test.ts": {
-        "version": "e17e4cd7c3a9c5eba2004a337334d346a0eaecf6bbebb1b256cde9b78f9dd404",
+        "version": "f73c7fd575bcfc403de9b85a2ad5df57635d7dae58141eecc274576767cd7fe0",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
         "affectsGlobalScope": false
       },
@@ -1138,7 +1138,6 @@
       "assumeChangesOnlyAffectDirectDependencies": true,
       "incremental": true,
       "target": 7,
-      "preserveWatchOutput": true,
       "watch": true,
       "configFilePath": "./tsconfig.json"
     },
@@ -1248,7 +1247,6 @@
       ],
       "../node_modules/@types/d3-selection-multi/index.d.ts": [
         "../node_modules/@types/d3-axis/node_modules/@types/d3-selection/index.d.ts",
-        "../node_modules/@types/d3-selection-multi/node_modules/@types/d3-transition/index.d.ts",
         "../node_modules/@types/d3-transition/index.d.ts"
       ],
       "../node_modules/@types/d3-selection-multi/node_modules/@types/d3-transition/index.d.ts": [
@@ -1261,8 +1259,7 @@
       ],
       "../node_modules/@types/d3-transition/index.d.ts": [
         "../node_modules/@types/d3-axis/node_modules/@types/d3-selection/index.d.ts",
-        "../node_modules/@types/d3-selection-multi/index.d.ts",
-        "../node_modules/@types/d3-selection-multi/node_modules/@types/d3-transition/index.d.ts"
+        "../node_modules/@types/d3-selection-multi/index.d.ts"
       ],
       "../node_modules/@types/d3-zoom/index.d.ts": [
         "../node_modules/@types/d3-axis/node_modules/@types/d3-selection/index.d.ts",

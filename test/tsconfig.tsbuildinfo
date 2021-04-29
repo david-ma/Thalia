@@ -717,7 +717,7 @@
         "affectsGlobalScope": true
       },
       "./websiteconfig.test.ts": {
-        "version": "f73c7fd575bcfc403de9b85a2ad5df57635d7dae58141eecc274576767cd7fe0",
+        "version": "b25acf7d5a53f848f580fcd1a7c82569e4c337bb32ec80c19d6a1ea8afe10ea5",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
         "affectsGlobalScope": false
       },
@@ -1871,6 +1871,7 @@
       "./websiteconfig.test.ts": [
         "../node_modules/@jest/globals/build/index.d.ts",
         "../node_modules/@types/lodash/index.d.ts",
+        "../node_modules/@types/mustache/index.d.ts",
         "../node_modules/@types/node/fs.d.ts",
         "../server/requesthandlers.ts",
         "../server/thalia.d.ts",

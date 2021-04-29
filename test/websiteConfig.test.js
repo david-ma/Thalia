@@ -4,6 +4,7 @@ const globals_1 = require("@jest/globals");
 const fs = require("fs");
 const utilities_1 = require("./utilities");
 const _ = require("lodash");
+const mustache = require("mustache");
 const consoleLog = console.log;
 console.log = jest.fn();
 const requestHandlers_1 = require("../server/requestHandlers");
@@ -81,7 +82,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
     });
     // Audit usage of features?
     itif(websites[site].sockets)(`Sockets Used`, () => { });
-    xitif(websites[site].proxies)(`Proxy hosts are online`, () => {
+    itif(websites[site].proxies)(`Proxy hosts are online`, () => {
         const proxies = websites[site]
             .proxies;
         const links = proxies.map((proxy) => {
@@ -132,7 +133,23 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
         });
         return utilities_1.checkLinks(site, pages);
     });
-    itif(requestHandlers_1.handle.websites[site].views)(`Views Used`, () => { });
+    // This doesn't actually check if the mustache templates are valid
+    // It just opens them?? Perhaps try finding what data they need?
+    // Maybe use a library?
+    itif(requestHandlers_1.handle.websites[site].views)(`Views Used`, (done) => {
+        try {
+            requestHandlers_1.handle.websites[site].readAllViews((views) => {
+                Object.keys(views).forEach((view) => {
+                    const template = views[view];
+                    mustache.render(template, {});
+                });
+                done();
+            });
+        }
+        catch (e) {
+            done(e);
+        }
+    }, timeout);
     // itif(websites[site].viewableFolders)(`viewable Folders`, () => {})
     /**
      * To do:

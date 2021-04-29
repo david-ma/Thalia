@@ -3,6 +3,7 @@ import fs = require('fs')
 import type { Thalia } from '../server/thalia'
 import { asyncForEach, checkLinks, validURL } from './utilities'
 import * as _ from 'lodash'
+import mustache = require('mustache')
 
 const consoleLog = console.log
 console.log = jest.fn()
@@ -94,7 +95,7 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
 
   // Audit usage of features?
   itif(websites[site].sockets)(`Sockets Used`, () => {})
-  xitif(websites[site].proxies)(
+  itif(websites[site].proxies)(
     `Proxy hosts are online`,
     () => {
       const proxies: Thalia.rawProxy[] = websites[site]
@@ -170,7 +171,29 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     return checkLinks(site, pages)
   })
 
-  itif(handle.websites[site].views)(`Views Used`, () => {})
+  // This doesn't actually check if the mustache templates are valid
+  // It just opens them?? Perhaps try finding what data they need?
+  // Maybe use a library?
+  itif(handle.websites[site].views)(
+    `Views Used`,
+    (done) => {
+      try {
+        handle.websites[site].readAllViews(
+          (views: { [key: string]: string }) => {
+            Object.keys(views).forEach((view) => {
+              const template = views[view]
+              mustache.render(template, {})
+            })
+
+            done()
+          }
+        )
+      } catch (e) {
+        done(e)
+      }
+    },
+    timeout
+  )
 
   // itif(websites[site].viewableFolders)(`viewable Folders`, () => {})
 

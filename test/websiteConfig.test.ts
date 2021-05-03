@@ -94,6 +94,7 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   })
 
   // Audit usage of features?
+  itif(handle.websites[site].seq)(`Database used`, () => {})
   itif(websites[site].sockets)(`Sockets Used`, () => {})
   itif(websites[site].proxies)(
     `Proxy hosts are online`,

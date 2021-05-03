@@ -81,6 +81,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
         });
     });
     // Audit usage of features?
+    itif(requestHandlers_1.handle.websites[site].seq)(`Database used`, () => { });
     itif(websites[site].sockets)(`Sockets Used`, () => { });
     itif(websites[site].proxies)(`Proxy hosts are online`, () => {
         const proxies = websites[site]

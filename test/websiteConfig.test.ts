@@ -94,11 +94,21 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   })
 
   // Audit usage of features?
-  itif(handle.websites[site].seq)(`Database used`, () => {})
+  itif(handle.websites[site].seq)(
+    `Databases used`,
+    function inspectDatabases() {
+      console.info(
+        `${site} uses these databases:`,
+        Object.keys(handle.websites[site].seq).filter(
+          (key) => key !== 'sequelize'
+        )
+      )
+    }
+  )
   itif(websites[site].sockets)(`Sockets Used`, () => {})
   itif(websites[site].proxies)(
     `Proxy hosts are online`,
-    () => {
+    function checkProxyHosts() {
       const proxies: Thalia.rawProxy[] = websites[site]
         .proxies as Thalia.rawProxy[]
       const links: string[] = proxies.map((proxy: Thalia.rawProxy) => {

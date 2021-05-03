@@ -135,7 +135,7 @@ async function checkLinks(site: string, links: string[]) {
         }
       })
       .catch((e) => {
-        reject(e)
+        reject(e.message)
       })
   })
 }

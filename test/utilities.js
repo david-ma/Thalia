@@ -117,7 +117,7 @@ async function checkLinks(site, links) {
             }
         })
             .catch((e) => {
-            reject(e);
+            reject(e.message);
         });
     });
 }

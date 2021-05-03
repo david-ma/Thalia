@@ -81,9 +81,11 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
         });
     });
     // Audit usage of features?
-    itif(requestHandlers_1.handle.websites[site].seq)(`Database used`, () => { });
+    itif(requestHandlers_1.handle.websites[site].seq)(`Databases used`, function inspectDatabases() {
+        console.info(`${site} uses these databases:`, Object.keys(requestHandlers_1.handle.websites[site].seq).filter((key) => key !== 'sequelize'));
+    });
     itif(websites[site].sockets)(`Sockets Used`, () => { });
-    itif(websites[site].proxies)(`Proxy hosts are online`, () => {
+    itif(websites[site].proxies)(`Proxy hosts are online`, function checkProxyHosts() {
         const proxies = websites[site]
             .proxies;
         const links = proxies.map((proxy) => {

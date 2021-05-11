@@ -692,12 +692,7 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                                     filename += 'index.html';
                                 }
                                 else {
-                                    if (request.url.indexOf('?') !== -1) {
-                                        redirect(request.url.replace("?", "/?"));
-                                    }
-                                    else {
-                                        redirect(request.url + "/");
-                                    }
+                                    redirect(request.url.replace(/(^\/.*?)\/?(\?$|$)/, '$1/$2'));
                                     return;
                                 }
                                 // Note we don't have content type, caching, or zipping!!!!

@@ -41,7 +41,7 @@ describe.each(websites)('Testing %s', (site) => {
   })
 
 
-  xtest(`Screenshot ${site}`, () => {
+  test(`Screenshot ${site}`, () => {
     return new Promise((resolve, reject) => {
       let promises : Promise<any>[]
 

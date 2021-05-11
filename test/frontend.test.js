@@ -37,7 +37,7 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
         // TO DO: Write test here
         // return checkLinks(site, homepageLinks.filter(link => validURL(link)))
     });
-    xtest(`Screenshot ${site}`, () => {
+    globals_1.test(`Screenshot ${site}`, () => {
         return new Promise((resolve, reject) => {
             let promises;
             puppeteer.launch().then(browser => {

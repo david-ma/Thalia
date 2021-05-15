@@ -8,7 +8,7 @@ const jestConfig = require('../jest.config');
 const jestURL = jestConfig.globals.URL;
 // Asynchronous for each, doing a limited number of things at a time. Pool of resources.
 async function asyncForEach(array, callback, limit = 5) {
-    return new Promise((resolve) => {
+    return await new Promise((resolve) => {
         let i = 0;
         let happening = 0;
         const errorMessages = [];
@@ -37,12 +37,12 @@ async function asyncForEach(array, callback, limit = 5) {
 exports.asyncForEach = asyncForEach;
 async function getLinks(site, page = '') {
     // console.log(`Getting links on ${site} - ${URL} - ${page}`)
-    return new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
         http
             .get(`${jestURL}/${page}`, {
             headers: {
-                'x-host': `${site}.com`,
-            },
+                'x-host': `${site}.com`
+            }
         }, function (res) {
             let rawData = '';
             res.on('data', (chunk) => {
@@ -70,7 +70,7 @@ async function getLinks(site, page = '') {
 }
 exports.getLinks = getLinks;
 async function checkLinks(site, links) {
-    return new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
         asyncForEach(links, function (link, done) {
             let requester = http;
             if (link.match(/^https/gi)) {
@@ -82,13 +82,13 @@ async function checkLinks(site, links) {
                     timeout: 2000,
                     headers: {
                         'x-host': `${site}.com`,
-                        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36',
-                    },
+                        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36'
+                    }
                 }, function (response) {
                     // TODO: Follow 3xx links and see if they're valid?
                     const allowedStatusCodes = [200, 301, 302, 303, 307, 999];
                     response.on('end', function () {
-                        if (allowedStatusCodes.indexOf(response.statusCode) === -1) {
+                        if (!allowedStatusCodes.includes(response.statusCode)) {
                             done(`${response.statusCode} - ${link}`);
                         }
                         else {

@@ -1,12 +1,12 @@
 import * as puppeteer from 'puppeteer'
 import { describe, expect, test } from '@jest/globals'
-import fs = require('fs');
+import fs = require('fs')
 import { getLinks, checkLinks, validURL } from './utilities'
-const jestConfig :any = require('../jest.config')
+const jestConfig: any = require('../jest.config')
 const jestURL = jestConfig.globals.URL
 const timeout = process.env.SLOWMO ? 30000 : 10000
 
-let websites :string[] = []
+let websites: string[] = []
 if (process.env.SITE && process.env.SITE !== 'all') {
   websites = [process.env.SITE]
 } else {
@@ -14,16 +14,16 @@ if (process.env.SITE && process.env.SITE !== 'all') {
 }
 
 describe.each(websites)('Testing %s', (site) => {
-  let homepageLinks: Array<string> = []
-  let siteLinks: Array<string> = []
-  beforeAll(() => {
+  let homepageLinks: string[] = []
+  let siteLinks: string[] = []
+  beforeAll(async () => {
     const promises = [
       getLinks(site)
     ]
 
     if (process.env.PAGE) promises.push(getLinks(site, process.env.PAGE))
 
-    return Promise.all(promises).then((array :string[][]) => {
+    return await Promise.all(promises).then((array: string[][]) => {
       homepageLinks = array[0]
       if (array[1]) {
         siteLinks = array[1]
@@ -31,8 +31,8 @@ describe.each(websites)('Testing %s', (site) => {
     })
   })
 
-  test(`Check external links on ${site} homepage`, () => {
-    return checkLinks(site, homepageLinks.filter(link => validURL(link)))
+  test(`Check external links on ${site} homepage`, async () => {
+    return await checkLinks(site, homepageLinks.filter(link => validURL(link)))
   })
 
   test(`Check internal links on ${site} homepage`, () => {
@@ -40,10 +40,9 @@ describe.each(websites)('Testing %s', (site) => {
     // return checkLinks(site, homepageLinks.filter(link => validURL(link)))
   })
 
-
-  test(`Screenshot ${site}`, () => {
-    return new Promise((resolve, reject) => {
-      let promises : Promise<any>[]
+  test(`Screenshot ${site}`, async () => {
+    return await new Promise((resolve, reject) => {
+      let promises: Array<Promise<any>>
 
       puppeteer.launch().then(browser => {
         browser.newPage().then(page => {
@@ -84,9 +83,9 @@ describe.each(websites)('Testing %s', (site) => {
     })
   }, timeout)
 
-  xtest(`Check external links on ${site} - ${process.env.PAGE || 'n/a'}`, () => {
+  xtest(`Check external links on ${site} - ${process.env.PAGE || 'n/a'}`, async () => {
     // console.log(`${site} links:`,siteLinks)
-    return checkLinks(site, siteLinks)
+    return await checkLinks(site, siteLinks)
   }, timeout)
 
   //       page.goto(URL, { waitUntil: 'domcontentloaded' }).then( () => {

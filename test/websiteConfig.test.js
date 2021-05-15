@@ -5,9 +5,9 @@ const fs = require("fs");
 const utilities_1 = require("./utilities");
 const _ = require("lodash");
 const mustache = require("mustache");
+const requestHandlers_1 = require("../server/requestHandlers");
 const consoleLog = console.log;
 console.log = jest.fn();
-const requestHandlers_1 = require("../server/requestHandlers");
 requestHandlers_1.handle.loadAllWebsites();
 console.log = consoleLog;
 const testserver = 'http://127.0.0.1:1337';
@@ -15,12 +15,12 @@ const jestConfig = require('../jest.config');
 const jestURL = jestConfig.globals.URL;
 const timeout = process.env.SLOWMO ? 30000 : 10000;
 let configPaths = {};
-let websites = {};
+const websites = {};
 // Setup:
 // process.env.SITE = 'david-ma' // Uncomment to test just one site
 if (process.env.SITE && process.env.SITE !== 'all') {
     configPaths = {
-        [process.env.SITE]: findSiteConfig(process.env.SITE),
+        [process.env.SITE]: findSiteConfig(process.env.SITE)
     };
 }
 else {
@@ -50,8 +50,8 @@ const itif = (condition) => (condition ? it : it.skip);
 const xitif = (condition) => it.skip;
 globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     let config;
-    globals_1.test(`Config.js can be opened?`, () => {
-        return new Promise((resolve, reject) => {
+    globals_1.test('Config.js can be opened?', async () => {
+        return await new Promise((resolve, reject) => {
             try {
                 config = requestHandlers_1.handle.websites[site];
                 // config = handle.websites[site]
@@ -66,13 +66,13 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
             }
         });
     });
-    itif(websites[site].domains)(`Website Domains`, () => {
+    itif(websites[site].domains)('Website Domains', () => {
         config.domains.forEach((domain) => {
             globals_1.expect(utilities_1.validURL(domain)).toBe(true);
         });
     });
-    globals_1.test(`Public Folder`, () => {
-        return new Promise((resolve, reject) => {
+    globals_1.test('Public Folder', async () => {
+        return await new Promise((resolve, reject) => {
             fs.access(config.folder, (err) => {
                 if (err)
                     reject(`Can't access public folder for ${site}`);
@@ -81,11 +81,11 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
         });
     });
     // Audit usage of features?
-    itif(requestHandlers_1.handle.websites[site].seq)(`Databases used`, function inspectDatabases() {
+    itif(requestHandlers_1.handle.websites[site].seq)('Databases used', function inspectDatabases() {
         console.info(`${site} uses these databases:`, Object.keys(requestHandlers_1.handle.websites[site].seq).filter((key) => key !== 'sequelize'));
     });
-    itif(websites[site].sockets)(`Sockets Used`, () => { });
-    itif(websites[site].proxies)(`Proxy hosts are online`, function checkProxyHosts() {
+    itif(websites[site].sockets)('Sockets Used', () => { });
+    itif(websites[site].proxies)('Proxy hosts are online', async function checkProxyHosts() {
         const proxies = websites[site]
             .proxies;
         const links = proxies.map((proxy) => {
@@ -99,7 +99,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
         });
         return utilities_1.checkLinks(site, links);
     }, timeout);
-    itif(websites[site].proxies)(`Proxy domains are working`, () => {
+    itif(websites[site].proxies)('Proxy domains are working', async () => {
         const proxies = websites[site]
             .proxies;
         const links = _.flatten(proxies.map((proxy) => proxy.domains.map((link) => {
@@ -111,7 +111,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
         return utilities_1.checkLinks(site, links);
     });
     let validLinks = [];
-    itif(websites[site].redirects)(`Redirects are valid`, () => {
+    itif(websites[site].redirects)('Redirects are valid', () => {
         const invalid = {};
         validLinks = Object.keys(websites[site].redirects)
             .map((redirect) => {
@@ -127,10 +127,10 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
             .filter((d) => d !== null);
         globals_1.expect(invalid).toStrictEqual({});
     });
-    itif(websites[site].redirects)(`All valid redirect links work`, () => {
-        return utilities_1.checkLinks(site, validLinks);
+    itif(websites[site].redirects)('All valid redirect links work', async () => {
+        return await utilities_1.checkLinks(site, validLinks);
     }, timeout);
-    itif(websites[site].pages)(`Pages Used`, () => {
+    itif(websites[site].pages)('Pages Used', async () => {
         const pages = Object.keys(websites[site].pages).map((key) => {
             return `${testserver}${websites[site].pages[key]}`;
         });
@@ -139,7 +139,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
     // This doesn't actually check if the mustache templates are valid
     // It just opens them?? Perhaps try finding what data they need?
     // Maybe use a library?
-    itif(requestHandlers_1.handle.websites[site].views)(`Views Used`, (done) => {
+    itif(requestHandlers_1.handle.websites[site].views)('Views Used', (done) => {
         try {
             requestHandlers_1.handle.websites[site].readAllViews((views) => {
                 Object.keys(views).forEach((view) => {
@@ -176,8 +176,8 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
     //   })
     // })
     // itif(handle.getWebsite(site).data)(`${site} data folder`, () => {
-    itif(requestHandlers_1.handle.websites[site].data)(`${site} data folder`, () => {
-        return new Promise((resolve, reject) => {
+    itif(requestHandlers_1.handle.websites[site].data)(`${site} data folder`, async () => {
+        return await new Promise((resolve, reject) => {
             fs.access(`websites/${site}/data`, (err) => {
                 if (err)
                     reject(`Can't access data folder for ${site}`);
@@ -194,9 +194,11 @@ if (false) {
     console.log(xitif);
 }
 function findSiteConfig(site) {
-    if (fs.existsSync(`websites/${site}/config.js`))
+    if (fs.existsSync(`websites/${site}/config.js`)) {
         return `websites/${site}/config.js`;
-    if (fs.existsSync(`websites/${site}/config/config.js`))
+    }
+    if (fs.existsSync(`websites/${site}/config/config.js`)) {
         return `websites/${site}/config/config.js`;
+    }
     return '';
 }

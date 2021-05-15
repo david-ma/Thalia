@@ -17,28 +17,28 @@ else {
 globals_1.describe.each(websites)('Testing %s', (site) => {
     let homepageLinks = [];
     let siteLinks = [];
-    beforeAll(() => {
+    beforeAll(async () => {
         const promises = [
             utilities_1.getLinks(site)
         ];
         if (process.env.PAGE)
             promises.push(utilities_1.getLinks(site, process.env.PAGE));
-        return Promise.all(promises).then((array) => {
+        return await Promise.all(promises).then((array) => {
             homepageLinks = array[0];
             if (array[1]) {
                 siteLinks = array[1];
             }
         });
     });
-    globals_1.test(`Check external links on ${site} homepage`, () => {
-        return utilities_1.checkLinks(site, homepageLinks.filter(link => utilities_1.validURL(link)));
+    globals_1.test(`Check external links on ${site} homepage`, async () => {
+        return await utilities_1.checkLinks(site, homepageLinks.filter(link => utilities_1.validURL(link)));
     });
     globals_1.test(`Check internal links on ${site} homepage`, () => {
         // TO DO: Write test here
         // return checkLinks(site, homepageLinks.filter(link => validURL(link)))
     });
-    globals_1.test(`Screenshot ${site}`, () => {
-        return new Promise((resolve, reject) => {
+    globals_1.test(`Screenshot ${site}`, async () => {
+        return await new Promise((resolve, reject) => {
             let promises;
             puppeteer.launch().then(browser => {
                 browser.newPage().then(page => {
@@ -77,9 +77,9 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
             });
         });
     }, timeout);
-    xtest(`Check external links on ${site} - ${process.env.PAGE || 'n/a'}`, () => {
+    xtest(`Check external links on ${site} - ${process.env.PAGE || 'n/a'}`, async () => {
         // console.log(`${site} links:`,siteLinks)
-        return utilities_1.checkLinks(site, siteLinks);
+        return await utilities_1.checkLinks(site, siteLinks);
     }, timeout);
     //       page.goto(URL, { waitUntil: 'domcontentloaded' }).then( () => {
     //         expect(true).toBeTruthy();

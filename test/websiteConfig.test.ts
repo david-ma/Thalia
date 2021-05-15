@@ -4,10 +4,10 @@ import type { Thalia } from '../server/thalia'
 import { asyncForEach, checkLinks, validURL } from './utilities'
 import * as _ from 'lodash'
 import mustache = require('mustache')
+import { handle } from '../server/requestHandlers'
 
 const consoleLog = console.log
 console.log = jest.fn()
-import { handle } from '../server/requestHandlers'
 handle.loadAllWebsites()
 console.log = consoleLog
 
@@ -16,12 +16,12 @@ const jestConfig: any = require('../jest.config')
 const jestURL = jestConfig.globals.URL
 const timeout = process.env.SLOWMO ? 30000 : 10000
 
-type SiteConfigPaths = {
+interface SiteConfigPaths {
   [key: string]: string
 }
 
 let configPaths: SiteConfigPaths = {}
-let websites: {
+const websites: {
   [key: string]: Thalia.WebsiteConfig
 } = {}
 
@@ -30,7 +30,7 @@ let websites: {
 
 if (process.env.SITE && process.env.SITE !== 'all') {
   configPaths = {
-    [process.env.SITE]: findSiteConfig(process.env.SITE),
+    [process.env.SITE]: findSiteConfig(process.env.SITE)
   }
 } else {
   const websiteArray = fs
@@ -62,8 +62,8 @@ const xitif = (condition: any) => it.skip
 
 describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   let config: Thalia.WebsiteConfig
-  test(`Config.js can be opened?`, () => {
-    return new Promise((resolve, reject) => {
+  test('Config.js can be opened?', async () => {
+    return await new Promise((resolve, reject) => {
       try {
         config = handle.websites[site]
         // config = handle.websites[site]
@@ -78,14 +78,14 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     })
   })
 
-  itif(websites[site].domains)(`Website Domains`, () => {
+  itif(websites[site].domains)('Website Domains', () => {
     config.domains.forEach((domain) => {
       expect(validURL(domain)).toBe(true)
     })
   })
 
-  test(`Public Folder`, () => {
-    return new Promise((resolve, reject) => {
+  test('Public Folder', async () => {
+    return await new Promise((resolve, reject) => {
       fs.access(config.folder, (err) => {
         if (err) reject(`Can't access public folder for ${site}`)
         resolve(true)
@@ -95,8 +95,8 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
 
   // Audit usage of features?
   itif(handle.websites[site].seq)(
-    `Databases used`,
-    function inspectDatabases() {
+    'Databases used',
+    function inspectDatabases () {
       console.info(
         `${site} uses these databases:`,
         Object.keys(handle.websites[site].seq).filter(
@@ -105,10 +105,10 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
       )
     }
   )
-  itif(websites[site].sockets)(`Sockets Used`, () => {})
+  itif(websites[site].sockets)('Sockets Used', () => {})
   itif(websites[site].proxies)(
-    `Proxy hosts are online`,
-    function checkProxyHosts() {
+    'Proxy hosts are online',
+    async function checkProxyHosts () {
       const proxies: Thalia.rawProxy[] = websites[site]
         .proxies as Thalia.rawProxy[]
       const links: string[] = proxies.map((proxy: Thalia.rawProxy) => {
@@ -129,7 +129,7 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     timeout
   )
 
-  itif(websites[site].proxies)(`Proxy domains are working`, () => {
+  itif(websites[site].proxies)('Proxy domains are working', async () => {
     const proxies: Thalia.rawProxy[] = websites[site]
       .proxies as Thalia.rawProxy[]
 
@@ -148,7 +148,7 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   })
 
   let validLinks: string[] = []
-  itif(websites[site].redirects)(`Redirects are valid`, () => {
+  itif(websites[site].redirects)('Redirects are valid', () => {
     const invalid: { [key: string]: string } = {}
 
     validLinks = Object.keys(websites[site].redirects)
@@ -167,14 +167,14 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   })
 
   itif(websites[site].redirects)(
-    `All valid redirect links work`,
-    () => {
-      return checkLinks(site, validLinks)
+    'All valid redirect links work',
+    async () => {
+      return await checkLinks(site, validLinks)
     },
     timeout
   )
 
-  itif(websites[site].pages)(`Pages Used`, () => {
+  itif(websites[site].pages)('Pages Used', async () => {
     const pages: string[] = Object.keys(websites[site].pages).map((key) => {
       return `${testserver}${websites[site].pages[key]}`
     })
@@ -186,7 +186,7 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   // It just opens them?? Perhaps try finding what data they need?
   // Maybe use a library?
   itif(handle.websites[site].views)(
-    `Views Used`,
+    'Views Used',
     (done) => {
       try {
         handle.websites[site].readAllViews(
@@ -232,8 +232,8 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   // })
 
   // itif(handle.getWebsite(site).data)(`${site} data folder`, () => {
-  itif(handle.websites[site].data)(`${site} data folder`, () => {
-    return new Promise((resolve, reject) => {
+  itif(handle.websites[site].data)(`${site} data folder`, async () => {
+    return await new Promise((resolve, reject) => {
       fs.access(`websites/${site}/data`, (err) => {
         if (err) reject(`Can't access data folder for ${site}`)
         resolve(true)
@@ -250,10 +250,8 @@ if (false) {
   console.log(xitif)
 }
 
-function findSiteConfig(site: string): string {
-  if (fs.existsSync(`websites/${site}/config.js`))
-    return `websites/${site}/config.js`
-  if (fs.existsSync(`websites/${site}/config/config.js`))
-    return `websites/${site}/config/config.js`
+function findSiteConfig (site: string): string {
+  if (fs.existsSync(`websites/${site}/config.js`)) { return `websites/${site}/config.js` }
+  if (fs.existsSync(`websites/${site}/config/config.js`)) { return `websites/${site}/config/config.js` }
   return ''
 }

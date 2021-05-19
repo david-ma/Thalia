@@ -26,14 +26,14 @@ cd ..
 cd websites/$SITE
 
     if test -f "tsconfig.json"; then
-        echo "tsconfig.json exists."
+        echo "$SITE/tsconfig.json exists."
         tsc --preserveWatchOutput --watch &
     else
         echo "No tsconfig.json in websites/$SITE"
     fi
 
     if test -f "config/tsconfig.json"; then
-        echo "config/tsconfig.json exists."
+        echo "$SITE/config/tsconfig.json exists."
         cd config
             tsc --preserveWatchOutput --watch &
         cd ..
@@ -42,7 +42,7 @@ cd websites/$SITE
     fi
 
     if test -f "models/tsconfig.json"; then
-        echo "models/tsconfig.json exists."
+        echo "$SITE/models/tsconfig.json exists."
         cd models
             tsc --preserveWatchOutput --watch &
         cd ..
@@ -50,5 +50,13 @@ cd websites/$SITE
         echo "No $SITE/models/tsconfig.json"
     fi
 
+    if test -f "test/tsconfig.json"; then
+        echo "$SITE/test/tsconfig.json exists."
+        cd test
+            tsc --preserveWatchOutput --watch &
+        cd ..
+    else
+        echo "No $SITE/test"
+    fi
 cd ../..
 ./node_modules/.bin/nodemon server/thalia.js $SITE $PORT

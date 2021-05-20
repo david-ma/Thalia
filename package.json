@@ -98,7 +98,7 @@
     "test": "./test.sh",
     "buildServer": "cd server; tsc",
     "watchTests": "cd test; tsc --preserveWatchOutput --watch",
-    "cleanup": "ps -ef | grep 'jest\\|puppeteer\\|tsc --preserveWatchOutput --watch\\|nodemon\\|gulp\\|server/thalia.js\\|watchTests' | grep -v grep | awk '{print $2}' | xargs -t kill -9",
+    "cleanup": "ps -ef | grep 'Chromium.app\\|jest\\|puppeteer\\|tsc --preserveWatchOutput --watch\\|nodemon\\|gulp\\|server/thalia.js\\|watchTests' | grep -v grep | awk '{print $2}' | xargs -t kill -9",
     "badCleanupDoNotUse": "ps -ef | grep 'jest\\|puppeteer\\|tsc --preserveWatchOutput --watch\\|nodemon\\|gulp\\|server/thalia.js\\|watchTests' | grep -v grep | bash -c 'tee >(awk \"{print $2}\" | xargs -t kill -9)'",
     "develop": "./develop.sh"
   },

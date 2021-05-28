@@ -6,22 +6,16 @@
   "main": "index.js",
   "dependencies": {
     "amdefine": "^1.0.1",
-    "async": "^3.2.0",
-    "csv-parser": "^3.0.0",
     "formidable": "^1.2.2",
     "http-proxy": "^1.18.1",
     "lodash": "^4.17.21",
     "mariadb": "^2.5.3",
     "mime": "^2.5.2",
     "mustache": "^4.2.0",
-    "nodemailer": "^6.6.1",
     "puppeteer": "^9.1.1",
     "requirejs": "^2.3.6",
     "sequelize": "^6.6.2",
     "socket.io": "^2.4.1",
-    "tabletojson": "^2.0.6",
-    "x-ray": "^2.3.4",
-    "xml2js": "^0.4.23",
     "zlib": "^1.0.5"
   },
   "devDependencies": {
@@ -46,7 +40,6 @@
     "@types/socket.io": "^2.1.11",
     "@types/socket.io-client": "^1.4.34",
     "@types/validator": "^13.1.0",
-    "@types/xml2js": "^0.4.5",
     "@typescript-eslint/eslint-plugin": "^4.25.0",
     "@typescript-eslint/parser": "^4.25.0",
     "autoprefixer": "10.2.6",
@@ -86,6 +79,7 @@
     "standardx": "^7.0.0",
     "typescript": "^4.3.2",
     "typescript-eslint": "^0.0.1-alpha.0",
+    "x-ray": "^2.3.4",
     "yargs": "^17.0.1"
   },
   "engines": {

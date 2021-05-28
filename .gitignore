@@ -3,6 +3,8 @@ logs
 *.log
 npm-debug.log*
 
+*.tsbuildinfo
+
 # Runtime data
 pids
 *.pid
@@ -39,7 +41,7 @@ node_modules
 credentials.js
 *.dropbox
 bower_components
-Icon
+Icon
 
 
 websites

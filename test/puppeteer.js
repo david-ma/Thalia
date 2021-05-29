@@ -18,8 +18,5 @@ const puppeteer = require("puppeteer");
     page.goto(hrefs[1]);
     hrefs.forEach(function (link, i) {
         console.log('visiting link', i);
-        // page.goto(link)
     });
-    // await page.screenshot({ path: 'example.png' })
-    // await browser.close()
 })();

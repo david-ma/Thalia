@@ -6,19 +6,16 @@ const https = require("https");
 const xray = require('x-ray')();
 const jestConfig = require('../jest.config');
 const jestURL = jestConfig.globals.URL;
-// Asynchronous for each, doing a limited number of things at a time. Pool of resources.
 async function asyncForEach(array, callback, limit = 5) {
     return await new Promise((resolve) => {
         let i = 0;
         let happening = 0;
         const errorMessages = [];
         for (; i < limit; i++) {
-            // Launch a limited number of things
             happening++;
             doNextThing(i);
         }
         function doNextThing(index) {
-            // Each thing calls back "done" and starts the next
             if (array[index]) {
                 callback(array[index], function done(message) {
                     if (message)
@@ -27,7 +24,7 @@ async function asyncForEach(array, callback, limit = 5) {
                 }, index, array);
             }
             else {
-                happening--; // When they're all done, resolve
+                happening--;
                 if (happening === 0)
                     resolve(errorMessages);
             }
@@ -36,7 +33,6 @@ async function asyncForEach(array, callback, limit = 5) {
 }
 exports.asyncForEach = asyncForEach;
 async function getLinks(site, page = '') {
-    // console.log(`Getting links on ${site} - ${URL} - ${page}`)
     return await new Promise((resolve, reject) => {
         http
             .get(`${jestURL}/${page}`, {
@@ -85,7 +81,6 @@ async function checkLinks(site, links) {
                         'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36'
                     }
                 }, function (response) {
-                    // TODO: Follow 3xx links and see if they're valid?
                     const allowedStatusCodes = [200, 301, 302, 303, 307, 999];
                     response.on('end', function () {
                         if (!allowedStatusCodes.includes(response.statusCode)) {
@@ -123,12 +118,12 @@ async function checkLinks(site, links) {
 }
 exports.checkLinks = checkLinks;
 function validURL(str) {
-    var pattern = new RegExp('^(https?:\\/\\/)?' + // protocol
-        '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
-        '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
-        '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
-        '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
-        '(\\#[-a-z\\d_]*)?$', 'i'); // fragment locator
+    var pattern = new RegExp('^(https?:\\/\\/)?' +
+        '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' +
+        '((\\d{1,3}\\.){3}\\d{1,3}))' +
+        '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' +
+        '(\\?[;&a-z\\d%_.~+=-]*)?' +
+        '(\\#[-a-z\\d_]*)?$', 'i');
     return !!pattern.test(str);
 }
 exports.validURL = validURL;

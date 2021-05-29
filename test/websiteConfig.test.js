@@ -16,8 +16,6 @@ const jestURL = jestConfig.globals.URL;
 const timeout = process.env.SLOWMO ? 30000 : 10000;
 let configPaths = {};
 const websites = {};
-// Setup:
-// process.env.SITE = 'david-ma' // Uncomment to test just one site
 if (process.env.SITE && process.env.SITE !== 'all') {
     configPaths = {
         [process.env.SITE]: findSiteConfig(process.env.SITE)
@@ -38,14 +36,12 @@ Object.keys(configPaths)
     try {
         const configPath = configPaths[site];
         websites[site] = require('../' + configPath).config;
-        // handle.addWebsite(site, websites[site])
     }
     catch (e) {
         console.log(`Error in ${site}!`);
         console.error(e);
     }
 });
-// Tests:
 const itif = (condition) => (condition ? it : it.skip);
 const xitif = (condition) => it.skip;
 globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) => {
@@ -54,10 +50,6 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
         return await new Promise((resolve, reject) => {
             try {
                 config = requestHandlers_1.handle.websites[site];
-                // config = handle.websites[site]
-                // const configPath = configPaths[site]
-                // config = require('../' + configPath).config
-                // config = new Website(site, config)
                 resolve(true);
             }
             catch (e) {
@@ -80,7 +72,6 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
             });
         });
     });
-    // Audit usage of features?
     itif(requestHandlers_1.handle.websites[site].seq)('Databases used', function inspectDatabases() {
         console.info(`${site} uses these databases:`, Object.keys(requestHandlers_1.handle.websites[site].seq).filter((key) => key !== 'sequelize'));
     });
@@ -136,9 +127,6 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
         });
         return utilities_1.checkLinks(site, pages);
     });
-    // This doesn't actually check if the mustache templates are valid
-    // It just opens them?? Perhaps try finding what data they need?
-    // Maybe use a library?
     itif(requestHandlers_1.handle.websites[site].views)('Views Used', (done) => {
         try {
             requestHandlers_1.handle.websites[site].readAllViews((views) => {
@@ -153,29 +141,6 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
             done(e);
         }
     }, timeout);
-    // itif(websites[site].viewableFolders)(`viewable Folders`, () => {})
-    /**
-     * To do:
-     * Check proxies are valid, and running?
-     * Check Pages exist
-     * Check redirects are valid
-     * - Publish
-     * - publish??? Only used in truestores. Possibly remove it?
-     * - security
-     * - sequalize????
-     *
-     *
-     *  */
-    // Dist should depend on src
-    // itif(websites[site].dist)(`${site} dist folder`, () => {
-    //   return new Promise((resolve, reject) => {
-    //     fs.access(`websites/${site}/dist`, (err) => {
-    //       if (err) reject(`No dist folder for ${site}`)
-    //       resolve(true)
-    //     })
-    //   })
-    // })
-    // itif(handle.getWebsite(site).data)(`${site} data folder`, () => {
     itif(requestHandlers_1.handle.websites[site].data)(`${site} data folder`, async () => {
         return await new Promise((resolve, reject) => {
             fs.access(`websites/${site}/data`, (err) => {
@@ -187,7 +152,6 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
     });
 });
 if (false) {
-    // I don't want eslint complaining about unused things.
     console.log(jestURL);
     console.log(globals_1.test);
     utilities_1.asyncForEach([], function () { });

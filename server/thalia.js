@@ -465,6 +465,8 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                 if (typeof website.pages[d.words[1]] !== 'undefined') {
                     pathname = website.pages[d.words[1]];
                 }
+                // Pathnames should be decoded
+                pathname = decodeURIComponent(pathname);
                 // If there's a redirect, go to it
                 if (typeof website.redirects[pathname] !== 'undefined') {
                     redirect(website.redirects[pathname]);

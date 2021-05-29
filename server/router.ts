@@ -68,6 +68,9 @@ const router: Thalia.Router = function (
           pathname = website.pages[d.words[1]]
         }
 
+        // Pathnames should be decoded
+        pathname = decodeURIComponent(pathname)
+
         // If there's a redirect, go to it
         if (typeof website.redirects[pathname] !== 'undefined') {
           redirect(website.redirects[pathname])

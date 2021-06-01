@@ -97,6 +97,7 @@
     "develop": "./develop.sh"
   },
   "nodemonConfig": {
+    "exec": "node server/thalia.js",
     "verbose": true,
     "watch": [
       "./server/thalia.js",

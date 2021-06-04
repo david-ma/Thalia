@@ -32,7 +32,7 @@ var uglify = require('gulp-terser');
 var sass = require('gulp-dart-sass');
 var postcss = require('gulp-postcss');
 var prefix = require('autoprefixer');
-var minify = require('cssnano');
+var cssnano = require('cssnano');
 
 
 // BrowserSync
@@ -251,7 +251,7 @@ var buildStyles = function (done) {
 		.pipe(dest(paths.styles.output))
 		.pipe(rename({suffix: '.min'}))
 		.pipe(postcss([
-			minify({
+			cssnano({
 				discardComments: {
 					removeAll: true
 				}

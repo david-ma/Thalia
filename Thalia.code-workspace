@@ -31,8 +31,8 @@
       "formulahendry.auto-close-tag": true,
       "ionutvmi.path-autocomplete": true,
       "mrmlnc.vscode-scss": true
-    }
-  },
-  "editor.tabSize": 2,
-  "eslint.packageManager": "yarn"
+    },
+    "editor.tabSize": 2,
+    "eslint.packageManager": "yarn"
+  }
 }

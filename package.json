@@ -13,7 +13,9 @@
     "mime": "^2.5.2",
     "mustache": "^4.2.0",
     "puppeteer": "^10.0.0",
+    "prettier": "^2.3.2",
     "requirejs": "^2.3.6",
+    "sass": "^1.40.1",
     "sequelize": "^6.6.2",
     "socket.io": "^2.4.1",
     "zlib": "^1.0.5"
@@ -35,6 +37,7 @@
     "@types/mustache": "^4.0.1",
     "@types/node": "^15.12.0",
     "@types/puppeteer": "^5.4.3",
+    "@types/sass": "^1.16.1",
     "@types/sequelize": "^4.28.9",
     "@types/showdown": "^1.9.3",
     "@types/socket.io": "^2.1.11",

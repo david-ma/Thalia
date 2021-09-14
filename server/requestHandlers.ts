@@ -4,6 +4,7 @@ import fs = require('fs')
 const fsPromise = fs.promises
 import mustache = require('mustache')
 import path = require('path')
+import sass = require('sass')
 
 class Website implements Thalia.WebsiteConfig {
   name: string
@@ -467,15 +468,20 @@ async function readTemplate(template: string, folder: string, content = '') {
           })
           .then((result: any) => {
             const scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g
-            const styleEx = /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/g
+            const styleEx = /<style\b.*>([^<]*(?:(?!<\/style>)<[^<]*)*)<\/style>/g
 
             const scripts = [...result.matchAll(scriptEx)].map((d) => d[0])
             const styles = [...result.matchAll(styleEx)].map((d) => d[0])
 
-            resolve({
-              content: result.replace(scriptEx, '').replace(styleEx, ''),
-              scripts: scripts.join('\n'),
-              styles: styles.join('\n'),
+            sass.render({
+              data: styles.join('\n'),
+              outputStyle: 'compressed',
+            }, function(err, sassResult){
+              resolve({
+                content: result.replace(scriptEx, '').replace(styleEx, ''),
+                scripts: scripts.join('\n'),
+                styles: `<style>${sassResult.css.toString()}</style>`
+              })
             })
           })
           .catch(() => {

@@ -104,8 +104,12 @@ const handle: Thalia.Handle = {
         if (fs.existsSync(path.resolve(__dirname, '..', 'config.js'))) {
           config = require(path.resolve(__dirname, '..', 'config')).config
         } else {
-          config = require(path.resolve(__dirname, '..', 'config', 'config'))
-            .config
+          config = require(path.resolve(
+            __dirname,
+            '..',
+            'config',
+            'config'
+          )).config
         }
 
         console.log(`Loading time: ${Date.now() - start} ms - config.js`)
@@ -357,11 +361,9 @@ const handle: Thalia.Handle = {
         content: string,
         cb: any
       ) {
-        readTemplate(
-          template,
-          path.resolve(baseUrl, 'views'),
-          content
-        ).then((d) => cb(d))
+        readTemplate(template, path.resolve(baseUrl, 'views'), content).then(
+          (d) => cb(d)
+        )
       }
 
       readAllViews(path.resolve(baseUrl, 'views')).then((views) => {
@@ -467,22 +469,36 @@ async function readTemplate(template: string, folder: string, content = '') {
             encoding: 'utf8',
           })
           .then((result: any) => {
-            const scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g
-            const styleEx = /<style\b.*>([^<]*(?:(?!<\/style>)<[^<]*)*)<\/style>/g
+            const scriptEx =
+              /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g
+            const styleEx =
+              /<style\b.*>([^<]*(?:(?!<\/style>)<[^<]*)*)<\/style>/g
 
             const scripts = [...result.matchAll(scriptEx)].map((d) => d[0])
             const styles = [...result.matchAll(styleEx)].map((d) => d[0])
+            let styleData = styles.join('\n')
 
-            sass.render({
-              data: styles.join('\n'),
-              outputStyle: 'compressed',
-            }, function(err, sassResult){
-              resolve({
-                content: result.replace(scriptEx, '').replace(styleEx, ''),
-                scripts: scripts.join('\n'),
-                styles: `<style>${sassResult.css.toString()}</style>`
-              })
-            })
+            sass.render(
+              {
+                data: styleData,
+                outputStyle: 'compressed',
+              },
+              function (err, sassResult) {
+                if (err) {
+                  console.error(
+                    `Error reading SCSS from file: ${folder}/content/${content}.mustache`
+                  )
+                  console.error(err)
+                } else {
+                  styleData = sassResult.css.toString()
+                }
+                resolve({
+                  content: result.replace(scriptEx, '').replace(styleEx, ''),
+                  scripts: scripts.join('\n'),
+                  styles: `<style>${styleData}</style>`,
+                })
+              }
+            )
           })
           .catch(() => {
             fsPromise

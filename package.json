@@ -15,7 +15,7 @@
     "puppeteer": "^10.0.0",
     "requirejs": "^2.3.6",
     "sass": "^1.40.1",
-    "sequelize": "^6.6.2",
+    "sequelize": "^6.6.5",
     "socket.io": "^2.4.1",
     "zlib": "^1.0.5"
   },
@@ -37,7 +37,7 @@
     "@types/node": "^15.12.0",
     "@types/puppeteer": "^5.4.3",
     "@types/sass": "^1.16.1",
-    "@types/sequelize": "^4.28.9",
+    "@types/sequelize": "^4.28.10",
     "@types/showdown": "^1.9.3",
     "@types/socket.io": "^2.1.11",
     "@types/socket.io-client": "^1.4.34",

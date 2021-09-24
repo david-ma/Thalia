@@ -6,7 +6,10 @@ import { Thalia } from './thalia'
 import http = require('http')
 import url = require('url')
 import httpProxy = require('http-proxy')
-import socketIO = require('socket.io')
+
+import { Server as SocketIoServer } from 'socket.io'
+const socketIO = new SocketIoServer({ /* options */ });
+
 import formidable = require('formidable')
 
 let blacklist: string[] = []

@@ -1,7 +1,7 @@
 import { Thalia } from './thalia'
-import SocketIO = require('socket.io')
+import { Server as SocketIoServer } from 'socket.io'
 
-function socketInit(io: SocketIO.Server, handle: Thalia.Handle) {
+function socketInit(io: SocketIoServer, handle: Thalia.Handle) {
   // console.log('Initialising Socket.io for site: ') // Which sites?
 
   Object.keys(handle.websites).forEach((siteName: string) => {

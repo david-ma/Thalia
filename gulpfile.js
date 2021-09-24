@@ -29,7 +29,7 @@ var concat = require('gulp-concat');
 var uglify = require('gulp-terser');
 
 // Styles
-var sass = require('gulp-dart-sass');
+var sass = require('gulp-sass')(require('sass'));
 var postcss = require('gulp-postcss');
 var prefix = require('autoprefixer');
 var cssnano = require('cssnano');

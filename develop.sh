@@ -59,4 +59,9 @@ cd websites/$SITE
         echo "No $SITE/test"
     fi
 cd ../..
-./node_modules/.bin/nodemon server/thalia.js $SITE $PORT
+
+./node_modules/.bin/nodemon $SITE $PORT
+# Changed because we added this to package.json:
+#   "nodemonConfig": {
+#     "exec": "node server/thalia.js",
+# }

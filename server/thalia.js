@@ -837,15 +837,26 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                 else {
                     proxyConfig = proxies['*'];
                 }
-                httpProxy
+                const proxyServer = httpProxy
                     .createProxyServer({
                     ws: true,
                     target: {
                         host: proxyConfig.host || '127.0.0.1',
                         port: proxyConfig.port || 80,
                     },
-                })
-                    .ws(request, socket, head);
+                });
+                proxyServer.on('error', function (err, req, res) {
+                    'use strict';
+                    console.log(err);
+                    try {
+                        res.writeHead(500);
+                        res.end(proxyConfig.message);
+                    }
+                    catch (e) {
+                        console.log('Error doing upgraded proxy!', e);
+                    }
+                });
+                proxyServer.ws(request, socket, head);
             }
         });
     }

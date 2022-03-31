@@ -164,7 +164,7 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
       } else {
         proxyConfig = proxies['*']
       }
-      httpProxy
+      const proxyServer = httpProxy
         .createProxyServer({
           ws: true,
           target: {
@@ -172,7 +172,19 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
             port: proxyConfig.port || 80,
           },
         })
-        .ws(request, socket, head)
+        
+        proxyServer.on('error', function (err: any, req: any, res: any) {
+          'use strict'
+          console.log(err)
+          try {
+            res.writeHead(500)
+            res.end(proxyConfig.message)
+          } catch (e) {
+            console.log('Error doing upgraded proxy!', e)
+          }
+        })
+
+        proxyServer.ws(request, socket, head)
     }
   })
 }

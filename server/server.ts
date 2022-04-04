@@ -146,7 +146,11 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
   const io = socketIO.listen(server, {})
   socketInit(io, handle)
 
-  return server.on('upgrade', function (request: any, socket: any, head: any) {
+  server.on('error', function(e: any) {
+    console.log("Server error", e)
+  })
+
+  server.on('upgrade', function (request: any, socket: any, head: any) {
     'use strict'
 
     let host: string =
@@ -164,6 +168,9 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
       } else {
         proxyConfig = proxies['*']
       }
+
+      // HTTP Proxy options
+      // https://github.com/http-party/node-http-proxy/blob/HEAD/lib/http-proxy.js#L26-L42
       const proxyServer = httpProxy
         .createProxyServer({
           ws: true,
@@ -187,6 +194,8 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
         proxyServer.ws(request, socket, head)
     }
   })
+
+  return server
 }
 
 // exports.start = start;

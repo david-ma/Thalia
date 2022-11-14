@@ -121,6 +121,7 @@ function setSite(website){
         },
         views: workspace+'/views/**/*.mustache',
         public: workspace+'/public',
+        docs: workspace+'/docs', // Github pages uses /docs instead of /public
         reload: './'+workspace+'/dist/'
     };
 
@@ -229,6 +230,8 @@ var lintScripts = function (done) {
 
 // Process, lint, and minify Sass files
 var buildStyles = function (done) {
+    console.log("Running gulp task buildStyles");
+
     var scssLoadPaths = [
             'src/css/vendor/bootstrap',
             'src/css/vendor/bootstrap/mixins',
@@ -283,6 +286,7 @@ var typescript = function (done) {
 
 // Copy static files into output folder
 var copyFiles = function (done) {
+    console.log("Copying files...");
 	// Copy static files
 	return src(paths.copy.input)
 		.pipe(dest(paths.copy.output));
@@ -366,13 +370,27 @@ var watchSource = function (done) {
  */
 var publish = function (done) {
     if(siteConfig && siteConfig.publish && siteConfig.publish.dist) {
-
         return src(siteConfig.publish.dist.map(file => `websites/${site}/dist/${file}`),
-        {base: `websites/${site}/dist`})
-    		.pipe(dest(paths.public));
+        {base: `websites/${site}/dist`,
+        allowEmpty: true})
+        .pipe(dest(paths.public));
     }
     done();
-}
+};
+exports.publish = publish;
+
+// Publishes to github pages, i.e. to the docs folder
+var publishGithubPages = function (done) {
+    if(siteConfig && siteConfig.publish && siteConfig.publish.dist) {
+        return src(siteConfig.publish.dist.map(file => `websites/${site}/dist/${file}`),
+        {base: `websites/${site}/dist`,
+        allowEmpty: true})
+            .pipe(dest(paths.docs));
+    }
+    done();
+};
+exports.publishGithubPages = publishGithubPages;
+
 
 /**
  * Export Tasks

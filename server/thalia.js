@@ -288,8 +288,17 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path", "sass
         return new Promise((resolve, reject) => {
             const promises = [];
             const filenames = ['template', 'content'];
-            promises.push(fsPromise.readFile(`${folder}/${template}`, {
-                encoding: 'utf8',
+            promises.push(new Promise((resolve) => {
+                fsPromise
+                    .readFile(`${folder}/${template}`, {
+                    encoding: 'utf8',
+                })
+                    .catch(() => {
+                    resolve(`404 - ${template} not found`);
+                })
+                    .then((data) => {
+                    resolve(data);
+                });
             }));
             promises.push(new Promise((resolve) => {
                 if (Array.isArray(content) && content[0])
@@ -375,7 +384,8 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path", "sass
                 encoding: 'utf8',
             })
                 .catch(() => {
-                throw new Error(`Error reading file: ${file}`);
+                console.error('Error reading file: ', file);
+                resolve(`Error reading file: ${file}`);
             })
                 .then((fileText) => {
                 const scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g;
@@ -390,20 +400,29 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path", "sass
                     if (err) {
                         console.error(`Error reading SCSS from file: ${file}`);
                         console.error('Error', err);
-                        reject(err);
+                        resolve({
+                            content: fileText,
+                            scripts: '',
+                            styles: '',
+                        });
                     }
                     else {
                         styleData = sassResult.css.toString();
+                        resolve({
+                            content: fileText.replace(scriptEx, '').replace(styleEx, ''),
+                            scripts: scripts.join('\n'),
+                            styles: `<style>${styleData}</style>`,
+                        });
                     }
-                    resolve({
-                        content: fileText.replace(scriptEx, '').replace(styleEx, ''),
-                        scripts: scripts.join('\n'),
-                        styles: `<style>${styleData}</style>`,
-                    });
                 });
             })
                 .catch(() => {
-                throw new Error(`Error with SCSS or Script file: ${file}`);
+                console.error(`Error with SCSS or Script file: ${file}`);
+                resolve({
+                    content: '500',
+                    scripts: '',
+                    styles: '',
+                });
             });
         });
     }

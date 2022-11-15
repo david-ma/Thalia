@@ -460,13 +460,22 @@ async function readTemplate(template: string, folder: string, content = '') {
 
     // Load the mustache template (outer layer)
     promises.push(
-      fsPromise.readFile(`${folder}/${template}`, {
-        encoding: 'utf8',
+      new Promise((resolve) => {
+        fsPromise
+          .readFile(`${folder}/${template}`, {
+            encoding: 'utf8',
+          })
+          .catch(() => {
+            resolve(`404 - ${template} not found`)
+          })
+          .then((data: string) => {
+            resolve(data)
+          })
       })
 
       // Use mustache to render the template?
       // Bad idea because it breaks scripts that need data.
-      // 
+      //
       // new Promise((resolve) => {
       //   loadMustacheTemplate(`${folder}/${template}`)
       //     .catch((e) => {
@@ -590,6 +599,8 @@ async function readAllViews(folder: string): Promise<Views> {
  * Find the scripts and styles
  * Minify and process the javscript and sass
  * Then reinsert them into the template
+ *
+ * TODO: Process typescript?
  */
 function loadMustacheTemplate(file: string) {
   return new Promise((resolve, reject) => {
@@ -598,10 +609,11 @@ function loadMustacheTemplate(file: string) {
         encoding: 'utf8',
       })
       .catch(() => {
-        throw new Error(`Error reading file: ${file}`)
+        // throw new Error(`Error reading file: ${file}`)
+        console.error('Error reading file: ', file)
+        resolve(`Error reading file: ${file}`)
       })
       .then((fileText: any) => {
-
         const scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g
         const styleEx = /<style\b.*>([^<]*(?:(?!<\/style>)<[^<]*)*)<\/style>/g
 
@@ -621,21 +633,31 @@ function loadMustacheTemplate(file: string) {
               console.error('Error', err)
 
               // Or do we just resolve with the original styles?
-              reject(err)
+
+              resolve({
+                content: fileText,
+                scripts: '',
+                styles: '',
+              })
             } else {
               styleData = sassResult.css.toString()
+              resolve({
+                content: fileText.replace(scriptEx, '').replace(styleEx, ''),
+                scripts: scripts.join('\n'),
+                styles: `<style>${styleData}</style>`,
+              })
             }
-
-            resolve({
-              content: fileText.replace(scriptEx, '').replace(styleEx, ''),
-              scripts: scripts.join('\n'),
-              styles: `<style>${styleData}</style>`,
-            })
           }
         )
       })
       .catch(() => {
-        throw new Error(`Error with SCSS or Script file: ${file}`)
+        // throw new Error(`Error with SCSS or Script file: ${file}`)
+        console.error(`Error with SCSS or Script file: ${file}`)
+        resolve({
+          content: '500',
+          scripts: '',
+          styles: '',
+        })
       })
   })
 }

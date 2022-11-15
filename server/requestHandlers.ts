@@ -361,9 +361,12 @@ const handle: Thalia.Handle = {
         content: string,
         cb: any
       ) {
-        readTemplate(template, path.resolve(baseUrl, 'views'), content).then(
-          (d) => cb(d)
-        )
+        readTemplate(template, path.resolve(baseUrl, 'views'), content)
+          .catch((e) => {
+            console.error('error here?', e)
+            cb(e)
+          })
+          .then((d) => cb(d))
       }
 
       readAllViews(path.resolve(baseUrl, 'views')).then((views) => {
@@ -449,7 +452,9 @@ handle.addWebsite('default', {})
 
 // TODO: handle rejection & errors?
 async function readTemplate(template: string, folder: string, content = '') {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    // console.log(`Reading template ${template} from folder ${folder}`)
+
     const promises: Promise<any>[] = []
     const filenames = ['template', 'content']
 
@@ -458,49 +463,33 @@ async function readTemplate(template: string, folder: string, content = '') {
       fsPromise.readFile(`${folder}/${template}`, {
         encoding: 'utf8',
       })
+
+      // Use mustache to render the template?
+      // Bad idea because it breaks scripts that need data.
+      // 
+      // new Promise((resolve) => {
+      //   loadMustacheTemplate(`${folder}/${template}`)
+      //     .catch((e) => {
+      //       console.log('Error', e)
+      //       resolve('bad world?')
+      //     })
+      //     .then((template: any) => {
+      //       resolve(mustache.render(template.content, {}, template))
+      //     })
+      //     .catch((e) => {
+      //       console.log('Error over here', e)
+      //       reject(e)
+      //     })
     )
 
     // Load the mustache content (innermost layer)
     promises.push(
       new Promise((resolve) => {
         if (Array.isArray(content) && content[0]) content = content[0]
-        fsPromise
-          .readFile(`${folder}/content/${content}.mustache`, {
-            encoding: 'utf8',
-          })
-          .then((result: any) => {
-            const scriptEx =
-              /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g
-            const styleEx =
-              /<style\b.*>([^<]*(?:(?!<\/style>)<[^<]*)*)<\/style>/g
 
-            const scripts = [...result.matchAll(scriptEx)].map((d) => d[0])
-            const styles = [...result.matchAll(styleEx)].map((d) => d[0])
-            let styleData = styles.join('\n')
-
-            sass.render(
-              {
-                data: styleData,
-                outputStyle: 'compressed',
-              },
-              function (err, sassResult) {
-                if (err) {
-                  console.error(
-                    `Error reading SCSS from file: ${folder}/content/${content}.mustache`
-                  )
-                  console.error(err)
-                } else {
-                  styleData = sassResult.css.toString()
-                }
-                resolve({
-                  content: result.replace(scriptEx, '').replace(styleEx, ''),
-                  scripts: scripts.join('\n'),
-                  styles: `<style>${styleData}</style>`,
-                })
-              }
-            )
-          })
-          .catch(() => {
+        loadMustacheTemplate(`${folder}/content/${content}.mustache`)
+          .catch((e) => {
+            console.error('Error loading mustache template.', e)
             fsPromise
               .readFile(`${folder}/404.mustache`, {
                 encoding: 'utf8',
@@ -509,6 +498,7 @@ async function readTemplate(template: string, folder: string, content = '') {
                 resolve(result)
               })
           })
+          .then((d) => resolve(d))
       })
     )
 
@@ -592,6 +582,61 @@ async function readAllViews(folder: string): Promise<Views> {
         )
       })
       .catch((e: any) => console.log(e))
+  })
+}
+
+/**
+ * Read a mustache template file
+ * Find the scripts and styles
+ * Minify and process the javscript and sass
+ * Then reinsert them into the template
+ */
+function loadMustacheTemplate(file: string) {
+  return new Promise((resolve, reject) => {
+    fsPromise
+      .readFile(file, {
+        encoding: 'utf8',
+      })
+      .catch(() => {
+        throw new Error(`Error reading file: ${file}`)
+      })
+      .then((fileText: any) => {
+
+        const scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g
+        const styleEx = /<style\b.*>([^<]*(?:(?!<\/style>)<[^<]*)*)<\/style>/g
+
+        const scripts = [...fileText.matchAll(scriptEx)].map((d) => d[0])
+        const styles = [...fileText.matchAll(styleEx)].map((d) => d[0])
+
+        let styleData = styles.join('\n').replace(/<\/?style>/g, '')
+
+        sass.render(
+          {
+            data: styleData,
+            outputStyle: 'compressed',
+          },
+          function (err, sassResult) {
+            if (err) {
+              console.error(`Error reading SCSS from file: ${file}`)
+              console.error('Error', err)
+
+              // Or do we just resolve with the original styles?
+              reject(err)
+            } else {
+              styleData = sassResult.css.toString()
+            }
+
+            resolve({
+              content: fileText.replace(scriptEx, '').replace(styleEx, ''),
+              scripts: scripts.join('\n'),
+              styles: `<style>${styleData}</style>`,
+            })
+          }
+        )
+      })
+      .catch(() => {
+        throw new Error(`Error with SCSS or Script file: ${file}`)
+      })
   })
 }
 

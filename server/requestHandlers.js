@@ -224,13 +224,15 @@ const handle = {
             handle.websites[site].readAllViews = function (cb) {
                 readAllViews(path.resolve(baseUrl, 'views')).then((d) => cb(d));
             };
-            handle.websites[site].readTemplate = function (template, content, cb) {
-                readTemplate(template, path.resolve(baseUrl, 'views'), content)
+            handle.websites[site].readTemplate = function (config) {
+                readTemplate(config.template, path.resolve(baseUrl, 'views'), config.content)
                     .catch((e) => {
                     console.error('error here?', e);
-                    cb(e);
+                    config.callback(e);
                 })
-                    .then((d) => cb(d));
+                    .then((d) => {
+                    config.callback(d);
+                });
             };
             readAllViews(path.resolve(baseUrl, 'views')).then((views) => {
                 handle.websites[site].views = views;
@@ -285,6 +287,7 @@ const handle = {
 exports.handle = handle;
 handle.addWebsite('default', {});
 async function readTemplate(template, folder, content = '') {
+    console.log(`Running readTemplate(${template}, ${folder}, ${content})`);
     return new Promise((resolve, reject) => {
         const promises = [];
         const filenames = ['template', 'content'];

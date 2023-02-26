@@ -116,7 +116,7 @@ export declare namespace Thalia {
       (callback: any): void
     }
     readTemplate?: {
-      (template: string, content: string, callback: any): void
+      (config: { template: string; content: string; callback: any }): void
     }
   }
   export interface WebsiteCredentials {}

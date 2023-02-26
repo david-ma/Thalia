@@ -46,7 +46,7 @@ const itif = (condition) => (condition ? it : it.skip);
 const xitif = (condition) => it.skip;
 globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) => {
     let config;
-    globals_1.test('Config.js can be opened?', async () => {
+    (0, globals_1.test)('Config.js can be opened?', async () => {
         return await new Promise((resolve, reject) => {
             try {
                 config = requestHandlers_1.handle.websites[site];
@@ -60,10 +60,10 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
     });
     itif(websites[site].domains)('Website Domains', () => {
         config.domains.forEach((domain) => {
-            globals_1.expect(utilities_1.validURL(domain)).toBe(true);
+            (0, globals_1.expect)((0, utilities_1.validURL)(domain)).toBe(true);
         });
     });
-    globals_1.test('Public Folder', async () => {
+    (0, globals_1.test)('Public Folder', async () => {
         return await new Promise((resolve, reject) => {
             fs.access(config.folder, (err) => {
                 if (err)
@@ -88,7 +88,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
             }
             return link;
         });
-        return utilities_1.checkLinks(site, links);
+        return (0, utilities_1.checkLinks)(site, links);
     }, timeout);
     itif(websites[site].proxies)('Proxy domains are working', async () => {
         const proxies = websites[site]
@@ -99,7 +99,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
             }
             return link;
         })));
-        return utilities_1.checkLinks(site, links);
+        return (0, utilities_1.checkLinks)(site, links);
     });
     let validLinks = [];
     itif(websites[site].redirects)('Redirects are valid', () => {
@@ -107,7 +107,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
         validLinks = Object.keys(websites[site].redirects)
             .map((redirect) => {
             const link = websites[site].redirects[redirect];
-            if (!utilities_1.validURL(link)) {
+            if (!(0, utilities_1.validURL)(link)) {
                 invalid[redirect] = link;
                 return null;
             }
@@ -116,16 +116,16 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
             }
         })
             .filter((d) => d !== null);
-        globals_1.expect(invalid).toStrictEqual({});
+        (0, globals_1.expect)(invalid).toStrictEqual({});
     });
     itif(websites[site].redirects)('All valid redirect links work', async () => {
-        return await utilities_1.checkLinks(site, validLinks);
+        return await (0, utilities_1.checkLinks)(site, validLinks);
     }, timeout);
     itif(websites[site].pages)('Pages Used', async () => {
         const pages = Object.keys(websites[site].pages).map((key) => {
             return `${testserver}${websites[site].pages[key]}`;
         });
-        return utilities_1.checkLinks(site, pages);
+        return (0, utilities_1.checkLinks)(site, pages);
     });
     itif(requestHandlers_1.handle.websites[site].views)('Views Used', (done) => {
         try {
@@ -154,7 +154,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
 if (false) {
     console.log(jestURL);
     console.log(globals_1.test);
-    utilities_1.asyncForEach([], function () { });
+    (0, utilities_1.asyncForEach)([], function () { });
     console.log(xitif);
 }
 function findSiteConfig(site) {

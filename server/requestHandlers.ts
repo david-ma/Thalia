@@ -41,7 +41,7 @@ class Website implements Thalia.WebsiteConfig {
   }
 
   readTemplate: {
-    (template: string, content: string, callback: any): void
+    (config: { template: string; content: string; callback: any }): void
   }
 
   views: any
@@ -356,17 +356,23 @@ const handle: Thalia.Handle = {
       handle.websites[site].readAllViews = function (cb: any) {
         readAllViews(path.resolve(baseUrl, 'views')).then((d) => cb(d))
       }
-      handle.websites[site].readTemplate = function (
-        template: string,
-        content: string,
-        cb: any
-      ) {
-        readTemplate(template, path.resolve(baseUrl, 'views'), content)
+      handle.websites[site].readTemplate = function (config: {
+        template: string
+        content: string
+        callback: any
+      }) {
+        readTemplate(
+          config.template,
+          path.resolve(baseUrl, 'views'),
+          config.content
+        )
           .catch((e) => {
             console.error('error here?', e)
-            cb(e)
+            config.callback(e)
           })
-          .then((d) => cb(d))
+          .then((d) => {
+            config.callback(d)
+          })
       }
 
       readAllViews(path.resolve(baseUrl, 'views')).then((views) => {
@@ -452,6 +458,8 @@ handle.addWebsite('default', {})
 
 // TODO: handle rejection & errors?
 async function readTemplate(template: string, folder: string, content = '') {
+  console.log(`Running readTemplate(${template}, ${folder}, ${content})`)
+
   return new Promise((resolve, reject) => {
     // console.log(`Reading template ${template} from folder ${folder}`)
 

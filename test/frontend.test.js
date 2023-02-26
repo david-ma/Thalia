@@ -19,10 +19,10 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
     let siteLinks = [];
     beforeAll(async () => {
         const promises = [
-            utilities_1.getLinks(site)
+            (0, utilities_1.getLinks)(site)
         ];
         if (process.env.PAGE)
-            promises.push(utilities_1.getLinks(site, process.env.PAGE));
+            promises.push((0, utilities_1.getLinks)(site, process.env.PAGE));
         return await Promise.all(promises).then((array) => {
             homepageLinks = array[0];
             if (array[1]) {
@@ -30,12 +30,12 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
             }
         });
     });
-    globals_1.test(`Check external links on ${site} homepage`, async () => {
-        return await utilities_1.checkLinks(site, homepageLinks.filter(link => utilities_1.validURL(link)));
+    (0, globals_1.test)(`Check external links on ${site} homepage`, async () => {
+        return await (0, utilities_1.checkLinks)(site, homepageLinks.filter(link => (0, utilities_1.validURL)(link)));
     });
-    globals_1.test(`Check internal links on ${site} homepage`, () => {
+    (0, globals_1.test)(`Check internal links on ${site} homepage`, () => {
     });
-    globals_1.test(`Screenshot ${site}`, async () => {
+    (0, globals_1.test)(`Screenshot ${site}`, async () => {
         return await new Promise((resolve, reject) => {
             let promises;
             puppeteer.launch().then(browser => {
@@ -57,7 +57,7 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
                                         path: `./tmp/${site}-homepage-desktop.jpg`,
                                         type: 'jpeg'
                                     }).then(() => {
-                                        globals_1.expect(true).toBeTruthy();
+                                        (0, globals_1.expect)(true).toBeTruthy();
                                         browser.close();
                                         resolve(site);
                                     });
@@ -76,6 +76,6 @@ globals_1.describe.each(websites)('Testing %s', (site) => {
         });
     }, timeout);
     xtest(`Check external links on ${site} - ${process.env.PAGE || 'n/a'}`, async () => {
-        return await utilities_1.checkLinks(site, siteLinks);
+        return await (0, utilities_1.checkLinks)(site, siteLinks);
     }, timeout);
 });

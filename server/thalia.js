@@ -224,13 +224,15 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path", "sass
                 handle.websites[site].readAllViews = function (cb) {
                     readAllViews(path.resolve(baseUrl, 'views')).then((d) => cb(d));
                 };
-                handle.websites[site].readTemplate = function (template, content, cb) {
-                    readTemplate(template, path.resolve(baseUrl, 'views'), content)
+                handle.websites[site].readTemplate = function (config) {
+                    readTemplate(config.template, path.resolve(baseUrl, 'views'), config.content)
                         .catch((e) => {
                         console.error('error here?', e);
-                        cb(e);
+                        config.callback(e);
                     })
-                        .then((d) => cb(d));
+                        .then((d) => {
+                        config.callback(d);
+                    });
                 };
                 readAllViews(path.resolve(baseUrl, 'views')).then((views) => {
                     handle.websites[site].views = views;
@@ -285,6 +287,7 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path", "sass
     exports.handle = handle;
     handle.addWebsite('default', {});
     async function readTemplate(template, folder, content = '') {
+        console.log(`Running readTemplate(${template}, ${folder}, ${content})`);
         return new Promise((resolve, reject) => {
             const promises = [];
             const filenames = ['template', 'content'];
@@ -860,7 +863,7 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
         console.log('Server has started on port: ' + port);
         server = http.createServer(onRequest).listen(port);
         const io = socketIO.listen(server, {});
-        socket_1.socketInit(io, handle);
+        (0, socket_1.socketInit)(io, handle);
         server.on('error', function (e) {
             console.log("Server error", e);
         });

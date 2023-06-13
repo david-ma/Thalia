@@ -10,6 +10,8 @@ define(function (require: any) {
     requestHandlers: any,
     fs: any
   ) {
+    var argv = require('minimist')(process.argv.slice(2))
+
     let port: string = '1337' // change the port here?
     const pattern = /^\d{0,5}$/
     let workspace = 'default'
@@ -33,6 +35,20 @@ define(function (require: any) {
       !pattern.exec(process.argv[3])
     ) {
       workspace = process.argv[3]
+    }
+
+    if (argv.s !== undefined) {
+      workspace = argv.w
+    }
+    if (argv.site !== undefined) {
+      workspace = argv.site
+    }
+
+    if (argv.p !== undefined && pattern.exec(argv.port)) {
+      port = argv.p
+    }
+    if (argv.port !== undefined && pattern.exec(argv.port)) {
+      port = argv.port
     }
 
     if (fs.existsSync(`websites/${workspace}`)) {

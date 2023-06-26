@@ -1,7 +1,7 @@
 {
   "name": "thalia",
   "private": true,
-  "version": "3.3.0",
+  "version": "4.0.0",
   "description": "Frostickle's server",
   "main": "index.js",
   "dependencies": {
@@ -12,8 +12,6 @@
     "mime": "^2.5.2",
     "minimist": "^1.2.8",
     "mustache": "^4.2.0",
-    "mysql2": "^2.3.3",
-    "puppeteer": "^10.0.0",
     "requirejs": "^2.3.6",
     "sass": "^1.42.1",
     "sequelize": "^6.17.0",
@@ -44,7 +42,6 @@
     "@typescript-eslint/eslint-plugin": "^4.31.2",
     "@typescript-eslint/parser": "^4.31.2",
     "autoprefixer": "10.2.6",
-    "browser-sync": "2.26.14",
     "cssnano": "5.0.5",
     "d3": "^5.16.0",
     "d3-selection": "^2.0.0",
@@ -67,21 +64,15 @@
     "gulp-sass": "5.0.0",
     "gulp-terser": "2.0.1",
     "gulp-typescript": "^6.0.0-alpha.1",
-    "jest": "^27.2.1",
-    "jest-puppeteer": "^5.0.4",
     "jshint": "2.13.0",
     "jshint-stylish": "2.2.1",
     "lazypipe": "1.0.2",
     "nodemon": "^2.0.13",
     "postcss": "^8.3.7",
-    "prettier": "^2.4.1",
     "readline-sync": "^1.4.10",
     "sequelize-cli": "^6.2.0",
-    "sqlite3": "^5.0.2",
-    "standardx": "^7.0.0",
     "typescript": "^4.4.3",
     "typescript-eslint": "^0.0.1-alpha.0",
-    "x-ray": "^2.3.4",
     "yargs": "^17.2.0"
   },
   "engines": {
@@ -94,8 +85,6 @@
     "test": "./test.sh",
     "buildServer": "cd server; tsc",
     "watchTests": "cd test; tsc --preserveWatchOutput --watch",
-    "cleanup": "ps -ef | grep 'Chromium.app\\|jest\\|puppeteer\\|tsc --preserveWatchOutput --watch\\|nodemon\\|gulp\\|server/thalia.js\\|watchTests' | grep -v grep | awk '{print $2}' | xargs -t kill -9",
-    "badCleanupDoNotUse": "ps -ef | grep 'jest\\|puppeteer\\|tsc --preserveWatchOutput --watch\\|nodemon\\|gulp\\|server/thalia.js\\|watchTests' | grep -v grep | bash -c 'tee >(awk \"{print $2}\" | xargs -t kill -9)'",
     "develop": "./develop.sh"
   },
   "nodemonConfig": {
@@ -141,24 +130,6 @@
     },
     "ignorePatterns": [
       "gulpfile.js"
-    ]
-  },
-  "standardx": {
-    "globals": [
-      "d3",
-      "$",
-      "JQuery",
-      "DataTables",
-      "showdown",
-      "io"
-    ],
-    "parser": "@typescript-eslint/parser",
-    "plugins": [
-      "@typescript-eslint/eslint-plugin"
-    ],
-    "ignore": [
-      "server/index.ts",
-      "server/moduleShim.ts"
     ]
   },
   "repository": {

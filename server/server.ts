@@ -6,6 +6,7 @@ import { Thalia } from './thalia'
 import http = require('http')
 import url = require('url')
 import httpProxy = require('http-proxy')
+// import httpsProxy = require('https-proxy-agent')
 
 import { Server as SocketIoServer } from 'socket.io'
 const socketIO = new SocketIoServer({ /* options */ });
@@ -83,6 +84,7 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
 
       const message = config.message || 'Error, server is down.'
       const target = `http://${config.host || '127.0.0.1'}:${config.port || 80}`
+
       const proxyServer = httpProxy.createProxyServer({
         // preserveHeaderKeyCase: true,
         // autoRewrite: true,

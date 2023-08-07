@@ -482,28 +482,40 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                                 const input = Buffer.from(result, 'utf8');
                                 response.setHeader('Content-Type', 'text/html');
                                 if (acceptedEncoding.indexOf('gzip') >= 0) {
-                                    zlib.gzip(input, function (err, result) {
-                                        if (err) {
-                                            response.writeHead(503);
-                                            response.end(err);
-                                        }
-                                        else {
-                                            response.writeHead(200, { 'Content-Encoding': 'gzip' });
-                                            response.end(result);
-                                        }
-                                    });
+                                    try {
+                                        zlib.gzip(input, function (err, result) {
+                                            if (err) {
+                                                response.writeHead(503);
+                                                response.end(err);
+                                            }
+                                            else {
+                                                response.writeHead(200, { 'Content-Encoding': 'gzip' });
+                                                response.end(result);
+                                            }
+                                        });
+                                    }
+                                    catch (e) {
+                                        console.error(e);
+                                    }
                                 }
                                 else if (acceptedEncoding.indexOf('deflate') >= 0) {
-                                    zlib.deflate(input, function (err, result) {
-                                        if (err) {
-                                            response.writeHead(503);
-                                            response.end(err);
-                                        }
-                                        else {
-                                            response.writeHead(200, { 'Content-Encoding': 'deflate' });
-                                            response.end(result);
-                                        }
-                                    });
+                                    try {
+                                        zlib.deflate(input, function (err, result) {
+                                            if (err) {
+                                                response.writeHead(503);
+                                                response.end(err);
+                                            }
+                                            else {
+                                                response.writeHead(200, {
+                                                    'Content-Encoding': 'deflate',
+                                                });
+                                                response.end(result);
+                                            }
+                                        });
+                                    }
+                                    catch (e) {
+                                        console.error(e);
+                                    }
                                 }
                                 else {
                                     response.end(result);
@@ -633,16 +645,21 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                             }
                             router = function (file) {
                                 if (acceptedEncoding.indexOf('gzip') >= 0) {
-                                    zlib.gzip(file, function (err, result) {
-                                        if (err) {
-                                            response.writeHead(503);
-                                            response.end(err);
-                                        }
-                                        else {
-                                            response.writeHead(200, { 'content-encoding': 'gzip' });
-                                            response.end(result);
-                                        }
-                                    });
+                                    try {
+                                        zlib.gzip(file, function (err, result) {
+                                            if (err) {
+                                                response.writeHead(503);
+                                                response.end(err);
+                                            }
+                                            else {
+                                                response.writeHead(200, { 'content-encoding': 'gzip' });
+                                                response.end(result);
+                                            }
+                                        });
+                                    }
+                                    catch (e) {
+                                        console.error(e);
+                                    }
                                 }
                                 else if (acceptedEncoding.indexOf('deflate') >= 0) {
                                     zlib.deflate(file, function (err, result) {
@@ -772,7 +789,8 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
             let spam = false;
             const ip = request.headers['X-Real-IP'] ||
                 request.headers['x-real-ip'] ||
-                request.connection.remoteAddress;
+                request.connection.remoteAddress ||
+                request.socket.remoteAddress;
             if (ip) {
                 if (!host || blacklist.some((thing) => ip.includes(thing))) {
                     spam = true;

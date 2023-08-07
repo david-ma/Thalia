@@ -32,7 +32,8 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
     const ip =
       request.headers['X-Real-IP'] ||
       request.headers['x-real-ip'] ||
-      request.connection.remoteAddress
+      request.connection.remoteAddress ||
+      request.socket.remoteAddress
 
     if (ip) {
       if (!host || blacklist.some((thing) => ip.includes(thing))) {

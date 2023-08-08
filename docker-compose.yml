@@ -1,0 +1,9 @@
+services:
+  web:
+    build: .
+    image: frostickle/thalia:4.0.0
+    ports:
+      - '1337:1337'
+    environment:
+      - NODE_ENV=docker
+    restart: always

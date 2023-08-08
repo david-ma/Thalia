@@ -60,14 +60,27 @@ const handle = {
             try {
                 const start = Date.now();
                 const list_of_paths = [
-                    path.resolve(__dirname, '..', 'config.js'),
-                    path.resolve(__dirname, '..', 'config', 'config.js'),
-                    path.resolve(process.cwd(), 'config.js'),
-                    path.resolve(process.cwd(), 'config', 'config.js'),
+                    {
+                        config: path.resolve(__dirname, '..', 'config.js'),
+                        workspace: path.resolve(__dirname, '..'),
+                    },
+                    {
+                        config: path.resolve(__dirname, '..', 'config', 'config.js'),
+                        workspace: path.resolve(__dirname, '..'),
+                    },
+                    {
+                        config: path.resolve(process.cwd(), 'config.js'),
+                        workspace: process.cwd(),
+                    },
+                    {
+                        config: path.resolve(process.cwd(), 'config', 'config.js'),
+                        workspace: process.cwd(),
+                    }
                 ];
-                for (const path of list_of_paths) {
-                    if (fs.existsSync(path)) {
-                        config = require(path).config;
+                for (const paths of list_of_paths) {
+                    if (fs.existsSync(paths.config)) {
+                        config = require(paths.config).config;
+                        config.workspacePath = paths.workspace;
                         if (config) {
                             break;
                         }

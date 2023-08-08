@@ -102,15 +102,30 @@ const handle: Thalia.Handle = {
         const start = Date.now()
 
         const list_of_paths = [
-          path.resolve(__dirname, '..', 'config.js'),
-          path.resolve(__dirname, '..', 'config', 'config.js'),
-          path.resolve(process.cwd(), 'config.js'),
-          path.resolve(process.cwd(), 'config', 'config.js'),
+          {
+            config: path.resolve(__dirname, '..', 'config.js'),
+            workspace: path.resolve(__dirname, '..'),
+          },
+          {
+            config: path.resolve(__dirname, '..', 'config', 'config.js'),
+            workspace: path.resolve(__dirname, '..'),
+          },
+          {
+            config: path.resolve(process.cwd(), 'config.js'),
+            workspace: process.cwd(),
+          },
+          {
+            config: path.resolve(process.cwd(), 'config', 'config.js'),
+            workspace: process.cwd(),
+          },
         ]
 
-        for (const path of list_of_paths) {
-          if (fs.existsSync(path)) {
-            config = require(path).config
+        for (const paths of list_of_paths) {
+          if (fs.existsSync(paths.config)) {
+            console.log('Found config', paths.config)
+            console.log('Workspace:', paths.workspace)
+            config = require(paths.config).config
+            config.workspacePath = paths.workspace
             if (config) {
               break
             }
@@ -135,7 +150,7 @@ const handle: Thalia.Handle = {
       }
 
       config.standAlone = true
-      config.folder = path.resolve(__dirname, '..', 'public')
+      config.folder = path.resolve(config.workspacePath, 'public')
 
       handle.addWebsite(site, config)
 
@@ -282,7 +297,7 @@ const handle: Thalia.Handle = {
     handle.websites[site] = new Website(site, config)
 
     const baseUrl = config.standAlone
-      ? path.resolve(__dirname, '..')
+      ? config.workspacePath
       : path.resolve(__dirname, '..', 'websites', site)
 
     // If dist or data exist, enable them.

@@ -86,6 +86,7 @@ export declare namespace Thalia {
     sockets?: Sockets
     cache?: boolean
     folder?: string
+    workspacePath?: string
     domains?: Array<string>
     services?: Services
     controllers?: Controllers

@@ -62,8 +62,8 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path", "sass
                     const list_of_paths = [
                         path.resolve(__dirname, '..', 'config.js'),
                         path.resolve(__dirname, '..', 'config', 'config.js'),
-                        path.resolve(process.cwd(), '..', 'config.js'),
-                        path.resolve(process.cwd(), '..', 'config', 'config.js'),
+                        path.resolve(process.cwd(), 'config.js'),
+                        path.resolve(process.cwd(), 'config', 'config.js'),
                     ];
                     for (const path of list_of_paths) {
                         if (fs.existsSync(path)) {
@@ -72,6 +72,9 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path", "sass
                                 break;
                             }
                         }
+                    }
+                    if (!config) {
+                        console.log('No config provided');
                     }
                     console.log(`Loading time: ${Date.now() - start} ms - config.js`);
                 }

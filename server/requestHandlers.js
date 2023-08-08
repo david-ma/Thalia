@@ -59,11 +59,22 @@ const handle = {
             let config;
             try {
                 const start = Date.now();
-                if (fs.existsSync(path.resolve(__dirname, '..', 'config.js'))) {
-                    config = require(path.resolve(__dirname, '..', 'config')).config;
+                const list_of_paths = [
+                    path.resolve(__dirname, '..', 'config.js'),
+                    path.resolve(__dirname, '..', 'config', 'config.js'),
+                    path.resolve(process.cwd(), 'config.js'),
+                    path.resolve(process.cwd(), 'config', 'config.js'),
+                ];
+                for (const path of list_of_paths) {
+                    if (fs.existsSync(path)) {
+                        config = require(path).config;
+                        if (config) {
+                            break;
+                        }
+                    }
                 }
-                else {
-                    config = require(path.resolve(__dirname, '..', 'config', 'config')).config;
+                if (!config) {
+                    console.log('No config provided');
                 }
                 console.log(`Loading time: ${Date.now() - start} ms - config.js`);
             }

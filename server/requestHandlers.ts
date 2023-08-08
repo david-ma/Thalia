@@ -104,8 +104,8 @@ const handle: Thalia.Handle = {
         const list_of_paths = [
           path.resolve(__dirname, '..', 'config.js'),
           path.resolve(__dirname, '..', 'config', 'config.js'),
-          path.resolve(process.cwd(), '..', 'config.js'),
-          path.resolve(process.cwd(), '..', 'config', 'config.js'),
+          path.resolve(process.cwd(), 'config.js'),
+          path.resolve(process.cwd(), 'config', 'config.js'),
         ]
 
         for (const path of list_of_paths) {
@@ -115,6 +115,11 @@ const handle: Thalia.Handle = {
               break
             }
           }
+        }
+
+        if (!config) {
+          console.log('No config provided')
+          // TODO: We shouldn't crash. Just serve the public folder.
         }
 
         console.log(`Loading time: ${Date.now() - start} ms - config.js`)

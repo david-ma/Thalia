@@ -4,6 +4,9 @@
   "version": "4.0.0",
   "description": "Frostickle's server",
   "main": "index.js",
+  "bin": {
+    "thalia": "./server/thalia.js"
+  },
   "dependencies": {
     "amdefine": "^1.0.1",
     "formidable": "^1.2.6",

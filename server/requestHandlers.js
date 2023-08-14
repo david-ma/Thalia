@@ -75,7 +75,7 @@ const handle = {
                     {
                         config: path.resolve(process.cwd(), 'config', 'config.js'),
                         workspace: process.cwd(),
-                    }
+                    },
                 ];
                 for (const paths of list_of_paths) {
                     if (fs.existsSync(paths.config)) {
@@ -103,7 +103,7 @@ const handle = {
                 }
             }
             config.standAlone = true;
-            config.folder = path.resolve(__dirname, '..', 'public');
+            config.folder = path.resolve(config.workspacePath, 'public');
             handle.addWebsite(site, config);
             console.log('Setting workspace to current directory');
             handle.index.localhost = workspace;
@@ -183,7 +183,7 @@ const handle = {
         config = config || {};
         handle.websites[site] = new Website(site, config);
         const baseUrl = config.standAlone
-            ? path.resolve(__dirname, '..')
+            ? config.workspacePath
             : path.resolve(__dirname, '..', 'websites', site);
         if (fs.existsSync(path.resolve(baseUrl, 'data'))) {
             handle.websites[site].data = path.resolve(baseUrl, 'data');

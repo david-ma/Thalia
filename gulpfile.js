@@ -62,10 +62,6 @@ function compileBoilerplate(done){
             input: 'src/**/*'+staticSrc,
             output: workspace+'/dist/'
         },
-        typescript: {
-            input: 'src/**/*.ts',
-            output: workspace+'/dist/'
-        },
         views: workspace+'/views/**/*.mustache',
         reload: './'+workspace+'/dist/'
     };
@@ -79,16 +75,12 @@ function compileBoilerplate(done){
     parallelBuildTasks(done);
 }
 
-var ts = require("gulp-typescript");
-var tsProject = null;
 var siteConfig = null;
 
 function setSite(website){
     site = website;
     workspace = "websites/"+site;
     console.log(`Setting workspace to: ${workspace}`);
-
-    tsProject = ts.createProject(`websites/${site}/tsconfig.json`);
 
     if(fs.existsSync(`${__dirname}/websites/${site}/config.js`)) {
         siteConfig = require(`${__dirname}/websites/${site}/config`).config;
@@ -113,10 +105,6 @@ function setSite(website){
         },
         copy: {
             input: workspace+'/src/**/*'+staticSrc,
-            output: workspace+'/dist/'
-        },
-        typescript: {
-            input: workspace+'/src/**/*.ts',
             output: workspace+'/dist/'
         },
         views: workspace+'/views/**/*.mustache',
@@ -266,23 +254,6 @@ var buildStyles = function (done) {
 
 
 
-/**
- * Compile Typescript from src folder into dist folder
- */
-var typescript = function (done) {
-
-    // TODO: Use tsconfig input/output?
-    // var input = tsProject.config.files
-    // var output = tsProject.config.compilerOptions.outFile
-
-    return src(paths.typescript.input)
-        .pipe(tsProject())
-        .js
-        .pipe(dest(paths.typescript.output));
-}
-
-
-
 
 // Copy static files into output folder
 var copyFiles = function (done) {
@@ -399,7 +370,6 @@ var parallelBuildTasks = parallel(
 		buildScripts,
 		lintScripts,
 		buildStyles,
-		typescript,
 		copyFiles
 	);
 

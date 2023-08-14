@@ -122,8 +122,8 @@ const handle: Thalia.Handle = {
 
         for (const paths of list_of_paths) {
           if (fs.existsSync(paths.config)) {
-            console.log('Found config', paths.config)
-            console.log('Workspace:', paths.workspace)
+            // console.log('Found config', paths.config)
+            // console.log('Workspace:', paths.workspace)
             config = require(paths.config).config
             config.workspacePath = paths.workspace
             if (config) {

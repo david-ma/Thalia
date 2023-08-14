@@ -209,11 +209,14 @@ var buildScripts = function (done) {
 };
 
 // Lint scripts
+// Only applied to paths.scripts.input: workspace+'/src/**/*(?<!\.min)\.js',
+// Which means it's only applied to javascript... which I'm not usually writing anyway.
 var lintScripts = function (done) {
+    console.log("linting scripts with jshint")
 	// Lint scripts
 	return src(paths.scripts.input)
 		.pipe(jshint())
-		.pipe(jshint.reporter('jshint-stylish'));
+		.pipe(jshint.reporter('jshint-stylish', {verbose: true}));
 };
 
 // Process, lint, and minify Sass files

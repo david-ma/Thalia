@@ -16,7 +16,11 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path", "sass
                 this.folder =
                     typeof config.folder === 'string'
                         ? config.folder
-                        : 'websites/' + site + '/public';
+                        : path.resolve(process.cwd(), 'websites', site, 'public');
+                this.workspacePath =
+                    typeof config.workspacePath === 'string'
+                        ? config.workspacePath
+                        : path.resolve(process.cwd(), 'websites', site);
                 this.domains = typeof config.domains === 'object' ? config.domains : [];
                 this.pages = typeof config.pages === 'object' ? config.pages : {};
                 this.redirects =
@@ -549,6 +553,7 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                         req: request,
                         db: website.seq || null,
                         views: website.views,
+                        workspacePath: website.workspacePath,
                         readAllViews: website.readAllViews,
                         readTemplate: website.readTemplate,
                         path: d.words.slice(2),

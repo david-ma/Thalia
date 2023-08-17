@@ -13,6 +13,7 @@ class Website implements Thalia.WebsiteConfig {
   cache: boolean
   folder: string
   domains: Array<string>
+  workspacePath: string
   pages: {
     [key: string]: string
   }
@@ -55,7 +56,14 @@ class Website implements Thalia.WebsiteConfig {
       this.folder =
         typeof config.folder === 'string'
           ? config.folder
-          : 'websites/' + site + '/public'
+          : path.resolve(process.cwd(), 'websites', site, 'public')
+      // : 'websites/' + site + '/public'
+
+      this.workspacePath =
+        typeof config.workspacePath === 'string'
+          ? config.workspacePath
+          : path.resolve(process.cwd(), 'websites', site)
+
       this.domains = typeof config.domains === 'object' ? config.domains : []
       this.pages = typeof config.pages === 'object' ? config.pages : {}
       this.redirects =

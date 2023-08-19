@@ -112,7 +112,7 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
     function loginPage(password: string, filter: string) {
       if (request.url.indexOf('login') >= 0) {
         const form = new formidable.IncomingForm()
-        form.parse(request, (err, fields) => {
+        form.parse(request, (err :any, fields :any) => {
           if (fields.password && fields.password === password) {
             const encodedPassword = encode(password)
             response.setHeader('Set-Cookie', [

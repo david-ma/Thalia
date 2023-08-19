@@ -8,7 +8,7 @@ specifiers:
   '@types/d3-selection-multi': ^1.0.10
   '@types/d3-voronoi': ^1.1.9
   '@types/datatables.net': ^1.10.24
-  '@types/formidable': ^1.2.5
+  '@types/formidable': ^3.4.1
   '@types/http-proxy': ^1.17.11
   '@types/jest': ^26.0.24
   '@types/jquery': ^3.5.16
@@ -18,7 +18,6 @@ specifiers:
   '@types/node': ^18.17.5
   '@types/nodemailer': ^6.4.9
   '@types/puppeteer': ^5.4.7
-  '@types/sass': ^1.45.0
   '@types/sequelize': ^4.28.15
   '@types/showdown': ^1.9.4
   '@types/validator': ^13.11.1
@@ -40,7 +39,7 @@ specifiers:
   eslint-plugin-node: ^11.1.0
   eslint-plugin-promise: ^5.2.0
   eslint-plugin-react: ^7.33.1
-  formidable: ^1.2.6
+  formidable: ^3.5.0
   gulp: 4.0.2
   gulp-cli: ^2.3.0
   gulp-concat: 2.6.1
@@ -50,6 +49,7 @@ specifiers:
   gulp-rename: 2.0.0
   gulp-sass: 5.0.0
   gulp-terser: 2.0.1
+  handlebars: ^4.7.8
   http-proxy: ^1.18.1
   jshint: 2.13.0
   jshint-stylish: 2.2.1
@@ -72,7 +72,8 @@ specifiers:
 
 dependencies:
   amdefine: 1.0.1
-  formidable: 1.2.6
+  formidable: 3.5.0
+  handlebars: 4.7.8
   http-proxy: 1.18.1
   lodash: 4.17.21
   mime: 2.6.0
@@ -92,7 +93,7 @@ devDependencies:
   '@types/d3-selection-multi': 1.0.10
   '@types/d3-voronoi': 1.1.9
   '@types/datatables.net': 1.10.24
-  '@types/formidable': 1.2.5
+  '@types/formidable': 3.4.1
   '@types/http-proxy': 1.17.11
   '@types/jest': 26.0.24
   '@types/jquery': 3.5.16
@@ -102,7 +103,6 @@ devDependencies:
   '@types/node': 18.17.5
   '@types/nodemailer': 6.4.9
   '@types/puppeteer': 5.4.7
-  '@types/sass': 1.45.0
   '@types/sequelize': 4.28.15
   '@types/showdown': 1.9.4
   '@types/validator': 13.11.1
@@ -944,8 +944,8 @@ packages:
       '@types/ms': 0.7.31
     dev: false
 
-  /@types/formidable/1.2.5:
-    resolution: {integrity: sha512-zu3mQJa4hDNubEMViSj937602XdDGzK7Q5pJ5QmLUbNxclbo9tZGt5jtwM352ssZ+pqo5V4H14TBvT/ALqQQcA==}
+  /@types/formidable/3.4.1:
+    resolution: {integrity: sha512-8G2MI302B0yinarziM10Jx9Y43sPwo4LH059FB1ihA3jf7HSamhC6alLRzB2XDGwrpCxbcd6xaFXeDh+rcE3xQ==}
     dependencies:
       '@types/node': 18.17.5
     dev: true
@@ -1036,13 +1036,6 @@ packages:
     resolution: {integrity: sha512-JdGWZZYL0vKapXF4oQTC5hLVNfOgdPrqeZ1BiQnGk5cB7HeE91EWUiTdVSdQPobRN8rIcdffjiOgCYJ/S8QrnQ==}
     dependencies:
       '@types/node': 18.17.5
-    dev: true
-
-  /@types/sass/1.45.0:
-    resolution: {integrity: sha512-jn7qwGFmJHwUSphV8zZneO3GmtlgLsmhs/LQyVvQbIIa+fzGMUiHI4HXJZL3FT8MJmgXWbLGiVVY7ElvHq6vDA==}
-    deprecated: This is a stub types definition. sass provides its own type definitions, so you do not need this installed.
-    dependencies:
-      sass: 1.65.1
     dev: true
 
   /@types/sequelize/4.28.15:
@@ -1519,6 +1512,10 @@ packages:
       is-array-buffer: 3.0.2
       is-shared-array-buffer: 1.0.2
     dev: true
+
+  /asap/2.0.6:
+    resolution: {integrity: sha512-BSHWgDSAiKs50o2Re8ppvp3seVHXSRM44cdSsT9FfNEUUZLOGWVCsiWaRPWM1Znn+mqZ1OfVZ3z3DWEzSp7hRA==}
+    dev: false
 
   /assign-symbols/1.0.0:
     resolution: {integrity: sha512-Q+JC7Whu8HhmTdBph/Tq59IoRtoy6KAm5zzPv00WdujX82lbAL8K7WVjne7vdCsAmbF4AYaDOPyO3k0kl8qIrw==}
@@ -2785,6 +2782,13 @@ packages:
     hasBin: true
     dev: true
 
+  /dezalgo/1.0.4:
+    resolution: {integrity: sha512-rXSP0bf+5n0Qonsb+SVVfNfIsimO4HEtmnIpPHY8Q1UCzKlQrDMfdobr8nJOOsRgWCyMRqeSBQzmWUMq7zvVig==}
+    dependencies:
+      asap: 2.0.6
+      wrappy: 1.0.2
+    dev: false
+
   /diff-sequences/26.6.2:
     resolution: {integrity: sha512-Mv/TDa3nZ9sbc5soK+OoA74BsS3mL37yixCvUAQkiuA4Wz6YtwP/K47n2rv2ovzHZvoiQeA5FTQOschKkEwB0Q==}
     engines: {node: '>= 10.14.2'}
@@ -3719,9 +3723,12 @@ packages:
       for-in: 1.0.2
     dev: true
 
-  /formidable/1.2.6:
-    resolution: {integrity: sha512-KcpbcpuLNOwrEjnbpMC0gS+X8ciDoZE1kkqzat4a8vrprf+s9pKNQ/QIwWfbfs4ltgmFl3MD177SNTkve3BwGQ==}
-    deprecated: 'Please upgrade to latest, formidable@v2 or formidable@v3! Check these notes: https://bit.ly/2ZEqIau'
+  /formidable/3.5.0:
+    resolution: {integrity: sha512-WwsMWvPmY+Kv37C3+KP3A+2Ym1aZoac4nz4ZEe5z0UPBoCg0O/wHay3eeYkZr4KJIbCzpSUeno+STMhde+KCfw==}
+    dependencies:
+      dezalgo: 1.0.4
+      hexoid: 1.0.0
+      once: 1.4.0
     dev: false
 
   /fraction.js/4.2.0:
@@ -4105,6 +4112,19 @@ packages:
       glogg: 1.0.2
     dev: true
 
+  /handlebars/4.7.8:
+    resolution: {integrity: sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==}
+    engines: {node: '>=0.4.7'}
+    hasBin: true
+    dependencies:
+      minimist: 1.2.8
+      neo-async: 2.6.2
+      source-map: 0.6.1
+      wordwrap: 1.0.0
+    optionalDependencies:
+      uglify-js: 3.17.4
+    dev: false
+
   /has-ansi/2.0.0:
     resolution: {integrity: sha512-C8vBJ8DwUCx19vhm7urhTuUsr4/IyP6l4VzNQDv+ryHQObW3TTTp9yB68WpYgRe2bbaGuZ/se74IqFeVnMnLZg==}
     engines: {node: '>=0.10.0'}
@@ -4187,6 +4207,11 @@ packages:
       function-bind: 1.1.1
     dev: true
 
+  /hexoid/1.0.0:
+    resolution: {integrity: sha512-QFLV0taWQOZtvIRIAdBChesmogZrtuXvVWsFHZTk2SU+anspqZ2vMnoLg7IE1+Uk16N19APic1BuF8bC8c2m5g==}
+    engines: {node: '>=8'}
+    dev: false
+
   /homedir-polyfill/1.0.3:
     resolution: {integrity: sha512-eSmmWE5bZTK2Nou4g0AI3zZ9rswp7GRKoKXS1BLUkvPviOqs4YTN1djQIqrXy9k5gEtdLPy86JjRwsNM9tnDcA==}
     engines: {node: '>=0.10.0'}
@@ -4267,6 +4292,7 @@ packages:
 
   /immutable/4.3.2:
     resolution: {integrity: sha512-oGXzbEDem9OOpDWZu88jGiYCvIsLHMvGw+8OXlpsvTFvIQplQbjg1B1cvKg8f7Hoch6+NGjpPsH1Fr+Mc2D1aA==}
+    dev: false
 
   /import-cwd/2.1.0:
     resolution: {integrity: sha512-Ew5AZzJQFqrOV5BTW3EIoHAnoie1LojZLXKcCQ/yTRyVZosBhK1x1ViYjHGf5pAFOq8ZyChZp6m/fSN7pJyZtg==}
@@ -5378,6 +5404,10 @@ packages:
     resolution: {integrity: sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==}
     engines: {node: '>= 0.6'}
 
+  /neo-async/2.6.2:
+    resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
+    dev: false
+
   /next-tick/1.1.0:
     resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}
     dev: true
@@ -5597,7 +5627,6 @@ packages:
     resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
     dependencies:
       wrappy: 1.0.2
-    dev: true
 
   /openurl/1.1.1:
     resolution: {integrity: sha512-d/gTkTb1i1GKz5k3XE3XFV/PxQ1k45zDqGP2OA7YhgsaLoqm6qRvARAZOFer1fcXritWlGBRCu/UgeS4HAnXAA==}
@@ -6599,6 +6628,7 @@ packages:
       chokidar: 3.5.3
       immutable: 4.3.2
       source-map-js: 1.0.2
+    dev: false
 
   /semver-greatest-satisfied-range/1.1.0:
     resolution: {integrity: sha512-Ny/iyOzSSa8M5ML46IAx3iXc6tfOsYU2R4AXi2UpHk60Zrgyq6eqPj/xiOfS0rRl/iiQ/rdJkVjw/5cdUyCntQ==}
@@ -6940,7 +6970,6 @@ packages:
   /source-map/0.6.1:
     resolution: {integrity: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==}
     engines: {node: '>=0.10.0'}
-    dev: true
 
   /source-map/0.7.4:
     resolution: {integrity: sha512-l3BikUxvPOcn5E74dZiq5BGsTb5yEwhaTSzccU6t4sDOH8NWJCstKO5QT2CvtFoK6F0saL7p9xHAqHOlCPJygA==}
@@ -7480,6 +7509,14 @@ packages:
     resolution: {integrity: sha512-fKnGuqmTBnIE+/KXSzCn4db8RTigUzw1AN0DmdU6hJovUTbYJKyqj+8Mt1c4VfRDnOVJnENmfYkIPZ946UrSAA==}
     dev: true
 
+  /uglify-js/3.17.4:
+    resolution: {integrity: sha512-T9q82TJI9e/C1TAxYvfb16xO120tMVFZrGA3f9/P4424DNu6ypK103y0GPFVa17yotwSyZW5iYXgjYHkGrJW/g==}
+    engines: {node: '>=0.8.0'}
+    hasBin: true
+    requiresBuild: true
+    dev: false
+    optional: true
+
   /umzug/2.3.0:
     resolution: {integrity: sha512-Z274K+e8goZK8QJxmbRPhl89HPO1K+ORFtm6rySPhFKfKc5GHhqdzD0SGhSWHkzoXasqJuItdhorSvY7/Cgflw==}
     engines: {node: '>=6.0.0'}
@@ -7750,6 +7787,10 @@ packages:
       '@types/node': 18.17.5
     dev: false
 
+  /wordwrap/1.0.0:
+    resolution: {integrity: sha512-gvVzJFlPycKc5dZN4yPkP8w7Dc37BtP1yczEneOb4uq34pXZcvrtRTmWV8W+Ume+XCxKgbjM+nevkyFPMybd4Q==}
+    dev: false
+
   /wrap-ansi/2.1.0:
     resolution: {integrity: sha512-vAaEaDM946gbNpH5pLVNR+vX2ht6n0Bt3GXwVB1AuAqZosOvHNF3P7wDnh8KLkSqgUh0uh77le7Owgoz+Z9XBw==}
     engines: {node: '>=0.10.0'}
@@ -7769,7 +7810,6 @@ packages:
 
   /wrappy/1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
-    dev: true
 
   /write-file-atomic/4.0.2:
     resolution: {integrity: sha512-7KxauUdBmSdWnmpaGFg+ppNjKF8uNLry8LyzjauQDOVONfFLNKrKvQOxZ/VuTIcS/gge/YNahf5RIIQWTSarlg==}

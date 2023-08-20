@@ -12,7 +12,12 @@ echo
 SITE="${1:-example}"
 PORT="${2:-1337}"
 
-echo "Developing $SITE"
+if test -d "websites/$SITE"; then
+    echo "Developing $SITE"
+else
+    echo "No websites/$SITE"
+    exit 1
+fi
 
 ./node_modules/.bin/gulp watch -t -s $SITE &
 cd server

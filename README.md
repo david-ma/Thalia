@@ -10,9 +10,9 @@ Quickstart
 -
 To install, download the repository then run:
 ```
-yarn install
-yarn gulp build
-yarn start
+npm install
+npm gulp build
+npm start
 ```
 
 Note that ```npm start``` needs your admin password because it will start serving the website on port 80
@@ -23,7 +23,7 @@ If you want to start a new project, just copy the example folder and rename it. 
 
 To test, run:
 ```
-yarn test
+npm test
 ```
 
 To develop, run:

@@ -3,7 +3,7 @@ import fs = require('fs')
 import type { Thalia } from '../server/thalia'
 import { asyncForEach, checkLinks, validURL } from './utilities'
 import * as _ from 'lodash'
-import mustache = require('mustache')
+import Handlebars = require('handlebars')
 import { handle } from '../server/requestHandlers'
 
 const consoleLog = console.log
@@ -30,7 +30,7 @@ const websites: {
 
 if (process.env.SITE && process.env.SITE !== 'all') {
   configPaths = {
-    [process.env.SITE]: findSiteConfig(process.env.SITE)
+    [process.env.SITE]: findSiteConfig(process.env.SITE),
   }
 } else {
   const websiteArray = fs
@@ -96,7 +96,7 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   // Audit usage of features?
   itif(handle.websites[site].seq)(
     'Databases used',
-    function inspectDatabases () {
+    function inspectDatabases() {
       console.info(
         `${site} uses these databases:`,
         Object.keys(handle.websites[site].seq).filter(
@@ -108,7 +108,7 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
   itif(websites[site].sockets)('Sockets Used', () => {})
   itif(websites[site].proxies)(
     'Proxy hosts are online',
-    async function checkProxyHosts () {
+    async function checkProxyHosts() {
       const proxies: Thalia.rawProxy[] = websites[site]
         .proxies as Thalia.rawProxy[]
       const links: string[] = proxies.map((proxy: Thalia.rawProxy) => {
@@ -193,7 +193,7 @@ describe.each(Object.keys(websites))('Testing config of %s', (site) => {
           (views: { [key: string]: string }) => {
             Object.keys(views).forEach((view) => {
               const template = views[view]
-              mustache.render(template, {})
+              Handlebars.compile(template)({})
             })
 
             done()
@@ -250,8 +250,12 @@ if (false) {
   console.log(xitif)
 }
 
-function findSiteConfig (site: string): string {
-  if (fs.existsSync(`websites/${site}/config.js`)) { return `websites/${site}/config.js` }
-  if (fs.existsSync(`websites/${site}/config/config.js`)) { return `websites/${site}/config/config.js` }
+function findSiteConfig(site: string): string {
+  if (fs.existsSync(`websites/${site}/config.js`)) {
+    return `websites/${site}/config.js`
+  }
+  if (fs.existsSync(`websites/${site}/config/config.js`)) {
+    return `websites/${site}/config/config.js`
+  }
   return ''
 }

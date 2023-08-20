@@ -2,9 +2,9 @@
 import { Thalia } from './thalia'
 import fs = require('fs')
 const fsPromise = fs.promises
-import mustache = require('mustache')
 import path = require('path')
 import sass = require('sass')
+import Handlebars = require('handlebars')
 
 class Website implements Thalia.WebsiteConfig {
   name: string
@@ -300,6 +300,9 @@ const handle: Thalia.Handle = {
 
   // TODO: Make all of this asynchronous?
   // Add a site to the handle
+  /**
+   * Takes the name of a workspace, and the config, then returns a website object
+   */
   addWebsite: function (site: string, config: Thalia.WebsiteConfig) {
     config = config || {}
     handle.websites[site] = new Website(site, config)
@@ -408,15 +411,19 @@ const handle: Thalia.Handle = {
           })
       }
 
+      // Load all the views
+      // Consider adding partials only for it's own website?
+      // There's a possibility of name collisions if we don't.
       readAllViews(path.resolve(baseUrl, 'views')).then((views) => {
         handle.websites[site].views = views
 
         fsPromise
           .readdir(path.resolve(baseUrl, 'views'))
-          .then(function (d: string[]) {
-            d.filter((d: string) => d.indexOf('.mustache') > 0).forEach(
-              (file: string) => {
-                const webpage = file.split('.mustache')[0]
+          .then(function (files: string[]) {
+            files
+              .filter((file: string) => file.match(/.mustache|.hbs/))
+              .forEach((file: string) => {
+                const webpage = file.split(/.mustache|.hbs/)[0]
                 if (
                   (config.mustacheIgnore
                     ? config.mustacheIgnore.indexOf(webpage) === -1
@@ -427,27 +434,22 @@ const handle: Thalia.Handle = {
                     controller: Thalia.Controller
                   ) {
                     if (handle.websites[site].cache) {
-                      controller.res.end(
-                        (<any>mustache).render((<any>views)[webpage], {}, views)
-                      )
+                      registerAllViewsAsPartials(views)
+                      controller.res.end(Handlebars.compile(views[webpage])({}))
                     } else {
                       readAllViews(path.resolve(baseUrl, 'views')).then(
                         (views) => {
                           handle.websites[site].views = views
+                          registerAllViewsAsPartials(views)
                           controller.res.end(
-                            (<any>mustache).render(
-                              (<any>views)[webpage],
-                              {},
-                              views
-                            )
+                            Handlebars.compile(views[webpage])({})
                           )
                         }
                       )
                     }
                   }
                 }
-              }
-            )
+              })
           })
           .catch((e: any) => console.log(e))
       })
@@ -556,8 +558,8 @@ async function readTemplate(template: string, folder: string, content = '') {
     // Todo: Check folder exists and is not empty?
     fsPromise.readdir(`${folder}/partials/`).then(function (d: string[]) {
       d.forEach(function (filename) {
-        if (filename.indexOf('.mustache') > 0) {
-          filenames.push(filename.split('.mustache')[0])
+        if (filename.match(/.mustache|.hbs/)) {
+          filenames.push(filename.split(/.mustache|.hbs/)[0])
           promises.push(
             fsPromise.readFile(`${folder}/partials/${filename}`, {
               encoding: 'utf8',
@@ -597,11 +599,13 @@ async function readAllViews(folder: string): Promise<Views> {
           directory.map(
             (filename: string) =>
               new Promise((resolve) => {
-                if (filename.indexOf('.mustache') > 0) {
+
+                if (filename.match(/.mustache|.hbs/)) {
+                  
                   fsPromise
                     .readFile(`${folder}/${filename}`, 'utf8')
                     .then((file: string) => {
-                      const name = filename.split('.mustache')[0]
+                      const name = filename.split(/.mustache|.hbs/)[0]
                       resolve({
                         [name]: file,
                       })
@@ -700,6 +704,12 @@ function loadMustacheTemplate(file: string) {
           styles: '',
         })
       })
+  })
+}
+
+function registerAllViewsAsPartials(views: Views) {
+  Object.entries(views).forEach(([key, value]) => {
+    Handlebars.registerPartial(key, value)
   })
 }
 

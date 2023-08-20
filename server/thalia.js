@@ -1,7 +1,7 @@
 if (typeof define !== 'function') {
     var define = require('amdefine')(module);
 }
-define("requestHandlers", ["require", "exports", "fs", "mustache", "path", "sass"], function (require, exports, fs, mustache, path, sass) {
+define("requestHandlers", ["require", "exports", "fs", "path", "sass", "handlebars"], function (require, exports, fs, path, sass, Handlebars) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Website = exports.handle = void 0;
@@ -266,21 +266,25 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path", "sass
                     handle.websites[site].views = views;
                     fsPromise
                         .readdir(path.resolve(baseUrl, 'views'))
-                        .then(function (d) {
-                        d.filter((d) => d.indexOf('.mustache') > 0).forEach((file) => {
-                            const webpage = file.split('.mustache')[0];
+                        .then(function (files) {
+                        files
+                            .filter((file) => file.match(/.mustache|.hbs/))
+                            .forEach((file) => {
+                            const webpage = file.split(/.mustache|.hbs/)[0];
                             if ((config.mustacheIgnore
                                 ? config.mustacheIgnore.indexOf(webpage) === -1
                                 : true) &&
                                 !handle.websites[site].controllers[webpage]) {
                                 handle.websites[site].controllers[webpage] = function (controller) {
                                     if (handle.websites[site].cache) {
-                                        controller.res.end(mustache.render(views[webpage], {}, views));
+                                        registerAllViewsAsPartials(views);
+                                        controller.res.end(Handlebars.compile(views[webpage])({}));
                                     }
                                     else {
                                         readAllViews(path.resolve(baseUrl, 'views')).then((views) => {
                                             handle.websites[site].views = views;
-                                            controller.res.end(mustache.render(views[webpage], {}, views));
+                                            registerAllViewsAsPartials(views);
+                                            controller.res.end(Handlebars.compile(views[webpage])({}));
                                         });
                                     }
                                 };
@@ -349,8 +353,8 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path", "sass
             }));
             fsPromise.readdir(`${folder}/partials/`).then(function (d) {
                 d.forEach(function (filename) {
-                    if (filename.indexOf('.mustache') > 0) {
-                        filenames.push(filename.split('.mustache')[0]);
+                    if (filename.match(/.mustache|.hbs/)) {
+                        filenames.push(filename.split(/.mustache|.hbs/)[0]);
                         promises.push(fsPromise.readFile(`${folder}/partials/${filename}`, {
                             encoding: 'utf8',
                         }));
@@ -377,11 +381,11 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path", "sass
                 .readdir(folder)
                 .then((directory) => {
                 Promise.all(directory.map((filename) => new Promise((resolve) => {
-                    if (filename.indexOf('.mustache') > 0) {
+                    if (filename.match(/.mustache|.hbs/)) {
                         fsPromise
                             .readFile(`${folder}/${filename}`, 'utf8')
                             .then((file) => {
-                            const name = filename.split('.mustache')[0];
+                            const name = filename.split(/.mustache|.hbs/)[0];
                             resolve({
                                 [name]: file,
                             });
@@ -455,6 +459,11 @@ define("requestHandlers", ["require", "exports", "fs", "mustache", "path", "sass
                     styles: '',
                 });
             });
+        });
+    }
+    function registerAllViewsAsPartials(views) {
+        Object.entries(views).forEach(([key, value]) => {
+            Handlebars.registerPartial(key, value);
         });
     }
 });

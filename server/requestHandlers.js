@@ -3,9 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Website = exports.handle = void 0;
 const fs = require("fs");
 const fsPromise = fs.promises;
-const mustache = require("mustache");
 const path = require("path");
 const sass = require("sass");
+const Handlebars = require("handlebars");
 class Website {
     constructor(site, config) {
         if (typeof config === 'object') {
@@ -266,21 +266,25 @@ const handle = {
                 handle.websites[site].views = views;
                 fsPromise
                     .readdir(path.resolve(baseUrl, 'views'))
-                    .then(function (d) {
-                    d.filter((d) => d.indexOf('.mustache') > 0).forEach((file) => {
-                        const webpage = file.split('.mustache')[0];
+                    .then(function (files) {
+                    files
+                        .filter((file) => file.match(/.mustache|.hbs/))
+                        .forEach((file) => {
+                        const webpage = file.split(/.mustache|.hbs/)[0];
                         if ((config.mustacheIgnore
                             ? config.mustacheIgnore.indexOf(webpage) === -1
                             : true) &&
                             !handle.websites[site].controllers[webpage]) {
                             handle.websites[site].controllers[webpage] = function (controller) {
                                 if (handle.websites[site].cache) {
-                                    controller.res.end(mustache.render(views[webpage], {}, views));
+                                    registerAllViewsAsPartials(views);
+                                    controller.res.end(Handlebars.compile(views[webpage])({}));
                                 }
                                 else {
                                     readAllViews(path.resolve(baseUrl, 'views')).then((views) => {
                                         handle.websites[site].views = views;
-                                        controller.res.end(mustache.render(views[webpage], {}, views));
+                                        registerAllViewsAsPartials(views);
+                                        controller.res.end(Handlebars.compile(views[webpage])({}));
                                     });
                                 }
                             };
@@ -349,8 +353,8 @@ async function readTemplate(template, folder, content = '') {
         }));
         fsPromise.readdir(`${folder}/partials/`).then(function (d) {
             d.forEach(function (filename) {
-                if (filename.indexOf('.mustache') > 0) {
-                    filenames.push(filename.split('.mustache')[0]);
+                if (filename.match(/.mustache|.hbs/)) {
+                    filenames.push(filename.split(/.mustache|.hbs/)[0]);
                     promises.push(fsPromise.readFile(`${folder}/partials/${filename}`, {
                         encoding: 'utf8',
                     }));
@@ -377,11 +381,11 @@ async function readAllViews(folder) {
             .readdir(folder)
             .then((directory) => {
             Promise.all(directory.map((filename) => new Promise((resolve) => {
-                if (filename.indexOf('.mustache') > 0) {
+                if (filename.match(/.mustache|.hbs/)) {
                     fsPromise
                         .readFile(`${folder}/${filename}`, 'utf8')
                         .then((file) => {
-                        const name = filename.split('.mustache')[0];
+                        const name = filename.split(/.mustache|.hbs/)[0];
                         resolve({
                             [name]: file,
                         });
@@ -455,5 +459,10 @@ function loadMustacheTemplate(file) {
                 styles: '',
             });
         });
+    });
+}
+function registerAllViewsAsPartials(views) {
+    Object.entries(views).forEach(([key, value]) => {
+        Handlebars.registerPartial(key, value);
     });
 }

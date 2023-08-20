@@ -4,7 +4,7 @@ const globals_1 = require("@jest/globals");
 const fs = require("fs");
 const utilities_1 = require("./utilities");
 const _ = require("lodash");
-const mustache = require("mustache");
+const Handlebars = require("handlebars");
 const requestHandlers_1 = require("../server/requestHandlers");
 const consoleLog = console.log;
 console.log = jest.fn();
@@ -18,7 +18,7 @@ let configPaths = {};
 const websites = {};
 if (process.env.SITE && process.env.SITE !== 'all') {
     configPaths = {
-        [process.env.SITE]: findSiteConfig(process.env.SITE)
+        [process.env.SITE]: findSiteConfig(process.env.SITE),
     };
 }
 else {
@@ -132,7 +132,7 @@ globals_1.describe.each(Object.keys(websites))('Testing config of %s', (site) =>
             requestHandlers_1.handle.websites[site].readAllViews((views) => {
                 Object.keys(views).forEach((view) => {
                     const template = views[view];
-                    mustache.render(template, {});
+                    Handlebars.compile(template)({});
                 });
                 done();
             });

@@ -627,7 +627,13 @@ async function readAllViews(folder: string): Promise<Views> {
           )
         ).then(
           (array: Array<Views>) => {
-            resolve(array.reduce((a, b) => Object.assign(a, b)))
+            console.log('array', array)
+            // Check if array is empty before reducing
+            if (array.length === 0) {
+              resolve({})
+            } else {
+              resolve(array.reduce((a, b) => Object.assign(a, b)))
+            }
           },
           (reason) => {
             console.log('Error in readAllViews', reason)

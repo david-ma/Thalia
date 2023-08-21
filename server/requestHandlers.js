@@ -403,7 +403,13 @@ async function readAllViews(folder) {
                     });
                 }
             }))).then((array) => {
-                resolve(array.reduce((a, b) => Object.assign(a, b)));
+                console.log('array', array);
+                if (array.length === 0) {
+                    resolve({});
+                }
+                else {
+                    resolve(array.reduce((a, b) => Object.assign(a, b)));
+                }
             }, (reason) => {
                 console.log('Error in readAllViews', reason);
                 reject(reason);

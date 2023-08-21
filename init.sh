@@ -64,20 +64,25 @@ if [ "$DATABASE" = "y" ]; then
   echo "  websites/${PROJECT}/config/db_bootstrap.ts"
   echo "  websites/${PROJECT}/models/tsconfig.json"
   echo "  websites/${PROJECT}/models/index.ts"
+  echo "  websites/${PROJECT}/models/log.ts"
+  echo "  websites/${PROJECT}/models/models.d.ts"
 
-  # Create a database folder
   mkdir -p websites/${PROJECT}/database
-
-  # Create models folder
   mkdir -p websites/${PROJECT}/models
-
-  # Copy config/db_bootstrap.ts
   cp websites/example/config/db_bootstrap.ts websites/${PROJECT}/config/db_bootstrap.ts
-  # Copy models/tsconfig.json
   cp websites/example/models/tsconfig.json websites/${PROJECT}/models/tsconfig.json
-  # Copy models/index.ts
   cp websites/example/models/index.ts websites/${PROJECT}/models/index.ts
+  cp websites/example/models/log.ts websites/${PROJECT}/models/log.ts
+  cp websites/example/models/models.d.ts websites/${PROJECT}/models/models.d.ts
+
+  pushd websites/${PROJECT}/models
+    tsc
+  popd
 fi
+
+pushd websites/${PROJECT}/config
+  tsc
+popd
 
 # Ask if docker is needed
 echo "Do you want to use Docker? (y/n)"

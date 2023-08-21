@@ -2,14 +2,36 @@
 
 # Initialise a new Thalia project
 
-# Get workspace name
-echo "What is the name of your project?"
-read PROJECT
+# Take first argument as project name, or ask for it
+PROJECT="${1:-}"
+if [ "$PROJECT" = "" ]; then
+  echo "What is the name of your project?"
+  read PROJECT
+fi
 
-# Add some safety, check if the folder already exists
-if [ -d "websites/${PROJECT}" ]; then
-  echo "Folder already exists, aborting."
+# Safety
+if [ "$PROJECT" = "" ]; then
+  echo "No project name given, aborting."
   exit 1
+fi
+
+# Check for whitespaces
+if [[ "$PROJECT" =~ [[:space:]] ]]; then
+  echo "Project name may not contain whitespaces, aborting."
+  exit 1
+fi
+
+# Check if the folder already exists
+if [ -d "websites/${PROJECT}" ]; then
+  echo "Folder websites/$PROJECT already exists, are you sure you want to overwrite it? (y/n)"
+  read CONTINUE
+  if [ "$CONTINUE" != "y" ]; then
+    echo "Aborting."
+    exit 1
+  fi
+  echo "Overwriting folder websites/$PROJECT"
+else
+  echo "Creating folder websites/$PROJECT"
 fi
 
 # Create folder in websites
@@ -32,20 +54,29 @@ fi
 
 # Ask if a database is needed
 echo "Do you want to use a database? (y/n)"
+echo "The example db is PostgreSQL, run in a docker container on port 5555."
 read DATABASE
 if [ "$DATABASE" = "y" ]; then
+  echo "Creating database folders and files, be sure to start a database server."
+  echo "Making:"
+  echo "  websites/${PROJECT}/database"
+  echo "  websites/${PROJECT}/models"
+  echo "  websites/${PROJECT}/config/db_bootstrap.ts"
+  echo "  websites/${PROJECT}/models/tsconfig.json"
+  echo "  websites/${PROJECT}/models/index.ts"
+
   # Create a database folder
   mkdir -p websites/${PROJECT}/database
 
   # Create models folder
   mkdir -p websites/${PROJECT}/models
 
+  # Copy config/db_bootstrap.ts
+  cp websites/example/config/db_bootstrap.ts websites/${PROJECT}/config/db_bootstrap.ts
   # Copy models/tsconfig.json
   cp websites/example/models/tsconfig.json websites/${PROJECT}/models/tsconfig.json
   # Copy models/index.ts
   cp websites/example/models/index.ts websites/${PROJECT}/models/index.ts
-  # Copy config/db_bootstrap.ts
-  cp websites/example/config/db_bootstrap.ts websites/${PROJECT}/config/db_bootstrap.ts
 fi
 
 # Ask if docker is needed
@@ -59,10 +90,8 @@ if [ "$DOCKER" = "y" ]; then
   cp websites/example/docker-compose.yml websites/${PROJECT}/docker-compose.yml
 
   # If a database is needed, add it to docker-compose.yml
-  if [ "$DATABASE" = "y" ]; then
-    echo "\
-    aef\
-    " >>websites/${PROJECT}/docker-compose.yml
+  if [ "$DATABASE" = "n" ]; then
+    head websites/example/docker-compose.yml > websites/${PROJECT}/docker-compose.yml
   fi
 fi
 

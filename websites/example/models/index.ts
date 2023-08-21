@@ -8,7 +8,7 @@ let seqOptions: sequelize.Options = {
   password: 'postgres_password',
   dialect: 'postgres',
   host: 'localhost',
-  port: 5432,
+  port: 5555,
   logging: false,
   dialectOptions: {
     decimalNumbers: true,
@@ -22,6 +22,8 @@ if (process.env.NODE_ENV === 'docker') {
   seqOptions.host = 'db'
   seqOptions.port = 5432
 }
+
+console.log('seqOptions', seqOptions)
 
 // Initialise Sequelize
 export const dbConfig: sequelize.Sequelize = new sequelize.Sequelize(seqOptions)

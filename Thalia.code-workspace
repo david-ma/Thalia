@@ -9,7 +9,8 @@
       "editor.defaultFormatter": "vscode.html-language-features"
     },
     "files.associations": {
-      "*.mustache": "handlebars"
+      "*.mustache": "handlebars",
+      "*.hbs": "handlebars"
     },
     "javascript.validate.enable": false,
     "standard.validate": ["typescript"],
@@ -22,7 +23,7 @@
       "envs": ["jest"]
     },
     "git.scanRepositories": ["."],
-    "auto-close-tag.activationOnLanguage": ["mustache"],
+    "auto-close-tag.activationOnLanguage": ["mustache", "handlebars", "hbs"],
     "extensions_that_I_use": {
       "aeschli.vscode-css-formatter": true,
       "christian-kohler.path-intellisense": true,
@@ -32,7 +33,6 @@
       "ionutvmi.path-autocomplete": true,
       "mrmlnc.vscode-scss": true
     },
-    "editor.tabSize": 2,
-    "eslint.packageManager": "yarn"
+    "editor.tabSize": 2
   }
 }

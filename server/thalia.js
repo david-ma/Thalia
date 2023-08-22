@@ -531,7 +531,11 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                                                 response.end(err);
                                             }
                                             else {
-                                                response.writeHead(200, { 'Content-Encoding': 'gzip' });
+                                                if (!response.headersSent) {
+                                                    response.writeHead(200, {
+                                                        'Content-Encoding': 'gzip',
+                                                    });
+                                                }
                                                 response.end(result);
                                             }
                                         });
@@ -548,9 +552,11 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                                                 response.end(err);
                                             }
                                             else {
-                                                response.writeHead(200, {
-                                                    'Content-Encoding': 'deflate',
-                                                });
+                                                if (!response.headersSent) {
+                                                    response.writeHead(200, {
+                                                        'Content-Encoding': 'deflate',
+                                                    });
+                                                }
                                                 response.end(result);
                                             }
                                         });

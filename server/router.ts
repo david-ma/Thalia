@@ -101,7 +101,11 @@ const router: Thalia.Router = function (
                         response.writeHead(503)
                         response.end(err)
                       } else {
-                        response.writeHead(200, { 'Content-Encoding': 'gzip' })
+                        if (!response.headersSent) {
+                          response.writeHead(200, {
+                            'Content-Encoding': 'gzip',
+                          })
+                        }
                         response.end(result)
                       }
                     })
@@ -115,9 +119,11 @@ const router: Thalia.Router = function (
                         response.writeHead(503)
                         response.end(err)
                       } else {
-                        response.writeHead(200, {
-                          'Content-Encoding': 'deflate',
-                        })
+                        if (!response.headersSent) {
+                          response.writeHead(200, {
+                            'Content-Encoding': 'deflate',
+                          })
+                        }
                         response.end(result)
                       }
                     })

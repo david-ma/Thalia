@@ -403,7 +403,6 @@ define("requestHandlers", ["require", "exports", "fs", "path", "sass", "handleba
                         });
                     }
                 }))).then((array) => {
-                    console.log('array', array);
                     if (array.length === 0) {
                         resolve({});
                     }

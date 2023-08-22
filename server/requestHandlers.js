@@ -403,7 +403,6 @@ async function readAllViews(folder) {
                     });
                 }
             }))).then((array) => {
-                console.log('array', array);
                 if (array.length === 0) {
                     resolve({});
                 }

@@ -59,7 +59,6 @@ read DATABASE
 if [ "$DATABASE" = "y" ]; then
   echo "Creating database folders and files, be sure to start a database server."
   echo "Making:"
-  echo "  websites/${PROJECT}/database"
   echo "  websites/${PROJECT}/models"
   echo "  websites/${PROJECT}/config/db_bootstrap.ts"
   echo "  websites/${PROJECT}/models/tsconfig.json"
@@ -67,7 +66,6 @@ if [ "$DATABASE" = "y" ]; then
   echo "  websites/${PROJECT}/models/log.ts"
   echo "  websites/${PROJECT}/models/models.d.ts"
 
-  mkdir -p websites/${PROJECT}/database
   mkdir -p websites/${PROJECT}/models
   cp websites/example/config/db_bootstrap.ts websites/${PROJECT}/config/db_bootstrap.ts
   cp websites/example/models/tsconfig.json websites/${PROJECT}/models/tsconfig.json

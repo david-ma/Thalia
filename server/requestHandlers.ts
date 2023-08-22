@@ -627,7 +627,6 @@ async function readAllViews(folder: string): Promise<Views> {
           )
         ).then(
           (array: Array<Views>) => {
-            console.log('array', array)
             // Check if array is empty before reducing
             if (array.length === 0) {
               resolve({})

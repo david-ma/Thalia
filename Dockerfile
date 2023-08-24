@@ -18,3 +18,7 @@ RUN pnpm install --ignore-scripts --prod
 USER chrome
 
 CMD ["/usr/app/Thalia/start.sh"]
+
+
+# To build for multiple platforms:
+# docker buildx build --push --platform linux/arm64/v8,linux/amd64 --progress=plain --tag frostickle/thalia:4.0 .

@@ -24,7 +24,6 @@ var rename = require('gulp-rename');
 var package = require('./package.json');
 
 // Scripts
-var jshint = require('gulp-jshint');
 var concat = require('gulp-concat');
 var uglify = require('gulp-terser');
 
@@ -62,7 +61,7 @@ function compileBoilerplate(done){
             input: 'src/**/*'+staticSrc,
             output: workspace+'/dist/'
         },
-        views: workspace+'/views/**/*.mustache',
+        views: workspace+'/views/**/*.(mustache|hbs)',
         reload: './'+workspace+'/dist/'
     };
 
@@ -107,7 +106,7 @@ function setSite(website){
             input: workspace+'/src/**/*'+staticSrc,
             output: workspace+'/dist/'
         },
-        views: workspace+'/views/**/*.mustache',
+        views: workspace+'/views/**/*.(mustache|hbs)',
         public: workspace+'/public',
         docs: workspace+'/docs', // Github pages uses /docs instead of /public
         reload: './'+workspace+'/dist/'
@@ -208,16 +207,6 @@ var buildScripts = function (done) {
 		}));
 };
 
-// Lint scripts
-// Only applied to paths.scripts.input: workspace+'/src/**/*(?<!\.min)\.js',
-// Which means it's only applied to javascript... which I'm not usually writing anyway.
-var lintScripts = function (done) {
-    console.log("linting scripts with jshint")
-	// Lint scripts
-	return src(paths.scripts.input)
-		.pipe(jshint())
-		.pipe(jshint.reporter('jshint-stylish', {verbose: true}));
-};
 
 // Process, lint, and minify Sass files
 var buildStyles = function (done) {
@@ -317,7 +306,8 @@ var watchSource = function (done) {
         series(copySingleFile, reloadBrowser)();
     });
 
-    watch(paths.scripts.input, series(lintScripts, buildScripts, reloadBrowser));
+    watch(paths.scripts.input, series(buildScripts, reloadBrowser));
+    watch(paths.scripts.input, series(reloadBrowser));
     watch(paths.styles.input, series(buildStyles, reloadBrowser));
     watch(paths.views, series(reloadBrowser));
 
@@ -371,7 +361,6 @@ exports.publishGithubPages = publishGithubPages;
  */
 var parallelBuildTasks = parallel(
 		buildScripts,
-		lintScripts,
 		buildStyles,
 		copyFiles
 	);

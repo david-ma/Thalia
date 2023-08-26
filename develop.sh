@@ -19,6 +19,20 @@ else
     exit 1
 fi
 
+
+# Run healthcheck.sh
+if test -f "websites/$SITE/models/healthcheck.sh"; then
+    echo "Running healthcheck.sh for $SITE"
+
+    if bash websites/$SITE/models/healthcheck.sh; then
+        echo "Healthcheck passed for $SITE"
+    else
+        echo "Healthcheck failed for $SITE"
+        exit 1
+    fi
+fi
+
+
 ./node_modules/.bin/gulp watch -t -s $SITE &
 cd server
     tsc --preserveWatchOutput --watch &

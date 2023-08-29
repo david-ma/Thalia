@@ -73,6 +73,7 @@ export declare namespace Thalia {
     readAllViews?: any
     readTemplate?: any
     path?: any
+    query?: any
   }
 
   export interface Controllers {

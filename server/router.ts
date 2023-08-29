@@ -142,6 +142,7 @@ const router: Thalia.Router = function (
             readAllViews: website.readAllViews,
             readTemplate: website.readTemplate,
             path: d.words.slice(2),
+            query: url.parse(request.url, true).query,
           })
 
           // if there is a matching data file

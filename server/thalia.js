@@ -577,6 +577,7 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                         readAllViews: website.readAllViews,
                         readTemplate: website.readTemplate,
                         path: d.words.slice(2),
+                        query: url.parse(request.url, true).query,
                     });
                 }
                 else if (website.data &&

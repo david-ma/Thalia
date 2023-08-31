@@ -108,6 +108,7 @@
     "verbose": true,
     "watch": [
       "./server/thalia.js",
+      "./server/helpers.js",
       "./websites/**/config.js",
       "./websites/**/config/*.js",
       "./websites/**/db_bootstrap.js"

@@ -62,6 +62,7 @@ function compileBoilerplate(done){
             output: workspace+'/dist/'
         },
         views: workspace+'/views/**/*.(mustache|hbs)',
+        scaffold: 'src/views/**/*',
         reload: './'+workspace+'/dist/'
     };
 
@@ -107,6 +108,7 @@ function setSite(website){
             output: workspace+'/dist/'
         },
         views: workspace+'/views/**/*.(mustache|hbs)',
+        scaffold: 'src/views/**/*',
         public: workspace+'/public',
         docs: workspace+'/docs', // Github pages uses /docs instead of /public
         reload: './'+workspace+'/dist/'
@@ -310,6 +312,7 @@ var watchSource = function (done) {
     watch(paths.scripts.input, series(reloadBrowser));
     watch(paths.styles.input, series(buildStyles, reloadBrowser));
     watch(paths.views, series(reloadBrowser));
+    watch(paths.scaffold, series(reloadBrowser));
 
     try {
         watch(paths.public, series(reloadBrowser));

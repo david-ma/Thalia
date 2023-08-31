@@ -36,10 +36,7 @@ fi
 ./node_modules/.bin/gulp watch -t -s $SITE &
 cd server
     tsc --preserveWatchOutput --watch &
-cd ..
-
-cd test
-    tsc --preserveWatchOutput --watch &
+    tsc -p helpers.tsconfig.json --preserveWatchOutput --watch &
 cd ..
 
 cd websites/$SITE
@@ -67,15 +64,6 @@ cd websites/$SITE
         cd ..
     else
         echo "No $SITE/models/tsconfig.json"
-    fi
-
-    if test -f "test/tsconfig.json"; then
-        echo "$SITE/test/tsconfig.json exists."
-        cd test
-            tsc --preserveWatchOutput --watch &
-        cd ..
-    else
-        echo "No $SITE/test"
     fi
 cd ../..
 

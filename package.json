@@ -3,7 +3,20 @@
   "private": true,
   "version": "4.0.3",
   "description": "Frostickle's server",
-  "main": "index.js",
+  "main": "./server/helpers.js",
+  "types": "./server/helpers.d.ts",
+  "exports": {
+    "default": {
+      "import": "./server/helpers.js",
+      "require": "./server/helpers.js",
+      "types": "./server/helpers.d.ts"
+    },
+    "thalia": {
+      "import": "./server/thalia.js",
+      "require": "./server/thalia.js",
+      "types": "./server/thalia.d.ts"
+    }
+  },
   "bin": {
     "thalia": "./server/thalia.js"
   },

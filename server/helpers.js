@@ -1,67 +1,38 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkPackage = exports.hello = void 0;
 const sequelize_1 = require("sequelize");
 const sequelize_2 = require("sequelize");
+const Handlebars = require('handlebars');
 const fs = require('fs');
-function hello() {
-    console.log('hello world');
-}
-exports.hello = hello;
-function checkPackage() {
-    fs.readFile('package.json', 'utf8', function (err, data) {
-        console.log(data);
-    });
-}
-exports.checkPackage = checkPackage;
-const SequelizeDataTableTypes = {
-    STRING: 'string',
-    TEXT: 'string',
-    INTEGER: 'num',
-    BIGINT: 'num',
-    FLOAT: 'num',
-    REAL: 'num',
-    DOUBLE: 'num',
-    DECIMAL: 'num',
-    DATE: 'date',
-    DATEONLY: 'date',
-    BOOLEAN: 'bool',
-    ENUM: 'string',
-    ARRAY: 'string',
-    JSON: 'string',
-    JSONB: 'string',
-    BLOB: 'string',
-};
-const checkSequelizeDataTableTypes = function (type) {
-    switch (type) {
-        case sequelize_2.DataTypes.STRING:
-            return 'string';
-        case sequelize_2.DataTypes.TEXT:
-            return 'string';
-        case sequelize_2.DataTypes.INTEGER:
-            return 'num';
-        case sequelize_2.DataTypes.BIGINT:
-            return 'num';
-        default:
-            return 'string';
-    }
-};
+const path = require('path');
 function crud(options) {
     return function (controller) {
         const table = controller.db[options.tableName];
-        const path = controller.path;
-        switch (path[0]) {
+        const uriPath = controller.path;
+        switch (uriPath[0]) {
             case 'columns':
                 columnDefinitions(controller, table);
                 break;
             case 'json':
                 dataTableJson(controller, table);
+                break;
             default:
+                Promise.all([new Promise(controller.readAllViews)]).then(([views]) => {
+                    const template = Handlebars.compile(views.wrapper);
+                    Handlebars.registerPartial('content', views.list);
+                    const data = {
+                        title: options.tableName,
+                    };
+                    const html = template(data);
+                    controller.res.end(html);
+                });
         }
     };
 }
 function columnDefinitions(controller, table) {
     console.log('Getting column definitions');
+    var test = require.resolve('handlebars');
+    console.log('test', test);
     const data = Object.entries(table.getAttributes())
         .filter(([key, value]) => !value.references)
         .map(([key, value]) => {
@@ -156,4 +127,36 @@ function parseDTquery(queryStrings) {
 function parseBoolean(string) {
     return string === 'true' || string === '1' || string === true;
 }
-exports.default = { crud, hello, checkPackage };
+const SequelizeDataTableTypes = {
+    STRING: 'string',
+    TEXT: 'string',
+    INTEGER: 'num',
+    BIGINT: 'num',
+    FLOAT: 'num',
+    REAL: 'num',
+    DOUBLE: 'num',
+    DECIMAL: 'num',
+    DATE: 'date',
+    DATEONLY: 'date',
+    BOOLEAN: 'bool',
+    ENUM: 'string',
+    ARRAY: 'string',
+    JSON: 'string',
+    JSONB: 'string',
+    BLOB: 'string',
+};
+const checkSequelizeDataTableTypes = function (type) {
+    switch (type) {
+        case sequelize_2.DataTypes.STRING:
+            return 'string';
+        case sequelize_2.DataTypes.TEXT:
+            return 'string';
+        case sequelize_2.DataTypes.INTEGER:
+            return 'num';
+        case sequelize_2.DataTypes.BIGINT:
+            return 'num';
+        default:
+            return 'string';
+    }
+};
+exports.default = { crud };

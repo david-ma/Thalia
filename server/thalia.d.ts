@@ -1,5 +1,6 @@
 import { IncomingMessage, ServerResponse } from 'http'
 import { Website as requestHandlersWebsite } from './requestHandlers'
+import { ViewCallback } from './requestHandlers'
 import SocketIO = require('socket.io')
 // https://www.typescriptlang.org/docs/handbook/declaration-files/templates/module-class-d-ts.html
 
@@ -70,7 +71,7 @@ export declare namespace Thalia {
     db?: SequelizeWrapper | null
     views?: any
     workspacePath?: any
-    readAllViews?: any
+    readAllViews: (callback: ViewCallback) => void
     readTemplate?: any
     path?: any
     query?: any

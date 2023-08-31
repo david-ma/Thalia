@@ -6,6 +6,8 @@ const fsPromise = fs.promises;
 const path = require("path");
 const sass = require("sass");
 const Handlebars = require("handlebars");
+const _ = require('lodash');
+const thaliaPath = path.resolve(global.require.resolve('thalia'), '..', '..');
 class Website {
     constructor(site, config) {
         if (typeof config === 'object') {
@@ -249,8 +251,16 @@ const handle = {
         }
         if (fs.existsSync(path.resolve(baseUrl, 'views'))) {
             handle.websites[site].views = true;
-            handle.websites[site].readAllViews = function (cb) {
-                readAllViews(path.resolve(baseUrl, 'views')).then((d) => cb(d));
+            handle.websites[site].readAllViews = function (callback) {
+                const promises = [
+                    readAllViewsInFolder(path.resolve(thaliaPath, 'src', 'views')),
+                    readAllViewsInFolder(path.resolve(baseUrl, 'views')),
+                ];
+                Promise.all(promises)
+                    .then(([scaffoldViews, websiteViews]) => {
+                    return _.merge(scaffoldViews, websiteViews);
+                })
+                    .then(callback);
             };
             handle.websites[site].readTemplate = function (config) {
                 readTemplate(config.template, path.resolve(baseUrl, 'views'), config.content)
@@ -262,7 +272,15 @@ const handle = {
                     config.callback(d);
                 });
             };
-            readAllViews(path.resolve(baseUrl, 'views')).then((views) => {
+            const promises = [
+                readAllViewsInFolder(path.resolve(thaliaPath, 'src', 'views')),
+                readAllViewsInFolder(path.resolve(baseUrl, 'views')),
+            ];
+            Promise.all(promises)
+                .then(([scaffoldViews, projectViews]) => {
+                return _.merge(scaffoldViews, projectViews);
+            })
+                .then((views) => {
                 handle.websites[site].views = views;
                 fsPromise
                     .readdir(path.resolve(baseUrl, 'views'))
@@ -281,7 +299,7 @@ const handle = {
                                     controller.res.end(Handlebars.compile(views[webpage])({}));
                                 }
                                 else {
-                                    readAllViews(path.resolve(baseUrl, 'views')).then((views) => {
+                                    readAllViewsInFolder(path.resolve(baseUrl, 'views')).then((views) => {
                                         handle.websites[site].views = views;
                                         registerAllViewsAsPartials(views);
                                         controller.res.end(Handlebars.compile(views[webpage])({}));
@@ -375,7 +393,7 @@ async function readTemplate(template, folder, content = '') {
         });
     });
 }
-async function readAllViews(folder) {
+async function readAllViewsInFolder(folder) {
     return new Promise((resolve, reject) => {
         fsPromise
             .readdir(folder)
@@ -395,7 +413,7 @@ async function readAllViews(folder) {
                 else {
                     fsPromise.lstat(`${folder}/${filename}`).then((d) => {
                         if (d.isDirectory()) {
-                            readAllViews(`${folder}/${filename}`).then((d) => resolve(d));
+                            readAllViewsInFolder(`${folder}/${filename}`).then((d) => resolve(d));
                         }
                         else {
                             resolve({});

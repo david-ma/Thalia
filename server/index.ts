@@ -3,6 +3,8 @@ if (typeof define !== 'function') {
   var define = require('amdefine')(module)
 }
 
+global.require = require
+
 define(function (require: any) {
   require(['server', 'router', 'requestHandlers', 'fs'], function (
     server: any,

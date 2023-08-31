@@ -24,7 +24,7 @@ declare class Website implements Thalia.WebsiteConfig {
     viewableFolders: boolean | Array<string>;
     seq: Thalia.SequelizeWrapper;
     readAllViews: {
-        (callback: any): void;
+        (callback: ViewCallback): void;
     };
     readTemplate: {
         (config: {
@@ -38,4 +38,8 @@ declare class Website implements Thalia.WebsiteConfig {
     constructor(site: string, config: Thalia.WebsiteConfig);
 }
 declare const handle: Thalia.Handle;
+export type Views = {
+    [key: string]: string;
+};
+export type ViewCallback = (view: Views) => void;
 export { handle, Website };

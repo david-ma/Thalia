@@ -2,53 +2,12 @@
 import { Op } from 'sequelize'
 import { Thalia } from './thalia'
 import { DataTypes } from 'sequelize'
-
+// import * from 'handlebars'
+// import fs from 'fs'
+const Handlebars = require('handlebars')
 const fs = require('fs')
-
-export function hello() {
-  console.log('hello world')
-}
-
-export function checkPackage() {
-  fs.readFile('package.json', 'utf8', function (err: any, data: any) {
-    console.log(data)
-  })
-}
-
-const SequelizeDataTableTypes = {
-  STRING: 'string',
-  TEXT: 'string',
-  INTEGER: 'num',
-  BIGINT: 'num',
-  FLOAT: 'num',
-  REAL: 'num',
-  DOUBLE: 'num',
-  DECIMAL: 'num',
-  DATE: 'date',
-  DATEONLY: 'date',
-  BOOLEAN: 'bool',
-  ENUM: 'string',
-  ARRAY: 'string',
-  JSON: 'string',
-  JSONB: 'string',
-  BLOB: 'string',
-}
-// A better way of checking the type?
-const checkSequelizeDataTableTypes = function (type) {
-  switch (type) {
-    case DataTypes.STRING:
-      return 'string'
-    case DataTypes.TEXT:
-      return 'string'
-    case DataTypes.INTEGER:
-      return 'num'
-    case DataTypes.BIGINT:
-      return 'num'
-    default:
-      return 'string'
-  }
-}
-
+const path = require('path')
+import { Views } from './requestHandlers'
 /**
  * Scaffold for CRUD operations
  * - Create
@@ -64,17 +23,35 @@ const checkSequelizeDataTableTypes = function (type) {
 function crud(options: { tableName: string }) {
   return function (controller: Thalia.Controller) {
     const table = controller.db[options.tableName]
-    const path = controller.path
+    const uriPath = controller.path
     // Put some checks here to make sure these are valid
     // Check for security maybe?
 
-    switch (path[0]) {
+    switch (uriPath[0]) {
       case 'columns':
         columnDefinitions(controller, table)
         break
       case 'json':
         dataTableJson(controller, table)
+        break
       default:
+        // serve the list page
+        // const hbs = fs.readFileSync(
+        //   // `${__dirname}/../src/views/crud.html`,
+        //   path.join(__dirname, '..', 'src', 'views', 'crud.hbs'),
+        //   'utf8'
+        // )
+        Promise.all([new Promise<Views>(controller.readAllViews)]).then(
+          ([views]) => {
+            const template = Handlebars.compile(views.wrapper)
+            Handlebars.registerPartial('content', views.list)
+            const data = {
+              title: options.tableName,
+            }
+            const html = template(data)
+            controller.res.end(html)
+          }
+        )
     }
   }
 }
@@ -85,6 +62,10 @@ function crud(options: { tableName: string }) {
  */
 function columnDefinitions(controller: Thalia.Controller, table) {
   console.log('Getting column definitions')
+
+  var test = require.resolve('handlebars')
+  console.log('test', test)
+
   const data = Object.entries(table.getAttributes())
     .filter(([key, value]: any) => !value.references)
     .map(([key, value]: any) => {
@@ -209,4 +190,38 @@ function parseBoolean(string) {
   return string === 'true' || string === '1' || string === true
 }
 
-export default { crud, hello, checkPackage }
+const SequelizeDataTableTypes = {
+  STRING: 'string',
+  TEXT: 'string',
+  INTEGER: 'num',
+  BIGINT: 'num',
+  FLOAT: 'num',
+  REAL: 'num',
+  DOUBLE: 'num',
+  DECIMAL: 'num',
+  DATE: 'date',
+  DATEONLY: 'date',
+  BOOLEAN: 'bool',
+  ENUM: 'string',
+  ARRAY: 'string',
+  JSON: 'string',
+  JSONB: 'string',
+  BLOB: 'string',
+}
+// A better way of checking the type?
+const checkSequelizeDataTableTypes = function (type) {
+  switch (type) {
+    case DataTypes.STRING:
+      return 'string'
+    case DataTypes.TEXT:
+      return 'string'
+    case DataTypes.INTEGER:
+      return 'num'
+    case DataTypes.BIGINT:
+      return 'num'
+    default:
+      return 'string'
+  }
+}
+
+export default { crud }

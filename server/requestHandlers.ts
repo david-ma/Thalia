@@ -5,6 +5,9 @@ const fsPromise = fs.promises
 import path = require('path')
 import sass = require('sass')
 import Handlebars = require('handlebars')
+const _ = require('lodash')
+
+const thaliaPath = path.resolve(global.require.resolve('thalia'), '..', '..')
 
 class Website implements Thalia.WebsiteConfig {
   name: string
@@ -38,7 +41,7 @@ class Website implements Thalia.WebsiteConfig {
   viewableFolders: boolean | Array<string>
   seq: Thalia.SequelizeWrapper
   readAllViews: {
-    (callback: any): void
+    (callback: ViewCallback): void
   }
 
   readTemplate: {
@@ -389,8 +392,16 @@ const handle: Thalia.Handle = {
       handle.websites[site].views = true
 
       // Stupid hack for development if you don't want to cache the views :(
-      handle.websites[site].readAllViews = function (cb: any) {
-        readAllViews(path.resolve(baseUrl, 'views')).then((d) => cb(d))
+      handle.websites[site].readAllViews = function (callback: ViewCallback) {
+        const promises: Promise<Views>[] = [
+          readAllViewsInFolder(path.resolve(thaliaPath, 'src', 'views')),
+          readAllViewsInFolder(path.resolve(baseUrl, 'views')),
+        ]
+        Promise.all(promises)
+          .then(([scaffoldViews, websiteViews]: any) => {
+            return _.merge(scaffoldViews, websiteViews)
+          })
+          .then(callback)
       }
       handle.websites[site].readTemplate = function (config: {
         template: string
@@ -414,45 +425,56 @@ const handle: Thalia.Handle = {
       // Load all the views
       // Consider adding partials only for it's own website?
       // There's a possibility of name collisions if we don't.
-      readAllViews(path.resolve(baseUrl, 'views')).then((views) => {
-        handle.websites[site].views = views
+      const promises: Promise<Views>[] = [
+        readAllViewsInFolder(path.resolve(thaliaPath, 'src', 'views')),
+        readAllViewsInFolder(path.resolve(baseUrl, 'views')),
+      ]
+      Promise.all(promises)
+        .then(([scaffoldViews, projectViews]: any) => {
+          return _.merge(scaffoldViews, projectViews)
+        })
+        .then((views) => {
+          // readAllViewsInFolder(path.resolve(baseUrl, 'views')).then((views) => {
+          handle.websites[site].views = views
 
-        fsPromise
-          .readdir(path.resolve(baseUrl, 'views'))
-          .then(function (files: string[]) {
-            files
-              .filter((file: string) => file.match(/.mustache|.hbs/))
-              .forEach((file: string) => {
-                const webpage = file.split(/.mustache|.hbs/)[0]
-                if (
-                  (config.mustacheIgnore
-                    ? config.mustacheIgnore.indexOf(webpage) === -1
-                    : true) &&
-                  !handle.websites[site].controllers[webpage]
-                ) {
-                  handle.websites[site].controllers[webpage] = function (
-                    controller: Thalia.Controller
+          fsPromise
+            .readdir(path.resolve(baseUrl, 'views'))
+            .then(function (files: string[]) {
+              files
+                .filter((file: string) => file.match(/.mustache|.hbs/))
+                .forEach((file: string) => {
+                  const webpage = file.split(/.mustache|.hbs/)[0]
+                  if (
+                    (config.mustacheIgnore
+                      ? config.mustacheIgnore.indexOf(webpage) === -1
+                      : true) &&
+                    !handle.websites[site].controllers[webpage]
                   ) {
-                    if (handle.websites[site].cache) {
-                      registerAllViewsAsPartials(views)
-                      controller.res.end(Handlebars.compile(views[webpage])({}))
-                    } else {
-                      readAllViews(path.resolve(baseUrl, 'views')).then(
-                        (views) => {
+                    handle.websites[site].controllers[webpage] = function (
+                      controller: Thalia.Controller
+                    ) {
+                      if (handle.websites[site].cache) {
+                        registerAllViewsAsPartials(views)
+                        controller.res.end(
+                          Handlebars.compile(views[webpage])({})
+                        )
+                      } else {
+                        readAllViewsInFolder(
+                          path.resolve(baseUrl, 'views')
+                        ).then((views) => {
                           handle.websites[site].views = views
                           registerAllViewsAsPartials(views)
                           controller.res.end(
                             Handlebars.compile(views[webpage])({})
                           )
-                        }
-                      )
+                        })
+                      }
                     }
                   }
-                }
-              })
-          })
-          .catch((e: any) => console.log(e))
-      })
+                })
+            })
+            .catch((e: any) => console.log(e))
+        })
     }
 
     // Unused feature? Commenting it out DKGM 2020-10-29
@@ -586,11 +608,13 @@ async function readTemplate(template: string, folder: string, content = '') {
   })
 }
 
-type Views = {
+export type Views = {
   [key: string]: string
 }
 
-async function readAllViews(folder: string): Promise<Views> {
+export type ViewCallback = (view: Views) => void
+
+async function readAllViewsInFolder(folder: string): Promise<Views> {
   return new Promise((resolve, reject) => {
     fsPromise
       .readdir(folder)
@@ -599,9 +623,7 @@ async function readAllViews(folder: string): Promise<Views> {
           directory.map(
             (filename: string) =>
               new Promise((resolve) => {
-
                 if (filename.match(/.mustache|.hbs/)) {
-                  
                   fsPromise
                     .readFile(`${folder}/${filename}`, 'utf8')
                     .then((file: string) => {
@@ -614,7 +636,7 @@ async function readAllViews(folder: string): Promise<Views> {
                 } else {
                   fsPromise.lstat(`${folder}/${filename}`).then((d: any) => {
                     if (d.isDirectory()) {
-                      readAllViews(`${folder}/${filename}`).then((d) =>
+                      readAllViewsInFolder(`${folder}/${filename}`).then((d) =>
                         resolve(d)
                       )
                     } else {

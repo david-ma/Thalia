@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Website = exports.handle = void 0;
+exports.Website = exports.handle = exports.loadMustacheTemplate = void 0;
 const fs = require("fs");
 const fsPromise = fs.promises;
 const path = require("path");
@@ -443,7 +443,7 @@ function loadMustacheTemplate(file) {
         })
             .catch(() => {
             console.error('Error reading file: ', file);
-            resolve(`Error reading file: ${file}`);
+            reject(`Error reading file: ${file}`);
         })
             .then((fileText) => {
             const scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g;
@@ -484,6 +484,7 @@ function loadMustacheTemplate(file) {
         });
     });
 }
+exports.loadMustacheTemplate = loadMustacheTemplate;
 function registerAllViewsAsPartials(views) {
     Object.entries(views).forEach(([key, value]) => {
         Handlebars.registerPartial(key, value);

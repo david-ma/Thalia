@@ -5,9 +5,15 @@ import { DataTypes } from 'sequelize'
 // import * from 'handlebars'
 // import fs from 'fs'
 const Handlebars = require('handlebars')
+// import Handlebars from 'handlebars'
+// import Handlebars = require('handlebars')
+
 const fs = require('fs')
 const path = require('path')
-import { Views } from './requestHandlers'
+import { Views, loadMustacheTemplate } from './requestHandlers'
+
+//const thaliaPath = path.resolve(global.require.resolve('thalia'), '..', '..')
+
 /**
  * Scaffold for CRUD operations
  * - Create
@@ -41,19 +47,44 @@ function crud(options: { tableName: string }) {
         //   path.join(__dirname, '..', 'src', 'views', 'crud.hbs'),
         //   'utf8'
         // )
-        Promise.all([new Promise<Views>(controller.readAllViews)]).then(
-          ([views]) => {
-            const template = Handlebars.compile(views.wrapper)
+        console.log('Loading views for default stuff')
+        Promise.all([
+          new Promise<Views>(controller.readAllViews),
+          loadMustacheTemplate(
+            path.join(process.cwd(), 'src', 'views', 'partials', 'wrapper.hbs')
+          ),
+        ])
+          .catch((e) => {
+            console.log('Error loading views')
+            return Promise.reject(e)
+          })
+          .then(([views, loadedTemplate]) => {
+            const template = Handlebars.compile(loadedTemplate.content)
+            Handlebars.registerPartial('scripts', loadedTemplate.scripts)
+            Handlebars.registerPartial('styles', loadedTemplate.styles)
             Handlebars.registerPartial('content', views.list)
+            loadViewsAsPartials(views)
+
             const data = {
               title: options.tableName,
+              controllerName: options.tableName.toLowerCase(),
             }
             const html = template(data)
             controller.res.end(html)
-          }
-        )
+          })
+          .catch((e) => {
+            console.log('Error rendering template', e)
+            controller.res.end('Error rendering template')
+          })
     }
   }
+}
+
+function loadViewsAsPartials(views: Views) {
+  Object.entries(views).forEach(([key, value]) => {
+    // console.log(`Loading partial ${key}`)
+    Handlebars.registerPartial(key, value)
+  })
 }
 
 /**
@@ -61,11 +92,6 @@ function crud(options: { tableName: string }) {
  * in DataTables.net format
  */
 function columnDefinitions(controller: Thalia.Controller, table) {
-  console.log('Getting column definitions')
-
-  var test = require.resolve('handlebars')
-  console.log('test', test)
-
   const data = Object.entries(table.getAttributes())
     .filter(([key, value]: any) => !value.references)
     .map(([key, value]: any) => {

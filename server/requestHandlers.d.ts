@@ -42,4 +42,9 @@ export type Views = {
     [key: string]: string;
 };
 export type ViewCallback = (view: Views) => void;
+export declare function loadMustacheTemplate(file: string): Promise<{
+    content: string;
+    scripts: string;
+    styles: string;
+}>;
 export { handle, Website };

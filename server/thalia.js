@@ -4,7 +4,7 @@ if (typeof define !== 'function') {
 define("requestHandlers", ["require", "exports", "fs", "path", "sass", "handlebars"], function (require, exports, fs, path, sass, Handlebars) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.Website = exports.handle = void 0;
+    exports.Website = exports.handle = exports.loadMustacheTemplate = void 0;
     const fsPromise = fs.promises;
     const _ = require('lodash');
     const thaliaPath = path.resolve(global.require.resolve('thalia'), '..', '..');
@@ -443,7 +443,7 @@ define("requestHandlers", ["require", "exports", "fs", "path", "sass", "handleba
             })
                 .catch(() => {
                 console.error('Error reading file: ', file);
-                resolve(`Error reading file: ${file}`);
+                reject(`Error reading file: ${file}`);
             })
                 .then((fileText) => {
                 const scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g;
@@ -484,6 +484,7 @@ define("requestHandlers", ["require", "exports", "fs", "path", "sass", "handleba
             });
         });
     }
+    exports.loadMustacheTemplate = loadMustacheTemplate;
     function registerAllViewsAsPartials(views) {
         Object.entries(views).forEach(([key, value]) => {
             Handlebars.registerPartial(key, value);

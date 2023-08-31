@@ -674,7 +674,11 @@ async function readAllViewsInFolder(folder: string): Promise<Views> {
  *
  * TODO: Process typescript?
  */
-function loadMustacheTemplate(file: string) {
+export function loadMustacheTemplate(file: string) : Promise<{
+  content: string
+  scripts: string
+  styles: string
+}>{
   return new Promise((resolve, reject) => {
     fsPromise
       .readFile(file, {
@@ -683,7 +687,7 @@ function loadMustacheTemplate(file: string) {
       .catch(() => {
         // throw new Error(`Error reading file: ${file}`)
         console.error('Error reading file: ', file)
-        resolve(`Error reading file: ${file}`)
+        reject(`Error reading file: ${file}`)
       })
       .then((fileText: any) => {
         const scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g

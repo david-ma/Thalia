@@ -1,3 +1,32 @@
 <h1>This is a list page</h1>
 
 <p>Put list stuff here</p>
+
+<div>
+  <table id="myTable"></table>
+</div>
+
+<script>
+  console.log("hey")
+
+  $.ajax('/{{controllerName}}/columns')
+    .then(function (data) {
+      let columns = JSON.parse(data)
+
+      $('#myTable').DataTable({
+        ajax: {
+          url: '/{{controllerName}}/json',
+          dataSrc: 'data',
+          data: function (d) {
+            delete d.columns;
+            return d
+          }
+        },
+        processing: true,
+        serverSide: true,
+        columns: columns
+      });
+
+    })
+
+</script>

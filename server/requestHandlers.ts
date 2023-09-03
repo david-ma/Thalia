@@ -471,7 +471,10 @@ const handle: Thalia.Handle = {
                   }
                 })
             })
-            .catch((e: any) => console.log(e))
+            .catch((e: any) => {
+              console.log('Error reading views folder')
+              console.log(e)
+            })
         })
     }
 
@@ -630,7 +633,13 @@ async function readAllViewsInFolder(folder: string): Promise<Views> {
                         [name]: file,
                       })
                     })
-                    .catch((e: any) => console.log(e))
+                    .catch((e: any) => {
+                      console.log(
+                        'Error in readAllViewsInFolder, reading the file:',
+                        filename
+                      )
+                      console.log('error', e)
+                    })
                 } else {
                   fsPromise.lstat(`${folder}/${filename}`).then((d: any) => {
                     if (d.isDirectory()) {
@@ -660,7 +669,10 @@ async function readAllViewsInFolder(folder: string): Promise<Views> {
           }
         )
       })
-      .catch((e: any) => console.log(e))
+      .catch((e: any) => {
+        console.log('Error in readAllViewsInFolder')
+        console.log(e)
+      })
   })
 }
 

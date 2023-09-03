@@ -38,6 +38,7 @@ const router: Thalia.Router = function (
 
       resolve(data)
     } catch (err) {
+      console.log("Error parsing route's cookies")
       console.log(err)
       reject(err)
     }

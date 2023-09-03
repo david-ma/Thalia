@@ -308,7 +308,10 @@ const handle = {
                         }
                     });
                 })
-                    .catch((e) => console.log(e));
+                    .catch((e) => {
+                    console.log('Error reading views folder');
+                    console.log(e);
+                });
             });
         }
         handle.index[site + '.david-ma.net'] = site;
@@ -407,7 +410,10 @@ async function readAllViewsInFolder(folder) {
                             [name]: file,
                         });
                     })
-                        .catch((e) => console.log(e));
+                        .catch((e) => {
+                        console.log('Error in readAllViewsInFolder, reading the file:', filename);
+                        console.log('error', e);
+                    });
                 }
                 else {
                     fsPromise.lstat(`${folder}/${filename}`).then((d) => {
@@ -431,7 +437,10 @@ async function readAllViewsInFolder(folder) {
                 reject(reason);
             });
         })
-            .catch((e) => console.log(e));
+            .catch((e) => {
+            console.log('Error in readAllViewsInFolder');
+            console.log(e);
+        });
     });
 }
 function loadMustacheTemplate(file) {

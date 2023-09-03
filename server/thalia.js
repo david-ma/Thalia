@@ -308,7 +308,10 @@ define("requestHandlers", ["require", "exports", "fs", "path", "sass", "handleba
                             }
                         });
                     })
-                        .catch((e) => console.log(e));
+                        .catch((e) => {
+                        console.log('Error reading views folder');
+                        console.log(e);
+                    });
                 });
             }
             handle.index[site + '.david-ma.net'] = site;
@@ -407,7 +410,10 @@ define("requestHandlers", ["require", "exports", "fs", "path", "sass", "handleba
                                 [name]: file,
                             });
                         })
-                            .catch((e) => console.log(e));
+                            .catch((e) => {
+                            console.log('Error in readAllViewsInFolder, reading the file:', filename);
+                            console.log('error', e);
+                        });
                     }
                     else {
                         fsPromise.lstat(`${folder}/${filename}`).then((d) => {
@@ -431,7 +437,10 @@ define("requestHandlers", ["require", "exports", "fs", "path", "sass", "handleba
                     reject(reason);
                 });
             })
-                .catch((e) => console.log(e));
+                .catch((e) => {
+                console.log('Error in readAllViewsInFolder');
+                console.log(e);
+            });
         });
     }
     function loadMustacheTemplate(file) {
@@ -513,6 +522,7 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                 resolve(data);
             }
             catch (err) {
+                console.log("Error parsing route's cookies");
                 console.log(err);
                 reject(err);
             }

@@ -7,43 +7,45 @@ const fs = require('fs');
 const path = require('path');
 const requestHandlers_1 = require("./requestHandlers");
 function crud(options) {
-    return function (controller) {
-        const table = controller.db[options.tableName];
-        const uriPath = controller.path;
-        switch (uriPath[0]) {
-            case 'columns':
-                columnDefinitions(controller, table);
-                break;
-            case 'json':
-                dataTableJson(controller, table);
-                break;
-            default:
-                Promise.all([
-                    new Promise(controller.readAllViews),
-                    (0, requestHandlers_1.loadMustacheTemplate)(path.join(__dirname, '..', 'src', 'views', 'partials', 'wrapper.hbs')),
-                ])
-                    .catch((e) => {
-                    console.log('Error loading views');
-                    return Promise.reject(e);
-                })
-                    .then(([views, loadedTemplate]) => {
-                    const template = Handlebars.compile(loadedTemplate.content);
-                    Handlebars.registerPartial('scripts', loadedTemplate.scripts);
-                    Handlebars.registerPartial('styles', loadedTemplate.styles);
-                    Handlebars.registerPartial('content', views.list);
-                    loadViewsAsPartials(views);
-                    const data = {
-                        title: options.tableName,
-                        controllerName: options.tableName.toLowerCase(),
-                    };
-                    const html = template(data);
-                    controller.res.end(html);
-                })
-                    .catch((e) => {
-                    console.log('Error rendering template', e);
-                    controller.res.end('Error rendering template');
-                });
-        }
+    return {
+        [options.tableName.toLowerCase()]: function (controller) {
+            const table = controller.db[options.tableName];
+            const uriPath = controller.path;
+            switch (uriPath[0]) {
+                case 'columns':
+                    columnDefinitions(controller, table);
+                    break;
+                case 'json':
+                    dataTableJson(controller, table);
+                    break;
+                default:
+                    Promise.all([
+                        new Promise(controller.readAllViews),
+                        (0, requestHandlers_1.loadMustacheTemplate)(path.join(__dirname, '..', 'src', 'views', 'partials', 'wrapper.hbs')),
+                    ])
+                        .catch((e) => {
+                        console.log('Error loading views');
+                        return Promise.reject(e);
+                    })
+                        .then(([views, loadedTemplate]) => {
+                        const template = Handlebars.compile(loadedTemplate.content);
+                        Handlebars.registerPartial('scripts', loadedTemplate.scripts);
+                        Handlebars.registerPartial('styles', loadedTemplate.styles);
+                        Handlebars.registerPartial('content', views.list);
+                        loadViewsAsPartials(views);
+                        const data = {
+                            title: options.tableName,
+                            controllerName: options.tableName.toLowerCase(),
+                        };
+                        const html = template(data);
+                        controller.res.end(html);
+                    })
+                        .catch((e) => {
+                        console.log('Error rendering template', e);
+                        controller.res.end('Error rendering template');
+                    });
+            }
+        },
     };
 }
 function loadViewsAsPartials(views) {

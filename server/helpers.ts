@@ -41,17 +41,17 @@ function crud(options: { tableName: string }) {
         dataTableJson(controller, table)
         break
       default:
-        // serve the list page
-        // const hbs = fs.readFileSync(
-        //   // `${__dirname}/../src/views/crud.html`,
-        //   path.join(__dirname, '..', 'src', 'views', 'crud.hbs'),
-        //   'utf8'
-        // )
-        console.log('Loading views for default stuff')
         Promise.all([
           new Promise<Views>(controller.readAllViews),
           loadMustacheTemplate(
-            path.join(process.cwd(), 'src', 'views', 'partials', 'wrapper.hbs')
+            path.join(
+              __dirname,
+              '..',
+              'src',
+              'views',
+              'partials',
+              'wrapper.hbs'
+            )
           ),
         ])
           .catch((e) => {

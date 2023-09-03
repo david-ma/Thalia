@@ -7,8 +7,6 @@ import sass = require('sass')
 import Handlebars = require('handlebars')
 const _ = require('lodash')
 
-const thaliaPath = path.resolve(global.require.resolve('thalia'), '..', '..')
-
 class Website implements Thalia.WebsiteConfig {
   name: string
   data: string
@@ -394,7 +392,7 @@ const handle: Thalia.Handle = {
       // Stupid hack for development if you don't want to cache the views :(
       handle.websites[site].readAllViews = function (callback: ViewCallback) {
         const promises: Promise<Views>[] = [
-          readAllViewsInFolder(path.resolve(thaliaPath, 'src', 'views')),
+          readAllViewsInFolder(path.resolve(__dirname, '..', 'src', 'views')),
           readAllViewsInFolder(path.resolve(baseUrl, 'views')),
         ]
         Promise.all(promises)
@@ -426,7 +424,7 @@ const handle: Thalia.Handle = {
       // Consider adding partials only for it's own website?
       // There's a possibility of name collisions if we don't.
       const promises: Promise<Views>[] = [
-        readAllViewsInFolder(path.resolve(thaliaPath, 'src', 'views')),
+        readAllViewsInFolder(path.resolve(__dirname, '..', 'src', 'views')),
         readAllViewsInFolder(path.resolve(baseUrl, 'views')),
       ]
       Promise.all(promises)
@@ -674,11 +672,11 @@ async function readAllViewsInFolder(folder: string): Promise<Views> {
  *
  * TODO: Process typescript?
  */
-export function loadMustacheTemplate(file: string) : Promise<{
+export function loadMustacheTemplate(file: string): Promise<{
   content: string
   scripts: string
   styles: string
-}>{
+}> {
   return new Promise((resolve, reject) => {
     fsPromise
       .readFile(file, {

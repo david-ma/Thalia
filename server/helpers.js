@@ -18,10 +18,9 @@ function crud(options) {
                 dataTableJson(controller, table);
                 break;
             default:
-                console.log('Loading views for default stuff');
                 Promise.all([
                     new Promise(controller.readAllViews),
-                    (0, requestHandlers_1.loadMustacheTemplate)(path.join(process.cwd(), 'src', 'views', 'partials', 'wrapper.hbs')),
+                    (0, requestHandlers_1.loadMustacheTemplate)(path.join(__dirname, '..', 'src', 'views', 'partials', 'wrapper.hbs')),
                 ])
                     .catch((e) => {
                     console.log('Error loading views');

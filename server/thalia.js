@@ -7,7 +7,6 @@ define("requestHandlers", ["require", "exports", "fs", "path", "sass", "handleba
     exports.Website = exports.handle = exports.loadMustacheTemplate = void 0;
     const fsPromise = fs.promises;
     const _ = require('lodash');
-    const thaliaPath = path.resolve(global.require.resolve('thalia'), '..', '..');
     class Website {
         constructor(site, config) {
             if (typeof config === 'object') {
@@ -253,7 +252,7 @@ define("requestHandlers", ["require", "exports", "fs", "path", "sass", "handleba
                 handle.websites[site].views = true;
                 handle.websites[site].readAllViews = function (callback) {
                     const promises = [
-                        readAllViewsInFolder(path.resolve(thaliaPath, 'src', 'views')),
+                        readAllViewsInFolder(path.resolve(__dirname, '..', 'src', 'views')),
                         readAllViewsInFolder(path.resolve(baseUrl, 'views')),
                     ];
                     Promise.all(promises)
@@ -273,7 +272,7 @@ define("requestHandlers", ["require", "exports", "fs", "path", "sass", "handleba
                     });
                 };
                 const promises = [
-                    readAllViewsInFolder(path.resolve(thaliaPath, 'src', 'views')),
+                    readAllViewsInFolder(path.resolve(__dirname, '..', 'src', 'views')),
                     readAllViewsInFolder(path.resolve(baseUrl, 'views')),
                 ];
                 Promise.all(promises)

@@ -11,6 +11,7 @@ echo
 
 SITE="${1:-example}"
 PORT="${2:-1337}"
+STANDALONE="${3:-false}"
 
 if test -d "websites/$SITE"; then
     echo "Developing $SITE"
@@ -67,7 +68,16 @@ cd websites/$SITE
     fi
 cd ../..
 
-./node_modules/.bin/nodemon $SITE $PORT
+
+if [ "$STANDALONE" = true ] ; then
+    echo "Running standalone nodemon thalia"
+    cd websites/$SITE
+    pnpm nodemon thalia
+else
+    ./node_modules/.bin/nodemon $SITE $PORT
+fi
+
+
 # Changed because we added this to package.json:
 #   "nodemonConfig": {
 #     "exec": "node server/thalia.js",

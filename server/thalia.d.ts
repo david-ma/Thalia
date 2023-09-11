@@ -65,6 +65,9 @@ export declare namespace Thalia {
     res:
       | ServerResponse
       | {
+        getCookie: (cookieName: string) => string
+          setCookie: (cookie: Cookie) => void
+          deleteCookie: (cookieName: string) => void
           end: (result: any) => void
         }
     req?: IncomingMessage
@@ -75,6 +78,11 @@ export declare namespace Thalia {
     readTemplate?: any
     path?: any
     query?: any
+    cookies?: Cookie
+  }
+
+  type Cookie = {
+    [key: string]: string
   }
 
   export interface Controllers {

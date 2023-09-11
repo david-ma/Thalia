@@ -547,6 +547,20 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                 else if (typeof website.controllers[d.words[1]] === 'function') {
                     website.controllers[d.words[1]]({
                         res: {
+                            getCookie: function (cookieName) {
+                                return d.cookies[cookieName];
+                            },
+                            setCookie: function (cookie) {
+                                const cookieString = Object.keys(cookie)
+                                    .map(function (key) {
+                                    return key + '=' + cookie[key];
+                                })
+                                    .join('; ');
+                                response.setHeader('Set-Cookie', cookieString);
+                            },
+                            deleteCookie: function (cookieName) {
+                                response.setHeader('Set-Cookie', cookieName + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT');
+                            },
                             end: function (result) {
                                 const acceptedEncoding = request.headers['accept-encoding'] || '';
                                 const input = Buffer.from(result, 'utf8');
@@ -606,6 +620,7 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                         readTemplate: website.readTemplate,
                         path: d.words.slice(2),
                         query: url.parse(request.url, true).query,
+                        cookies: d.cookies,
                     });
                 }
                 else if (website.data &&

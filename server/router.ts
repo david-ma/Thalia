@@ -94,11 +94,6 @@ const router: Thalia.Router = function (
                 return d.cookies[cookieName]
               },
               setCookie: function (cookie: Thalia.Cookie, expires?: Date) {
-                // No port?
-                // If domain is localhost, we should do something so we can develop...
-                // const domain = request.headers.host.split(':')[0] || 'localhost'                
-                // console.log(`Domain: "${domain}"`)
-                
                 const [key, value] = Object.entries(cookie)[0]
 
                 // One week from now
@@ -106,9 +101,12 @@ const router: Thalia.Router = function (
                   expires || new Date(Date.now() + 1000 * 60 * 60 * 24 * 7)
 
                 const cookieString = [
-                  `__Host-${key}=${value}`,
+                  // It would be better to use __Host and secure
+                  // But it makes things harder for development
+                  // `__Host-${key}=${value}`,
+                  // `Secure`,
+                  `${key}=${value}`,
                   `Path=/`,
-                  `Secure`,
                   `Expires=${expires.toUTCString()}`,
                 ].join('; ')
 

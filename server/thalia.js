@@ -555,9 +555,8 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                                 expires =
                                     expires || new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
                                 const cookieString = [
-                                    `__Host-${key}=${value}`,
+                                    `${key}=${value}`,
                                     `Path=/`,
-                                    `Secure`,
                                     `Expires=${expires.toUTCString()}`,
                                 ].join('; ');
                                 console.log('Setting Cookie', cookieString);

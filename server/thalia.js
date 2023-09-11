@@ -550,10 +550,16 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                             getCookie: function (cookieName) {
                                 return d.cookies[cookieName];
                             },
-                            setCookie: function (cookie) {
+                            setCookie: function (cookie, expires) {
+                                expires =
+                                    expires || new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
                                 const cookieString = Object.keys(cookie)
                                     .map(function (key) {
-                                    return key + '=' + cookie[key];
+                                    return (key +
+                                        '=' +
+                                        cookie[key] +
+                                        '; expires=' +
+                                        expires.toUTCString());
                                 })
                                     .join('; ');
                                 response.setHeader('Set-Cookie', cookieString);

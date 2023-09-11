@@ -65,8 +65,8 @@ export declare namespace Thalia {
     res:
       | ServerResponse
       | {
-        getCookie: (cookieName: string) => string
-          setCookie: (cookie: Cookie) => void
+          getCookie: (cookieName: string) => string
+          setCookie: (cookie: Cookie, expires?: Date) => void
           deleteCookie: (cookieName: string) => void
           end: (result: any) => void
         }

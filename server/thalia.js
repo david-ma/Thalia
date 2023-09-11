@@ -551,17 +551,16 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                                 return d.cookies[cookieName];
                             },
                             setCookie: function (cookie, expires) {
+                                const [key, value] = Object.entries(cookie)[0];
                                 expires =
                                     expires || new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
-                                const cookieString = Object.keys(cookie)
-                                    .map(function (key) {
-                                    return (key +
-                                        '=' +
-                                        cookie[key] +
-                                        '; expires=' +
-                                        expires.toUTCString());
-                                })
-                                    .join('; ');
+                                const cookieString = [
+                                    `__Host-${key}=${value}`,
+                                    `Path=/`,
+                                    `Secure`,
+                                    `Expires=${expires.toUTCString()}`,
+                                ].join('; ');
+                                console.log('Setting Cookie', cookieString);
                                 response.setHeader('Set-Cookie', cookieString);
                             },
                             deleteCookie: function (cookieName) {

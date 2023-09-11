@@ -94,20 +94,25 @@ const router: Thalia.Router = function (
                 return d.cookies[cookieName]
               },
               setCookie: function (cookie: Thalia.Cookie, expires?: Date) {
+                // No port?
+                // If domain is localhost, we should do something so we can develop...
+                // const domain = request.headers.host.split(':')[0] || 'localhost'                
+                // console.log(`Domain: "${domain}"`)
+                
+                const [key, value] = Object.entries(cookie)[0]
+
                 // One week from now
                 expires =
                   expires || new Date(Date.now() + 1000 * 60 * 60 * 24 * 7)
-                const cookieString = Object.keys(cookie)
-                  .map(function (key) {
-                    return (
-                      key +
-                      '=' +
-                      cookie[key] +
-                      '; expires=' +
-                      expires.toUTCString()
-                    )
-                  })
-                  .join('; ')
+
+                const cookieString = [
+                  `__Host-${key}=${value}`,
+                  `Path=/`,
+                  `Secure`,
+                  `Expires=${expires.toUTCString()}`,
+                ].join('; ')
+
+                console.log('Setting Cookie', cookieString)
                 response.setHeader('Set-Cookie', cookieString)
               },
               deleteCookie: function (cookieName: string) {

@@ -72,7 +72,9 @@ export declare namespace Thalia {
         }
     req?: IncomingMessage
     db?: SequelizeWrapper | null
-    views?: any
+    views?: {
+      [key: string]: string
+    }
     workspacePath?: any
     readAllViews: (callback: ViewCallback) => void
     readTemplate?: any

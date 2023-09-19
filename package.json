@@ -1,7 +1,7 @@
 {
   "name": "thalia",
   "private": true,
-  "version": "4.0.3",
+  "version": "4.0.4",
   "description": "Frostickle's server",
   "main": "./server/helpers.js",
   "types": "./server/helpers.d.ts",

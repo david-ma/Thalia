@@ -14,7 +14,7 @@ import { Views, loadMustacheTemplate } from './requestHandlers'
 
 //const thaliaPath = path.resolve(global.require.resolve('thalia'), '..', '..')
 
-type SecurityMiddleware = (
+export type SecurityMiddleware = (
   controller: Thalia.Controller,
   success: ([Views, UserModel]: [any, any]) => void,
   failure?: () => void
@@ -93,7 +93,7 @@ function crud(options: { tableName: string; security?: SecurityMiddleware }) {
   }
 }
 // SecurityMiddleware
-function noSecurity(
+const noSecurity: SecurityMiddleware = async function (
   controller: Thalia.Controller,
   success: ([Views, UserModel]: [any, any]) => void,
   failure?: () => void

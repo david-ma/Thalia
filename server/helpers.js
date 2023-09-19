@@ -51,9 +51,9 @@ function crud(options) {
         },
     };
 }
-function noSecurity(controller, success, failure) {
+const noSecurity = async function (controller, success, failure) {
     success([{}, {}]);
-}
+};
 function loadViewsAsPartials(views) {
     Object.entries(views).forEach(([key, value]) => {
         Handlebars.registerPartial(key, value);

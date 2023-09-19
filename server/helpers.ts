@@ -14,6 +14,12 @@ import { Views, loadMustacheTemplate } from './requestHandlers'
 
 //const thaliaPath = path.resolve(global.require.resolve('thalia'), '..', '..')
 
+type SecurityMiddleware = (
+  controller: Thalia.Controller,
+  success: ([Views, UserModel]: [any, any]) => void,
+  failure?: () => void
+) => Promise<void>
+
 /**
  * Scaffold for CRUD operations
  * - Create
@@ -26,62 +32,73 @@ import { Views, loadMustacheTemplate } from './requestHandlers'
  * Search, Sort, Filter, Paginate, Validate, Authorize, Audit, Log, Cache, Test, Mock, Deploy, Monitor, Alert, Notify, Backup, Restore, Migrate, Rollback, Upgrade, Downgrade, Seed, Import, Export, Publish, Subscribe, Unsubscribe
  *
  */
-function crud(options: { tableName: string }) {
+function crud(options: { tableName: string; security?: SecurityMiddleware }) {
   return {
     [options.tableName.toLowerCase()]: function (
       controller: Thalia.Controller
     ) {
-      const table = controller.db[options.tableName]
-      const uriPath = controller.path
-      // Put some checks here to make sure these are valid
-      // Check for security maybe?
+      const security = options.security || noSecurity
+      security(controller, function ([views, usermodel]) {
+        const table = controller.db[options.tableName]
+        const uriPath = controller.path
+        // Put some checks here to make sure these are valid
+        // Check for security maybe?
 
-      switch (uriPath[0]) {
-        case 'columns':
-          columnDefinitions(controller, table)
-          break
-        case 'json':
-          dataTableJson(controller, table)
-          break
-        default:
-          Promise.all([
-            new Promise<Views>(controller.readAllViews),
-            loadMustacheTemplate(
-              path.join(
-                __dirname,
-                '..',
-                'src',
-                'views',
-                'partials',
-                'wrapper.hbs'
-              )
-            ),
-          ])
-            .catch((e) => {
-              console.log('Error loading views')
-              return Promise.reject(e)
-            })
-            .then(([views, loadedTemplate]) => {
-              const template = Handlebars.compile(loadedTemplate.content)
-              Handlebars.registerPartial('scripts', loadedTemplate.scripts)
-              Handlebars.registerPartial('styles', loadedTemplate.styles)
-              Handlebars.registerPartial('content', views.list)
-              loadViewsAsPartials(views)
+        switch (uriPath[0]) {
+          case 'columns':
+            columnDefinitions(controller, table)
+            break
+          case 'json':
+            dataTableJson(controller, table)
+            break
+          default:
+            Promise.all([
+              new Promise<Views>(controller.readAllViews),
+              loadMustacheTemplate(
+                path.join(
+                  __dirname,
+                  '..',
+                  'src',
+                  'views',
+                  'partials',
+                  'wrapper.hbs'
+                )
+              ),
+            ])
+              .catch((e) => {
+                console.log('Error loading views')
+                return Promise.reject(e)
+              })
+              .then(([views, loadedTemplate]) => {
+                const template = Handlebars.compile(loadedTemplate.content)
+                Handlebars.registerPartial('scripts', loadedTemplate.scripts)
+                Handlebars.registerPartial('styles', loadedTemplate.styles)
+                Handlebars.registerPartial('content', views.list)
+                loadViewsAsPartials(views)
 
-              const data = {
-                title: options.tableName,
-                controllerName: options.tableName.toLowerCase(),
-              }
-              const html = template(data)
-              controller.res.end(html)
-            })
-            .catch((e) => {
-              console.log('Error rendering template', e)
-              controller.res.end('Error rendering template')
-            })
-      }
+                const data = {
+                  title: options.tableName,
+                  controllerName: options.tableName.toLowerCase(),
+                }
+                const html = template(data)
+                controller.res.end(html)
+              })
+              .catch((e) => {
+                console.log('Error rendering template', e)
+                controller.res.end('Error rendering template')
+              })
+        }
+      })
     },
   }
+}
+// SecurityMiddleware
+function noSecurity(
+  controller: Thalia.Controller,
+  success: ([Views, UserModel]: [any, any]) => void,
+  failure?: () => void
+) {
+  success([{}, {}])
 }
 
 function loadViewsAsPartials(views: Views) {

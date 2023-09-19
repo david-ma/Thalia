@@ -15,6 +15,11 @@
       "import": "./server/thalia.js",
       "require": "./server/thalia.js",
       "types": "./server/thalia.d.ts"
+    },
+    "helpers": {
+      "import": "./server/helpers.js",
+      "require": "./server/helpers.js",
+      "types": "./server/helpers.d.ts"
     }
   },
   "bin": {

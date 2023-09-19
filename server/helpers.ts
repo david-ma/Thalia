@@ -32,11 +32,16 @@ export type SecurityMiddleware = (
  * Search, Sort, Filter, Paginate, Validate, Authorize, Audit, Log, Cache, Test, Mock, Deploy, Monitor, Alert, Notify, Backup, Restore, Migrate, Rollback, Upgrade, Downgrade, Seed, Import, Export, Publish, Subscribe, Unsubscribe
  *
  */
-function crud(options: { tableName: string; security?: SecurityMiddleware }) {
+function crud(options: {
+  tableName: string
+  hideColumns?: string[]
+  security?: SecurityMiddleware
+}) {
   return {
     [options.tableName.toLowerCase()]: function (
       controller: Thalia.Controller
     ) {
+      const hideColumns = options.hideColumns || []
       const security = options.security || noSecurity
       security(controller, function ([views, usermodel]) {
         const table = controller.db[options.tableName]
@@ -46,10 +51,10 @@ function crud(options: { tableName: string; security?: SecurityMiddleware }) {
 
         switch (uriPath[0]) {
           case 'columns':
-            columnDefinitions(controller, table)
+            columnDefinitions(controller, table, hideColumns)
             break
           case 'json':
-            dataTableJson(controller, table)
+            dataTableJson(controller, table, hideColumns)
             break
           default:
             Promise.all([
@@ -112,9 +117,14 @@ function loadViewsAsPartials(views: Views) {
  * Get column definitions from Sequelize.org database
  * in DataTables.net format
  */
-function columnDefinitions(controller: Thalia.Controller, table) {
+function columnDefinitions(
+  controller: Thalia.Controller,
+  table,
+  hideColumns: string[] = []
+) {
   const data = Object.entries(table.getAttributes())
     .filter(([key, value]: any) => !value.references)
+    .filter(([key, value]: any) => !hideColumns.includes(key))
     .map(([key, value]: any) => {
       return {
         name: key,
@@ -130,11 +140,16 @@ function columnDefinitions(controller: Thalia.Controller, table) {
 /**
  * Serve Sequelize.org data in DataTables.net format
  */
-function dataTableJson(controller: Thalia.Controller, table: any) {
+function dataTableJson(
+  controller: Thalia.Controller,
+  table: any,
+  hideColumns: string[] = []
+) {
   const [order, search] = parseDTquery(controller.query)
 
   const columns = Object.entries(table.getAttributes())
     .filter(([key, value]: any) => !value.references)
+    .filter(([key, value]: any) => !hideColumns.includes(key))
     .map(([key, value]: any) => {
       return {
         name: key,

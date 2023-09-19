@@ -9,16 +9,17 @@ const requestHandlers_1 = require("./requestHandlers");
 function crud(options) {
     return {
         [options.tableName.toLowerCase()]: function (controller) {
+            const hideColumns = options.hideColumns || [];
             const security = options.security || noSecurity;
             security(controller, function ([views, usermodel]) {
                 const table = controller.db[options.tableName];
                 const uriPath = controller.path;
                 switch (uriPath[0]) {
                     case 'columns':
-                        columnDefinitions(controller, table);
+                        columnDefinitions(controller, table, hideColumns);
                         break;
                     case 'json':
-                        dataTableJson(controller, table);
+                        dataTableJson(controller, table, hideColumns);
                         break;
                     default:
                         Promise.all([
@@ -59,9 +60,10 @@ function loadViewsAsPartials(views) {
         Handlebars.registerPartial(key, value);
     });
 }
-function columnDefinitions(controller, table) {
+function columnDefinitions(controller, table, hideColumns = []) {
     const data = Object.entries(table.getAttributes())
         .filter(([key, value]) => !value.references)
+        .filter(([key, value]) => !hideColumns.includes(key))
         .map(([key, value]) => {
         return {
             name: key,
@@ -72,10 +74,11 @@ function columnDefinitions(controller, table) {
     });
     controller.res.end(JSON.stringify(data));
 }
-function dataTableJson(controller, table) {
+function dataTableJson(controller, table, hideColumns = []) {
     const [order, search] = parseDTquery(controller.query);
     const columns = Object.entries(table.getAttributes())
         .filter(([key, value]) => !value.references)
+        .filter(([key, value]) => !hideColumns.includes(key))
         .map(([key, value]) => {
         return {
             name: key,

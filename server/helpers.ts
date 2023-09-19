@@ -125,16 +125,24 @@ function columnDefinitions(
   const data = Object.entries(table.getAttributes())
     .filter(([key, value]: any) => !value.references)
     .filter(([key, value]: any) => !hideColumns.includes(key))
-    .map(([key, value]: any) => {
-      return {
-        name: key,
-        title: key,
-        data: key,
-        type: SequelizeDataTableTypes[value.type.key],
-      }
-    })
+    .map(mapColumns)
 
   controller.res.end(JSON.stringify(data))
+}
+
+function mapColumns([key, value]: any) {
+  const type = SequelizeDataTableTypes[value.type.key]
+  const orderable = type === 'string' || type === 'num' || type === 'date'
+  const searchable = type === 'string' || type === 'num' || type === 'date'
+
+  return {
+    name: key,
+    title: key,
+    data: key,
+    orderable,
+    searchable,
+    type,
+  }
 }
 
 /**
@@ -150,14 +158,7 @@ function dataTableJson(
   const columns = Object.entries(table.getAttributes())
     .filter(([key, value]: any) => !value.references)
     .filter(([key, value]: any) => !hideColumns.includes(key))
-    .map(([key, value]: any) => {
-      return {
-        name: key,
-        title: key,
-        data: key,
-        type: SequelizeDataTableTypes[value.type.key],
-      }
-    })
+    .map(mapColumns)
 
   const findOptions = {
     offset: controller.query.start || 0,
@@ -266,9 +267,9 @@ const SequelizeDataTableTypes = {
   BOOLEAN: 'bool',
   ENUM: 'string',
   ARRAY: 'string',
-  JSON: 'string',
-  JSONB: 'string',
-  BLOB: 'string',
+  JSON: 'object', // 'object',
+  JSONB: 'object', // 'object',
+  BLOB: 'object', // 'object',
 }
 // A better way of checking the type?
 const checkSequelizeDataTableTypes = function (type) {

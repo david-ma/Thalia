@@ -7,11 +7,12 @@
 </div>
 
 <script>
-  console.log("hey")
+  console.log("hey, we're in list.hbs")
 
   $.ajax('/{{controllerName}}/columns')
     .then(function (data) {
       let columns = JSON.parse(data)
+      columns.forEach(addRenders)
 
       $('#myTable').DataTable({
         ajax: {
@@ -29,5 +30,16 @@
       });
 
     })
+
+  function addRenders(column) {
+    if (column.type === 'date') {
+      column.render = function (data, type, row, meta) {
+
+        let time = new Date(data).toLocaleTimeString()
+        let date = new Date(data).toLocaleDateString()
+        return `${time} ${date}`
+      }
+    }
+  }
 
 </script>

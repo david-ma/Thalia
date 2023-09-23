@@ -2,7 +2,7 @@
   "name": "thalia",
   "private": true,
   "version": "4.0.4",
-  "description": "Frostickle's server",
+  "description": "Yet another server framework for serving websites",
   "main": "./server/helpers.js",
   "types": "./server/helpers.d.ts",
   "exports": {
@@ -158,7 +158,7 @@
     "type": "git",
     "url": "git+https://github.com/david-ma/Thalia.git"
   },
-  "author": "David Ma aka @Frostickle",
+  "author": "David Ma",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/david-ma/Thalia/issues"

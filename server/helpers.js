@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const requestHandlers_1 = require("./requestHandlers");
 function crud(options) {
+    const references = options.references || [];
     return {
         [options.tableName.toLowerCase()]: function (controller) {
             const hideColumns = options.hideColumns || [];
@@ -19,7 +20,7 @@ function crud(options) {
                         columnDefinitions(controller, table, hideColumns);
                         break;
                     case 'json':
-                        dataTableJson(controller, table, hideColumns);
+                        dataTableJson(controller, table, hideColumns, references);
                         break;
                     default:
                         Promise.all([
@@ -36,9 +37,33 @@ function crud(options) {
                             Handlebars.registerPartial('styles', loadedTemplate.styles);
                             Handlebars.registerPartial('content', views.list);
                             loadViewsAsPartials(views);
+                            const attributes = table.getAttributes();
+                            const links = references
+                                .map((reference) => {
+                                const table = controller.db[reference];
+                                const name = reference;
+                                const tableName = table.tableName;
+                                const attribute = Object.values(attributes).filter((attribute) => {
+                                    return (attribute.references &&
+                                        typeof attribute.references === 'object' &&
+                                        attribute.references.model === tableName);
+                                })[0];
+                                if (attribute) {
+                                    return JSON.stringify({
+                                        name,
+                                        tableName,
+                                        attribute,
+                                    });
+                                }
+                                else {
+                                    return null;
+                                }
+                            })
+                                .filter((link) => link !== null);
                             const data = {
                                 title: options.tableName,
                                 controllerName: options.tableName.toLowerCase(),
+                                links,
                             };
                             const html = template(data);
                             controller.res.end(html);
@@ -62,7 +87,6 @@ function loadViewsAsPartials(views) {
 }
 function columnDefinitions(controller, table, hideColumns = []) {
     const data = Object.entries(table.getAttributes())
-        .filter(([key, value]) => !value.references)
         .filter(([key, value]) => !hideColumns.includes(key))
         .map(mapColumns);
     controller.res.end(JSON.stringify(data));
@@ -71,7 +95,7 @@ function mapColumns([key, value]) {
     const type = SequelizeDataTableTypes[value.type.key];
     const orderable = type === 'string' || type === 'num' || type === 'date';
     const searchable = type === 'string' || type === 'num' || type === 'date';
-    return {
+    var blob = {
         name: key,
         title: key,
         data: key,
@@ -79,14 +103,18 @@ function mapColumns([key, value]) {
         searchable,
         type,
     };
+    return blob;
 }
-function dataTableJson(controller, table, hideColumns = []) {
+function dataTableJson(controller, table, hideColumns = [], references = []) {
     const [order, search] = parseDTquery(controller.query);
     const columns = Object.entries(table.getAttributes())
         .filter(([key, value]) => !value.references)
         .filter(([key, value]) => !hideColumns.includes(key))
         .map(mapColumns);
     const findOptions = {
+        include: references.map((table) => {
+            return controller.db[table];
+        }),
         offset: controller.query.start || 0,
         limit: controller.query.length || 10,
         order: order.map((item) => {

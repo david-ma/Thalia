@@ -1,5 +1,5 @@
 // Calling this file helpers.ts because util is reserved
-import { Op } from 'sequelize'
+import { ModelStatic, Op } from 'sequelize'
 import { Thalia } from './thalia'
 import { DataTypes } from 'sequelize'
 // import * from 'handlebars'
@@ -34,9 +34,11 @@ export type SecurityMiddleware = (
  */
 function crud(options: {
   tableName: string
+  references?: string[]
   hideColumns?: string[]
   security?: SecurityMiddleware
 }) {
+  const references = options.references || []
   return {
     [options.tableName.toLowerCase()]: function (
       controller: Thalia.Controller
@@ -44,7 +46,7 @@ function crud(options: {
       const hideColumns = options.hideColumns || []
       const security = options.security || noSecurity
       security(controller, function ([views, usermodel]) {
-        const table = controller.db[options.tableName]
+        const table: ModelStatic<any> = controller.db[options.tableName]
         const uriPath = controller.path
         // Put some checks here to make sure these are valid
         // Check for security maybe?
@@ -54,7 +56,7 @@ function crud(options: {
             columnDefinitions(controller, table, hideColumns)
             break
           case 'json':
-            dataTableJson(controller, table, hideColumns)
+            dataTableJson(controller, table, hideColumns, references)
             break
           default:
             Promise.all([
@@ -81,9 +83,40 @@ function crud(options: {
                 Handlebars.registerPartial('content', views.list)
                 loadViewsAsPartials(views)
 
+                const attributes = table.getAttributes()
+
+                // This could probably be cleaner...
+                const links = references
+                  .map((reference) => {
+                    const table = controller.db[reference]
+                    const name = reference
+                    const tableName = table.tableName
+                    const attribute = Object.values(attributes).filter(
+                      (attribute) => {
+                        return (
+                          attribute.references &&
+                          typeof attribute.references === 'object' &&
+                          attribute.references.model === tableName
+                        )
+                      }
+                    )[0]
+
+                    if (attribute) {
+                      return JSON.stringify({
+                        name,
+                        tableName,
+                        attribute,
+                      })
+                    } else {
+                      return null
+                    }
+                  })
+                  .filter((link) => link !== null)
+
                 const data = {
                   title: options.tableName,
                   controllerName: options.tableName.toLowerCase(),
+                  links,
                 }
                 const html = template(data)
                 controller.res.end(html)
@@ -123,7 +156,7 @@ function columnDefinitions(
   hideColumns: string[] = []
 ) {
   const data = Object.entries(table.getAttributes())
-    .filter(([key, value]: any) => !value.references)
+    // .filter(([key, value]: any) => !value.references) // Dunno why I was filtering this out
     .filter(([key, value]: any) => !hideColumns.includes(key))
     .map(mapColumns)
 
@@ -135,7 +168,7 @@ function mapColumns([key, value]: any) {
   const orderable = type === 'string' || type === 'num' || type === 'date'
   const searchable = type === 'string' || type === 'num' || type === 'date'
 
-  return {
+  var blob = {
     name: key,
     title: key,
     data: key,
@@ -143,6 +176,8 @@ function mapColumns([key, value]: any) {
     searchable,
     type,
   }
+
+  return blob
 }
 
 /**
@@ -151,7 +186,8 @@ function mapColumns([key, value]: any) {
 function dataTableJson(
   controller: Thalia.Controller,
   table: any,
-  hideColumns: string[] = []
+  hideColumns: string[] = [],
+  references: string[] = []
 ) {
   const [order, search] = parseDTquery(controller.query)
 
@@ -161,6 +197,9 @@ function dataTableJson(
     .map(mapColumns)
 
   const findOptions = {
+    include: references.map((table) => {
+      return controller.db[table]
+    }),
     offset: controller.query.start || 0,
     limit: controller.query.length || 10,
     order: order.map((item) => {

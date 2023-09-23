@@ -32,6 +32,14 @@
     })
 
   function addRenders(column) {
+    const links = []
+    {{#each links}}
+    links.push({{{this}}})
+    {{/each}}
+
+    console.log(links)
+    console.log(column)
+
     if (column.type === 'date') {
       column.render = function (data, type, row, meta) {
 

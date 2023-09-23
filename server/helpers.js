@@ -38,6 +38,9 @@ function crud(options) {
                             Handlebars.registerPartial('content', views.list);
                             loadViewsAsPartials(views);
                             const attributes = table.getAttributes();
+                            const primaryKey = Object.keys(attributes).filter((key) => {
+                                return attributes[key].primaryKey;
+                            });
                             const links = references
                                 .map((reference) => {
                                 const table = controller.db[reference];
@@ -64,6 +67,7 @@ function crud(options) {
                                 title: options.tableName,
                                 controllerName: options.tableName.toLowerCase(),
                                 links,
+                                primaryKey,
                             };
                             const html = template(data);
                             controller.res.end(html);

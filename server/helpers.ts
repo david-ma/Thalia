@@ -85,6 +85,10 @@ function crud(options: {
 
                 const attributes = table.getAttributes()
 
+                const primaryKey = Object.keys(attributes).filter((key) => {
+                  return attributes[key].primaryKey
+                })
+
                 // This could probably be cleaner...
                 const links = references
                   .map((reference) => {
@@ -117,6 +121,7 @@ function crud(options: {
                   title: options.tableName,
                   controllerName: options.tableName.toLowerCase(),
                   links,
+                  primaryKey,
                 }
                 const html = template(data)
                 controller.res.end(html)

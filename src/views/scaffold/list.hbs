@@ -38,18 +38,15 @@
     links.push({{{this}}})
     {{/each}}
 
-    const fieldName = column.data
-
     links.forEach(function (link) {
-      if (link.attribute.fieldName === fieldName) {
+      if (link.attribute.fieldName === column.data) {
         column.render = function (data, type, row, meta) {
           return `<a href="/${link.name.toLowerCase()}/${data}">${data}</a>`
         }
       }
     })
 
-    // Primary key..? might not be id.
-    if (column.data === 'id') {
+    if (column.data === '{{ primaryKey }}') {
       column.render = function (data, type, row, meta) {
         return `<a href="/{{controllerName}}/${data}">${data}</a>`
       }

@@ -14,15 +14,16 @@ function crud(options) {
             const security = options.security || noSecurity;
             security(controller, function ([views, usermodel]) {
                 const table = controller.db[options.tableName];
+                const primaryKey = table.primaryKeyAttribute;
                 const uriPath = controller.path;
-                switch (uriPath[0]) {
+                switch (uriPath[0] || '') {
                     case 'columns':
                         columnDefinitions(controller, table, hideColumns);
                         break;
                     case 'json':
                         dataTableJson(controller, table, hideColumns, references);
                         break;
-                    default:
+                    case '':
                         Promise.all([
                             new Promise(controller.readAllViews),
                             (0, requestHandlers_1.loadMustacheTemplate)(path.join(__dirname, '..', 'src', 'views', 'partials', 'wrapper.hbs')),
@@ -75,6 +76,38 @@ function crud(options) {
                             .catch((e) => {
                             console.log('Error rendering template', e);
                             controller.res.end('Error rendering template');
+                        });
+                        break;
+                    default:
+                        Promise.all([
+                            new Promise(controller.readAllViews),
+                            (0, requestHandlers_1.loadMustacheTemplate)(path.join(__dirname, '..', 'src', 'views', 'partials', 'wrapper.hbs')),
+                        ]).then(([views, loadedTemplate]) => {
+                            const template = Handlebars.compile(loadedTemplate.content);
+                            Handlebars.registerPartial('scripts', loadedTemplate.scripts);
+                            Handlebars.registerPartial('styles', loadedTemplate.styles);
+                            Handlebars.registerPartial('content', views.read);
+                            loadViewsAsPartials(views);
+                            table
+                                .findOne({
+                                where: {
+                                    [primaryKey]: controller.path[0],
+                                },
+                            })
+                                .then((item) => {
+                                const data = {
+                                    title: options.tableName,
+                                    controller: options.tableName.toLowerCase(),
+                                    item: item.dataValues,
+                                    json: JSON.stringify(item.dataValues),
+                                    attributes: Object.keys(item.dataValues),
+                                };
+                                const html = template(data);
+                                controller.res.end(html);
+                            }, (e) => {
+                                console.log('Error finding item', e);
+                                controller.res.end(`Error finding item: ${uriPath[0]}`);
+                            });
                         });
                 }
             });

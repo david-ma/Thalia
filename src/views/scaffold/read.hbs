@@ -1,0 +1,23 @@
+<h1>This is a Read page</h1>
+
+<p>Put stuff here</p>
+
+
+<a href="/{{controller}}">Back to table {{title}}</a>
+
+<div>
+  <table></table>
+</div>
+
+<script>
+  var data = {{{ json }}}
+  console.log(data)
+
+  d3.select("table")
+    .selectAll("tr")
+    .data(Object.entries(data))
+    .enter()
+    .append("tr")
+    .html(d => `<td>${d[0]}</td><td>${d[1]}</td>`)
+
+</script>

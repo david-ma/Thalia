@@ -47,18 +47,19 @@ function crud(options: {
       const security = options.security || noSecurity
       security(controller, function ([views, usermodel]) {
         const table: ModelStatic<any> = controller.db[options.tableName]
+        const primaryKey = table.primaryKeyAttribute
         const uriPath = controller.path
         // Put some checks here to make sure these are valid
         // Check for security maybe?
 
-        switch (uriPath[0]) {
-          case 'columns':
+        switch (uriPath[0] || '') {
+          case 'columns': // Column definitions for DataTables.net
             columnDefinitions(controller, table, hideColumns)
             break
-          case 'json':
+          case 'json': // JSON for DataTables.net list
             dataTableJson(controller, table, hideColumns, references)
             break
-          default:
+          case '': // List
             Promise.all([
               new Promise<Views>(controller.readAllViews),
               loadMustacheTemplate(
@@ -130,6 +131,52 @@ function crud(options: {
                 console.log('Error rendering template', e)
                 controller.res.end('Error rendering template')
               })
+            break
+          default: // Read page
+            Promise.all([
+              new Promise<Views>(controller.readAllViews),
+              loadMustacheTemplate(
+                path.join(
+                  __dirname,
+                  '..',
+                  'src',
+                  'views',
+                  'partials',
+                  'wrapper.hbs'
+                )
+              ),
+            ]).then(([views, loadedTemplate]) => {
+              const template = Handlebars.compile(loadedTemplate.content)
+              Handlebars.registerPartial('scripts', loadedTemplate.scripts)
+              Handlebars.registerPartial('styles', loadedTemplate.styles)
+              Handlebars.registerPartial('content', views.read)
+              loadViewsAsPartials(views)
+
+              table
+                .findOne({
+                  where: {
+                    [primaryKey]: controller.path[0],
+                  },
+                })
+                .then(
+                  (item) => {
+                    const data = {
+                      title: options.tableName,
+                      controller: options.tableName.toLowerCase(),
+                      item: item.dataValues,
+                      json: JSON.stringify(item.dataValues),
+                      attributes: Object.keys(item.dataValues),
+                    }
+
+                    const html = template(data)
+                    controller.res.end(html)
+                  },
+                  (e) => {
+                    console.log('Error finding item', e)
+                    controller.res.end(`Error finding item: ${uriPath[0]}`)
+                  }
+                )
+            })
         }
       })
     },

@@ -41,7 +41,8 @@
     links.forEach(function (link) {
       if (link.attribute.fieldName === column.data) {
         column.render = function (data, type, row, meta) {
-          return `<a href="/${link.name.toLowerCase()}/${data}">${data}</a>`
+          let name = row[link.name].name || data
+          return `<a href="/${link.name.toLowerCase()}/${data}">${name}</a>`
         }
       }
     })

@@ -95,12 +95,18 @@ function crud(options) {
                                 },
                             })
                                 .then((item) => {
+                                const values = Object.entries(item.dataValues).reduce((obj, [key, value]) => {
+                                    if (!hideColumns.includes(key)) {
+                                        obj[key] = value;
+                                    }
+                                    return obj;
+                                }, {});
                                 const data = {
                                     title: options.tableName,
                                     controller: options.tableName.toLowerCase(),
-                                    item: item.dataValues,
-                                    json: JSON.stringify(item.dataValues),
-                                    attributes: Object.keys(item.dataValues),
+                                    values,
+                                    json: JSON.stringify(values),
+                                    attributes: Object.keys(values),
                                 };
                                 const html = template(data);
                                 controller.res.end(html);

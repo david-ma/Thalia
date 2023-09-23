@@ -226,8 +226,9 @@ function columnDefinitions(
 
 function mapColumns([key, value]: any) {
   const type = SequelizeDataTableTypes[value.type.key]
-  const orderable = type === 'string' || type === 'num' || type === 'date'
-  const searchable = type === 'string' || type === 'num' || type === 'date'
+  const allowedTypes = ['string', 'num', 'date', 'bool']
+  const orderable = allowedTypes.includes(type)
+  const searchable = allowedTypes.includes(type)
 
   var blob = {
     name: key,

@@ -1,7 +1,20 @@
 <h1>This is a Read page</h1>
 
-<p>Put stuff here</p>
+<style>
+  table {
+    border-collapse: collapse;
+    margin: 15px 0;
+  }
 
+  td:first-child {
+    font-weight: bold;
+  }
+
+  td {
+    border: 1px solid black;
+    padding: 5px;
+  }
+</style>
 
 <a href="/{{controller}}">Back to table {{title}}</a>
 
@@ -18,6 +31,17 @@
     .data(Object.entries(data))
     .enter()
     .append("tr")
-    .html(d => `<td>${d[0]}</td><td>${d[1]}</td>`)
+    .html(function ([key, value]) {
+
+      if (typeof value === 'object') {
+        value = JSON.stringify(value)
+      }
+
+      if (value && value !== 'null' && (key === 'image' || key === 'photo')) {
+        value = `<img src="${value}" />`
+      }
+
+      return `<td>${key}</td><td>${value}</td>`
+    })
 
 </script>

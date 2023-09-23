@@ -3,12 +3,9 @@ import { LogFactory } from './log'
 
 // Default options
 let seqOptions: sequelize.Options = {
-  database: 'postgres',
-  username: 'postgres',
-  password: 'postgres_password',
-  dialect: 'postgres',
-  host: 'localhost',
-  port: 5555,
+  "dialect": "sqlite",
+  "storage": `${__dirname}/database.sqlite`,
+  // "storage": "websites/dataviz/models/dataviz_production.sqlite",
   logging: false,
   dialectOptions: {
     decimalNumbers: true,
@@ -19,6 +16,12 @@ let seqOptions: sequelize.Options = {
 }
 
 if (process.env.NODE_ENV === 'docker') {
+  delete seqOptions.storage
+
+  seqOptions.database = 'postgres'
+  seqOptions.username = 'postgres'
+  seqOptions.password = 'postgres_password'
+  seqOptions.dialect = 'postgres'
   seqOptions.host = 'db'
   seqOptions.port = 5432
 }

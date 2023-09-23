@@ -27,12 +27,8 @@ exports.Log = exports.dbConfig = void 0;
 const sequelize = __importStar(require("sequelize"));
 const log_1 = require("./log");
 let seqOptions = {
-    database: 'postgres',
-    username: 'postgres',
-    password: 'postgres_password',
-    dialect: 'postgres',
-    host: 'localhost',
-    port: 5555,
+    "dialect": "sqlite",
+    "storage": `${__dirname}/database.sqlite`,
     logging: false,
     dialectOptions: {
         decimalNumbers: true,
@@ -42,6 +38,11 @@ let seqOptions = {
     },
 };
 if (process.env.NODE_ENV === 'docker') {
+    delete seqOptions.storage;
+    seqOptions.database = 'postgres';
+    seqOptions.username = 'postgres';
+    seqOptions.password = 'postgres_password';
+    seqOptions.dialect = 'postgres';
     seqOptions.host = 'db';
     seqOptions.port = 5432;
 }

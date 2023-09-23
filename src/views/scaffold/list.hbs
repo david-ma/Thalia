@@ -53,6 +53,12 @@
       }
     }
 
+    if (column.type === 'object') {
+      column.render = function (data, type, row, meta) {
+        return JSON.stringify(data)
+      }
+    }
+
     if (column.type === 'date') {
       column.render = function (data, type, row, meta) {
 

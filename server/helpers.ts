@@ -218,7 +218,6 @@ function columnDefinitions(
   hideColumns: string[] = []
 ) {
   const data = Object.entries(table.getAttributes())
-    // .filter(([key, value]: any) => !value.references) // Dunno why I was filtering this out
     .filter(([key, value]: any) => !hideColumns.includes(key))
     .map(mapColumns)
 
@@ -254,7 +253,6 @@ function dataTableJson(
   const [order, search] = parseDTquery(controller.query)
 
   const columns = Object.entries(table.getAttributes())
-    .filter(([key, value]: any) => !value.references)
     .filter(([key, value]: any) => !hideColumns.includes(key))
     .map(mapColumns)
 

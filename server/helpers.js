@@ -151,7 +151,6 @@ function mapColumns([key, value]) {
 function dataTableJson(controller, table, hideColumns = [], references = []) {
     const [order, search] = parseDTquery(controller.query);
     const columns = Object.entries(table.getAttributes())
-        .filter(([key, value]) => !value.references)
         .filter(([key, value]) => !hideColumns.includes(key))
         .map(mapColumns);
     const findOptions = {

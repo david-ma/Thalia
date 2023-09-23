@@ -33,12 +33,27 @@
 
   function addRenders(column) {
     const links = []
+
     {{#each links}}
     links.push({{{this}}})
     {{/each}}
 
-    console.log(links)
-    console.log(column)
+    const fieldName = column.data
+
+    links.forEach(function (link) {
+      if (link.attribute.fieldName === fieldName) {
+        column.render = function (data, type, row, meta) {
+          return `<a href="/${link.name.toLowerCase()}/${data}">${data}</a>`
+        }
+      }
+    })
+
+    // Primary key..? might not be id.
+    if (column.data === 'id') {
+      column.render = function (data, type, row, meta) {
+        return `<a href="/{{controllerName}}/${data}">${data}</a>`
+      }
+    }
 
     if (column.type === 'date') {
       column.render = function (data, type, row, meta) {

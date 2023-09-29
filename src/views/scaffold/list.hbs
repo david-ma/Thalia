@@ -2,6 +2,21 @@
 
 <p>Put list stuff here</p>
 
+<style>
+  p.blob {
+    line-break: anywhere;
+  }
+
+  table {
+    width: 100%;
+
+  }
+
+  td {
+    border: 1px solid black;
+  }
+</style>
+
 <div>
   <table id="myTable"></table>
 </div>
@@ -34,39 +49,41 @@
   function addRenders(column) {
     const links = []
 
-    {{#each links}}
-    links.push({{{this}}})
-    {{/each}}
+    { { #each links } }
+    links.push({{{ this}}})
+  {
+    {
+      /each}}
 
-    links.forEach(function (link) {
-      if (link.attribute.fieldName === column.data) {
+      links.forEach(function (link) {
+        if (link.attribute.fieldName === column.data) {
+          column.render = function (data, type, row, meta) {
+            let name = row[link.name].name || data
+            return `<a href="/${link.name.toLowerCase()}/${data}">${name}</a>`
+          }
+        }
+      })
+
+      if (column.data === '{{ primaryKey }}') {
         column.render = function (data, type, row, meta) {
-          let name = row[link.name].name || data
-          return `<a href="/${link.name.toLowerCase()}/${data}">${name}</a>`
+          return `<a href="/{{controllerName}}/${data}">${data}</a>`
         }
       }
-    })
 
-    if (column.data === '{{ primaryKey }}') {
-      column.render = function (data, type, row, meta) {
-        return `<a href="/{{controllerName}}/${data}">${data}</a>`
+      if (column.type === 'object') {
+        column.render = function (data, type, row, meta) {
+          return `<p class="blob">${JSON.stringify(data)}</p>`
+        }
+      }
+
+      if (column.type === 'date') {
+        column.render = function (data, type, row, meta) {
+
+          let time = new Date(data).toLocaleTimeString()
+          let date = new Date(data).toLocaleDateString()
+          return `${time} ${date}`
+        }
       }
     }
-
-    if (column.type === 'object') {
-      column.render = function (data, type, row, meta) {
-        return JSON.stringify(data)
-      }
-    }
-
-    if (column.type === 'date') {
-      column.render = function (data, type, row, meta) {
-
-        let time = new Date(data).toLocaleTimeString()
-        let date = new Date(data).toLocaleDateString()
-        return `${time} ${date}`
-      }
-    }
-  }
 
 </script>

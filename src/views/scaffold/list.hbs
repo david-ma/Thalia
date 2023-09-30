@@ -6,12 +6,10 @@
   p.blob {
     line-break: anywhere;
   }
-
   table {
     width: 100%;
 
   }
-
   td {
     border: 1px solid black;
   }
@@ -49,41 +47,39 @@
   function addRenders(column) {
     const links = []
 
-    { { #each links } }
-    links.push({{{ this}}})
-  {
-    {
-      /each}}
+    {{#each links}}
+    links.push({{{this}}})
+    {{/each}}
 
-      links.forEach(function (link) {
-        if (link.attribute.fieldName === column.data) {
-          column.render = function (data, type, row, meta) {
-            let name = row[link.name].name || data
-            return `<a href="/${link.name.toLowerCase()}/${data}">${name}</a>`
-          }
-        }
-      })
-
-      if (column.data === '{{ primaryKey }}') {
+    links.forEach(function (link) {
+      if (link.attribute.fieldName === column.data) {
         column.render = function (data, type, row, meta) {
-          return `<a href="/{{controllerName}}/${data}">${data}</a>`
+          let name = row[link.name].name || data
+          return `<a href="/${link.name.toLowerCase()}/${data}">${name}</a>`
         }
       }
+    })
 
-      if (column.type === 'object') {
-        column.render = function (data, type, row, meta) {
-          return `<p class="blob">${JSON.stringify(data)}</p>`
-        }
-      }
-
-      if (column.type === 'date') {
-        column.render = function (data, type, row, meta) {
-
-          let time = new Date(data).toLocaleTimeString()
-          let date = new Date(data).toLocaleDateString()
-          return `${time} ${date}`
-        }
+    if (column.data === '{{ primaryKey }}') {
+      column.render = function (data, type, row, meta) {
+        return `<a href="/{{controllerName}}/${data}">${data}</a>`
       }
     }
+
+    if (column.type === 'object') {
+      column.render = function (data, type, row, meta) {
+        return `<p class="blob">${JSON.stringify(data)}</p>`
+      }
+    }
+
+    if (column.type === 'date') {
+      column.render = function (data, type, row, meta) {
+
+        let time = new Date(data).toLocaleTimeString()
+        let date = new Date(data).toLocaleDateString()
+        return `${time} ${date}`
+      }
+    }
+  }
 
 </script>

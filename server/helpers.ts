@@ -387,4 +387,116 @@ const checkSequelizeDataTableTypes = function (type) {
   }
 }
 
-export default { crud }
+
+
+
+// Security stuff. Maybe put in another file..?
+import { UserFactory, SessionFactory, AuditFactory, User, SessionModel } from '../websites/example/models/security'
+
+
+async function createSession(
+  userId: number,
+  controller: any, // Thalia.controller?
+  // controller: Thalia.Controller,
+  noCookie?: boolean
+) {
+  const token = Math.random().toString(36).substring(2, 15)
+  const data = controller.req ? {
+    'x-forwarded-for': controller.req.headers['x-forwarded-for'],
+    'X-Real-IP': controller.req.headers['X-Real-IP'],
+    remoteAddress: controller.req.connection.remoteAddress,
+    ip: controller.req.ip,
+    userAgent: controller.req.headers['user-agent'],
+  } : {}
+
+  return controller.db.Session.create({
+    sid: token,
+    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+    data: data,
+    loggedOut: false,
+    userId,
+  }).then((session: any) => {
+    if (!noCookie) {
+      controller.res.setCookie({ _sabby_login: token }, session.expires)
+    }
+    return session
+  })
+}
+
+
+const nodemailer = require('nodemailer')
+
+function sendEmail(emailOptions, mailAuth) {
+  console.log(`Sending email to ${emailOptions.to}`)
+
+  const transporter = nodemailer.createTransport({
+    pool: true,
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // use TLS
+    auth: mailAuth,
+    tls: { rejectUnauthorized: false },
+  })
+
+  transporter.verify(function (error) {
+    if (error) {
+      console.log('Nodemailer error')
+      console.log(error)
+    } else {
+      console.log('Nodemailer: Server is ready to take our messages')
+    }
+  })
+
+  transporter.sendMail(emailOptions, function (error, info) {
+    if (error) {
+      console.log(error)
+    } else {
+      console.log('Email sent: ' + info.response)
+    }
+  })
+}
+
+
+async function inviteNewAdmin(email: string, controller: Thalia.Controller, mailAuth: any) {
+  // Check we can send emails.
+
+  // Check if user exists
+  // If not, create user
+  // Create session
+  // Send invite email
+  const password = Math.random().toString(36).substring(2, 15)
+
+  const User: any = controller.db.User
+
+  return User.findOrCreate({
+    where: {
+      email,
+    },
+    defaults: {
+      email,
+      password,
+    },
+  }).then(([user, created]) => {
+    return createSession(user.id, controller, true).then(
+      (session: SessionModel) => {
+        let message = `You're invited to be an admin of Sabbatical Gallery.<br><a href="https://sabbatical.gallery/profile?session=${session.sid}">Click here set up your account</a>.<br>Then visit <a href="https://sabbatical.gallery/m">https://sabbatical.gallery/m</a> to manage the gallery.`
+
+        if (!created) {
+          message = `Here is a new login link for Sabbatical Gallery.<br><a href="https://sabbatical.gallery/profile?session=${session.sid}">Click here to log in</a>.`
+        }
+
+        const emailOptions: any = {
+          from: '"Sabbatical Gallery" <7oclockco@gmail.com>',
+          to: email,
+          subject: 'Your Sabbatical Gallery admin invite',
+          html: message,
+        }
+
+        sendEmail(emailOptions, mailAuth)
+      }
+    )
+  })
+}
+
+export default { crud, UserFactory, SessionFactory, AuditFactory, createSession, inviteNewAdmin }
+export { crud, UserFactory, SessionFactory, AuditFactory, createSession, inviteNewAdmin, SessionModel, User }

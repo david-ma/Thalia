@@ -10,16 +10,6 @@
       "import": "./server/helpers.js",
       "require": "./server/helpers.js",
       "types": "./server/helpers.d.ts"
-    },
-    "thalia": {
-      "import": "./server/thalia.js",
-      "require": "./server/thalia.js",
-      "types": "./server/thalia.d.ts"
-    },
-    "helpers": {
-      "import": "./server/helpers.js",
-      "require": "./server/helpers.js",
-      "types": "./server/helpers.d.ts"
     }
   },
   "bin": {
@@ -33,6 +23,7 @@
     "lodash": "^4.17.21",
     "mime": "^2.6.0",
     "minimist": "^1.2.8",
+    "nodemailer": "^6.9.5",
     "requirejs": "^2.3.6",
     "sass": "^1.65.1",
     "sequelize": "^6.33.0",

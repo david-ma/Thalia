@@ -8,7 +8,16 @@ declare function crud(options: {
 }): {
     [x: string]: (controller: Thalia.Controller) => void;
 };
+import { UserFactory, SessionFactory, AuditFactory, User, SessionModel } from '../websites/example/models/security';
+declare function createSession(userId: number, controller: any, noCookie?: boolean): Promise<any>;
+declare function inviteNewAdmin(email: string, controller: Thalia.Controller, mailAuth: any): Promise<any>;
 declare const _default: {
     crud: typeof crud;
+    UserFactory: typeof UserFactory;
+    SessionFactory: typeof SessionFactory;
+    AuditFactory: typeof AuditFactory;
+    createSession: typeof createSession;
+    inviteNewAdmin: typeof inviteNewAdmin;
 };
 export default _default;
+export { crud, UserFactory, SessionFactory, AuditFactory, createSession, inviteNewAdmin, SessionModel, User };

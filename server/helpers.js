@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.User = exports.inviteNewAdmin = exports.createSession = exports.AuditFactory = exports.SessionFactory = exports.UserFactory = exports.crud = void 0;
 const sequelize_1 = require("sequelize");
 const sequelize_2 = require("sequelize");
 const Handlebars = require('handlebars');
@@ -120,6 +121,7 @@ function crud(options) {
         },
     };
 }
+exports.crud = crud;
 const noSecurity = async function (controller, success, failure) {
     success([{}, {}]);
 };
@@ -259,4 +261,89 @@ const checkSequelizeDataTableTypes = function (type) {
             return 'string';
     }
 };
-exports.default = { crud };
+const security_1 = require("../websites/example/models/security");
+Object.defineProperty(exports, "UserFactory", { enumerable: true, get: function () { return security_1.UserFactory; } });
+Object.defineProperty(exports, "SessionFactory", { enumerable: true, get: function () { return security_1.SessionFactory; } });
+Object.defineProperty(exports, "AuditFactory", { enumerable: true, get: function () { return security_1.AuditFactory; } });
+Object.defineProperty(exports, "User", { enumerable: true, get: function () { return security_1.User; } });
+async function createSession(userId, controller, noCookie) {
+    const token = Math.random().toString(36).substring(2, 15);
+    const data = controller.req ? {
+        'x-forwarded-for': controller.req.headers['x-forwarded-for'],
+        'X-Real-IP': controller.req.headers['X-Real-IP'],
+        remoteAddress: controller.req.connection.remoteAddress,
+        ip: controller.req.ip,
+        userAgent: controller.req.headers['user-agent'],
+    } : {};
+    return controller.db.Session.create({
+        sid: token,
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+        data: data,
+        loggedOut: false,
+        userId,
+    }).then((session) => {
+        if (!noCookie) {
+            controller.res.setCookie({ _sabby_login: token }, session.expires);
+        }
+        return session;
+    });
+}
+exports.createSession = createSession;
+const nodemailer = require('nodemailer');
+function sendEmail(emailOptions, mailAuth) {
+    console.log(`Sending email to ${emailOptions.to}`);
+    const transporter = nodemailer.createTransport({
+        pool: true,
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: mailAuth,
+        tls: { rejectUnauthorized: false },
+    });
+    transporter.verify(function (error) {
+        if (error) {
+            console.log('Nodemailer error');
+            console.log(error);
+        }
+        else {
+            console.log('Nodemailer: Server is ready to take our messages');
+        }
+    });
+    transporter.sendMail(emailOptions, function (error, info) {
+        if (error) {
+            console.log(error);
+        }
+        else {
+            console.log('Email sent: ' + info.response);
+        }
+    });
+}
+async function inviteNewAdmin(email, controller, mailAuth) {
+    const password = Math.random().toString(36).substring(2, 15);
+    const User = controller.db.User;
+    return User.findOrCreate({
+        where: {
+            email,
+        },
+        defaults: {
+            email,
+            password,
+        },
+    }).then(([user, created]) => {
+        return createSession(user.id, controller, true).then((session) => {
+            let message = `You're invited to be an admin of Sabbatical Gallery.<br><a href="https://sabbatical.gallery/profile?session=${session.sid}">Click here set up your account</a>.<br>Then visit <a href="https://sabbatical.gallery/m">https://sabbatical.gallery/m</a> to manage the gallery.`;
+            if (!created) {
+                message = `Here is a new login link for Sabbatical Gallery.<br><a href="https://sabbatical.gallery/profile?session=${session.sid}">Click here to log in</a>.`;
+            }
+            const emailOptions = {
+                from: '"Sabbatical Gallery" <7oclockco@gmail.com>',
+                to: email,
+                subject: 'Your Sabbatical Gallery admin invite',
+                html: message,
+            };
+            sendEmail(emailOptions, mailAuth);
+        });
+    });
+}
+exports.inviteNewAdmin = inviteNewAdmin;
+exports.default = { crud, UserFactory: security_1.UserFactory, SessionFactory: security_1.SessionFactory, AuditFactory: security_1.AuditFactory, createSession, inviteNewAdmin };

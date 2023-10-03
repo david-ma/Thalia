@@ -1,49 +1,33 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.dbConfig = void 0;
-const sequelize = __importStar(require("sequelize"));
-let seqOptions = {
-    "dialect": "sqlite",
-    "storage": `${__dirname}/database.sqlite`,
-    logging: false,
-    dialectOptions: {
+exports.securityFactory = void 0;
+const sequelize_1 = require("sequelize");
+const security_1 = require("./security");
+function securityFactory(seqOptions) {
+    if (!seqOptions.dialect) {
+        seqOptions.dialect = 'sqlite';
+        seqOptions.storage = seqOptions.storage || `${__dirname}/database.sqlite`;
+    }
+    seqOptions.logging = seqOptions.logging || false;
+    seqOptions.dialectOptions = seqOptions.dialectOptions || {
         decimalNumbers: true,
-    },
-    define: {
-        underscored: true,
-    },
-};
-if (process.env.NODE_ENV === 'docker') {
-    delete seqOptions.storage;
-    seqOptions.database = 'postgres';
-    seqOptions.username = 'postgres';
-    seqOptions.password = 'postgres_password';
-    seqOptions.dialect = 'postgres';
-    seqOptions.host = 'db';
-    seqOptions.port = 5432;
+    };
+    seqOptions.define = seqOptions.define || { underscored: true };
+    const sequelize = new sequelize_1.Sequelize(seqOptions);
+    const User = (0, security_1.UserFactory)(sequelize);
+    const Session = (0, security_1.SessionFactory)(sequelize);
+    const Audit = (0, security_1.AuditFactory)(sequelize);
+    Session.belongsTo(User, { foreignKey: 'userId', targetKey: 'id' });
+    User.hasMany(Session, { foreignKey: 'userId', sourceKey: 'id' });
+    Audit.belongsTo(User, { foreignKey: 'userId', targetKey: 'id' });
+    User.hasMany(Audit, { foreignKey: 'userId', sourceKey: 'id' });
+    Audit.belongsTo(Session, { foreignKey: 'sessionId', targetKey: 'sid' });
+    Session.hasMany(Audit, { foreignKey: 'sessionId', sourceKey: 'sid' });
+    return {
+        sequelize,
+        User,
+        Session,
+        Audit,
+    };
 }
-console.log('seqOptions', seqOptions);
-exports.dbConfig = new sequelize.Sequelize(seqOptions);
+exports.securityFactory = securityFactory;

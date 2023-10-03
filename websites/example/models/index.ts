@@ -1,33 +1,34 @@
-import * as sequelize from 'sequelize'
+import { Sequelize, Options } from 'sequelize'
+import { UserFactory, SessionFactory, AuditFactory } from './security'
 
-// Default options
-let seqOptions: sequelize.Options = {
-  "dialect": "sqlite",
-  "storage": `${__dirname}/database.sqlite`,
-  // "storage": "websites/dataviz/models/dataviz_production.sqlite",
-  logging: false,
-  dialectOptions: {
+export function securityFactory(seqOptions: Options) {
+  if (!seqOptions.dialect) {
+    seqOptions.dialect = 'sqlite'
+    seqOptions.storage = seqOptions.storage || `${__dirname}/database.sqlite`
+  }
+  seqOptions.logging = seqOptions.logging || false
+  seqOptions.dialectOptions = seqOptions.dialectOptions || {
     decimalNumbers: true,
-  },
-  define: {
-    underscored: true,
-  },
+  }
+  seqOptions.define = seqOptions.define || { underscored: true }
+  const sequelize = new Sequelize(seqOptions)
+  const User = UserFactory(sequelize)
+  const Session = SessionFactory(sequelize)
+  const Audit = AuditFactory(sequelize)
+
+  Session.belongsTo(User, { foreignKey: 'userId', targetKey: 'id' })
+  User.hasMany(Session, { foreignKey: 'userId', sourceKey: 'id' })
+
+  Audit.belongsTo(User, { foreignKey: 'userId', targetKey: 'id' })
+  User.hasMany(Audit, { foreignKey: 'userId', sourceKey: 'id' })
+
+  Audit.belongsTo(Session, { foreignKey: 'sessionId', targetKey: 'sid' })
+  Session.hasMany(Audit, { foreignKey: 'sessionId', sourceKey: 'sid' })
+
+  return {
+    sequelize,
+    User,
+    Session,
+    Audit,
+  }
 }
-
-if (process.env.NODE_ENV === 'docker') {
-  delete seqOptions.storage
-
-  seqOptions.database = 'postgres'
-  seqOptions.username = 'postgres'
-  seqOptions.password = 'postgres_password'
-  seqOptions.dialect = 'postgres'
-  seqOptions.host = 'db'
-  seqOptions.port = 5432
-}
-
-console.log('seqOptions', seqOptions)
-
-// Initialise Sequelize
-export const dbConfig: sequelize.Sequelize = new sequelize.Sequelize(seqOptions)
-
-// Initialise models

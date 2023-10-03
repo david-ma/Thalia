@@ -23,9 +23,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Log = exports.dbConfig = void 0;
+exports.dbConfig = void 0;
 const sequelize = __importStar(require("sequelize"));
-const log_1 = require("./log");
 let seqOptions = {
     "dialect": "sqlite",
     "storage": `${__dirname}/database.sqlite`,
@@ -48,4 +47,3 @@ if (process.env.NODE_ENV === 'docker') {
 }
 console.log('seqOptions', seqOptions);
 exports.dbConfig = new sequelize.Sequelize(seqOptions);
-exports.Log = (0, log_1.LogFactory)(exports.dbConfig);

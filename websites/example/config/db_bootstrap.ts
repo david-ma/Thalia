@@ -1,7 +1,6 @@
 import { Model, Sequelize } from 'sequelize'
 import {
   dbConfig,
-  Log,
 } from '../models'
 
 export interface seqObject {
@@ -12,7 +11,6 @@ export interface seqObject {
 const seq: seqObject = {
   // @ts-ignore
   sequelize: dbConfig,
-  Log,
 }
 
 seq.sequelize.sync({

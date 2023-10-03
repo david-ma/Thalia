@@ -1,5 +1,4 @@
 import * as sequelize from 'sequelize'
-import { LogFactory } from './log'
 
 // Default options
 let seqOptions: sequelize.Options = {
@@ -32,4 +31,3 @@ console.log('seqOptions', seqOptions)
 export const dbConfig: sequelize.Sequelize = new sequelize.Sequelize(seqOptions)
 
 // Initialise models
-export const Log = LogFactory(dbConfig)

@@ -1,4 +1,4 @@
-import { Model, Sequelize, Options } from 'sequelize'
+import { Options } from 'sequelize'
 import { securityFactory } from '../models'
 
 let seqOptions: Options = {
@@ -24,10 +24,7 @@ if (process.env.NODE_ENV === 'docker') {
   seqOptions.port = 5432
 }
 
-export interface seqObject {
-  [key: string]: Model | any | Sequelize
-  sequelize: Sequelize
-}
+import { seqObject } from '../../../server/helpers'
 
 const seq: seqObject = securityFactory(seqOptions)
 

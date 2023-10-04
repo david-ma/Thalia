@@ -1,4 +1,4 @@
-import { Sequelize } from 'sequelize';
+import { ModelStatic, Sequelize } from 'sequelize';
 import { BuildOptions, Model } from 'sequelize';
 export interface UserAttributes {
     name: string;
@@ -15,7 +15,7 @@ export declare class User extends Model {
     sayHello(): string;
     getSessions(): Promise<Session[]>;
 }
-export type UserStatic = typeof Model & {
+export type UserStatic = ModelStatic<User> & {
     new (values?: object, options?: BuildOptions): User;
 };
 export declare function UserFactory(sequelize: Sequelize): UserStatic;
@@ -36,7 +36,7 @@ export declare class Session extends Model implements SessionAttributes {
     loggedOut: boolean;
     getUser(): Promise<User>;
 }
-export type SessionStatic = typeof Model & {
+export type SessionStatic = ModelStatic<Session> & {
     new (values?: object, options?: BuildOptions): SessionModel;
 };
 export declare function SessionFactory(sequelize: Sequelize): SessionStatic;
@@ -52,7 +52,7 @@ export interface AuditModel extends Model<AuditAttributes>, AuditAttributes {
 }
 export declare class Audit extends Model<AuditModel, AuditAttributes> {
 }
-export type AuditStatic = typeof Model & {
+export type AuditStatic = ModelStatic<Audit> & {
     new (values?: object, options?: BuildOptions): AuditModel;
 };
 export declare function AuditFactory(sequelize: Sequelize): AuditStatic;

@@ -388,10 +388,17 @@ const checkSequelizeDataTableTypes = function (type) {
 }
 
 
+import { Model, Sequelize } from 'sequelize'
 
+interface seqObject {
+  [key: string]: typeof Model | Sequelize
+  sequelize: Sequelize
+}
 
 // Security stuff. Maybe put in another file..?
 import { UserFactory, SessionFactory, AuditFactory, User, SessionModel } from '../websites/example/models/security'
+import { securityFactory } from '../websites/example/models'
+export { securityFactory, seqObject }
 
 
 async function createSession(

@@ -24,6 +24,8 @@
     "mime": "^2.6.0",
     "minimist": "^1.2.8",
     "nodemailer": "^6.9.5",
+    "pg": "^8.11.3",
+    "pg-hstore": "^2.3.4",
     "requirejs": "^2.3.6",
     "sass": "^1.65.1",
     "sequelize": "^6.33.0",

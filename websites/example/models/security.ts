@@ -1,9 +1,7 @@
-import { DataTypes, Sequelize } from 'sequelize'
+import { ModelStatic, DataTypes, Sequelize } from 'sequelize'
 import {
   BuildOptions,
   Model,
-  InferAttributes,
-  InferCreationAttributes,
 } from 'sequelize'
 
 export interface UserAttributes {
@@ -35,7 +33,8 @@ export class User extends Model {
   }
 }
 
-export type UserStatic = typeof Model & {
+// export type UserStatic = typeof Model & {
+export type UserStatic = ModelStatic<User> & {
   new (values?: object, options?: BuildOptions): User
 }
 
@@ -81,7 +80,8 @@ export class Session extends Model implements SessionAttributes {
   //   // return User.findByPk(this.userId)
   // }
 }
-export type SessionStatic = typeof Model & {
+// export type SessionStatic = typeof Model & {
+export type SessionStatic = ModelStatic<Session> & {
   new (values?: object, options?: BuildOptions): SessionModel
 }
 export function SessionFactory(sequelize: Sequelize): SessionStatic {
@@ -127,7 +127,9 @@ export interface AuditAttributes {
 
 export interface AuditModel extends Model<AuditAttributes>, AuditAttributes {}
 export class Audit extends Model<AuditModel, AuditAttributes> {}
-export type AuditStatic = typeof Model & {
+
+// export type AuditStatic = typeof Model & {
+export type AuditStatic = ModelStatic<Audit> & {
   new (values?: object, options?: BuildOptions): AuditModel
 }
 export function AuditFactory(sequelize: Sequelize): AuditStatic {

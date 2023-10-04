@@ -13,27 +13,45 @@ export interface UserAttributes {
   photo: string
 }
 
-// export interface UserModel extends Model<UserAttributes>, UserAttributes {}
-export class User extends Model<
-  InferAttributes<User>,
-  InferCreationAttributes<User>
-> {
-  declare id: number
-  declare name: string
-  declare email: string
-  declare password: string
-  declare photo: string
+export class User extends Model {
+  public id!: number
+
+  public name!: string
+  public email!: string
+  public password!: string
+  public photo!: string
+
+  public sayHello() {
+    console.log('Hello, my name is ' + this.name)
+    return 'hello world'
+  }
+
+  public getSessions() {
+    return Session.findAll({
+      where: {
+        userId: this.id,
+      },
+    })
+  }
 }
+
 export type UserStatic = typeof Model & {
   new (values?: object, options?: BuildOptions): User
 }
+
 export function UserFactory(sequelize: Sequelize): UserStatic {
-  return <UserStatic>sequelize.define('User', {
-    name: DataTypes.STRING,
-    email: DataTypes.STRING,
-    password: DataTypes.STRING,
-    photo: DataTypes.STRING,
-  })
+  return User.init(
+    {
+      name: DataTypes.STRING,
+      email: DataTypes.STRING,
+      password: DataTypes.STRING,
+      photo: DataTypes.STRING,
+    },
+    {
+      sequelize,
+      tableName: 'users',
+    }
+  )
 }
 
 export interface SessionAttributes {
@@ -47,11 +65,17 @@ export interface SessionAttributes {
 export interface SessionModel
   extends Model<SessionAttributes>,
     SessionAttributes {}
-export class Session extends Model<SessionModel, SessionAttributes> {
+export class Session extends Model implements SessionAttributes {
+  public sid!: string
+  public expires!: Date
+  public data!: Object
+  public userId!: number
+  public loggedOut!: boolean
+
   // Worry about this later
-  // public function getUser() {
-  //   return User.findByPk(this.userId)
-  // }
+  public getUser() {
+    return User.findByPk(this.userId)
+  }
   // getUser() {
   //   console.log('running getUser')
   //   // return User.findByPk(this.userId)
@@ -61,17 +85,36 @@ export type SessionStatic = typeof Model & {
   new (values?: object, options?: BuildOptions): SessionModel
 }
 export function SessionFactory(sequelize: Sequelize): SessionStatic {
-  return <SessionStatic>sequelize.define('Session', {
-    sid: {
-      type: DataTypes.STRING,
-      primaryKey: true,
+  return Session.init(
+    {
+      sid: {
+        type: DataTypes.STRING,
+        primaryKey: true,
+      },
+      expires: DataTypes.DATE,
+      data: DataTypes.JSON,
+      userId: DataTypes.INTEGER,
+      loggedOut: DataTypes.BOOLEAN,
     },
-    expires: DataTypes.DATE,
-    data: DataTypes.JSON,
-    userId: DataTypes.INTEGER,
-    loggedOut: DataTypes.BOOLEAN,
-  })
+    {
+      sequelize,
+      tableName: 'sessions',
+    }
+  )
 }
+
+// export function SessionFactory(sequelize: Sequelize): SessionStatic {
+//   return <SessionStatic>sequelize.define('Session', {
+//     sid: {
+//       type: DataTypes.STRING,
+//       primaryKey: true,
+//     },
+//     expires: DataTypes.DATE,
+//     data: DataTypes.JSON,
+//     userId: DataTypes.INTEGER,
+//     loggedOut: DataTypes.BOOLEAN,
+//   })
+// }
 
 export interface AuditAttributes {
   id: number
@@ -96,4 +139,3 @@ export function AuditFactory(sequelize: Sequelize): AuditStatic {
     timestamp: DataTypes.DATE,
   })
 }
-

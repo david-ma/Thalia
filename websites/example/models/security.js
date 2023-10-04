@@ -4,22 +4,39 @@ exports.AuditFactory = exports.Audit = exports.SessionFactory = exports.Session 
 const sequelize_1 = require("sequelize");
 const sequelize_2 = require("sequelize");
 class User extends sequelize_2.Model {
+    sayHello() {
+        console.log('Hello, my name is ' + this.name);
+        return 'hello world';
+    }
+    getSessions() {
+        return Session.findAll({
+            where: {
+                userId: this.id,
+            },
+        });
+    }
 }
 exports.User = User;
 function UserFactory(sequelize) {
-    return sequelize.define('User', {
+    return User.init({
         name: sequelize_1.DataTypes.STRING,
         email: sequelize_1.DataTypes.STRING,
         password: sequelize_1.DataTypes.STRING,
         photo: sequelize_1.DataTypes.STRING,
+    }, {
+        sequelize,
+        tableName: 'users',
     });
 }
 exports.UserFactory = UserFactory;
 class Session extends sequelize_2.Model {
+    getUser() {
+        return User.findByPk(this.userId);
+    }
 }
 exports.Session = Session;
 function SessionFactory(sequelize) {
-    return sequelize.define('Session', {
+    return Session.init({
         sid: {
             type: sequelize_1.DataTypes.STRING,
             primaryKey: true,
@@ -28,6 +45,9 @@ function SessionFactory(sequelize) {
         data: sequelize_1.DataTypes.JSON,
         userId: sequelize_1.DataTypes.INTEGER,
         loggedOut: sequelize_1.DataTypes.BOOLEAN,
+    }, {
+        sequelize,
+        tableName: 'sessions',
     });
 }
 exports.SessionFactory = SessionFactory;

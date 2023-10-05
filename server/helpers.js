@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Audit = exports.User = exports.Session = exports.inviteNewAdmin = exports.crud = exports.checkSession = exports.createSession = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = void 0;
+exports.Audit = exports.User = exports.Session = exports.crud = exports.checkSession = exports.emailNewAccount = exports.createSession = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = void 0;
 const sequelize_1 = require("sequelize");
 const sequelize_2 = require("sequelize");
 const Handlebars = require('handlebars');
@@ -347,34 +347,34 @@ function sendEmail(emailOptions, mailAuth) {
         }
     });
 }
-async function inviteNewAdmin(email, controller, mailAuth) {
+async function emailNewAccount(config) {
     const password = Math.random().toString(36).substring(2, 15);
-    const User = controller.db.User;
+    const User = config.controller.db.User;
     return User.findOrCreate({
         where: {
-            email,
+            email: config.email,
         },
         defaults: {
-            email,
+            email: config.email,
             password,
         },
     }).then(([user, created]) => {
-        return createSession(user.id, controller, true).then((session) => {
+        return createSession(user.id, config.controller, true).then((session) => {
             let message = `You're invited to be an admin of Sabbatical Gallery.<br><a href="https://sabbatical.gallery/profile?session=${session.sid}">Click here set up your account</a>.<br>Then visit <a href="https://sabbatical.gallery/m">https://sabbatical.gallery/m</a> to manage the gallery.`;
             if (!created) {
                 message = `Here is a new login link for Sabbatical Gallery.<br><a href="https://sabbatical.gallery/profile?session=${session.sid}">Click here to log in</a>.`;
             }
             const emailOptions = {
                 from: '"Sabbatical Gallery" <7oclockco@gmail.com>',
-                to: email,
+                to: config.email,
                 subject: 'Your Sabbatical Gallery admin invite',
                 html: message,
             };
-            sendEmail(emailOptions, mailAuth);
+            sendEmail(emailOptions, config.mailAuth);
         });
     });
 }
-exports.inviteNewAdmin = inviteNewAdmin;
+exports.emailNewAccount = emailNewAccount;
 const checkSession = async function (controller, success, naive) {
     const name = controller.name || 'thalia';
     const cookies = controller.cookies;
@@ -412,4 +412,4 @@ const checkSession = async function (controller, success, naive) {
     });
 };
 exports.checkSession = checkSession;
-exports.default = { crud, inviteNewAdmin };
+exports.default = { crud };

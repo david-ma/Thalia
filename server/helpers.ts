@@ -495,11 +495,13 @@ function sendEmail(emailOptions, mailAuth) {
   })
 }
 
-async function inviteNewAdmin(
-  email: string,
-  controller: Thalia.Controller,
-  mailAuth: any
-) {
+type emailNewAccountConfig = {
+  email: string
+  controller: Thalia.Controller
+  mailAuth: {}
+}
+
+export async function emailNewAccount(config: emailNewAccountConfig) {
   // Check we can send emails.
 
   // Check if user exists
@@ -508,33 +510,37 @@ async function inviteNewAdmin(
   // Send invite email
   const password = Math.random().toString(36).substring(2, 15)
 
-  const User: any = controller.db.User
+  const User: any = config.controller.db.User
 
   return User.findOrCreate({
     where: {
-      email,
+      email: config.email,
     },
     defaults: {
-      email,
+      email: config.email,
       password,
     },
   }).then(([user, created]) => {
-    return createSession(user.id, controller, true).then((session: Session) => {
-      let message = `You're invited to be an admin of Sabbatical Gallery.<br><a href="https://sabbatical.gallery/profile?session=${session.sid}">Click here set up your account</a>.<br>Then visit <a href="https://sabbatical.gallery/m">https://sabbatical.gallery/m</a> to manage the gallery.`
+    return createSession(user.id, config.controller, true).then(
+      (session: Session) => {
 
-      if (!created) {
-        message = `Here is a new login link for Sabbatical Gallery.<br><a href="https://sabbatical.gallery/profile?session=${session.sid}">Click here to log in</a>.`
+        // TODO: Find an elegant way to pass this info in
+        let message = `You're invited to be an admin of Sabbatical Gallery.<br><a href="https://sabbatical.gallery/profile?session=${session.sid}">Click here set up your account</a>.<br>Then visit <a href="https://sabbatical.gallery/m">https://sabbatical.gallery/m</a> to manage the gallery.`
+
+        if (!created) {
+          message = `Here is a new login link for Sabbatical Gallery.<br><a href="https://sabbatical.gallery/profile?session=${session.sid}">Click here to log in</a>.`
+        }
+
+        const emailOptions: any = {
+          from: '"Sabbatical Gallery" <7oclockco@gmail.com>',
+          to: config.email,
+          subject: 'Your Sabbatical Gallery admin invite',
+          html: message,
+        }
+
+        sendEmail(emailOptions, config.mailAuth)
       }
-
-      const emailOptions: any = {
-        from: '"Sabbatical Gallery" <7oclockco@gmail.com>',
-        to: email,
-        subject: 'Your Sabbatical Gallery admin invite',
-        html: message,
-      }
-
-      sendEmail(emailOptions, mailAuth)
-    })
+    )
   })
 }
 
@@ -585,5 +591,5 @@ export const checkSession: SecurityMiddleware = async function (
   })
 }
 
-export default { crud, inviteNewAdmin }
-export { crud, Views, inviteNewAdmin, Session, User, Audit }
+export default { crud }
+export { crud, Views, Session, User, Audit }

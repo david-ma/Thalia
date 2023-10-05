@@ -22,11 +22,15 @@ export { Album, Image };
 import { securityFactory, smugmugFactory } from '../websites/example/models';
 export { securityFactory, smugmugFactory, seqObject };
 export declare function createSession(userId: number, controller: Thalia.Controller, noCookie?: boolean): Promise<any>;
-declare function inviteNewAdmin(email: string, controller: Thalia.Controller, mailAuth: any): Promise<any>;
+type emailNewAccountConfig = {
+    email: string;
+    controller: Thalia.Controller;
+    mailAuth: {};
+};
+export declare function emailNewAccount(config: emailNewAccountConfig): Promise<any>;
 export declare const checkSession: SecurityMiddleware;
 declare const _default: {
     crud: typeof crud;
-    inviteNewAdmin: typeof inviteNewAdmin;
 };
 export default _default;
-export { crud, Views, inviteNewAdmin, Session, User, Audit };
+export { crud, Views, Session, User, Audit };

@@ -397,8 +397,10 @@ interface seqObject {
 
 // Security stuff. Maybe put in another file..?
 import { UserFactory, SessionFactory, AuditFactory, User, SessionModel } from '../websites/example/models/security'
-import { securityFactory } from '../websites/example/models'
-export { securityFactory, seqObject }
+import { Album, Image } from '../websites/example/models/smugmug'
+export { Album, Image }
+import { securityFactory, smugmugFactory } from '../websites/example/models'
+export { securityFactory, smugmugFactory, seqObject }
 
 
 async function createSession(

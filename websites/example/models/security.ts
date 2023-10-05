@@ -1,8 +1,5 @@
 import { ModelStatic, DataTypes, Sequelize } from 'sequelize'
-import {
-  BuildOptions,
-  Model,
-} from 'sequelize'
+import { BuildOptions, Model } from 'sequelize'
 
 export interface UserAttributes {
   name: string
@@ -33,9 +30,11 @@ export class User extends Model {
   }
 }
 
+export interface UserModel extends Model<UserAttributes>, UserAttributes {}
+
 // export type UserStatic = typeof Model & {
 export type UserStatic = ModelStatic<User> & {
-  new (values?: object, options?: BuildOptions): User
+  new (values?: object, options?: BuildOptions): UserModel
 }
 
 export function UserFactory(sequelize: Sequelize): UserStatic {

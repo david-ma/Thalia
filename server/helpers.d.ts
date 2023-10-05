@@ -14,8 +14,10 @@ interface seqObject {
     sequelize: Sequelize;
 }
 import { UserFactory, SessionFactory, AuditFactory, User, SessionModel } from '../websites/example/models/security';
-import { securityFactory } from '../websites/example/models';
-export { securityFactory, seqObject };
+import { Album, Image } from '../websites/example/models/smugmug';
+export { Album, Image };
+import { securityFactory, smugmugFactory } from '../websites/example/models';
+export { securityFactory, smugmugFactory, seqObject };
 declare function createSession(userId: number, controller: any, noCookie?: boolean): Promise<any>;
 declare function inviteNewAdmin(email: string, controller: Thalia.Controller, mailAuth: any): Promise<any>;
 declare const _default: {

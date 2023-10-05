@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.User = exports.inviteNewAdmin = exports.createSession = exports.AuditFactory = exports.SessionFactory = exports.UserFactory = exports.crud = exports.securityFactory = void 0;
+exports.User = exports.inviteNewAdmin = exports.createSession = exports.AuditFactory = exports.SessionFactory = exports.UserFactory = exports.crud = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = void 0;
 const sequelize_1 = require("sequelize");
 const sequelize_2 = require("sequelize");
 const Handlebars = require('handlebars');
@@ -266,8 +266,12 @@ Object.defineProperty(exports, "UserFactory", { enumerable: true, get: function 
 Object.defineProperty(exports, "SessionFactory", { enumerable: true, get: function () { return security_1.SessionFactory; } });
 Object.defineProperty(exports, "AuditFactory", { enumerable: true, get: function () { return security_1.AuditFactory; } });
 Object.defineProperty(exports, "User", { enumerable: true, get: function () { return security_1.User; } });
+const smugmug_1 = require("../websites/example/models/smugmug");
+Object.defineProperty(exports, "Album", { enumerable: true, get: function () { return smugmug_1.Album; } });
+Object.defineProperty(exports, "Image", { enumerable: true, get: function () { return smugmug_1.Image; } });
 const models_1 = require("../websites/example/models");
 Object.defineProperty(exports, "securityFactory", { enumerable: true, get: function () { return models_1.securityFactory; } });
+Object.defineProperty(exports, "smugmugFactory", { enumerable: true, get: function () { return models_1.smugmugFactory; } });
 async function createSession(userId, controller, noCookie) {
     const token = Math.random().toString(36).substring(2, 15);
     const data = controller.req ? {

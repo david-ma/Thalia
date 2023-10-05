@@ -22,10 +22,10 @@ fi
 
 
 # Run healthcheck.sh
-if test -f "websites/$SITE/models/healthcheck.sh"; then
+if test -f "websites/$SITE/config/healthcheck.sh"; then
     echo "Running healthcheck.sh for $SITE"
 
-    if bash websites/$SITE/models/healthcheck.sh; then
+    if bash websites/$SITE/config/healthcheck.sh; then
         echo "Healthcheck passed for $SITE"
     else
         echo "Healthcheck failed for $SITE"

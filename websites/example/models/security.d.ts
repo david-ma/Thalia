@@ -15,8 +15,10 @@ export declare class User extends Model {
     sayHello(): string;
     getSessions(): Promise<Session[]>;
 }
+export interface UserModel extends Model<UserAttributes>, UserAttributes {
+}
 export type UserStatic = ModelStatic<User> & {
-    new (values?: object, options?: BuildOptions): User;
+    new (values?: object, options?: BuildOptions): UserModel;
 };
 export declare function UserFactory(sequelize: Sequelize): UserStatic;
 export interface SessionAttributes {

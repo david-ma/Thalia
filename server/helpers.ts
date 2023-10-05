@@ -16,7 +16,7 @@ import { Views, loadMustacheTemplate } from './requestHandlers'
 
 export type SecurityMiddleware = (
   controller: Thalia.Controller,
-  success: ([Views, UserModel]: [any, any]) => void,
+  success: ([views, user]: [Views, User]) => void,
   failure?: () => void
 ) => Promise<void>
 
@@ -195,10 +195,10 @@ function crud(options: {
 // SecurityMiddleware
 const noSecurity: SecurityMiddleware = async function (
   controller: Thalia.Controller,
-  success: ([Views, UserModel]: [any, any]) => void,
+  success: ([views, user]: [Views, User]) => void,
   failure?: () => void
 ) {
-  success([{}, {}])
+  success([null, null])
 }
 
 import sass = require('sass')
@@ -417,7 +417,6 @@ const checkSequelizeDataTableTypes = function (type) {
   }
 }
 
-
 import { Model, Sequelize } from 'sequelize'
 
 interface seqObject {
@@ -432,21 +431,22 @@ export { Album, Image }
 import { securityFactory, smugmugFactory } from '../websites/example/models'
 export { securityFactory, smugmugFactory, seqObject }
 
-
-async function createSession(
+export async function createSession(
   userId: number,
-  controller: any, // Thalia.controller?
-  // controller: Thalia.Controller,
+  // controller: any, // Thalia.controller?
+  controller: Thalia.Controller,
   noCookie?: boolean
 ) {
   const token = Math.random().toString(36).substring(2, 15)
-  const data = controller.req ? {
-    'x-forwarded-for': controller.req.headers['x-forwarded-for'],
-    'X-Real-IP': controller.req.headers['X-Real-IP'],
-    remoteAddress: controller.req.connection.remoteAddress,
-    ip: controller.req.ip,
-    userAgent: controller.req.headers['user-agent'],
-  } : {}
+  const data = controller.req
+    ? {
+        'x-forwarded-for': controller.req.headers['x-forwarded-for'],
+        'X-Real-IP': controller.req.headers['X-Real-IP'],
+        remoteAddress: controller.req.connection.remoteAddress,
+        ip: controller.req.ip,
+        userAgent: controller.req.headers['user-agent'],
+      }
+    : {}
 
   return controller.db.Session.create({
     sid: token,
@@ -456,12 +456,12 @@ async function createSession(
     userId,
   }).then((session: any) => {
     if (!noCookie) {
-      controller.res.setCookie({ _sabby_login: token }, session.expires)
+      const name = controller.name || 'thalia'
+      controller.res.setCookie({ [`_${name}_login`]: token }, session.expires)
     }
     return session
   })
 }
-
 
 const nodemailer = require('nodemailer')
 
@@ -495,8 +495,11 @@ function sendEmail(emailOptions, mailAuth) {
   })
 }
 
-
-async function inviteNewAdmin(email: string, controller: Thalia.Controller, mailAuth: any) {
+async function inviteNewAdmin(
+  email: string,
+  controller: Thalia.Controller,
+  mailAuth: any
+) {
   // Check we can send emails.
 
   // Check if user exists
@@ -516,26 +519,71 @@ async function inviteNewAdmin(email: string, controller: Thalia.Controller, mail
       password,
     },
   }).then(([user, created]) => {
-    return createSession(user.id, controller, true).then(
-      (session: Session) => {
-        let message = `You're invited to be an admin of Sabbatical Gallery.<br><a href="https://sabbatical.gallery/profile?session=${session.sid}">Click here set up your account</a>.<br>Then visit <a href="https://sabbatical.gallery/m">https://sabbatical.gallery/m</a> to manage the gallery.`
+    return createSession(user.id, controller, true).then((session: Session) => {
+      let message = `You're invited to be an admin of Sabbatical Gallery.<br><a href="https://sabbatical.gallery/profile?session=${session.sid}">Click here set up your account</a>.<br>Then visit <a href="https://sabbatical.gallery/m">https://sabbatical.gallery/m</a> to manage the gallery.`
 
-        if (!created) {
-          message = `Here is a new login link for Sabbatical Gallery.<br><a href="https://sabbatical.gallery/profile?session=${session.sid}">Click here to log in</a>.`
-        }
-
-        const emailOptions: any = {
-          from: '"Sabbatical Gallery" <7oclockco@gmail.com>',
-          to: email,
-          subject: 'Your Sabbatical Gallery admin invite',
-          html: message,
-        }
-
-        sendEmail(emailOptions, mailAuth)
+      if (!created) {
+        message = `Here is a new login link for Sabbatical Gallery.<br><a href="https://sabbatical.gallery/profile?session=${session.sid}">Click here to log in</a>.`
       }
-    )
+
+      const emailOptions: any = {
+        from: '"Sabbatical Gallery" <7oclockco@gmail.com>',
+        to: email,
+        subject: 'Your Sabbatical Gallery admin invite',
+        html: message,
+      }
+
+      sendEmail(emailOptions, mailAuth)
+    })
   })
 }
 
-export default { crud, createSession, inviteNewAdmin }
-export { crud, Views, createSession, inviteNewAdmin, Session, User, Audit }
+export const checkSession: SecurityMiddleware = async function (
+  controller: Thalia.Controller,
+  success: ([views, user]: [Views, User]) => void,
+  naive?: () => void
+) {
+  const name = controller.name || 'thalia'
+
+  const cookies = controller.cookies
+  let login_token = cookies[`_${name}_login`] || null
+  const query = controller.query
+
+  if (query && query.session) {
+    controller.res.setCookie(
+      { [`_${name}_login`]: query.session },
+      new Date(Date.now() + 1000 * 60 * 60 * 24 * 7)
+    )
+    login_token = query.session
+  } else if (!login_token) {
+    if (naive) {
+      return naive()
+    } else {
+      controller.res.end('<meta http-equiv="refresh" content="0; url=/">')
+      return
+    }
+  }
+
+  return Promise.all([
+    new Promise(controller.readAllViews),
+    controller.db.Session.findOne({
+      where: {
+        sid: login_token,
+      },
+    }).then((session: Session) =>
+      session
+        ? controller.db.User.findOne({
+            where: {
+              id: session.userId,
+            },
+          })
+        : Promise.reject('No session found. Please log in.')
+    ),
+  ]).then(success, function (err) {
+    console.log('ERROR!', err)
+    controller.res.end(err)
+  })
+}
+
+export default { crud, inviteNewAdmin }
+export { crud, Views, inviteNewAdmin, Session, User, Audit }

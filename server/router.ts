@@ -169,6 +169,7 @@ const router: Thalia.Router = function (
             db: website.seq || null,
             views: website.views,
             workspacePath: website.workspacePath,
+            name: website.name,
             readAllViews: website.readAllViews,
             readTemplate: website.readTemplate,
             path: d.words.slice(2),

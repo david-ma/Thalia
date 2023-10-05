@@ -1,6 +1,6 @@
 import { Thalia } from './thalia';
 import { Views } from './requestHandlers';
-export type SecurityMiddleware = (controller: Thalia.Controller, success: ([Views, UserModel]: [any, any]) => void, failure?: () => void) => Promise<void>;
+export type SecurityMiddleware = (controller: Thalia.Controller, success: ([views, user]: [Views, User]) => void, failure?: () => void) => Promise<void>;
 declare function crud(options: {
     tableName: string;
     references?: string[];
@@ -21,12 +21,12 @@ import { Album, Image } from '../websites/example/models/smugmug';
 export { Album, Image };
 import { securityFactory, smugmugFactory } from '../websites/example/models';
 export { securityFactory, smugmugFactory, seqObject };
-declare function createSession(userId: number, controller: any, noCookie?: boolean): Promise<any>;
+export declare function createSession(userId: number, controller: Thalia.Controller, noCookie?: boolean): Promise<any>;
 declare function inviteNewAdmin(email: string, controller: Thalia.Controller, mailAuth: any): Promise<any>;
+export declare const checkSession: SecurityMiddleware;
 declare const _default: {
     crud: typeof crud;
-    createSession: typeof createSession;
     inviteNewAdmin: typeof inviteNewAdmin;
 };
 export default _default;
-export { crud, Views, createSession, inviteNewAdmin, Session, User, Audit };
+export { crud, Views, inviteNewAdmin, Session, User, Audit };

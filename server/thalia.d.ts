@@ -62,21 +62,23 @@ export declare namespace Thalia {
   }
 
   export interface Controller {
-    res:
-      | ServerResponse
-      | {
-          getCookie: (cookieName: string) => string
-          setCookie: (cookie: Cookie, expires?: Date) => void
-          deleteCookie: (cookieName: string) => void
-          end: (result: any) => void
-        }
-    req?: IncomingMessage
+    res: // ServerResponse &
+    {
+      getCookie: (cookieName: string) => string
+      setCookie: (cookie: Cookie, expires?: Date) => void
+      deleteCookie: (cookieName: string) => void
+      end: (result: any) => void
+    }
+    req?: IncomingMessage & {
+      ip?: string
+    }
     db?: SequelizeWrapper | null
     views?: {
       [key: string]: string
     }
     workspacePath?: any
     readAllViews: (callback: ViewCallback) => void
+    name: string
     readTemplate?: any
     path?: any
     query?: any

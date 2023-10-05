@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Audit = exports.User = exports.Session = exports.inviteNewAdmin = exports.createSession = exports.crud = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = void 0;
+exports.Audit = exports.User = exports.Session = exports.inviteNewAdmin = exports.crud = exports.checkSession = exports.createSession = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = void 0;
 const sequelize_1 = require("sequelize");
 const sequelize_2 = require("sequelize");
 const Handlebars = require('handlebars');
@@ -123,7 +123,7 @@ function crud(options) {
 }
 exports.crud = crud;
 const noSecurity = async function (controller, success, failure) {
-    success([{}, {}]);
+    success([null, null]);
 };
 const sass = require("sass");
 async function setHandlebarsContent(content) {
@@ -294,13 +294,15 @@ Object.defineProperty(exports, "securityFactory", { enumerable: true, get: funct
 Object.defineProperty(exports, "smugmugFactory", { enumerable: true, get: function () { return models_1.smugmugFactory; } });
 async function createSession(userId, controller, noCookie) {
     const token = Math.random().toString(36).substring(2, 15);
-    const data = controller.req ? {
-        'x-forwarded-for': controller.req.headers['x-forwarded-for'],
-        'X-Real-IP': controller.req.headers['X-Real-IP'],
-        remoteAddress: controller.req.connection.remoteAddress,
-        ip: controller.req.ip,
-        userAgent: controller.req.headers['user-agent'],
-    } : {};
+    const data = controller.req
+        ? {
+            'x-forwarded-for': controller.req.headers['x-forwarded-for'],
+            'X-Real-IP': controller.req.headers['X-Real-IP'],
+            remoteAddress: controller.req.connection.remoteAddress,
+            ip: controller.req.ip,
+            userAgent: controller.req.headers['user-agent'],
+        }
+        : {};
     return controller.db.Session.create({
         sid: token,
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
@@ -309,7 +311,8 @@ async function createSession(userId, controller, noCookie) {
         userId,
     }).then((session) => {
         if (!noCookie) {
-            controller.res.setCookie({ _sabby_login: token }, session.expires);
+            const name = controller.name || 'thalia';
+            controller.res.setCookie({ [`_${name}_login`]: token }, session.expires);
         }
         return session;
     });
@@ -372,4 +375,41 @@ async function inviteNewAdmin(email, controller, mailAuth) {
     });
 }
 exports.inviteNewAdmin = inviteNewAdmin;
-exports.default = { crud, createSession, inviteNewAdmin };
+const checkSession = async function (controller, success, naive) {
+    const name = controller.name || 'thalia';
+    const cookies = controller.cookies;
+    let login_token = cookies[`_${name}_login`] || null;
+    const query = controller.query;
+    if (query && query.session) {
+        controller.res.setCookie({ [`_${name}_login`]: query.session }, new Date(Date.now() + 1000 * 60 * 60 * 24 * 7));
+        login_token = query.session;
+    }
+    else if (!login_token) {
+        if (naive) {
+            return naive();
+        }
+        else {
+            controller.res.end('<meta http-equiv="refresh" content="0; url=/">');
+            return;
+        }
+    }
+    return Promise.all([
+        new Promise(controller.readAllViews),
+        controller.db.Session.findOne({
+            where: {
+                sid: login_token,
+            },
+        }).then((session) => session
+            ? controller.db.User.findOne({
+                where: {
+                    id: session.userId,
+                },
+            })
+            : Promise.reject('No session found. Please log in.')),
+    ]).then(success, function (err) {
+        console.log('ERROR!', err);
+        controller.res.end(err);
+    });
+};
+exports.checkSession = checkSession;
+exports.default = { crud, inviteNewAdmin };

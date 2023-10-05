@@ -201,7 +201,37 @@ const noSecurity: SecurityMiddleware = async function (
   success([{}, {}])
 }
 
-function loadViewsAsPartials(views: Views) {
+import sass = require('sass')
+
+export async function setHandlebarsContent(content: string) {
+  const scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g
+  const styleEx = /<style\b.*>([^<]*(?:(?!<\/style>)<[^<]*)*)<\/style>/g
+
+  const scripts = [...content.matchAll(scriptEx)].map((d) => d[0])
+  const styles = [...content.matchAll(styleEx)].map((d) => d[0])
+
+  let styleData = styles.join('\n').replace(/<\/?style>/g, '')
+
+  return sass.compileStringAsync(styleData).then(
+    (result) => {
+      styleData = result.css
+      Handlebars.registerPartial('styles', `<style>${styleData}</style>`)
+      Handlebars.registerPartial('scripts', scripts.join('\n'))
+      Handlebars.registerPartial(
+        'content',
+        content.replace(scriptEx, '').replace(styleEx, '')
+      )
+    },
+    () => {
+      console.log('Error processing SASS!')
+      Handlebars.registerPartial('styles', '')
+      Handlebars.registerPartial('scripts', '')
+      Handlebars.registerPartial('content', content)
+    }
+  )
+}
+
+export function loadViewsAsPartials(views: Views) {
   Object.entries(views).forEach(([key, value]) => {
     // console.log(`Loading partial ${key}`)
     Handlebars.registerPartial(key, value)

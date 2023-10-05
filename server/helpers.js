@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Audit = exports.User = exports.Session = exports.inviteNewAdmin = exports.createSession = exports.crud = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = void 0;
+exports.Audit = exports.User = exports.Session = exports.inviteNewAdmin = exports.createSession = exports.crud = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = void 0;
 const sequelize_1 = require("sequelize");
 const sequelize_2 = require("sequelize");
 const Handlebars = require('handlebars');
@@ -125,11 +125,32 @@ exports.crud = crud;
 const noSecurity = async function (controller, success, failure) {
     success([{}, {}]);
 };
+const sass = require("sass");
+async function setHandlebarsContent(content) {
+    const scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g;
+    const styleEx = /<style\b.*>([^<]*(?:(?!<\/style>)<[^<]*)*)<\/style>/g;
+    const scripts = [...content.matchAll(scriptEx)].map((d) => d[0]);
+    const styles = [...content.matchAll(styleEx)].map((d) => d[0]);
+    let styleData = styles.join('\n').replace(/<\/?style>/g, '');
+    return sass.compileStringAsync(styleData).then((result) => {
+        styleData = result.css;
+        Handlebars.registerPartial('styles', `<style>${styleData}</style>`);
+        Handlebars.registerPartial('scripts', scripts.join('\n'));
+        Handlebars.registerPartial('content', content.replace(scriptEx, '').replace(styleEx, ''));
+    }, () => {
+        console.log('Error processing SASS!');
+        Handlebars.registerPartial('styles', '');
+        Handlebars.registerPartial('scripts', '');
+        Handlebars.registerPartial('content', content);
+    });
+}
+exports.setHandlebarsContent = setHandlebarsContent;
 function loadViewsAsPartials(views) {
     Object.entries(views).forEach(([key, value]) => {
         Handlebars.registerPartial(key, value);
     });
 }
+exports.loadViewsAsPartials = loadViewsAsPartials;
 function columnDefinitions(controller, table, hideColumns = []) {
     const data = Object.entries(table.getAttributes())
         .filter(([key, value]) => !hideColumns.includes(key))

@@ -396,7 +396,7 @@ interface seqObject {
 }
 
 // Security stuff. Maybe put in another file..?
-import { UserFactory, SessionFactory, AuditFactory, User, SessionModel } from '../websites/example/models/security'
+import { User, Session, Audit } from '../websites/example/models/security'
 import { Album, Image } from '../websites/example/models/smugmug'
 export { Album, Image }
 import { securityFactory, smugmugFactory } from '../websites/example/models'
@@ -487,7 +487,7 @@ async function inviteNewAdmin(email: string, controller: Thalia.Controller, mail
     },
   }).then(([user, created]) => {
     return createSession(user.id, controller, true).then(
-      (session: SessionModel) => {
+      (session: Session) => {
         let message = `You're invited to be an admin of Sabbatical Gallery.<br><a href="https://sabbatical.gallery/profile?session=${session.sid}">Click here set up your account</a>.<br>Then visit <a href="https://sabbatical.gallery/m">https://sabbatical.gallery/m</a> to manage the gallery.`
 
         if (!created) {
@@ -507,5 +507,5 @@ async function inviteNewAdmin(email: string, controller: Thalia.Controller, mail
   })
 }
 
-export default { crud, UserFactory, SessionFactory, AuditFactory, createSession, inviteNewAdmin }
-export { crud, UserFactory, SessionFactory, AuditFactory, createSession, inviteNewAdmin, SessionModel, User }
+export default { crud, createSession, inviteNewAdmin }
+export { crud, Views, createSession, inviteNewAdmin, Session, User, Audit }

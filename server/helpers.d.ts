@@ -1,4 +1,5 @@
 import { Thalia } from './thalia';
+import { Views } from './requestHandlers';
 export type SecurityMiddleware = (controller: Thalia.Controller, success: ([Views, UserModel]: [any, any]) => void, failure?: () => void) => Promise<void>;
 declare function crud(options: {
     tableName: string;
@@ -13,7 +14,7 @@ interface seqObject {
     [key: string]: typeof Model | Sequelize;
     sequelize: Sequelize;
 }
-import { UserFactory, SessionFactory, AuditFactory, User, SessionModel } from '../websites/example/models/security';
+import { User, Session, Audit } from '../websites/example/models/security';
 import { Album, Image } from '../websites/example/models/smugmug';
 export { Album, Image };
 import { securityFactory, smugmugFactory } from '../websites/example/models';
@@ -22,11 +23,8 @@ declare function createSession(userId: number, controller: any, noCookie?: boole
 declare function inviteNewAdmin(email: string, controller: Thalia.Controller, mailAuth: any): Promise<any>;
 declare const _default: {
     crud: typeof crud;
-    UserFactory: typeof UserFactory;
-    SessionFactory: typeof SessionFactory;
-    AuditFactory: typeof AuditFactory;
     createSession: typeof createSession;
     inviteNewAdmin: typeof inviteNewAdmin;
 };
 export default _default;
-export { crud, UserFactory, SessionFactory, AuditFactory, createSession, inviteNewAdmin, SessionModel, User };
+export { crud, Views, createSession, inviteNewAdmin, Session, User, Audit };

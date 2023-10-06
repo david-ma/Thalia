@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Audit = exports.User = exports.Session = exports.crud = exports.checkSession = exports.emailNewAccount = exports.createSession = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = void 0;
+exports.Audit = exports.User = exports.Session = exports.crud = exports.checkSession = exports.emailNewAccount = exports.checkEmail = exports.createSession = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = void 0;
 const sequelize_1 = require("sequelize");
 const sequelize_2 = require("sequelize");
 const Handlebars = require('handlebars');
@@ -347,6 +347,14 @@ function sendEmail(emailOptions, mailAuth) {
         }
     });
 }
+function checkEmail(controller) {
+    controller.readAllViews(function (views) {
+        const template = Handlebars.compile(views.invite);
+        const html = template({});
+        controller.res.end(html);
+    });
+}
+exports.checkEmail = checkEmail;
 async function emailNewAccount(config) {
     const password = Math.random().toString(36).substring(2, 15);
     const User = config.controller.db.User;

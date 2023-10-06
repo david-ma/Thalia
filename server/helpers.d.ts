@@ -27,6 +27,7 @@ type emailNewAccountConfig = {
     controller: Thalia.Controller;
     mailAuth: {};
 };
+export declare function checkEmail(controller: Thalia.Controller): void;
 export declare function emailNewAccount(config: emailNewAccountConfig): Promise<any>;
 export declare const checkSession: SecurityMiddleware;
 declare const _default: {

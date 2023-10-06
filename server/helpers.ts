@@ -501,6 +501,15 @@ type emailNewAccountConfig = {
   mailAuth: {}
 }
 
+export function checkEmail(controller: Thalia.Controller) {
+  controller.readAllViews(function (views) {
+    const template = Handlebars.compile(views.invite)
+    const html = template({})
+    controller.res.end(html)
+  })
+  // controller.res.end("hey")
+}
+
 export async function emailNewAccount(config: emailNewAccountConfig) {
   // Check we can send emails.
 

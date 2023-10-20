@@ -507,7 +507,6 @@ export function checkEmail(controller: Thalia.Controller) {
     const html = template({})
     controller.res.end(html)
   })
-  // controller.res.end("hey")
 }
 
 export async function emailNewAccount(config: emailNewAccountConfig) {
@@ -532,7 +531,6 @@ export async function emailNewAccount(config: emailNewAccountConfig) {
   }).then(([user, created]) => {
     return createSession(user.id, config.controller, true).then(
       (session: Session) => {
-
         // TODO: Find an elegant way to pass this info in
         let message = `You're invited to be an admin of Sabbatical Gallery.<br><a href="https://sabbatical.gallery/profile?session=${session.sid}">Click here set up your account</a>.<br>Then visit <a href="https://sabbatical.gallery/m">https://sabbatical.gallery/m</a> to manage the gallery.`
 

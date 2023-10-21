@@ -4,7 +4,7 @@ import { Thalia } from './thalia'
 import { DataTypes } from 'sequelize'
 // import * from 'handlebars'
 // import fs from 'fs'
-const Handlebars = require('handlebars')
+// const Handlebars = require('handlebars')
 // import Handlebars from 'handlebars'
 // import Handlebars = require('handlebars')
 
@@ -195,15 +195,17 @@ function crud(options: {
 // SecurityMiddleware
 const noSecurity: SecurityMiddleware = async function (
   controller: Thalia.Controller,
-  success: ([views, user]: [Views, User]) => void,
+  success: ([views, user]: [Views, any]) => void,
   failure?: () => void
 ) {
-  success([null, null])
+  success([{}, null])
+  // success([null, null])
 }
 
-import sass = require('sass')
+// import sass = require('sass')
+const sass = require('sass')
 
-export async function setHandlebarsContent(content: string) {
+export async function setHandlebarsContent(content: string, Handlebars) {
   const scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g
   const styleEx = /<style\b.*>([^<]*(?:(?!<\/style>)<[^<]*)*)<\/style>/g
 
@@ -558,7 +560,7 @@ export const checkSession: SecurityMiddleware = async function (
 ) {
   const name = controller.name || 'thalia'
 
-  const cookies = controller.cookies
+  const cookies = controller.cookies || {}
   let login_token = cookies[`_${name}_login`] || null
   const query = controller.query
 

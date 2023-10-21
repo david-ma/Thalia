@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Audit = exports.User = exports.Session = exports.crud = exports.checkSession = exports.emailNewAccount = exports.checkEmail = exports.createSession = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = void 0;
 const sequelize_1 = require("sequelize");
 const sequelize_2 = require("sequelize");
-const Handlebars = require('handlebars');
 const fs = require('fs');
 const path = require('path');
 const requestHandlers_1 = require("./requestHandlers");
@@ -123,10 +122,10 @@ function crud(options) {
 }
 exports.crud = crud;
 const noSecurity = async function (controller, success, failure) {
-    success([null, null]);
+    success([{}, null]);
 };
-const sass = require("sass");
-async function setHandlebarsContent(content) {
+const sass = require('sass');
+async function setHandlebarsContent(content, Handlebars) {
     const scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g;
     const styleEx = /<style\b.*>([^<]*(?:(?!<\/style>)<[^<]*)*)<\/style>/g;
     const scripts = [...content.matchAll(scriptEx)].map((d) => d[0]);
@@ -385,7 +384,7 @@ async function emailNewAccount(config) {
 exports.emailNewAccount = emailNewAccount;
 const checkSession = async function (controller, success, naive) {
     const name = controller.name || 'thalia';
-    const cookies = controller.cookies;
+    const cookies = controller.cookies || {};
     let login_token = cookies[`_${name}_login`] || null;
     const query = controller.query;
     if (query && query.session) {

@@ -178,8 +178,8 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
         .createProxyServer({
           ws: true,
           target: {
-            host: proxyConfig.host || '127.0.0.1',
-            port: proxyConfig.port || 80,
+            host: proxyConfig && proxyConfig.host ? proxyConfig.host : '127.0.0.1',
+            port: proxyConfig && proxyConfig.port ? proxyConfig.port : 80,
           },
         })
         

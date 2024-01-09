@@ -1001,8 +1001,8 @@ define("server", ["require", "exports", "socket", "http", "url", "http-proxy", "
                     .createProxyServer({
                     ws: true,
                     target: {
-                        host: proxyConfig.host || '127.0.0.1',
-                        port: proxyConfig.port || 80,
+                        host: proxyConfig && proxyConfig.host ? proxyConfig.host : '127.0.0.1',
+                        port: proxyConfig && proxyConfig.port ? proxyConfig.port : 80,
                     },
                 });
                 proxyServer.on('error', function (err, req, res) {

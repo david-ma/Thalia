@@ -537,7 +537,6 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                 if (typeof website.pages[d.words[1]] !== 'undefined') {
                     pathname = website.pages[d.words[1]];
                 }
-                pathname = decodeURIComponent(pathname);
                 if (typeof website.redirects[pathname] !== 'undefined') {
                     redirect(website.redirects[pathname]);
                 }

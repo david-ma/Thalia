@@ -550,6 +550,10 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                                 return d.cookies[cookieName];
                             },
                             setCookie: function (cookie, expires) {
+                                if (expires && expires instanceof Date !== true) {
+                                    console.log("Expires is not a date");
+                                    expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
+                                }
                                 const [key, value] = Object.entries(cookie)[0];
                                 expires =
                                     expires || new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
@@ -565,6 +569,14 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                                 safeSetHeader(response, 'Set-Cookie', `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT`);
                             },
                             end: function (result) {
+                                if (response.writableEnded) {
+                                    console.log("Response already ended, cannot end again");
+                                    return;
+                                }
+                                if (response.headersSent) {
+                                    console.log("Headers already sent, cannot end");
+                                    return;
+                                }
                                 const acceptedEncoding = request.headers['accept-encoding'] || '';
                                 const input = Buffer.from(result, 'utf8');
                                 safeSetHeader(response, 'Content-Type', 'text/html');
@@ -831,7 +843,7 @@ ${links.join('\n')}
     };
     exports.router = router;
     function safeSetHeader(response, key, value) {
-        if (!response.headersSent) {
+        if (!response.headersSent && !response.writableEnded) {
             response.setHeader(key, value);
         }
         else {

@@ -95,6 +95,14 @@ const router: Thalia.Router = function (
                 return d.cookies[cookieName]
               },
               setCookie: function (cookie: Thalia.Cookie, expires?: Date) {
+                // TODO: Check that cookie is an object
+
+                // Check that expires was passed and is a date
+                if(expires && expires instanceof Date !== true) {
+                  console.log("Expires is not a date")
+                  expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7)
+                }
+
                 const [key, value] = Object.entries(cookie)[0]
 
                 // One week from now
@@ -118,6 +126,14 @@ const router: Thalia.Router = function (
                 safeSetHeader(response, 'Set-Cookie', `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT`)
               },
               end: function (result: any) {
+                if(response.writableEnded) {
+                  console.log("Response already ended, cannot end again")
+                  return
+                }
+                if (response.headersSent) {
+                  console.log("Headers already sent, cannot end")
+                  return
+                }
                 const acceptedEncoding =
                   request.headers['accept-encoding'] || ''
                 const input = Buffer.from(result, 'utf8')
@@ -415,8 +431,8 @@ ${links.join('\n')}
   }
 }
 
-function safeSetHeader(response: ServerResponse, key: string, value: string) {
-  if (!response.headersSent) {
+function safeSetHeader(response: ServerResponse, key: string, value: string) {  
+  if (!response.headersSent && !response.writableEnded) {
     response.setHeader(key, value)
   } else {
     console.error('Headers already sent, cannot set header', {

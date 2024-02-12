@@ -98,8 +98,8 @@ const router: Thalia.Router = function (
                 // TODO: Check that cookie is an object
 
                 // Check that expires was passed and is a date
-                if(expires && expires instanceof Date !== true) {
-                  console.log("Expires is not a date")
+                if (expires && expires instanceof Date !== true) {
+                  console.log('Expires is not a date')
                   expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7)
                 }
 
@@ -123,15 +123,19 @@ const router: Thalia.Router = function (
                 safeSetHeader(response, 'Set-Cookie', cookieString)
               },
               deleteCookie: function (cookieName: string) {
-                safeSetHeader(response, 'Set-Cookie', `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT`)
+                safeSetHeader(
+                  response,
+                  'Set-Cookie',
+                  `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT`
+                )
               },
               end: function (result: any) {
-                if(response.writableEnded) {
-                  console.log("Response already ended, cannot end again")
+                if (response.writableEnded) {
+                  console.log('Response already ended, cannot end again')
                   return
                 }
                 if (response.headersSent) {
-                  console.log("Headers already sent, cannot end")
+                  console.log('Headers already sent, cannot end')
                   return
                 }
                 const acceptedEncoding =
@@ -308,7 +312,11 @@ const router: Thalia.Router = function (
               try {
                 safeSetHeader(response, 'Cache-Control', 'public, max-age=600') // store for 10 mins
 
-                safeSetHeader(response, 'Expires', new Date(Date.now() + 600000 ).toUTCString()) // expire 10 mins from now
+                safeSetHeader(
+                  response,
+                  'Expires',
+                  new Date(Date.now() + 600000).toUTCString()
+                ) // expire 10 mins from now
 
                 const queryObject = url.parse(request.url, true).query
                 if (queryObject.v) {
@@ -321,8 +329,16 @@ const router: Thalia.Router = function (
                   //   'Expires',
                   //   new Date(Date.now() + 31536000000).toUTCString()
                   // )
-                  safeSetHeader(response, 'Cache-Control', 'public, max-age=31536000') // store for 1 year
-                  safeSetHeader(response, 'Expires', new Date(Date.now() + 31536000000).toUTCString()) // expire 1 year from now
+                  safeSetHeader(
+                    response,
+                    'Cache-Control',
+                    'public, max-age=31536000'
+                  ) // store for 1 year
+                  safeSetHeader(
+                    response,
+                    'Expires',
+                    new Date(Date.now() + 31536000000).toUTCString()
+                  ) // expire 1 year from now
                 }
               } catch (e) {
                 console.error(e)
@@ -337,7 +353,11 @@ const router: Thalia.Router = function (
               filetype === 'application/javascript')
           ) {
             try {
-              safeSetHeader(response, 'Content-Type', `${filetype}; charset=UTF-8`)
+              safeSetHeader(
+                response,
+                'Content-Type',
+                `${filetype}; charset=UTF-8`
+              )
             } catch (e) {
               console.error(e)
             }
@@ -431,7 +451,7 @@ ${links.join('\n')}
   }
 }
 
-function safeSetHeader(response: ServerResponse, key: string, value: string) {  
+function safeSetHeader(response: ServerResponse, key: string, value: string) {
   if (!response.headersSent && !response.writableEnded) {
     response.setHeader(key, value)
   } else {

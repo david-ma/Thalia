@@ -551,7 +551,7 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                             },
                             setCookie: function (cookie, expires) {
                                 if (expires && expires instanceof Date !== true) {
-                                    console.log("Expires is not a date");
+                                    console.log('Expires is not a date');
                                     expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
                                 }
                                 const [key, value] = Object.entries(cookie)[0];
@@ -570,11 +570,11 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                             },
                             end: function (result) {
                                 if (response.writableEnded) {
-                                    console.log("Response already ended, cannot end again");
+                                    console.log('Response already ended, cannot end again');
                                     return;
                                 }
                                 if (response.headersSent) {
-                                    console.log("Headers already sent, cannot end");
+                                    console.log('Headers already sent, cannot end');
                                     return;
                                 }
                                 const acceptedEncoding = request.headers['accept-encoding'] || '';

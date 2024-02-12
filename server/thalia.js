@@ -504,7 +504,7 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.router = void 0;
     const router = function (website, pathname, response, request) {
-        response.setHeader('Access-Control-Allow-Origin', '*');
+        safeSetHeader(response, 'Access-Control-Allow-Headers', '*');
         const route = new Promise(function (resolve, reject) {
             try {
                 const data = {
@@ -559,15 +559,15 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                                     `Expires=${expires.toUTCString()}`,
                                 ].join('; ');
                                 console.log('Setting Cookie', cookieString);
-                                response.setHeader('Set-Cookie', cookieString);
+                                safeSetHeader(response, 'Set-Cookie', cookieString);
                             },
                             deleteCookie: function (cookieName) {
-                                response.setHeader('Set-Cookie', cookieName + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT');
+                                safeSetHeader(response, 'Set-Cookie', `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT`);
                             },
                             end: function (result) {
                                 const acceptedEncoding = request.headers['accept-encoding'] || '';
                                 const input = Buffer.from(result, 'utf8');
-                                response.setHeader('Content-Type', 'text/html');
+                                safeSetHeader(response, 'Content-Type', 'text/html');
                                 if (acceptedEncoding.indexOf('gzip') >= 0) {
                                     try {
                                         zlib.gzip(input, function (err, result) {
@@ -634,7 +634,7 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                 }
                 else if (website.data &&
                     fs.existsSync(website.data.concat(pathname).concat('.gz'))) {
-                    response.setHeader('Content-Encoding', 'gzip');
+                    safeSetHeader(response, 'Content-Encoding', 'gzip');
                     routeFile(website.data.concat(pathname, '.gz'));
                 }
                 else if ((website.dist &&
@@ -691,7 +691,7 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                 const acceptedEncoding = request.headers['accept-encoding'] || '';
                 const filetype = mime.getType(filename);
                 try {
-                    response.setHeader('Content-Type', filetype);
+                    safeSetHeader(response, 'Content-Type', filetype);
                 }
                 catch (e) {
                     console.error(e);
@@ -709,7 +709,7 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                     }
                     else {
                         try {
-                            response.setHeader('Cache-Control', 'no-cache');
+                            safeSetHeader(response, 'Cache-Control', 'no-cache');
                         }
                         catch (e) {
                             console.error(e);
@@ -717,12 +717,12 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                         if (website.cache) {
                             if (stats.size > 10240) {
                                 try {
-                                    response.setHeader('Cache-Control', 'public, max-age=600');
-                                    response.setHeader('Expires', new Date(Date.now() + 86400000).toUTCString());
+                                    safeSetHeader(response, 'Cache-Control', 'public, max-age=600');
+                                    safeSetHeader(response, 'Expires', new Date(Date.now() + 600000).toUTCString());
                                     const queryObject = url.parse(request.url, true).query;
                                     if (queryObject.v) {
-                                        response.setHeader('Cache-Control', 'public, max-age=31536000');
-                                        response.setHeader('Expires', new Date(Date.now() + 31536000000).toUTCString());
+                                        safeSetHeader(response, 'Cache-Control', 'public, max-age=31536000');
+                                        safeSetHeader(response, 'Expires', new Date(Date.now() + 31536000000).toUTCString());
                                     }
                                 }
                                 catch (e) {
@@ -735,7 +735,7 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                                 filetype === 'application/json' ||
                                 filetype === 'application/javascript')) {
                             try {
-                                response.setHeader('Content-Type', `${filetype}; charset=UTF-8`);
+                                safeSetHeader(response, 'Content-Type', `${filetype}; charset=UTF-8`);
                             }
                             catch (e) {
                                 console.error(e);
@@ -830,6 +830,17 @@ ${links.join('\n')}
         }
     };
     exports.router = router;
+    function safeSetHeader(response, key, value) {
+        if (!response.headersSent) {
+            response.setHeader(key, value);
+        }
+        else {
+            console.error('Headers already sent, cannot set header', {
+                key,
+                value,
+            });
+        }
+    }
 });
 define("socket", ["require", "exports"], function (require, exports) {
     "use strict";

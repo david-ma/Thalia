@@ -13,7 +13,7 @@ const router: Thalia.Router = function (
   response: ServerResponse,
   request: IncomingMessage
 ) {
-  response.setHeader('Access-Control-Allow-Origin', '*')
+  safeSetHeader(response, 'Access-Control-Allow-Headers', '*')
 
   const route = new Promise(function (resolve, reject) {
     try {
@@ -112,19 +112,16 @@ const router: Thalia.Router = function (
                 ].join('; ')
 
                 console.log('Setting Cookie', cookieString)
-                response.setHeader('Set-Cookie', cookieString)
+                safeSetHeader(response, 'Set-Cookie', cookieString)
               },
               deleteCookie: function (cookieName: string) {
-                response.setHeader(
-                  'Set-Cookie',
-                  cookieName + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-                )
+                safeSetHeader(response, 'Set-Cookie', `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT`)
               },
               end: function (result: any) {
                 const acceptedEncoding =
                   request.headers['accept-encoding'] || ''
                 const input = Buffer.from(result, 'utf8')
-                response.setHeader('Content-Type', 'text/html')
+                safeSetHeader(response, 'Content-Type', 'text/html')
                 if (acceptedEncoding.indexOf('gzip') >= 0) {
                   try {
                     zlib.gzip(input, function (err: any, result: any) {
@@ -191,7 +188,7 @@ const router: Thalia.Router = function (
           website.data &&
           fs.existsSync(website.data.concat(pathname).concat('.gz'))
         ) {
-          response.setHeader('Content-Encoding', 'gzip')
+          safeSetHeader(response, 'Content-Encoding', 'gzip')
           routeFile(website.data.concat(pathname, '.gz'))
 
           // if there is a matching compiled file
@@ -265,7 +262,7 @@ const router: Thalia.Router = function (
       const acceptedEncoding = request.headers['accept-encoding'] || ''
       const filetype = mime.getType(filename)
       try {
-        response.setHeader('Content-Type', filetype)
+        safeSetHeader(response, 'Content-Type', filetype)
       } catch (e) {
         console.error(e)
       }
@@ -283,7 +280,7 @@ const router: Thalia.Router = function (
           return
         } else {
           try {
-            response.setHeader('Cache-Control', 'no-cache')
+            safeSetHeader(response, 'Cache-Control', 'no-cache')
           } catch (e) {
             console.error(e)
           }
@@ -293,23 +290,23 @@ const router: Thalia.Router = function (
               // https://web.dev/http-cache/
 
               try {
-                response.setHeader('Cache-Control', 'public, max-age=600') // store for 10 mins
-                response.setHeader(
-                  'Expires',
-                  new Date(Date.now() + 86400000).toUTCString()
-                ) // expire 1 day from now
+                safeSetHeader(response, 'Cache-Control', 'public, max-age=600') // store for 10 mins
+
+                safeSetHeader(response, 'Expires', new Date(Date.now() + 600000 ).toUTCString()) // expire 10 mins from now
 
                 const queryObject = url.parse(request.url, true).query
                 if (queryObject.v) {
                   // Set cache to 1 year if a cache busting query string is included
-                  response.setHeader(
-                    'Cache-Control',
-                    'public, max-age=31536000'
-                  )
-                  response.setHeader(
-                    'Expires',
-                    new Date(Date.now() + 31536000000).toUTCString()
-                  )
+                  // response.setHeader(
+                  //   'Cache-Control',
+                  //   'public, max-age=31536000'
+                  // )
+                  // response.setHeader(
+                  //   'Expires',
+                  //   new Date(Date.now() + 31536000000).toUTCString()
+                  // )
+                  safeSetHeader(response, 'Cache-Control', 'public, max-age=31536000') // store for 1 year
+                  safeSetHeader(response, 'Expires', new Date(Date.now() + 31536000000).toUTCString()) // expire 1 year from now
                 }
               } catch (e) {
                 console.error(e)
@@ -324,7 +321,7 @@ const router: Thalia.Router = function (
               filetype === 'application/javascript')
           ) {
             try {
-              response.setHeader('Content-Type', `${filetype}; charset=UTF-8`)
+              safeSetHeader(response, 'Content-Type', `${filetype}; charset=UTF-8`)
             } catch (e) {
               console.error(e)
             }
@@ -414,6 +411,17 @@ ${links.join('\n')}
           router(file)
         }
       })
+    })
+  }
+}
+
+function safeSetHeader(response: ServerResponse, key: string, value: string) {
+  if (!response.headersSent) {
+    response.setHeader(key, value)
+  } else {
+    console.error('Headers already sent, cannot set header', {
+      key,
+      value,
     })
   }
 }

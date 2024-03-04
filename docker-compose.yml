@@ -1,7 +1,7 @@
 services:
   web:
     build: .
-    image: frostickle/thalia:1.0.2
+    image: frostickle/thalia:4.0
     ports:
       - '1337:1337'
     environment:

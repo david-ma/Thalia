@@ -1,3 +1,4 @@
 exports.config = {
-  data: false
+  domains: ['www.yourwebsite.com'],
+  data: false,
 }

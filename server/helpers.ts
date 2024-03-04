@@ -43,6 +43,7 @@ function crud(options: {
     [options.tableName.toLowerCase()]: function (
       controller: Thalia.Controller
     ) {
+      const Handlebars = controller.handlebars
       const hideColumns = options.hideColumns || []
       const security = options.security || noSecurity
       security(controller, function ([views, usermodel]) {
@@ -82,7 +83,7 @@ function crud(options: {
                 Handlebars.registerPartial('scripts', loadedTemplate.scripts)
                 Handlebars.registerPartial('styles', loadedTemplate.styles)
                 Handlebars.registerPartial('content', views.list)
-                loadViewsAsPartials(views)
+                loadViewsAsPartials(views, Handlebars)
 
                 const attributes = table.getAttributes()
 
@@ -150,7 +151,7 @@ function crud(options: {
               Handlebars.registerPartial('scripts', loadedTemplate.scripts)
               Handlebars.registerPartial('styles', loadedTemplate.styles)
               Handlebars.registerPartial('content', views.read)
-              loadViewsAsPartials(views)
+              loadViewsAsPartials(views, Handlebars)
 
               table
                 .findOne({
@@ -233,7 +234,7 @@ export async function setHandlebarsContent(content: string, Handlebars) {
   )
 }
 
-export function loadViewsAsPartials(views: Views) {
+export function loadViewsAsPartials(views: Views, Handlebars) {
   Object.entries(views).forEach(([key, value]) => {
     // console.log(`Loading partial ${key}`)
     Handlebars.registerPartial(key, value)
@@ -431,6 +432,7 @@ import { User, Session, Audit } from '../websites/example/models/security'
 import { Album, Image } from '../websites/example/models/smugmug'
 export { Album, Image }
 import { securityFactory, smugmugFactory } from '../websites/example/models'
+import Handlebars from 'handlebars'
 export { securityFactory, smugmugFactory, seqObject }
 
 export async function createSession(
@@ -505,7 +507,7 @@ type emailNewAccountConfig = {
 
 export function checkEmail(controller: Thalia.Controller) {
   controller.readAllViews(function (views) {
-    const template = Handlebars.compile(views.invite)
+    const template = controller.handlebars.compile(views.invite)
     const html = template({})
     controller.res.end(html)
   })

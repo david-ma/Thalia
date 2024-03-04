@@ -10,6 +10,7 @@ function crud(options) {
     const references = options.references || [];
     return {
         [options.tableName.toLowerCase()]: function (controller) {
+            const Handlebars = controller.handlebars;
             const hideColumns = options.hideColumns || [];
             const security = options.security || noSecurity;
             security(controller, function ([views, usermodel]) {
@@ -37,7 +38,7 @@ function crud(options) {
                             Handlebars.registerPartial('scripts', loadedTemplate.scripts);
                             Handlebars.registerPartial('styles', loadedTemplate.styles);
                             Handlebars.registerPartial('content', views.list);
-                            loadViewsAsPartials(views);
+                            loadViewsAsPartials(views, Handlebars);
                             const attributes = table.getAttributes();
                             const primaryKey = Object.keys(attributes).filter((key) => {
                                 return attributes[key].primaryKey;
@@ -87,7 +88,7 @@ function crud(options) {
                             Handlebars.registerPartial('scripts', loadedTemplate.scripts);
                             Handlebars.registerPartial('styles', loadedTemplate.styles);
                             Handlebars.registerPartial('content', views.read);
-                            loadViewsAsPartials(views);
+                            loadViewsAsPartials(views, Handlebars);
                             table
                                 .findOne({
                                 where: {
@@ -144,7 +145,7 @@ async function setHandlebarsContent(content, Handlebars) {
     });
 }
 exports.setHandlebarsContent = setHandlebarsContent;
-function loadViewsAsPartials(views) {
+function loadViewsAsPartials(views, Handlebars) {
     Object.entries(views).forEach(([key, value]) => {
         Handlebars.registerPartial(key, value);
     });
@@ -348,7 +349,7 @@ function sendEmail(emailOptions, mailAuth) {
 }
 function checkEmail(controller) {
     controller.readAllViews(function (views) {
-        const template = Handlebars.compile(views.invite);
+        const template = controller.handlebars.compile(views.invite);
         const html = template({});
         controller.res.end(html);
     });

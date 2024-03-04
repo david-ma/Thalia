@@ -90,6 +90,7 @@ const router: Thalia.Router = function (
           // Note, this includes any top level mustache files, since they're loaded as generic, dataless controllers
         } else if (typeof website.controllers[d.words[1]] === 'function') {
           website.controllers[d.words[1]]({
+            handlebars: require('handlebars'),
             res: {
               getCookie: function (cookieName: string) {
                 return d.cookies[cookieName]

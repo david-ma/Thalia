@@ -10,7 +10,7 @@ declare function crud(options: {
     [x: string]: (controller: Thalia.Controller) => void;
 };
 export declare function setHandlebarsContent(content: string, Handlebars: any): Promise<any>;
-export declare function loadViewsAsPartials(views: Views): void;
+export declare function loadViewsAsPartials(views: Views, Handlebars: any): void;
 import { Model, Sequelize } from 'sequelize';
 interface seqObject {
     [key: string]: typeof Model | Sequelize;

@@ -4,7 +4,8 @@ import { ViewCallback } from './requestHandlers'
 import SocketIO = require('socket.io')
 // https://www.typescriptlang.org/docs/handbook/declaration-files/templates/module-class-d-ts.html
 
-export declare namespace Thalia {
+// export declare namespace Thalia {
+declare module Thalia {
   export interface Emitter {
     (socket: SocketIO.Socket, database: any): any
   }
@@ -76,6 +77,7 @@ export declare namespace Thalia {
     views?: {
       [key: string]: string
     }
+    handlebars: typeof Handlebars
     workspacePath?: any
     readAllViews: (callback: ViewCallback) => void
     name: string

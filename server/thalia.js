@@ -545,6 +545,7 @@ define("router", ["require", "exports", "fs", "mime", "zlib", "url"], function (
                 }
                 else if (typeof website.controllers[d.words[1]] === 'function') {
                     website.controllers[d.words[1]]({
+                        handlebars: require('handlebars'),
                         res: {
                             getCookie: function (cookieName) {
                                 return d.cookies[cookieName];

@@ -1,6 +1,7 @@
 // Calling this file helpers.ts because util is reserved
 import { ModelStatic, Op } from 'sequelize'
 import { Thalia } from './thalia'
+export { Thalia }
 import { DataTypes } from 'sequelize'
 // import * from 'handlebars'
 // import fs from 'fs'
@@ -576,8 +577,31 @@ export const checkSession: SecurityMiddleware = async function (
     if (naive) {
       return naive()
     } else {
-      controller.res.end('<meta http-equiv="refresh" content="0; url=/">')
-      return
+
+      return controller.readAllViews(function (views) {
+        loadViewsAsPartials(views, controller.handlebars)
+        setHandlebarsContent(views.login, controller.handlebars).then(() => {
+          const template = controller.handlebars.compile(views.login)
+          const html = template({})
+          controller.res.end(html)
+        })
+      })
+
+
+      // return fs.readFile(
+      //   path.join(__dirname, '..', 'websites', 'example', 'views', 'content', 'login.hbs'),
+      //   'utf8',
+      //   function (err, data) {
+      //     if (err) {
+      //       console.log('Error reading file')
+      //       return
+      //     }
+
+
+
+          
+      //   }
+      // )
     }
   }
 

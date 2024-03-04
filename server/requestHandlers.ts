@@ -392,12 +392,18 @@ const handle: Thalia.Handle = {
       // Stupid hack for development if you don't want to cache the views :(
       handle.websites[site].readAllViews = function (callback: ViewCallback) {
         const promises: Promise<Views>[] = [
+          readAllViewsInFolder(
+            path.resolve(__dirname, '..', 'websites', 'example', 'views')
+          ),
           readAllViewsInFolder(path.resolve(__dirname, '..', 'src', 'views')),
           readAllViewsInFolder(path.resolve(baseUrl, 'views')),
         ]
         Promise.all(promises)
-          .then(([scaffoldViews, websiteViews]: any) => {
-            return _.merge(scaffoldViews, websiteViews)
+          .then(([exampleViews, thaliaViews, websiteViews]: any) => {
+
+            // Use the website's views if they exist, otherwise use the default views
+            // TODO: Allow themes to be applied in the middle?
+            return _.merge(thaliaViews, exampleViews, websiteViews)
           })
           .then(callback)
       }

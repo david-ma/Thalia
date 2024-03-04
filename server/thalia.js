@@ -252,12 +252,13 @@ define("requestHandlers", ["require", "exports", "fs", "path", "sass", "handleba
                 handle.websites[site].views = true;
                 handle.websites[site].readAllViews = function (callback) {
                     const promises = [
+                        readAllViewsInFolder(path.resolve(__dirname, '..', 'websites', 'example', 'views')),
                         readAllViewsInFolder(path.resolve(__dirname, '..', 'src', 'views')),
                         readAllViewsInFolder(path.resolve(baseUrl, 'views')),
                     ];
                     Promise.all(promises)
-                        .then(([scaffoldViews, websiteViews]) => {
-                        return _.merge(scaffoldViews, websiteViews);
+                        .then(([exampleViews, thaliaViews, websiteViews]) => {
+                        return _.merge(thaliaViews, exampleViews, websiteViews);
                     })
                         .then(callback);
                 };

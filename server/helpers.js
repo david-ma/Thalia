@@ -1,7 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Audit = exports.User = exports.Session = exports.crud = exports.checkSession = exports.emailNewAccount = exports.checkEmail = exports.createSession = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = void 0;
+exports.Audit = exports.User = exports.Session = exports.crud = exports.checkSession = exports.emailNewAccount = exports.checkEmail = exports.createSession = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = exports.Thalia = void 0;
 const sequelize_1 = require("sequelize");
+const thalia_1 = require("./thalia");
+Object.defineProperty(exports, "Thalia", { enumerable: true, get: function () { return thalia_1.Thalia; } });
 const sequelize_2 = require("sequelize");
 const fs = require('fs');
 const path = require('path');
@@ -397,8 +399,14 @@ const checkSession = async function (controller, success, naive) {
             return naive();
         }
         else {
-            controller.res.end('<meta http-equiv="refresh" content="0; url=/">');
-            return;
+            return controller.readAllViews(function (views) {
+                loadViewsAsPartials(views, controller.handlebars);
+                setHandlebarsContent(views.login, controller.handlebars).then(() => {
+                    const template = controller.handlebars.compile(views.login);
+                    const html = template({});
+                    controller.res.end(html);
+                });
+            });
         }
     }
     return Promise.all([

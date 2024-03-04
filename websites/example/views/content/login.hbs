@@ -1,0 +1,23 @@
+<article id="featured" class="orange">
+  <form action="/m/login" method="post">
+  {{!-- <input type="text" id="email" name="email" placeholder="Email" required>
+  <input type="password" id="password" name="password" placeholder="Password" required> --}}
+
+    {{> input field="Email" helpText="Your email"}}
+    {{> input field="Password" type="password" helpText="Your password"}}
+
+    {{!-- {{> testPartial }} --}}
+
+    <input id="loginButton" type="submit" value="Login" />
+  </form>
+  <ul>
+    <li><a
+        href="mailto:sabby@david-ma.net?subject=New Sabby Account&body=Hey David, it's [YOUR NAME HERE], I would like an admin account for https://sabbatical.gallery/ Thanks!">Create
+        New Account</a></li>
+    <li><a
+        href="mailto:sabby@david-ma.net?subject=Forgot Sabby Password&body=Hey David, it's [YOUR NAME HERE], I forgot my password for https://sabbatical.gallery/ Sorry!">Forgot
+        password</a></li>
+  </ul>
+</article>
+
+hello world awefawef

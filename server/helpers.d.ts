@@ -1,4 +1,6 @@
 import { Thalia } from './thalia';
+export { Thalia };
+
 import { Views } from './requestHandlers';
 export type SecurityMiddleware = (controller: Thalia.Controller, success: ([views, user]: [Views, User]) => void, failure?: () => void) => Promise<void>;
 declare function crud(options: {

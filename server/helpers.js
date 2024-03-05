@@ -1,4 +1,7 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Audit = exports.User = exports.Session = exports.crud = exports.users = exports.checkSession = exports.emailNewAccount = exports.checkEmail = exports.createSession = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = exports.Thalia = void 0;
 const sequelize_1 = require("sequelize");
@@ -8,6 +11,7 @@ const sequelize_2 = require("sequelize");
 const fs = require('fs');
 const path = require('path');
 const requestHandlers_1 = require("./requestHandlers");
+const formidable_1 = __importDefault(require("formidable"));
 function crud(options) {
     const references = options.references || [];
     return {
@@ -438,6 +442,41 @@ function users(options) {
                         const html = template(data);
                         controller.res.end(html);
                     });
+                });
+            });
+        },
+        logon: function (controller) {
+            const form = (0, formidable_1.default)();
+            form.parse(controller.req, (err, fields, files) => {
+                if (err) {
+                    console.error('Error', err);
+                    return;
+                }
+                console.log('Fields', fields);
+                console.log('Files', files);
+                if (!fields || !fields.Email || !fields.Password) {
+                    controller.res.end('<meta http- equiv="refresh" content="0; url=/login">');
+                    return;
+                }
+                const Email = fields.Email;
+                const Password = fields.Password;
+                controller.db.User.findOne({
+                    where: {
+                        email: Email,
+                        password: Password,
+                    },
+                }).then((user) => {
+                    console.log('User', user);
+                    if (!user) {
+                        controller.res.end('Invalid login, user not found');
+                        return;
+                    }
+                    else {
+                        createSession(user.id, controller).then((session) => {
+                            controller.res.end('<meta http-equiv="refresh" content="0; url=/profile">');
+                            return;
+                        });
+                    }
                 });
             });
         },

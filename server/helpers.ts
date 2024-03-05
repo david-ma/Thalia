@@ -12,6 +12,7 @@ import { DataTypes } from 'sequelize'
 const fs = require('fs')
 const path = require('path')
 import { Views, loadMustacheTemplate } from './requestHandlers'
+import formidable from 'formidable'
 
 //const thaliaPath = path.resolve(global.require.resolve('thalia'), '..', '..')
 
@@ -651,6 +652,53 @@ export function users(options: {}) {
           })
         }
       )
+    },
+    logon: function (controller: Thalia.Controller) {
+      // Receive login form as a POST
+      // Check credentials
+      // Create session
+      // Redirect to profile
+      const form = formidable()
+
+      form.parse(controller.req, (err, fields, files) => {
+        if (err) {
+          console.error('Error', err)
+          return
+        }
+        console.log('Fields', fields)
+        console.log('Files', files)
+
+        if (!fields || !fields.Email || !fields.Password) {
+          controller.res.end(
+            '<meta http- equiv="refresh" content="0; url=/login">'
+          )
+          return
+        }
+
+        const Email = fields.Email
+        const Password = fields.Password
+
+        controller.db.User.findOne({
+          where: {
+            email: Email,
+            password: Password,
+          },
+        }).then((user: any) => {
+          console.log('User', user)
+
+          if (!user) {
+            controller.res.end('Invalid login, user not found')
+            return
+          } else {
+            createSession(user.id, controller).then((session: any) => {
+              controller.res.end(
+                '<meta http-equiv="refresh" content="0; url=/profile">'
+              )
+              return
+            })
+          }
+        })
+      })
     },
     profile: function (controller: Thalia.Controller) {},
     logout: function (controller: Thalia.Controller) {},

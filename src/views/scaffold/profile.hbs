@@ -1,0 +1,52 @@
+<div class="profile">
+  <h2>Profile</h2>
+  <form action="/profile" method="post">
+    <table>
+      {{#each user}}
+      <tr>
+        <td>{{@key}}</td>
+        <td>{{this}}</td>
+        <td>
+          {{!-- Edit button --}}
+          <input name="{{@key}}" style="display: none;" type="text" value="{{this}}" />
+          <button onclick="reveal('{{@key}}')">Edit</button>
+        </td>
+      </tr>
+      {{/each}}
+    </table>
+
+    <input id='saveButton' style="display: none;" type="submit" value="Save" />
+  </form>
+
+</div>
+
+<script>
+  function reveal(key) {
+    //disable default
+    event.preventDefault();
+
+    //show input button
+    document.getElementById('saveButton').style.display = 'block';
+
+    const input = document.querySelector(`input[type="text"][name="${key}"]`);
+    input.style.display = 'block';
+
+    //hide the button
+    const button = input.nextElementSibling;
+    button.style.display = 'none';
+  }
+</script>
+
+{{#if admin}}
+<br>
+<div class="profile">
+  <h2>Admin</h2>
+  {{!-- Invite a user by email --}}
+  <form action="/invite" method="post">
+    {{> input field="Name" helpText="Name of the person you want to invite"}}
+    {{> input field="Email" helpText="Email of the person you want to invite"}}
+    <input type="submit" value="Invite" />
+  </form>
+</div>
+
+{{/if}}

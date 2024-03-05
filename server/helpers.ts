@@ -449,6 +449,7 @@ import { User, Session, Audit } from '../websites/example/models/security'
 import { Album, Image } from '../websites/example/models/smugmug'
 export { Album, Image }
 import { securityFactory, smugmugFactory } from '../websites/example/models'
+import { register } from 'module'
 export { securityFactory, smugmugFactory, seqObject }
 
 export async function createSession(
@@ -600,7 +601,10 @@ export const checkSession: SecurityMiddleware = async function (
   }
 
   return Promise.all([
-    new Promise(controller.readAllViews),
+    new Promise(controller.readAllViews).then((views: Views) => {
+      loadViewsAsPartials(views, controller.handlebars)
+      return views
+    }),
     controller.db.Session.findOne({
       where: {
         sid: login_token,
@@ -626,9 +630,6 @@ export const checkSession: SecurityMiddleware = async function (
 export function users(options: {}) {
   return {
     login: function (controller: Thalia.Controller) {
-      const cookies = controller.cookies
-      const upload_login = cookies._upload_login || null
-
       checkSession(
         controller,
         function ([Views, User]) {
@@ -702,7 +703,26 @@ export function users(options: {}) {
     },
     profile: function (controller: Thalia.Controller) {
       checkSession(controller, function ([views, user]) {
-        controller.res.end(JSON.stringify(user))
+        const template = controller.handlebars.compile(views.wrapper)
+        setHandlebarsContent(views.profile, controller.handlebars).then(() => {
+          const filter = ['id', 'role', 'createdAt', 'updatedAt']
+
+          const html = template({
+            // filter datavalues
+            // user: user.dataValues
+            user: Object.entries(user.dataValues).reduce(
+              (obj, [key, value]) => {
+                if (!filter.includes(key)) {
+                  obj[key] = value
+                }
+                return obj
+              },
+              {}
+            ),
+            admin: user.role === 'admin',
+          })
+          controller.res.end(html)
+        })
       })
       return
     },

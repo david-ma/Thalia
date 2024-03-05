@@ -405,7 +405,10 @@ const checkSession = async function (controller, success, naive) {
         }
     }
     return Promise.all([
-        new Promise(controller.readAllViews),
+        new Promise(controller.readAllViews).then((views) => {
+            loadViewsAsPartials(views, controller.handlebars);
+            return views;
+        }),
         controller.db.Session.findOne({
             where: {
                 sid: login_token,
@@ -426,8 +429,6 @@ exports.checkSession = checkSession;
 function users(options) {
     return {
         login: function (controller) {
-            const cookies = controller.cookies;
-            const upload_login = cookies._upload_login || null;
             (0, exports.checkSession)(controller, function ([Views, User]) {
                 controller.res.end('<meta http-equiv="refresh" content="0; url=/profile">');
             }, function () {
@@ -479,7 +480,20 @@ function users(options) {
         },
         profile: function (controller) {
             (0, exports.checkSession)(controller, function ([views, user]) {
-                controller.res.end(JSON.stringify(user));
+                const template = controller.handlebars.compile(views.wrapper);
+                setHandlebarsContent(views.profile, controller.handlebars).then(() => {
+                    const filter = ['id', 'role', 'createdAt', 'updatedAt'];
+                    const html = template({
+                        user: Object.entries(user.dataValues).reduce((obj, [key, value]) => {
+                            if (!filter.includes(key)) {
+                                obj[key] = value;
+                            }
+                            return obj;
+                        }, {}),
+                        admin: user.role === 'admin',
+                    });
+                    controller.res.end(html);
+                });
             });
             return;
         },

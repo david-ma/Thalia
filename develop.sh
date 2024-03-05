@@ -34,7 +34,7 @@ if test -f "websites/$SITE/config/healthcheck.sh"; then
 fi
 
 
-./node_modules/.bin/gulp watch -t -s $SITE &
+./node_modules/.bin/gulp develop -t -s $SITE &
 cd server
     tsc --preserveWatchOutput --watch &
     tsc -p helpers.tsconfig.json --preserveWatchOutput --watch &

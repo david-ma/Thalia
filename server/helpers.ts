@@ -207,6 +207,27 @@ const noSecurity: SecurityMiddleware = async function (
 // import sass = require('sass')
 const sass = require('sass')
 
+// Should we have a single funciton to:
+// Compile wrapper, load content and partials? All in one?
+// function servePage(controller: Thalia.Controller, page: string, data?: object) {
+//   controller.readAllViews(function (views) {
+//     const template = controller.handlebars.compile(views[page])
+//     const html = template(data || {})
+//     controller.res.end(html)
+//   })
+
+//   const Handlebars = controller.handlebars
+//   const template = Handlebars.compile(views.wrapper)
+//   Handlebars.registerPartial('content', views.content)
+//   const html = template({})
+//   controller.res.end(html)
+// }
+
+// TODO: Handlebars validator.
+// So we don't get errors and crash when we try to render a template with missing partials.
+// Check Handlebars utility functions
+// https://handlebarsjs.com/api-reference/utilities.html
+
 export async function setHandlebarsContent(content: string, Handlebars) {
   const scriptEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/g
   const styleEx = /<style\b.*>([^<]*(?:(?!<\/style>)<[^<]*)*)<\/style>/g
@@ -577,7 +598,6 @@ export const checkSession: SecurityMiddleware = async function (
     if (naive) {
       return naive()
     } else {
-
       return controller.readAllViews(function (views) {
         loadViewsAsPartials(views, controller.handlebars)
         setHandlebarsContent(views.login, controller.handlebars).then(() => {
@@ -586,7 +606,6 @@ export const checkSession: SecurityMiddleware = async function (
           controller.res.end(html)
         })
       })
-
 
       // return fs.readFile(
       //   path.join(__dirname, '..', 'websites', 'example', 'views', 'content', 'login.hbs'),
@@ -597,9 +616,6 @@ export const checkSession: SecurityMiddleware = async function (
       //       return
       //     }
 
-
-
-          
       //   }
       // )
     }
@@ -624,6 +640,41 @@ export const checkSession: SecurityMiddleware = async function (
     console.log('ERROR!', err)
     controller.res.end(err)
   })
+}
+
+export function users(options: {}) {
+  return {
+    login: function (controller: Thalia.Controller) {
+      const router = controller
+      console.log('Login page!')
+      console.log(Object.keys(router))
+      console.log(router.workspacePath)
+      console.log('Name', router.name)
+      const cookies = router.cookies
+      const upload_login = cookies._upload_login || null
+
+      console.log('Cookies', cookies)
+      console.log('sabby_login', upload_login)
+
+      checkSession(router, function success([Views, User]) {
+        const promises = [new Promise(router.readAllViews)]
+        Promise.all(promises).then(([views]: [Views]) => {
+          const data = {}
+          const template = controller.handlebars.compile(views['wrapper'])
+          loadViewsAsPartials(views, controller.handlebars)
+          setHandlebarsContent(views['login'], controller.handlebars).then(
+            () => {
+              const html = template(data)
+              router.res.end(html)
+            }
+          )
+        })
+      })
+    },
+    profile: function (controller: Thalia.Controller) {},
+    logout: function (controller: Thalia.Controller) {},
+    invite: function (controller: Thalia.Controller) {},
+  }
 }
 
 export default { crud }

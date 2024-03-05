@@ -31,6 +31,12 @@ type emailNewAccountConfig = {
 export declare function checkEmail(controller: Thalia.Controller): void;
 export declare function emailNewAccount(config: emailNewAccountConfig): Promise<any>;
 export declare const checkSession: SecurityMiddleware;
+export declare function users(options: {}): {
+    login: (controller: Thalia.Controller) => void;
+    profile: (controller: Thalia.Controller) => void;
+    logout: (controller: Thalia.Controller) => void;
+    invite: (controller: Thalia.Controller) => void;
+};
 declare const _default: {
     crud: typeof crud;
 };

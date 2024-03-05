@@ -4,7 +4,11 @@ import fs = require('fs')
 const fsPromise = fs.promises
 import path = require('path')
 import sass = require('sass')
+
+// Each website should have their own Handlebars instace? Frame?
+// https://handlebarsjs.com/api-reference/utilities.html#handlebars-createframe-data
 import Handlebars = require('handlebars')
+
 const _ = require('lodash')
 
 class Website implements Thalia.WebsiteConfig {

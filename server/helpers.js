@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Audit = exports.User = exports.Session = exports.crud = exports.checkSession = exports.emailNewAccount = exports.checkEmail = exports.createSession = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = exports.Thalia = void 0;
+exports.Audit = exports.User = exports.Session = exports.crud = exports.users = exports.checkSession = exports.emailNewAccount = exports.checkEmail = exports.createSession = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = exports.Thalia = void 0;
 const sequelize_1 = require("sequelize");
 const thalia_1 = require("./thalia");
 Object.defineProperty(exports, "Thalia", { enumerable: true, get: function () { return thalia_1.Thalia; } });
@@ -428,4 +428,35 @@ const checkSession = async function (controller, success, naive) {
     });
 };
 exports.checkSession = checkSession;
+function users(options) {
+    return {
+        login: function (controller) {
+            const router = controller;
+            console.log('Login page!');
+            console.log(Object.keys(router));
+            console.log(router.workspacePath);
+            console.log('Name', router.name);
+            const cookies = router.cookies;
+            const upload_login = cookies._upload_login || null;
+            console.log('Cookies', cookies);
+            console.log('sabby_login', upload_login);
+            (0, exports.checkSession)(router, function success([Views, User]) {
+                const promises = [new Promise(router.readAllViews)];
+                Promise.all(promises).then(([views]) => {
+                    const data = {};
+                    const template = controller.handlebars.compile(views['wrapper']);
+                    loadViewsAsPartials(views, controller.handlebars);
+                    setHandlebarsContent(views['login'], controller.handlebars).then(() => {
+                        const html = template(data);
+                        router.res.end(html);
+                    });
+                });
+            });
+        },
+        profile: function (controller) { },
+        logout: function (controller) { },
+        invite: function (controller) { },
+    };
+}
+exports.users = users;
 exports.default = { crud };

@@ -82,11 +82,12 @@ function setSite(website){
     workspace = "websites/"+site;
     console.log(`Setting workspace to: ${workspace}`);
 
-    if(fs.existsSync(`${__dirname}/websites/${site}/config.js`)) {
-        siteConfig = require(`${__dirname}/websites/${site}/config`).config;
-    } else {
-        siteConfig = require(`${__dirname}/websites/${site}/config/config`).config;
-    }
+    // This might be to be too slow. Don't use it.
+    // if(fs.existsSync(`${__dirname}/websites/${site}/config.js`)) {
+    //     siteConfig = require(`${__dirname}/websites/${site}/config`).config;
+    // } else {
+    //     siteConfig = require(`${__dirname}/websites/${site}/config/config`).config;
+    // }
 
     /**
      * Paths to project folders
@@ -114,6 +115,8 @@ function setSite(website){
         reload: './'+workspace+'/dist/'
     };
 
+    console.log("hey we're here, no problems")
+
     jsTasks = lazypipe()
         .pipe(dest, paths.scripts.output)
         .pipe(rename, {suffix: '.min'})
@@ -122,9 +125,11 @@ function setSite(website){
 }
 
 var getWorkEnv = function (done) {
+    console.log("Getting work env!!!!")
+    console.log("Site:", site)
     if (site) {
         setSite(site);
-        return done();
+        done();
     } else {
 
         if (argv.s === true || argv.site === true) {
@@ -141,8 +146,10 @@ var getWorkEnv = function (done) {
             site = promptForSite();
         }
 
+        console.log("Found the site:", site)
+
         setSite(site);
-        return done();
+        done();
     }
 }
 
@@ -181,7 +188,7 @@ var cleanDist = function (done) {
 	]);
 
 	// Signal completion
-	return done();
+	done();
 };
 
 
@@ -217,7 +224,8 @@ var buildStyles = function (done) {
     var scssLoadPaths = [
             'src/css/vendor/bootstrap',
             'src/css/vendor/bootstrap/mixins',
-            'src/css/vendor'
+            'src/css/vendor',
+            'src/css'
         ];
 
 	// Run tasks on all Sass files
@@ -310,6 +318,8 @@ var watchSource = function (done) {
 
     watch(paths.scripts.input, series(buildScripts, reloadBrowser));
     watch(paths.scripts.input, series(reloadBrowser));
+
+// TODO: Watch for changes in Boilerplate?
     watch(paths.styles.input, series(buildStyles, reloadBrowser));
     watch(paths.views, series(reloadBrowser));
     watch(paths.scaffold, series(reloadBrowser));
@@ -329,7 +339,7 @@ var watchSource = function (done) {
       watch(siteConfig.publish.dist.map(file => `websites/${site}/dist/${file}`), series(publish));
     }
 
-	done();
+	// done();
 };
 
 /**
@@ -397,10 +407,10 @@ exports.buildAll = function(done) {
 
 
 // Watch and reload
-// gulp watch
-exports.watch = series(
+exports.develop = series(
     getWorkEnv,
     startBrowserSync,
+    parallelBuildTasks,
     watchSource
 );
 

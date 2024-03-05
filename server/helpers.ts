@@ -598,26 +598,7 @@ export const checkSession: SecurityMiddleware = async function (
     if (naive) {
       return naive()
     } else {
-      return controller.readAllViews(function (views) {
-        loadViewsAsPartials(views, controller.handlebars)
-        setHandlebarsContent(views.login, controller.handlebars).then(() => {
-          const template = controller.handlebars.compile(views.login)
-          const html = template({})
-          controller.res.end(html)
-        })
-      })
-
-      // return fs.readFile(
-      //   path.join(__dirname, '..', 'websites', 'example', 'views', 'content', 'login.hbs'),
-      //   'utf8',
-      //   function (err, data) {
-      //     if (err) {
-      //       console.log('Error reading file')
-      //       return
-      //     }
-
-      //   }
-      // )
+      controller.res.end(`<script>window.location = '/login'</script>`)
     }
   }
 
@@ -645,31 +626,31 @@ export const checkSession: SecurityMiddleware = async function (
 export function users(options: {}) {
   return {
     login: function (controller: Thalia.Controller) {
-      const router = controller
-      console.log('Login page!')
-      console.log(Object.keys(router))
-      console.log(router.workspacePath)
-      console.log('Name', router.name)
-      const cookies = router.cookies
+      const cookies = controller.cookies
       const upload_login = cookies._upload_login || null
 
-      console.log('Cookies', cookies)
-      console.log('sabby_login', upload_login)
-
-      checkSession(router, function success([Views, User]) {
-        const promises = [new Promise(router.readAllViews)]
-        Promise.all(promises).then(([views]: [Views]) => {
-          const data = {}
-          const template = controller.handlebars.compile(views['wrapper'])
-          loadViewsAsPartials(views, controller.handlebars)
-          setHandlebarsContent(views['login'], controller.handlebars).then(
-            () => {
-              const html = template(data)
-              router.res.end(html)
-            }
-          )
-        })
-      })
+      checkSession(
+        controller,
+        function ([Views, User]) {
+          // Already logged in?
+          // Redirect to profile?
+          controller.res.end('Already logged in')
+        },
+        function () {
+          const promises = [new Promise(controller.readAllViews)]
+          Promise.all(promises).then(([views]: [Views]) => {
+            const data = {}
+            const template = controller.handlebars.compile(views['wrapper'])
+            loadViewsAsPartials(views, controller.handlebars)
+            setHandlebarsContent(views['login'], controller.handlebars).then(
+              () => {
+                const html = template(data)
+                controller.res.end(html)
+              }
+            )
+          })
+        }
+      )
     },
     profile: function (controller: Thalia.Controller) {},
     logout: function (controller: Thalia.Controller) {},

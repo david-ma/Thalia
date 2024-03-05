@@ -29,6 +29,7 @@ import { seqObject } from '../../../server/helpers'
 const seq: seqObject = securityFactory(seqOptions)
 
 seq.sequelize.sync({
+  force: true,
   alter: true,
 })
 

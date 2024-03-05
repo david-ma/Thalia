@@ -399,14 +399,7 @@ const checkSession = async function (controller, success, naive) {
             return naive();
         }
         else {
-            return controller.readAllViews(function (views) {
-                loadViewsAsPartials(views, controller.handlebars);
-                setHandlebarsContent(views.login, controller.handlebars).then(() => {
-                    const template = controller.handlebars.compile(views.login);
-                    const html = template({});
-                    controller.res.end(html);
-                });
-            });
+            controller.res.end(`<script>window.location = '/login'</script>`);
         }
     }
     return Promise.all([
@@ -431,24 +424,19 @@ exports.checkSession = checkSession;
 function users(options) {
     return {
         login: function (controller) {
-            const router = controller;
-            console.log('Login page!');
-            console.log(Object.keys(router));
-            console.log(router.workspacePath);
-            console.log('Name', router.name);
-            const cookies = router.cookies;
+            const cookies = controller.cookies;
             const upload_login = cookies._upload_login || null;
-            console.log('Cookies', cookies);
-            console.log('sabby_login', upload_login);
-            (0, exports.checkSession)(router, function success([Views, User]) {
-                const promises = [new Promise(router.readAllViews)];
+            (0, exports.checkSession)(controller, function ([Views, User]) {
+                controller.res.end('Already logged in');
+            }, function () {
+                const promises = [new Promise(controller.readAllViews)];
                 Promise.all(promises).then(([views]) => {
                     const data = {};
                     const template = controller.handlebars.compile(views['wrapper']);
                     loadViewsAsPartials(views, controller.handlebars);
                     setHandlebarsContent(views['login'], controller.handlebars).then(() => {
                         const html = template(data);
-                        router.res.end(html);
+                        controller.res.end(html);
                     });
                 });
             });

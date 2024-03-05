@@ -23,6 +23,7 @@ if (process.env.NODE_ENV === 'docker') {
 }
 const seq = (0, models_1.securityFactory)(seqOptions);
 seq.sequelize.sync({
+    force: true,
     alter: true,
 });
 exports.seq = seq;

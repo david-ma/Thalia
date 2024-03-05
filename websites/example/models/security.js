@@ -23,6 +23,7 @@ function UserFactory(sequelize) {
         email: sequelize_1.DataTypes.STRING,
         password: sequelize_1.DataTypes.STRING,
         photo: sequelize_1.DataTypes.STRING,
+        role: sequelize_1.DataTypes.STRING,
     }, {
         sequelize,
         tableName: 'users',

@@ -9,7 +9,6 @@ const path = require('path')
 import { Views, loadMustacheTemplate } from './requestHandlers'
 
 import formidable = require('formidable')
-const form = new formidable.Formidable()
 
 export type SecurityMiddleware = (
   controller: Thalia.Controller,
@@ -593,7 +592,9 @@ export const checkSession: SecurityMiddleware = async function (
     if (naive) {
       return naive()
     } else {
-      controller.res.end(`<script>window.location = '/login'</script>`)
+      controller.res.end(
+        `<script>window.location = '/login?redirect=${controller.req.url}'</script>`
+      )
       return
     }
   }
@@ -659,14 +660,13 @@ export function users(options: {}) {
       // Check credentials
       // Create session
       // Redirect to profile
-
+      const form = new formidable.Formidable()
       form.parse(controller.req, (err, fields, files) => {
         if (err) {
           console.error('Error', err)
           return
         }
-        console.log('Fields', fields)
-        console.log('Files', files)
+        fields = parseFields(fields)
 
         if (!fields || !fields.Email || !fields.Password) {
           controller.res.end(
@@ -677,6 +677,7 @@ export function users(options: {}) {
 
         const Email = fields.Email
         const Password = fields.Password
+        const Redirect = fields.Redirect || '/profile'
 
         controller.db.User.findOne({
           where: {
@@ -684,8 +685,6 @@ export function users(options: {}) {
             password: Password,
           },
         }).then((user: any) => {
-          console.log('User', user)
-
           if (!user) {
             controller.res.end('Invalid login, user not found')
             return
@@ -693,7 +692,7 @@ export function users(options: {}) {
             createSession(user.id, controller).then((session: any) => {
               // controller.res.end('successfully logged in')
               controller.res.end(
-                '<meta http-equiv="refresh" content="0; url=/profile">'
+                `<meta http-equiv="refresh" content="0; url=${Redirect}">`
               )
               return
             })
@@ -720,6 +719,14 @@ export function users(options: {}) {
       return
     },
   }
+}
+
+// I don't know why Formidable needs us to parse the fields like this
+function parseFields(fields: { [key: string]: string[] }) {
+  return Object.entries(fields).reduce((obj, [key, value]) => {
+    obj[key] = value[0]
+    return obj
+  }, {})
 }
 
 export default { crud }

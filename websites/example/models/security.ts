@@ -45,6 +45,7 @@ export function UserFactory(sequelize: Sequelize): UserStatic {
       email: DataTypes.STRING,
       password: DataTypes.STRING,
       photo: DataTypes.STRING,
+      role: DataTypes.STRING,
     },
     {
       sequelize,

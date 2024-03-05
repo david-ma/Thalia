@@ -9,7 +9,6 @@ const fs = require('fs');
 const path = require('path');
 const requestHandlers_1 = require("./requestHandlers");
 const formidable = require("formidable");
-const form = new formidable.Formidable();
 function crud(options) {
     const references = options.references || [];
     return {
@@ -401,7 +400,7 @@ const checkSession = async function (controller, success, naive) {
             return naive();
         }
         else {
-            controller.res.end(`<script>window.location = '/login'</script>`);
+            controller.res.end(`<script>window.location = '/login?redirect=${controller.req.url}'</script>`);
             return;
         }
     }
@@ -445,33 +444,33 @@ function users(options) {
             });
         },
         logon: function (controller) {
+            const form = new formidable.Formidable();
             form.parse(controller.req, (err, fields, files) => {
                 if (err) {
                     console.error('Error', err);
                     return;
                 }
-                console.log('Fields', fields);
-                console.log('Files', files);
+                fields = parseFields(fields);
                 if (!fields || !fields.Email || !fields.Password) {
                     controller.res.end('<meta http- equiv="refresh" content="0; url=/login">');
                     return;
                 }
                 const Email = fields.Email;
                 const Password = fields.Password;
+                const Redirect = fields.Redirect || '/profile';
                 controller.db.User.findOne({
                     where: {
                         email: Email,
                         password: Password,
                     },
                 }).then((user) => {
-                    console.log('User', user);
                     if (!user) {
                         controller.res.end('Invalid login, user not found');
                         return;
                     }
                     else {
                         createSession(user.id, controller).then((session) => {
-                            controller.res.end('<meta http-equiv="refresh" content="0; url=/profile">');
+                            controller.res.end(`<meta http-equiv="refresh" content="0; url=${Redirect}">`);
                             return;
                         });
                     }
@@ -499,4 +498,10 @@ function users(options) {
     };
 }
 exports.users = users;
+function parseFields(fields) {
+    return Object.entries(fields).reduce((obj, [key, value]) => {
+        obj[key] = value[0];
+        return obj;
+    }, {});
+}
 exports.default = { crud };

@@ -30,6 +30,7 @@ seq.sequelize
         email: 'admin@example.com',
         password: 'password',
         name: 'Admin',
+        role: 'admin',
     });
 });
 exports.seq = seq;

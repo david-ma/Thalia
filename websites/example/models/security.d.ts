@@ -12,6 +12,7 @@ export declare class User extends Model {
     email: string;
     password: string;
     photo: string;
+    role: string;
     sayHello(): string;
     getSessions(): Promise<Session[]>;
 }

@@ -8,7 +8,8 @@ const sequelize_2 = require("sequelize");
 const fs = require('fs');
 const path = require('path');
 const requestHandlers_1 = require("./requestHandlers");
-const formidable = require('formidable');
+const formidable = require("formidable");
+const form = new formidable.Formidable();
 function crud(options) {
     const references = options.references || [];
     return {
@@ -444,7 +445,6 @@ function users(options) {
             });
         },
         logon: function (controller) {
-            const form = formidable();
             form.parse(controller.req, (err, fields, files) => {
                 if (err) {
                     console.error('Error', err);
@@ -490,7 +490,12 @@ function users(options) {
             controller.res.end('<meta http-equiv="refresh" content="0; url=/login">');
             return;
         },
-        invite: function (controller) { },
+        invite: function (controller) {
+            (0, exports.checkSession)(controller, function ([views, user]) {
+                controller.res.end('You are logged in: ' + JSON.stringify(user));
+            });
+            return;
+        },
     };
 }
 exports.users = users;

@@ -15,6 +15,7 @@ export class User extends Model {
   public email!: string
   public password!: string
   public photo!: string
+  public role!: string
 
   public sayHello() {
     console.log('Hello, my name is ' + this.name)

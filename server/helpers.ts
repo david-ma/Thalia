@@ -8,9 +8,8 @@ const fs = require('fs')
 const path = require('path')
 import { Views, loadMustacheTemplate } from './requestHandlers'
 
-const formidable = require('formidable')
-
-//const thaliaPath = path.resolve(global.require.resolve('thalia'), '..', '..')
+import formidable = require('formidable')
+const form = new formidable.Formidable()
 
 export type SecurityMiddleware = (
   controller: Thalia.Controller,
@@ -660,7 +659,6 @@ export function users(options: {}) {
       // Check credentials
       // Create session
       // Redirect to profile
-      const form = formidable()
 
       form.parse(controller.req, (err, fields, files) => {
         if (err) {
@@ -715,7 +713,12 @@ export function users(options: {}) {
       controller.res.end('<meta http-equiv="refresh" content="0; url=/login">')
       return
     },
-    invite: function (controller: Thalia.Controller) {},
+    invite: function (controller: Thalia.Controller) {
+      checkSession(controller, function ([views, user]) {
+        controller.res.end('You are logged in: ' + JSON.stringify(user))
+      })
+      return
+    },
   }
 }
 

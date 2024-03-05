@@ -5,7 +5,7 @@ const fs = require("fs");
 const fsPromise = fs.promises;
 const path = require("path");
 const sass = require("sass");
-const Handlebars = require("handlebars");
+const Handlebars = require('handlebars');
 const _ = require('lodash');
 class Website {
     constructor(site, config) {

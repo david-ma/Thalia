@@ -1,7 +1,4 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Audit = exports.User = exports.Session = exports.crud = exports.users = exports.checkSession = exports.emailNewAccount = exports.checkEmail = exports.createSession = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = exports.Thalia = void 0;
 const sequelize_1 = require("sequelize");
@@ -11,7 +8,7 @@ const sequelize_2 = require("sequelize");
 const fs = require('fs');
 const path = require('path');
 const requestHandlers_1 = require("./requestHandlers");
-const formidable_1 = __importDefault(require("formidable"));
+const formidable = require('formidable');
 function crud(options) {
     const references = options.references || [];
     return {
@@ -404,6 +401,7 @@ const checkSession = async function (controller, success, naive) {
         }
         else {
             controller.res.end(`<script>window.location = '/login'</script>`);
+            return;
         }
     }
     return Promise.all([
@@ -421,7 +419,7 @@ const checkSession = async function (controller, success, naive) {
             : Promise.reject('No session found. Please log in.')),
     ]).then(success, function (err) {
         console.log('ERROR!', err);
-        controller.res.end(err);
+        controller.res.end('<meta http-equiv="refresh" content="0; url=/logout">');
     });
 };
 exports.checkSession = checkSession;
@@ -431,7 +429,7 @@ function users(options) {
             const cookies = controller.cookies;
             const upload_login = cookies._upload_login || null;
             (0, exports.checkSession)(controller, function ([Views, User]) {
-                controller.res.end('Already logged in');
+                controller.res.end('<meta http-equiv="refresh" content="0; url=/profile">');
             }, function () {
                 const promises = [new Promise(controller.readAllViews)];
                 Promise.all(promises).then(([views]) => {
@@ -446,7 +444,7 @@ function users(options) {
             });
         },
         logon: function (controller) {
-            const form = (0, formidable_1.default)();
+            const form = formidable();
             form.parse(controller.req, (err, fields, files) => {
                 if (err) {
                     console.error('Error', err);
@@ -480,8 +478,18 @@ function users(options) {
                 });
             });
         },
-        profile: function (controller) { },
-        logout: function (controller) { },
+        profile: function (controller) {
+            (0, exports.checkSession)(controller, function ([views, user]) {
+                controller.res.end(JSON.stringify(user));
+            });
+            return;
+        },
+        logout: function (controller) {
+            const name = controller.name || 'thalia';
+            controller.res.setCookie({ [`_${name}_login`]: '' }, new Date(0));
+            controller.res.end('<meta http-equiv="refresh" content="0; url=/login">');
+            return;
+        },
         invite: function (controller) { },
     };
 }

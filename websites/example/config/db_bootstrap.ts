@@ -1,5 +1,6 @@
 import { Options } from 'sequelize'
 import { securityFactory } from '../models'
+import { User } from '../models/security'
 
 let seqOptions: Options = {
   dialect: 'sqlite',
@@ -28,9 +29,17 @@ import { seqObject } from '../../../server/helpers'
 
 const seq: seqObject = securityFactory(seqOptions)
 
-seq.sequelize.sync({
-  force: true,
-  alter: true,
-})
+seq.sequelize
+  .sync({
+    // force: true,
+    // alter: true,
+  })
+  .then(() => {
+    User.create({
+      email: 'admin@example.com',
+      password: 'password',
+      name: 'Admin',
+    })
+  })
 
 exports.seq = seq

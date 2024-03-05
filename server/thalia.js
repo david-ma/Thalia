@@ -1,11 +1,12 @@
 if (typeof define !== 'function') {
     var define = require('amdefine')(module);
 }
-define("requestHandlers", ["require", "exports", "fs", "path", "sass", "handlebars"], function (require, exports, fs, path, sass, Handlebars) {
+define("requestHandlers", ["require", "exports", "fs", "path", "sass"], function (require, exports, fs, path, sass) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Website = exports.handle = exports.loadMustacheTemplate = void 0;
     const fsPromise = fs.promises;
+    const Handlebars = require('handlebars');
     const _ = require('lodash');
     class Website {
         constructor(site, config) {

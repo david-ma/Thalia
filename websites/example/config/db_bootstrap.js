@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const models_1 = require("../models");
+const security_1 = require("../models/security");
 let seqOptions = {
     dialect: 'sqlite',
     storage: `${__dirname}/database.sqlite`,
@@ -22,8 +23,13 @@ if (process.env.NODE_ENV === 'docker') {
     seqOptions.port = 5432;
 }
 const seq = (0, models_1.securityFactory)(seqOptions);
-seq.sequelize.sync({
-    force: true,
-    alter: true,
+seq.sequelize
+    .sync({})
+    .then(() => {
+    security_1.User.create({
+        email: 'admin@example.com',
+        password: 'password',
+        name: 'Admin',
+    });
 });
 exports.seq = seq;

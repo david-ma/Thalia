@@ -2,6 +2,7 @@ import { IncomingMessage, ServerResponse } from 'http'
 import { Website as requestHandlersWebsite } from './requestHandlers'
 import { ViewCallback } from './requestHandlers'
 import SocketIO = require('socket.io')
+import Handlebars = require('handlebars')
 // https://www.typescriptlang.org/docs/handbook/declaration-files/templates/module-class-d-ts.html
 
 // export declare namespace Thalia {

@@ -7,7 +7,7 @@ import sass = require('sass')
 
 // Each website should have their own Handlebars instace? Frame?
 // https://handlebarsjs.com/api-reference/utilities.html#handlebars-createframe-data
-import Handlebars = require('handlebars')
+const Handlebars = require('handlebars')
 
 const _ = require('lodash')
 
@@ -404,7 +404,6 @@ const handle: Thalia.Handle = {
         ]
         Promise.all(promises)
           .then(([exampleViews, thaliaViews, websiteViews]: any) => {
-
             // Use the website's views if they exist, otherwise use the default views
             // TODO: Allow themes to be applied in the middle?
             return _.merge(thaliaViews, exampleViews, websiteViews)

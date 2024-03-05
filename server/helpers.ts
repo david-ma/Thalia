@@ -3,16 +3,12 @@ import { ModelStatic, Op } from 'sequelize'
 import { Thalia } from './thalia'
 export { Thalia }
 import { DataTypes } from 'sequelize'
-// import * from 'handlebars'
-// import fs from 'fs'
-// const Handlebars = require('handlebars')
-// import Handlebars from 'handlebars'
-// import Handlebars = require('handlebars')
 
 const fs = require('fs')
 const path = require('path')
 import { Views, loadMustacheTemplate } from './requestHandlers'
-import formidable from 'formidable'
+
+const formidable = require('formidable')
 
 //const thaliaPath = path.resolve(global.require.resolve('thalia'), '..', '..')
 
@@ -455,7 +451,6 @@ import { User, Session, Audit } from '../websites/example/models/security'
 import { Album, Image } from '../websites/example/models/smugmug'
 export { Album, Image }
 import { securityFactory, smugmugFactory } from '../websites/example/models'
-import Handlebars from 'handlebars'
 export { securityFactory, smugmugFactory, seqObject }
 
 export async function createSession(
@@ -600,6 +595,7 @@ export const checkSession: SecurityMiddleware = async function (
       return naive()
     } else {
       controller.res.end(`<script>window.location = '/login'</script>`)
+      return
     }
   }
 
@@ -620,7 +616,10 @@ export const checkSession: SecurityMiddleware = async function (
     ),
   ]).then(success, function (err) {
     console.log('ERROR!', err)
-    controller.res.end(err)
+    // Send the user to the logout page
+    // So they logout
+    // And then they get sent to the login page again
+    controller.res.end('<meta http-equiv="refresh" content="0; url=/logout">')
   })
 }
 
@@ -635,7 +634,10 @@ export function users(options: {}) {
         function ([Views, User]) {
           // Already logged in?
           // Redirect to profile?
-          controller.res.end('Already logged in')
+          // controller.res.end('Already logged in')
+          controller.res.end(
+            '<meta http-equiv="refresh" content="0; url=/profile">'
+          )
         },
         function () {
           const promises = [new Promise(controller.readAllViews)]
@@ -691,6 +693,7 @@ export function users(options: {}) {
             return
           } else {
             createSession(user.id, controller).then((session: any) => {
+              // controller.res.end('successfully logged in')
               controller.res.end(
                 '<meta http-equiv="refresh" content="0; url=/profile">'
               )
@@ -700,8 +703,18 @@ export function users(options: {}) {
         })
       })
     },
-    profile: function (controller: Thalia.Controller) {},
-    logout: function (controller: Thalia.Controller) {},
+    profile: function (controller: Thalia.Controller) {
+      checkSession(controller, function ([views, user]) {
+        controller.res.end(JSON.stringify(user))
+      })
+      return
+    },
+    logout: function (controller: Thalia.Controller) {
+      const name = controller.name || 'thalia'
+      controller.res.setCookie({ [`_${name}_login`]: '' }, new Date(0))
+      controller.res.end('<meta http-equiv="refresh" content="0; url=/login">')
+      return
+    },
     invite: function (controller: Thalia.Controller) {},
   }
 }

@@ -6,16 +6,14 @@
     {{> input field="Email" helpText="Your email"}}
     {{> input field="Password" type="password" helpText="Your password"}}
 
-    <input id="Redirect" name="Redirect" type="text" style="display:none;" />
+    <input id="Redirect" name="Redirect" type="hidden" style="display:none;" />
 
     <input id="loginButton" type="submit" value="Login" />
   </form>
   <ul>
-    <li><a
-        href="/newUser">Create
+    <li><a href="/newUser">Create
         New Account</a></li>
-    <li><a
-        href="mailto:sabby@david-ma.net?subject=Forgot Sabby Password&body=Hey David, it's [YOUR NAME HERE], I forgot my password for https://sabbatical.gallery/ Sorry!">Forgot
+    <li><a href="/forgotPassword">Forgot
         password</a></li>
   </ul>
 </div>

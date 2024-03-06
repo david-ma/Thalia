@@ -36,7 +36,9 @@ export declare function users(options: {}): {
     logon: (controller: Thalia.Controller) => void;
     profile: (controller: Thalia.Controller) => void;
     logout: (controller: Thalia.Controller) => void;
+    forgotPassword: (controller: Thalia.Controller) => void;
     newUser: (controller: Thalia.Controller) => void;
+    createNewUser: (controller: Thalia.Controller) => void;
     invite: (controller: Thalia.Controller) => void;
 };
 declare const _default: {

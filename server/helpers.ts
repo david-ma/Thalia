@@ -709,6 +709,19 @@ export function users(options: {}) {
       controller.res.end('<meta http-equiv="refresh" content="0; url=/login">')
       return
     },
+    forgotPassword: function (controller: Thalia.Controller) {
+      checkSession(
+        controller,
+        function ([views, user]) {
+          controller.res.end(
+            '<meta http-equiv="refresh" content="0; url=/profile">'
+          )
+        },
+        function () {
+          servePage(controller, 'forgotPassword')
+        }
+      )
+    },
     newUser: function (controller: Thalia.Controller) {
       checkSession(
         controller,
@@ -720,6 +733,44 @@ export function users(options: {}) {
           servePage(controller, 'newUser')
         }
       )
+    },
+    createNewUser: function (controller: Thalia.Controller) {
+      parseForm(controller).then(function ([fields, files]) {
+        if (!fields || !fields.Email || !fields.Password || !fields.Captcha) {
+          controller.res.end(
+            '<meta http-equiv="refresh" content="0; url=/newUser">'
+          )
+          return
+        }
+
+        const Name = fields.Name
+        const Email = fields.Email
+        const Password = fields.Password
+
+        controller.db.User.findOrCreate({
+          where: {
+            email: Email,
+          },
+          defaults: {
+            name: Name,
+            email: Email,
+            password: Password,
+          },
+        }).then(([user, created]) => {
+          if (!created) {
+            controller.res.end('User with this email already exists')
+            return
+          } else {
+            createSession(user.id, controller).then((session: any) => {
+              // controller.res.end('successfully logged in')
+              controller.res.end(
+                `<meta http-equiv="refresh" content="0; url=/profile">`
+              )
+              return
+            })
+          }
+        })
+      })
     },
     invite: function (controller: Thalia.Controller) {
       checkSession(controller, function ([views, user]) {

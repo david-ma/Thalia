@@ -1,1 +1,13 @@
-hey new user stuff?
+<div class="box">
+  <h2>New User</h2>
+  <form action="/createNewUser" method="post">
+    {{> input field="Name" helpText="Your name"}}
+    {{> input field="Email" type="email" helpText="Your email"}}
+    {{> input field="Password" type="password" helpText="Your password"}}
+
+    {{!-- capcha --}}
+    {{> input field="Captcha" helpText="Please type the letters and numbers below"}}
+    <img src="/captcha" alt="captcha" />
+
+    <input type="submit" value="Create" />
+  </form>

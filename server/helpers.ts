@@ -255,6 +255,40 @@ export function loadViewsAsPartials(views: Views, Handlebars) {
     // console.log(`Loading partial ${key}`)
     Handlebars.registerPartial(key, value)
   })
+
+  /**
+   * Helper to get the value of a field from the blob or the root
+   * Prioritises the root
+   */
+    Handlebars.registerHelper('getValue', function (field, options) {
+      if (!options || !options.data || !options.data.root) {
+        return ''
+      }
+      if (options.data.root[field]) {
+        return options.data.root[field]
+      }
+      if (!options.data.root.blob) {
+        return ''
+      }
+      return options.data.root.blob[field] || ''
+    })
+  
+    /**
+     * For the dropdown partial
+     * Might be useful for radio buttons or checkboxes too
+     */
+    Handlebars.registerHelper('isSelected', function (field, value, options) {
+      if (!options || !options.data || !options.data.root) {
+        return ''
+      }
+      if (options.data.root[field] === value) {
+        return 'selected'
+      }
+      if (options.data.root.blob && options.data.root.blob[field] === value) {
+        return 'selected'
+      }
+      return ''
+    })
 }
 
 /**

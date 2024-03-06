@@ -151,6 +151,30 @@ function loadViewsAsPartials(views, Handlebars) {
     Object.entries(views).forEach(([key, value]) => {
         Handlebars.registerPartial(key, value);
     });
+    Handlebars.registerHelper('getValue', function (field, options) {
+        if (!options || !options.data || !options.data.root) {
+            return '';
+        }
+        if (options.data.root[field]) {
+            return options.data.root[field];
+        }
+        if (!options.data.root.blob) {
+            return '';
+        }
+        return options.data.root.blob[field] || '';
+    });
+    Handlebars.registerHelper('isSelected', function (field, value, options) {
+        if (!options || !options.data || !options.data.root) {
+            return '';
+        }
+        if (options.data.root[field] === value) {
+            return 'selected';
+        }
+        if (options.data.root.blob && options.data.root.blob[field] === value) {
+            return 'selected';
+        }
+        return '';
+    });
 }
 exports.loadViewsAsPartials = loadViewsAsPartials;
 function columnDefinitions(controller, table, hideColumns = []) {

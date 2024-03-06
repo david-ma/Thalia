@@ -432,16 +432,7 @@ function users(options) {
             (0, exports.checkSession)(controller, function ([Views, User]) {
                 controller.res.end('<meta http-equiv="refresh" content="0; url=/profile">');
             }, function () {
-                const promises = [new Promise(controller.readAllViews)];
-                Promise.all(promises).then(([views]) => {
-                    const data = {};
-                    const template = controller.handlebars.compile(views['wrapper']);
-                    loadViewsAsPartials(views, controller.handlebars);
-                    setHandlebarsContent(views['login'], controller.handlebars).then(() => {
-                        const html = template(data);
-                        controller.res.end(html);
-                    });
-                });
+                servePage(controller, 'login');
             });
         },
         logon: function (controller) {
@@ -477,20 +468,17 @@ function users(options) {
         },
         profile: function (controller) {
             (0, exports.checkSession)(controller, function ([views, user]) {
-                const template = controller.handlebars.compile(views.wrapper);
-                setHandlebarsContent(views.profile, controller.handlebars).then(() => {
-                    const filter = ['id', 'role', 'createdAt', 'updatedAt'];
-                    const html = template({
-                        user: Object.entries(user.dataValues).reduce((obj, [key, value]) => {
-                            if (!filter.includes(key)) {
-                                obj[key] = value;
-                            }
-                            return obj;
-                        }, {}),
-                        admin: user.role === 'admin',
-                    });
-                    controller.res.end(html);
-                });
+                const filter = ['id', 'role', 'createdAt', 'updatedAt'];
+                const data = {
+                    user: Object.entries(user.dataValues).reduce((obj, [key, value]) => {
+                        if (!filter.includes(key)) {
+                            obj[key] = value;
+                        }
+                        return obj;
+                    }, {}),
+                    admin: user.role === 'admin',
+                };
+                servePage(controller, 'profile', data);
             });
             return;
         },
@@ -499,6 +487,13 @@ function users(options) {
             controller.res.setCookie({ [`_${name}_login`]: '' }, new Date(0));
             controller.res.end('<meta http-equiv="refresh" content="0; url=/login">');
             return;
+        },
+        newUser: function (controller) {
+            (0, exports.checkSession)(controller, function ([views, user]) {
+                controller.res.end('You already have an account.');
+            }, function () {
+                servePage(controller, 'newUser');
+            });
         },
         invite: function (controller) {
             (0, exports.checkSession)(controller, function ([views, user]) {
@@ -517,6 +512,16 @@ function users(options) {
     };
 }
 exports.users = users;
+function servePage(controller, page, data) {
+    controller.readAllViews(function (views) {
+        loadViewsAsPartials(views, controller.handlebars);
+        const template = controller.handlebars.compile(views.wrapper);
+        setHandlebarsContent(views[page], controller.handlebars).then(() => {
+            const html = template(data || {});
+            controller.res.end(html);
+        });
+    });
+}
 function parseForm(controller) {
     return new Promise((resolve, reject) => {
         const form = new formidable.Formidable();

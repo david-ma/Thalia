@@ -641,18 +641,7 @@ export function users(options: {}) {
           )
         },
         function () {
-          const promises = [new Promise(controller.readAllViews)]
-          Promise.all(promises).then(([views]: [Views]) => {
-            const data = {}
-            const template = controller.handlebars.compile(views['wrapper'])
-            loadViewsAsPartials(views, controller.handlebars)
-            setHandlebarsContent(views['login'], controller.handlebars).then(
-              () => {
-                const html = template(data)
-                controller.res.end(html)
-              }
-            )
-          })
+          servePage(controller, 'login')
         }
       )
     },
@@ -700,26 +689,17 @@ export function users(options: {}) {
     },
     profile: function (controller: Thalia.Controller) {
       checkSession(controller, function ([views, user]) {
-        const template = controller.handlebars.compile(views.wrapper)
-        setHandlebarsContent(views.profile, controller.handlebars).then(() => {
-          const filter = ['id', 'role', 'createdAt', 'updatedAt']
-
-          const html = template({
-            // filter datavalues
-            // user: user.dataValues
-            user: Object.entries(user.dataValues).reduce(
-              (obj, [key, value]) => {
-                if (!filter.includes(key)) {
-                  obj[key] = value
-                }
-                return obj
-              },
-              {}
-            ),
-            admin: user.role === 'admin',
-          })
-          controller.res.end(html)
-        })
+        const filter = ['id', 'role', 'createdAt', 'updatedAt']
+        const data = {
+          user: Object.entries(user.dataValues).reduce((obj, [key, value]) => {
+            if (!filter.includes(key)) {
+              obj[key] = value
+            }
+            return obj
+          }, {}),
+          admin: user.role === 'admin',
+        }
+        servePage(controller, 'profile', data)
       })
       return
     },
@@ -728,6 +708,18 @@ export function users(options: {}) {
       controller.res.setCookie({ [`_${name}_login`]: '' }, new Date(0))
       controller.res.end('<meta http-equiv="refresh" content="0; url=/login">')
       return
+    },
+    newUser: function (controller: Thalia.Controller) {
+      checkSession(
+        controller,
+        function ([views, user]) {
+          // user is already logged in. Redirect to profile?
+          controller.res.end('You already have an account.')
+        },
+        function () {
+          servePage(controller, 'newUser')
+        }
+      )
     },
     invite: function (controller: Thalia.Controller) {
       checkSession(controller, function ([views, user]) {
@@ -747,6 +739,17 @@ export function users(options: {}) {
       })
     },
   }
+}
+
+function servePage(controller: Thalia.Controller, page: string, data?: object) {
+  controller.readAllViews(function (views) {
+    loadViewsAsPartials(views, controller.handlebars)
+    const template = controller.handlebars.compile(views.wrapper)
+    setHandlebarsContent(views[page], controller.handlebars).then(() => {
+      const html = template(data || {})
+      controller.res.end(html)
+    })
+  })
 }
 
 function parseForm(

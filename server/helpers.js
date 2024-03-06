@@ -445,13 +445,7 @@ function users(options) {
             });
         },
         logon: function (controller) {
-            const form = new formidable.Formidable();
-            form.parse(controller.req, (err, fields, files) => {
-                if (err) {
-                    console.error('Error', err);
-                    return;
-                }
-                fields = parseFields(fields);
+            parseForm(controller).then(function ([fields, files]) {
                 if (!fields || !fields.Email || !fields.Password) {
                     controller.res.end('<meta http- equiv="refresh" content="0; url=/login">');
                     return;
@@ -462,11 +456,14 @@ function users(options) {
                 controller.db.User.findOne({
                     where: {
                         email: Email,
-                        password: Password,
                     },
                 }).then((user) => {
                     if (!user) {
                         controller.res.end('Invalid login, user not found');
+                        return;
+                    }
+                    else if (Password !== user.password) {
+                        controller.res.end('Invalid login, password incorrect');
                         return;
                     }
                     else {
@@ -505,13 +502,35 @@ function users(options) {
         },
         invite: function (controller) {
             (0, exports.checkSession)(controller, function ([views, user]) {
-                controller.res.end('You are logged in: ' + JSON.stringify(user));
+                if (user.role !== 'admin') {
+                    controller.res.end('You are not an admin');
+                    return;
+                }
+                parseForm(controller).then(function ([fields, files]) {
+                    console.log('fields', fields);
+                    console.log('files', files);
+                    controller.res.end('You are logged in: ' + JSON.stringify(user));
+                });
+                return;
             });
-            return;
         },
     };
 }
 exports.users = users;
+function parseForm(controller) {
+    return new Promise((resolve, reject) => {
+        const form = new formidable.Formidable();
+        form.parse(controller.req, (err, fields, files) => {
+            if (err) {
+                console.error('Error', err);
+                reject(err);
+                return;
+            }
+            fields = parseFields(fields);
+            resolve([fields, files]);
+        });
+    });
+}
 function parseFields(fields) {
     return Object.entries(fields).reduce((obj, [key, value]) => {
         obj[key] = value[0];

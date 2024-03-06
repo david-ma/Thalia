@@ -661,14 +661,8 @@ export function users(options: {}) {
       // Check credentials
       // Create session
       // Redirect to profile
-      const form = new formidable.Formidable()
-      form.parse(controller.req, (err, fields, files) => {
-        if (err) {
-          console.error('Error', err)
-          return
-        }
-        fields = parseFields(fields)
 
+      parseForm(controller).then(function ([fields, files]) {
         if (!fields || !fields.Email || !fields.Password) {
           controller.res.end(
             '<meta http- equiv="refresh" content="0; url=/login">'
@@ -683,11 +677,14 @@ export function users(options: {}) {
         controller.db.User.findOne({
           where: {
             email: Email,
-            password: Password,
+            // password: Password,
           },
         }).then((user: any) => {
           if (!user) {
             controller.res.end('Invalid login, user not found')
+            return
+          } else if (Password !== user.password) {
+            controller.res.end('Invalid login, password incorrect')
             return
           } else {
             createSession(user.id, controller).then((session: any) => {
@@ -734,11 +731,40 @@ export function users(options: {}) {
     },
     invite: function (controller: Thalia.Controller) {
       checkSession(controller, function ([views, user]) {
-        controller.res.end('You are logged in: ' + JSON.stringify(user))
+        if (user.role !== 'admin') {
+          controller.res.end('You are not an admin')
+          return
+        }
+
+        parseForm(controller).then(function ([fields, files]) {
+          console.log('fields', fields)
+          console.log('files', files)
+
+          controller.res.end('You are logged in: ' + JSON.stringify(user))
+        })
+
+        return
       })
-      return
     },
   }
+}
+
+function parseForm(
+  controller
+): Promise<[formidable.Fields<string>, formidable.Files<string>]> {
+  return new Promise((resolve, reject) => {
+    const form = new formidable.Formidable()
+    form.parse(controller.req, (err, fields, files) => {
+      if (err) {
+        console.error('Error', err)
+        reject(err)
+        return
+      }
+      fields = parseFields(fields)
+
+      resolve([fields, files])
+    })
+  })
 }
 
 // I don't know why Formidable needs us to parse the fields like this

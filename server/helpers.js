@@ -543,9 +543,25 @@ function users(options) {
                         return;
                     }
                     else {
-                        createSession(user.id, controller).then((session) => {
-                            controller.res.end(`<meta http-equiv="refresh" content="0; url=/profile">`);
-                            return;
+                        controller.readAllViews(function (views) {
+                            createSession(user.id, controller).then((session) => {
+                                loadViewsAsPartials(views, controller.handlebars);
+                                const template = controller.handlebars.compile(views.newUserEmail);
+                                const data = {
+                                    websiteName: options.websiteName,
+                                    websiteURL: controller.req.headers.host,
+                                    session,
+                                };
+                                const emailOptions = {
+                                    from: options.mailFrom || '"7oclock Co" <7oclockco@gmail.com>',
+                                    to: Email,
+                                    subject: `New account for ${options.websiteName} created`,
+                                    html: template(data),
+                                };
+                                sendEmail(emailOptions, options.mailAuth);
+                                controller.res.end(`<meta http-equiv="refresh" content="0; url=/profile">`);
+                                return;
+                            });
                         });
                     }
                 });
@@ -587,8 +603,7 @@ function parseForm(controller) {
                 reject(err);
                 return;
             }
-            fields = parseFields(fields);
-            resolve([fields, files]);
+            resolve([parseFields(fields), files]);
         });
     });
 }

@@ -2,6 +2,7 @@
 <input
 {{#if disabled}}disabled{{/if}}
 {{#if required}}required{{/if}}
- type="{{#if type}}{{type}}{{else}}type{{/if}}" id="{{field}}" name="{{field}}" value="{{field}}" />
+ type="{{#if type}}{{type}}{{else}}type{{/if}}" id="{{field}}" name="{{field}}" value="" />
+ {{!-- bring in the "getValue field" helper from sabby --}}
 {{#if helpText}}<sub>{{helpText}}</sub>{{/if}}
 <br />

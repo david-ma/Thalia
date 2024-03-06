@@ -484,7 +484,7 @@ export async function createSession(
 
 const nodemailer = require('nodemailer')
 
-function sendEmail(emailOptions, mailAuth) {
+function sendEmail(emailOptions: EmailOptions, mailAuth) {
   console.log(`Sending email to ${emailOptions.to}`)
 
   const transporter = nodemailer.createTransport({
@@ -518,6 +518,13 @@ type emailNewAccountConfig = {
   email: string
   controller: Thalia.Controller
   mailAuth: {}
+}
+
+type EmailOptions = {
+  from: string
+  to: string
+  subject: string
+  html: string
 }
 
 export function checkEmail(controller: Thalia.Controller) {
@@ -635,7 +642,14 @@ export const checkSession: SecurityMiddleware = async function (
   )
 }
 
-export function users(options: {}) {
+export function users(options: {
+  websiteName: string
+  mailFrom: string
+  mailAuth: {
+    user: string
+    pass: string
+  }
+}) {
   return {
     profile: function (controller: Thalia.Controller) {
       checkSession(controller, function ([views, user]) {
@@ -783,12 +797,33 @@ export function users(options: {}) {
             controller.res.end('User with this email already exists')
             return
           } else {
-            createSession(user.id, controller).then((session: any) => {
-              // controller.res.end('successfully logged in')
-              controller.res.end(
-                `<meta http-equiv="refresh" content="0; url=/profile">`
-              )
-              return
+            controller.readAllViews(function (views) {
+              createSession(user.id, controller).then((session: any) => {
+                loadViewsAsPartials(views, controller.handlebars)
+                const template = controller.handlebars.compile(
+                  views.newUserEmail
+                )
+                const data = {
+                  websiteName: options.websiteName,
+                  websiteURL: controller.req.headers.host,
+                  session,
+                }
+
+                const emailOptions: EmailOptions = {
+                  from:
+                    options.mailFrom || '"7oclock Co" <7oclockco@gmail.com>',
+                  to: Email,
+                  subject: `New account for ${options.websiteName} created`,
+                  html: template(data),
+                }
+
+                sendEmail(emailOptions, options.mailAuth)
+
+                controller.res.end(
+                  `<meta http-equiv="refresh" content="0; url=/profile">`
+                )
+                return
+              })
             })
           }
         })
@@ -825,9 +860,14 @@ function servePage(controller: Thalia.Controller, page: string, data?: object) {
   })
 }
 
-function parseForm(
-  controller
-): Promise<[formidable.Fields<string>, formidable.Files<string>]> {
+function parseForm(controller): Promise<
+  [
+    {
+      [key: string]: string
+    },
+    formidable.Files<string>
+  ]
+> {
   return new Promise((resolve, reject) => {
     const form = new formidable.Formidable()
     form.parse(controller.req, (err, fields, files) => {
@@ -836,15 +876,16 @@ function parseForm(
         reject(err)
         return
       }
-      fields = parseFields(fields)
 
-      resolve([fields, files])
+      resolve([parseFields(fields), files])
     })
   })
 }
 
 // I don't know why Formidable needs us to parse the fields like this
-function parseFields(fields: { [key: string]: string[] }) {
+function parseFields(fields: { [key: string]: string[] }): {
+  [key: string]: string
+} {
   return Object.entries(fields).reduce((obj, [key, value]) => {
     obj[key] = value[0]
     return obj

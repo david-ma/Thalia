@@ -13,8 +13,11 @@ export declare class User extends Model {
     password: string;
     photo: string;
     role: string;
+    locked: boolean;
+    verified: boolean;
     sayHello(): string;
     getSessions(): Promise<Session[]>;
+    logout(sessionId: string): void;
 }
 export interface UserModel extends Model<UserAttributes>, UserAttributes {
 }

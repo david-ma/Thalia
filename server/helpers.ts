@@ -4,7 +4,6 @@ import { Thalia } from './thalia'
 export { Thalia }
 import { DataTypes } from 'sequelize'
 
-const fs = require('fs')
 const path = require('path')
 import { Views, loadMustacheTemplate } from './requestHandlers'
 
@@ -449,7 +448,6 @@ import { User, Session, Audit } from '../websites/example/models/security'
 import { Album, Image } from '../websites/example/models/smugmug'
 export { Album, Image }
 import { securityFactory, smugmugFactory } from '../websites/example/models'
-import { register } from 'module'
 export { securityFactory, smugmugFactory, seqObject }
 
 export async function createSession(
@@ -618,17 +616,52 @@ export const checkSession: SecurityMiddleware = async function (
           })
         : Promise.reject('No session found. Please log in.')
     ),
-  ]).then(success, function (err) {
-    console.log('ERROR!', err)
-    // Send the user to the logout page
-    // So they logout
-    // And then they get sent to the login page again
-    controller.res.end('<meta http-equiv="refresh" content="0; url=/logout">')
-  })
+  ]).then(
+    function ([views, user]) {
+      if (user.locked) {
+        controller.res.end('Your account is locked. Please contact an admin.')
+        return
+      }
+      success([views, user])
+    },
+    function (err) {
+      // No session found
+      console.log('ERROR!', err)
+      // Send the user to the logout page
+      // So they logout
+      // And then they get sent to the login page again
+      controller.res.end('<meta http-equiv="refresh" content="0; url=/logout">')
+    }
+  )
 }
 
 export function users(options: {}) {
   return {
+    profile: function (controller: Thalia.Controller) {
+      checkSession(controller, function ([views, user]) {
+        const filter = ['id', 'role', 'createdAt', 'updatedAt']
+        const data: any = {
+          user: Object.entries(user.dataValues).reduce((obj, [key, value]) => {
+            if (!filter.includes(key)) {
+              obj[key] = value
+            }
+            return obj
+          }, {}),
+          admin: user.role === 'admin',
+        }
+        user.getSessions().then((sessions: Session[]) => {
+          data.sessions = sessions.map((session) => {
+            return {
+              sid: session.sid,
+              expires: session.expires,
+              data: JSON.stringify(session.data),
+            }
+          })
+          servePage(controller, 'profile', data)
+        })
+      })
+      return
+    },
     login: function (controller: Thalia.Controller) {
       checkSession(
         controller,
@@ -687,27 +720,16 @@ export function users(options: {}) {
         })
       })
     },
-    profile: function (controller: Thalia.Controller) {
-      checkSession(controller, function ([views, user]) {
-        const filter = ['id', 'role', 'createdAt', 'updatedAt']
-        const data = {
-          user: Object.entries(user.dataValues).reduce((obj, [key, value]) => {
-            if (!filter.includes(key)) {
-              obj[key] = value
-            }
-            return obj
-          }, {}),
-          admin: user.role === 'admin',
-        }
-        servePage(controller, 'profile', data)
-      })
-      return
-    },
     logout: function (controller: Thalia.Controller) {
       const name = controller.name || 'thalia'
       controller.res.setCookie({ [`_${name}_login`]: '' }, new Date(0))
-      controller.res.end('<meta http-equiv="refresh" content="0; url=/login">')
-      return
+      checkSession(controller, function ([views, user]) {
+        user.logout(controller.cookies[`_${name}_login`])
+        controller.res.end(
+          '<meta http-equiv="refresh" content="0; url=/login">'
+        )
+        return
+      })
     },
     forgotPassword: function (controller: Thalia.Controller) {
       checkSession(

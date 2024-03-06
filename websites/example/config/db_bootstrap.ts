@@ -40,6 +40,8 @@ seq.sequelize
       password: 'password',
       name: 'Admin',
       role: 'admin',
+      locked: false,
+      verified: false,
     })
   })
 

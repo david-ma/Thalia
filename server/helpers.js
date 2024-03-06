@@ -5,7 +5,6 @@ const sequelize_1 = require("sequelize");
 const thalia_1 = require("./thalia");
 Object.defineProperty(exports, "Thalia", { enumerable: true, get: function () { return thalia_1.Thalia; } });
 const sequelize_2 = require("sequelize");
-const fs = require('fs');
 const path = require('path');
 const requestHandlers_1 = require("./requestHandlers");
 const formidable = require("formidable");
@@ -420,7 +419,13 @@ const checkSession = async function (controller, success, naive) {
                 },
             })
             : Promise.reject('No session found. Please log in.')),
-    ]).then(success, function (err) {
+    ]).then(function ([views, user]) {
+        if (user.locked) {
+            controller.res.end('Your account is locked. Please contact an admin.');
+            return;
+        }
+        success([views, user]);
+    }, function (err) {
         console.log('ERROR!', err);
         controller.res.end('<meta http-equiv="refresh" content="0; url=/logout">');
     });
@@ -428,6 +433,31 @@ const checkSession = async function (controller, success, naive) {
 exports.checkSession = checkSession;
 function users(options) {
     return {
+        profile: function (controller) {
+            (0, exports.checkSession)(controller, function ([views, user]) {
+                const filter = ['id', 'role', 'createdAt', 'updatedAt'];
+                const data = {
+                    user: Object.entries(user.dataValues).reduce((obj, [key, value]) => {
+                        if (!filter.includes(key)) {
+                            obj[key] = value;
+                        }
+                        return obj;
+                    }, {}),
+                    admin: user.role === 'admin',
+                };
+                user.getSessions().then((sessions) => {
+                    data.sessions = sessions.map((session) => {
+                        return {
+                            sid: session.sid,
+                            expires: session.expires,
+                            data: JSON.stringify(session.data),
+                        };
+                    });
+                    servePage(controller, 'profile', data);
+                });
+            });
+            return;
+        },
         login: function (controller) {
             (0, exports.checkSession)(controller, function ([Views, User]) {
                 controller.res.end('<meta http-equiv="refresh" content="0; url=/profile">');
@@ -466,27 +496,14 @@ function users(options) {
                 });
             });
         },
-        profile: function (controller) {
-            (0, exports.checkSession)(controller, function ([views, user]) {
-                const filter = ['id', 'role', 'createdAt', 'updatedAt'];
-                const data = {
-                    user: Object.entries(user.dataValues).reduce((obj, [key, value]) => {
-                        if (!filter.includes(key)) {
-                            obj[key] = value;
-                        }
-                        return obj;
-                    }, {}),
-                    admin: user.role === 'admin',
-                };
-                servePage(controller, 'profile', data);
-            });
-            return;
-        },
         logout: function (controller) {
             const name = controller.name || 'thalia';
             controller.res.setCookie({ [`_${name}_login`]: '' }, new Date(0));
-            controller.res.end('<meta http-equiv="refresh" content="0; url=/login">');
-            return;
+            (0, exports.checkSession)(controller, function ([views, user]) {
+                user.logout(controller.cookies[`_${name}_login`]);
+                controller.res.end('<meta http-equiv="refresh" content="0; url=/login">');
+                return;
+            });
         },
         forgotPassword: function (controller) {
             (0, exports.checkSession)(controller, function ([views, user]) {

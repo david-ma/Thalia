@@ -14,8 +14,10 @@ export class User extends Model {
   public name!: string
   public email!: string
   public password!: string
-  public photo!: string
-  public role!: string
+  public photo: string
+  public role: string
+  public locked: boolean
+  public verified: boolean
 
   public sayHello() {
     console.log('Hello, my name is ' + this.name)
@@ -26,6 +28,15 @@ export class User extends Model {
     return Session.findAll({
       where: {
         userId: this.id,
+      },
+    })
+  }
+
+  public logout(sessionId: string) {
+    Session.destroy({
+      where: {
+        userId: this.id,
+        sid: sessionId,
       },
     })
   }
@@ -46,6 +57,8 @@ export function UserFactory(sequelize: Sequelize): UserStatic {
       password: DataTypes.STRING,
       photo: DataTypes.STRING,
       role: DataTypes.STRING,
+      locked: DataTypes.BOOLEAN,
+      verified: DataTypes.BOOLEAN,
     },
     {
       sequelize,

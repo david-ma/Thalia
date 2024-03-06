@@ -32,9 +32,9 @@ export declare function checkEmail(controller: Thalia.Controller): void;
 export declare function emailNewAccount(config: emailNewAccountConfig): Promise<any>;
 export declare const checkSession: SecurityMiddleware;
 export declare function users(options: {}): {
+    profile: (controller: Thalia.Controller) => void;
     login: (controller: Thalia.Controller) => void;
     logon: (controller: Thalia.Controller) => void;
-    profile: (controller: Thalia.Controller) => void;
     logout: (controller: Thalia.Controller) => void;
     forgotPassword: (controller: Thalia.Controller) => void;
     newUser: (controller: Thalia.Controller) => void;

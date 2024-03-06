@@ -1,4 +1,4 @@
-<div class="profile">
+<div class="box">
   <h2>Profile</h2>
   <form action="/profile" method="post">
     <table>
@@ -39,7 +39,7 @@
 
 {{#if admin}}
 <br>
-<div class="profile">
+<div class="box">
   <h2>Admin</h2>
   {{!-- Invite a user by email --}}
   <form action="/invite" method="post">
@@ -52,9 +52,28 @@
 {{/if}}
 
 <br>
-<div class="profile">
+<div class="box">
   <h2>Logout</h2>
   <form action="/logout" method="post">
     <input type="submit" value="Logout" />
   </form>
+</div>
+
+<br>
+<div class="box">
+  <h3>Sessions</h3>
+  <table>
+    <tr>
+      <th>Session</th>
+      <th>Created</th>
+      <th>Expires</th>
+    </tr>
+    {{#each sessions}}
+    <tr>
+      <td>{{this.sid}}</td>
+      <td>{{this.expires}}</td>
+      <td>{{this.data}}</td>
+    </tr>
+    {{/each}}
+  </table>
 </div>

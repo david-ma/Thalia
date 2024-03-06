@@ -15,6 +15,14 @@ class User extends sequelize_2.Model {
             },
         });
     }
+    logout(sessionId) {
+        Session.destroy({
+            where: {
+                userId: this.id,
+                sid: sessionId,
+            },
+        });
+    }
 }
 exports.User = User;
 function UserFactory(sequelize) {
@@ -24,6 +32,8 @@ function UserFactory(sequelize) {
         password: sequelize_1.DataTypes.STRING,
         photo: sequelize_1.DataTypes.STRING,
         role: sequelize_1.DataTypes.STRING,
+        locked: sequelize_1.DataTypes.BOOLEAN,
+        verified: sequelize_1.DataTypes.BOOLEAN,
     }, {
         sequelize,
         tableName: 'users',

@@ -1,10 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.config = void 0;
 const thalia_1 = require("thalia");
+const securityOptions = {
+    websiteName: 'default',
+    mailFrom: 'Thalia <thalia@david-ma.net>',
+    mailAuth: {
+        user: '',
+        pass: '',
+    },
+};
 exports.config = {
-    domains: ['www.yourwebsite.com'],
+    domains: [],
+    data: false,
+    dist: false,
     controllers: {
-        ...(0, thalia_1.users)({})
+        ...(0, thalia_1.users)(securityOptions),
     },
 };

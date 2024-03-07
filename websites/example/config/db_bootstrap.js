@@ -26,13 +26,18 @@ const seq = (0, models_1.securityFactory)(seqOptions);
 seq.sequelize
     .sync({})
     .then(() => {
-    security_1.User.create({
-        email: 'admin@example.com',
-        password: 'password',
-        name: 'Admin',
-        role: 'admin',
-        locked: false,
-        verified: false,
+    security_1.User.findOrCreate({
+        where: {
+            email: 'admin@example.com',
+        },
+        defaults: {
+            email: 'admin@example.com',
+            password: 'password',
+            name: 'Admin',
+            role: 'admin',
+            locked: false,
+            verified: false,
+        },
     });
 });
 exports.seq = seq;

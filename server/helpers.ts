@@ -260,35 +260,35 @@ export function loadViewsAsPartials(views: Views, Handlebars) {
    * Helper to get the value of a field from the blob or the root
    * Prioritises the root
    */
-    Handlebars.registerHelper('getValue', function (field, options) {
-      if (!options || !options.data || !options.data.root) {
-        return ''
-      }
-      if (options.data.root[field]) {
-        return options.data.root[field]
-      }
-      if (!options.data.root.blob) {
-        return ''
-      }
-      return options.data.root.blob[field] || ''
-    })
-  
-    /**
-     * For the dropdown partial
-     * Might be useful for radio buttons or checkboxes too
-     */
-    Handlebars.registerHelper('isSelected', function (field, value, options) {
-      if (!options || !options.data || !options.data.root) {
-        return ''
-      }
-      if (options.data.root[field] === value) {
-        return 'selected'
-      }
-      if (options.data.root.blob && options.data.root.blob[field] === value) {
-        return 'selected'
-      }
+  Handlebars.registerHelper('getValue', function (field, options) {
+    if (!options || !options.data || !options.data.root) {
       return ''
-    })
+    }
+    if (options.data.root[field]) {
+      return options.data.root[field]
+    }
+    if (!options.data.root.blob) {
+      return ''
+    }
+    return options.data.root.blob[field] || ''
+  })
+
+  /**
+   * For the dropdown partial
+   * Might be useful for radio buttons or checkboxes too
+   */
+  Handlebars.registerHelper('isSelected', function (field, value, options) {
+    if (!options || !options.data || !options.data.root) {
+      return ''
+    }
+    if (options.data.root[field] === value) {
+      return 'selected'
+    }
+    if (options.data.root.blob && options.data.root.blob[field] === value) {
+      return 'selected'
+    }
+    return ''
+  })
 }
 
 /**
@@ -676,14 +676,16 @@ export const checkSession: SecurityMiddleware = async function (
   )
 }
 
-export function users(options: {
+export type SecurityOptions = {
   websiteName: string
-  mailFrom: string
+  mailFrom?: string
   mailAuth: {
     user: string
     pass: string
   }
-}) {
+}
+
+export function users(options: SecurityOptions) {
   return {
     profile: function (controller: Thalia.Controller) {
       checkSession(controller, function ([views, user]) {

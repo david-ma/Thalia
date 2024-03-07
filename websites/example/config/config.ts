@@ -1,14 +1,19 @@
+import { users, SecurityOptions } from 'thalia'
 
-import { Thalia, users } from 'thalia'
+const securityOptions: SecurityOptions = {
+  websiteName: 'default',
+  mailFrom: 'Thalia <thalia@david-ma.net>',
+  mailAuth: {
+    user: '',
+    pass: '',
+  },
+}
 
-export const config: Thalia.WebsiteConfig ={
-  domains: ['www.yourwebsite.com'],
+exports.config = {
+  domains: [],
+  data: false,
+  dist: false,
   controllers: {
-    // '': function (router) {
-    //   console.log("hi")
-    //   router.res.end('Hello this is example!')
-    // },
-
-    ...users({})
+    ...users(securityOptions),
   },
 }

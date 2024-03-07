@@ -35,13 +35,18 @@ seq.sequelize
     // alter: true,
   })
   .then(() => {
-    User.create({
-      email: 'admin@example.com',
-      password: 'password',
-      name: 'Admin',
-      role: 'admin',
-      locked: false,
-      verified: false,
+    User.findOrCreate({
+      where: {
+        email: 'admin@example.com',
+      },
+      defaults: {
+        email: 'admin@example.com',
+        password: 'password',
+        name: 'Admin',
+        role: 'admin',
+        locked: false,
+        verified: false,
+      },
     })
   })
 

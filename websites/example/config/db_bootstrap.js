@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const models_1 = require("../models");
 const security_1 = require("../models/security");
+const cred = require('./cred.js').cred;
 let seqOptions = {
     dialect: 'sqlite',
     storage: `${__dirname}/database.sqlite`,
@@ -26,18 +27,13 @@ const seq = (0, models_1.securityFactory)(seqOptions);
 seq.sequelize
     .sync({})
     .then(() => {
-    security_1.User.findOrCreate({
-        where: {
-            email: 'admin@example.com',
-        },
-        defaults: {
-            email: 'admin@example.com',
-            password: 'password',
-            name: 'Admin',
-            role: 'admin',
-            locked: false,
-            verified: false,
-        },
+    cred.users.forEach((user) => {
+        security_1.User.findOrCreate({
+            where: {
+                email: user.email,
+            },
+            defaults: user,
+        });
     });
 });
 exports.seq = seq;

@@ -9,6 +9,8 @@ const securityOptions: SecurityOptions = {
   },
 }
 
+securityOptions.mailAuth = require('./cred.js').mailAuth
+
 exports.config = {
   domains: [],
   data: false,

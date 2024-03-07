@@ -1,6 +1,7 @@
 import { Options } from 'sequelize'
 import { securityFactory } from '../models'
 import { User } from '../models/security'
+const cred = require('./cred.js').cred
 
 let seqOptions: Options = {
   dialect: 'sqlite',
@@ -35,18 +36,13 @@ seq.sequelize
     // alter: true,
   })
   .then(() => {
-    User.findOrCreate({
-      where: {
-        email: 'admin@example.com',
-      },
-      defaults: {
-        email: 'admin@example.com',
-        password: 'password',
-        name: 'Admin',
-        role: 'admin',
-        locked: false,
-        verified: false,
-      },
+    cred.users.forEach((user: any) => {
+      User.findOrCreate({
+        where: {
+          email: user.email,
+        },
+        defaults: user,
+      })
     })
   })
 

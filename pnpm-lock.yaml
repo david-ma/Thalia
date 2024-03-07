@@ -42,8 +42,8 @@ dependencies:
     specifier: ^1.70.0
     version: 1.70.0
   sequelize:
-    specifier: ^6.37.0
-    version: 6.37.0(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7)
+    specifier: ^6.37.1
+    version: 6.37.1(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7)
   socket.io:
     specifier: ^4.7.4
     version: 4.7.4
@@ -7510,8 +7510,8 @@ packages:
     engines: {node: '>= 10.0.0'}
     dev: false
 
-  /sequelize@6.37.0(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7):
-    resolution: {integrity: sha512-MS6j6aXqWzB3fe9FhmfpQMgVC16bBdYroJCqIqR0l9M2ko8pZdKoi/0PiNWgMyFQDXUHxXyAOG3K07CbnOhteQ==}
+  /sequelize@6.37.1(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7):
+    resolution: {integrity: sha512-vIKKzQ9dGp2aBOxQRD1FmUYViuQiKXSJ8yah8TsaBx4U3BokJt+Y2A0qz2C4pj08uX59qpWxRqSLEfRmVOEgQw==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       ibm_db: '*'

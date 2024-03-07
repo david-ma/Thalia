@@ -28,7 +28,7 @@
     "pg-hstore": "^2.3.4",
     "requirejs": "^2.3.6",
     "sass": "^1.70.0",
-    "sequelize": "^6.37.0",
+    "sequelize": "^6.37.1",
     "socket.io": "^4.7.4",
     "sqlite3": "^5.1.7",
     "zlib": "^1.0.5"

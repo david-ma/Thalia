@@ -312,7 +312,7 @@ const security_1 = require("../websites/example/models/security");
 Object.defineProperty(exports, "User", { enumerable: true, get: function () { return security_1.User; } });
 Object.defineProperty(exports, "Session", { enumerable: true, get: function () { return security_1.Session; } });
 Object.defineProperty(exports, "Audit", { enumerable: true, get: function () { return security_1.Audit; } });
-const smugmug_1 = require("../websites/example/models/smugmug");
+var smugmug_1 = require("../websites/example/models/smugmug");
 Object.defineProperty(exports, "Album", { enumerable: true, get: function () { return smugmug_1.Album; } });
 Object.defineProperty(exports, "Image", { enumerable: true, get: function () { return smugmug_1.Image; } });
 const models_1 = require("../websites/example/models");
@@ -534,6 +534,36 @@ function users(options) {
                 controller.res.end('<meta http-equiv="refresh" content="0; url=/profile">');
             }, function () {
                 servePage(controller, 'forgotPassword');
+            });
+        },
+        recoverAccount: function (controller) {
+            parseForm(controller).then(function ([fields, files]) {
+                if (!fields || !fields.Email) {
+                    controller.res.end('<meta http-equiv="refresh" content="0; url=/forgotPassword">');
+                    return;
+                }
+                const Email = fields.Email;
+                controller.db.User.findOne({
+                    where: {
+                        email: Email,
+                    },
+                }).then((user) => {
+                    if (!user) {
+                        controller.res.end('User with this email not found');
+                        return;
+                    }
+                    else {
+                        createSession(user.id, controller).then((session) => {
+                            const emailOptions = {
+                                from: options.mailFrom,
+                                to: Email,
+                                subject: `Account Recovery for ${options.websiteName}`,
+                                html: `If you have forgotten your password, you can log in using this link: <a href="https://${controller.req.headers.host}/profile?session=${session.sid}">Log in</a> and then reset your password`,
+                            };
+                            sendEmail(emailOptions, options.mailAuth);
+                        });
+                    }
+                });
             });
         },
         newUser: function (controller) {

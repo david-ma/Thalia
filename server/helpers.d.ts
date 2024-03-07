@@ -18,8 +18,7 @@ interface seqObject {
     sequelize: Sequelize;
 }
 import { User, Session, Audit } from '../websites/example/models/security';
-import { Album, Image } from '../websites/example/models/smugmug';
-export { Album, Image };
+export { Album, Image, AlbumStatic, ImageStatic, } from '../websites/example/models/smugmug';
 import { securityFactory, smugmugFactory } from '../websites/example/models';
 export { securityFactory, smugmugFactory, seqObject };
 export declare function createSession(userId: number, controller: Thalia.Controller, noCookie?: boolean): Promise<any>;
@@ -45,6 +44,7 @@ export declare function users(options: SecurityOptions): {
     logon: (controller: Thalia.Controller) => void;
     logout: (controller: Thalia.Controller) => void;
     forgotPassword: (controller: Thalia.Controller) => void;
+    recoverAccount: (controller: Thalia.Controller) => void;
     newUser: (controller: Thalia.Controller) => void;
     createNewUser: (controller: Thalia.Controller) => void;
     invite: (controller: Thalia.Controller) => void;

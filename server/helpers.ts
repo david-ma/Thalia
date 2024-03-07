@@ -479,8 +479,13 @@ interface seqObject {
 
 // Security stuff. Maybe put in another file..?
 import { User, Session, Audit } from '../websites/example/models/security'
-import { Album, Image } from '../websites/example/models/smugmug'
-export { Album, Image }
+export {
+  Album,
+  Image,
+  AlbumStatic,
+  ImageStatic,
+} from '../websites/example/models/smugmug'
+
 import { securityFactory, smugmugFactory } from '../websites/example/models'
 export { securityFactory, smugmugFactory, seqObject }
 
@@ -793,6 +798,40 @@ export function users(options: SecurityOptions) {
           servePage(controller, 'forgotPassword')
         }
       )
+    },
+    recoverAccount: function (controller: Thalia.Controller) {
+      parseForm(controller).then(function ([fields, files]) {
+        if (!fields || !fields.Email) {
+          controller.res.end(
+            '<meta http-equiv="refresh" content="0; url=/forgotPassword">'
+          )
+          return
+        }
+
+        const Email = fields.Email
+
+        controller.db.User.findOne({
+          where: {
+            email: Email,
+          },
+        }).then((user: any) => {
+          if (!user) {
+            controller.res.end('User with this email not found')
+            return
+          } else {
+            createSession(user.id, controller).then((session: any) => {
+              // Send the user an email with the new password
+              const emailOptions: EmailOptions = {
+                from: options.mailFrom,
+                to: Email,
+                subject: `Account Recovery for ${options.websiteName}`,
+                html: `If you have forgotten your password, you can log in using this link: <a href="https://${controller.req.headers.host}/profile?session=${session.sid}">Log in</a> and then reset your password`,
+              }
+              sendEmail(emailOptions, options.mailAuth)
+            })
+          }
+        })
+      })
     },
     newUser: function (controller: Thalia.Controller) {
       checkSession(

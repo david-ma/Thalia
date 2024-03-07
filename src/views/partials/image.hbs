@@ -24,6 +24,10 @@
 <br />
 
 <script>
+  // TODO: Rewrite so we don't need D3js
+  // Or at least, give a warning
+  // Or maybe load it in this file?
+
   d3.select("#fileToUpload").on("change", function (event, thing, thing2) {
     d3.select("#imageHelpText").text("Uploading image... please wait");
     //loading.gif

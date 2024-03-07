@@ -4,9 +4,8 @@ exports.AuditFactory = exports.Audit = exports.SessionFactory = exports.Session 
 const sequelize_1 = require("sequelize");
 const sequelize_2 = require("sequelize");
 class User extends sequelize_2.Model {
-    sayHello() {
-        console.log('Hello, my name is ' + this.name);
-        return 'hello world';
+    isAdmin() {
+        return this.role.indexOf('admin') > -1;
     }
     getSessions() {
         return Session.findAll({

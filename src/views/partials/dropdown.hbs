@@ -1,0 +1,14 @@
+<style>
+select.dropdown {
+  font-size: 1.5em;
+}
+</style>
+
+<label for="{{field}}">{{field}}:</label>
+
+<select class="dropdown" id="{{field}}" name="{{field}}" size="{{options.length}}">
+  {{#each options}}
+    <option value="{{@key}}" {{isSelected ../field @key}}>{{this}}</option>
+  {{/each}}
+</select>
+<br />

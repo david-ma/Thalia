@@ -19,9 +19,8 @@ export class User extends Model {
   public locked: boolean
   public verified: boolean
 
-  public sayHello() {
-    console.log('Hello, my name is ' + this.name)
-    return 'hello world'
+  public isAdmin() {
+    return this.role.indexOf('admin') > -1
   }
 
   public getSessions() {

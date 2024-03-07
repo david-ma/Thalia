@@ -1,0 +1,75 @@
+<style>
+  #uploadImageLabel {
+    font-size: 20px;
+    font-family: 'Bobby Jones', 'Comico', cursive;
+  }
+
+#uploadImageLabel:hover {
+    pointer: cursor;
+  }
+
+  #imageHelpText {
+    background: none;
+  }
+</style>
+
+<label id="uploadImageLabel" for="fileToUpload"><img id="image"
+    src="{{#if image_url}}{{ image_url }}{{else}}{{thumbnail}}{{/if}}">
+  <span id="imageHelpText">Click to upload image</span>
+</label>
+
+<form id="imageForm" style="display: none;">
+  <input type="file" accept="image/*" name="fileToUpload" id="fileToUpload" />
+</form>
+<br />
+
+<script>
+  d3.select("#fileToUpload").on("change", function (event, thing, thing2) {
+    d3.select("#imageHelpText").text("Uploading image... please wait");
+    //loading.gif
+    d3.select("#image").attr("src", "/images/loading.gif");
+
+    var file = event.target.files[0];
+    var filetype = file.type;
+    console.log("filetype", filetype)
+
+    if (file) {
+      console.log("Hey, we have a file")
+
+      var reader = new FileReader();
+      reader.onloadend = function (event) {
+        console.log(event);
+
+        var formData = new FormData(document.getElementById("imageForm"));
+
+        $.ajax({
+          url: 'https://upload.david-ma.net/uploadPhoto',
+          type: 'POST',
+          data: formData,
+          cache: false,
+          contentType: false,
+          processData: false,
+          error: function (err) {
+            console.log("There's an error!")
+
+            d3.select("#imageHelpText").text("Error. Try again :(");
+            d3.select("#image").attr("src", "");
+
+            console.log("err", err)
+          },
+          success: function (imageBlob) {
+            d3.select("#imageHelpText").text("Image uploaded! Click save!");
+            const data = JSON.parse(imageBlob);
+
+            d3.select("#image").attr("src", data.thumbnail);
+            d3.select("#image_url").attr("value", data.image_url);
+            d3.select("#imageKey").attr("value", data.imageKey);
+            d3.select("#thumbnail").attr("value", data.thumbnail);
+            document.getElementById("saveButton").click();
+          }
+        })
+      }
+      reader.readAsDataURL(file);
+    }
+  });
+</script>

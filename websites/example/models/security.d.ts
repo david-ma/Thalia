@@ -15,7 +15,7 @@ export declare class User extends Model {
     role: string;
     locked: boolean;
     verified: boolean;
-    sayHello(): string;
+    isAdmin(): boolean;
     getSessions(): Promise<Session[]>;
     logout(sessionId: string): void;
 }

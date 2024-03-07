@@ -1,0 +1,12 @@
+<div>
+  <label style="float: left;" for="{{field}}">{{field}}:</label>
+  <input
+    style="float: left; margin: 8px;"
+    type="checkbox"
+    id="{{field}}"
+    name="{{field}}"
+    {{#if checked}}checked{{/if}}
+  />
+</div>
+{{#if helpText}}<sub>{{helpText}}</sub>{{/if}}
+<br />

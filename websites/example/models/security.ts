@@ -131,6 +131,7 @@ export function SessionFactory(sequelize: Sequelize): SessionStatic {
 
 export interface AuditAttributes {
   id: number
+  ip: string
   userId: number
   sessionId: string
   action: string
@@ -148,6 +149,7 @@ export type AuditStatic = ModelStatic<Audit> & {
 export function AuditFactory(sequelize: Sequelize): AuditStatic {
   return <AuditStatic>sequelize.define('Audit', {
     userId: DataTypes.INTEGER,
+    ip: DataTypes.STRING,
     sessionId: DataTypes.STRING,
     action: DataTypes.STRING,
     blob: DataTypes.JSON,

@@ -67,6 +67,7 @@ exports.Audit = Audit;
 function AuditFactory(sequelize) {
     return sequelize.define('Audit', {
         userId: sequelize_1.DataTypes.INTEGER,
+        ip: sequelize_1.DataTypes.STRING,
         sessionId: sequelize_1.DataTypes.STRING,
         action: sequelize_1.DataTypes.STRING,
         blob: sequelize_1.DataTypes.JSON,

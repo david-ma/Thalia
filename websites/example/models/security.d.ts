@@ -48,6 +48,7 @@ export type SessionStatic = ModelStatic<Session> & {
 export declare function SessionFactory(sequelize: Sequelize): SessionStatic;
 export interface AuditAttributes {
     id: number;
+    ip: string;
     userId: number;
     sessionId: string;
     action: string;

@@ -499,9 +499,9 @@ export async function createSession(
   const data = controller.req
     ? {
         'x-forwarded-for': controller.req.headers['x-forwarded-for'],
-        'X-Real-IP': controller.req.headers['X-Real-IP'],
+        'x-real-ip': controller.req.headers['x-real-ip'],
         remoteAddress: controller.req.connection.remoteAddress,
-        ip: controller.req.ip,
+        ip: controller.ip,
         userAgent: controller.req.headers['user-agent'],
       }
     : {}
@@ -800,37 +800,60 @@ export function users(options: SecurityOptions) {
       )
     },
     recoverAccount: function (controller: Thalia.Controller) {
-      parseForm(controller).then(function ([fields, files]) {
-        if (!fields || !fields.Email) {
-          controller.res.end(
-            '<meta http-equiv="refresh" content="0; url=/forgotPassword">'
-          )
-          return
-        }
+      // We should log this attempt
+      controller.db.Audit.create({
+        action: 'recoverAccount',
+        ip: controller.ip,
+        data: controller.req.headers,
+      })
 
-        const Email = fields.Email
-
-        controller.db.User.findOne({
-          where: {
-            email: Email,
+      // If account recovery is requested too many times, reject it
+      controller.db.Audit.count({
+        where: {
+          action: 'recoverAccount',
+          ip: controller.ip,
+          createdAt: {
+            [Op.gt]: new Date(Date.now() - 1000 * 60 * 60), // 1 hour
           },
-        }).then((user: any) => {
-          if (!user) {
-            controller.res.end('User with this email not found')
-            return
-          } else {
-            createSession(user.id, controller).then((session: any) => {
-              // Send the user an email with the new password
-              const emailOptions: EmailOptions = {
-                from: options.mailFrom,
-                to: Email,
-                subject: `Account Recovery for ${options.websiteName}`,
-                html: `If you have forgotten your password, you can log in using this link: <a href="https://${controller.req.headers.host}/profile?session=${session.sid}">Log in</a> and then reset your password`,
+        },
+      }).then((count) => {
+        if (count > 5) {
+          controller.res.end('Too many account recovery attempts')
+          return
+        } else {
+          parseForm(controller).then(function ([fields, files]) {
+            if (!fields || !fields.Email) {
+              controller.res.end(
+                '<meta http-equiv="refresh" content="0; url=/forgotPassword">'
+              )
+              return
+            }
+
+            const Email = fields.Email
+
+            controller.db.User.findOne({
+              where: {
+                email: Email,
+              },
+            }).then((user: any) => {
+              if (!user) {
+                controller.res.end('User with this email not found')
+                return
+              } else {
+                createSession(user.id, controller).then((session: any) => {
+                  // Send the user an email with the new password
+                  const emailOptions: EmailOptions = {
+                    from: options.mailFrom,
+                    to: Email,
+                    subject: `Account Recovery for ${options.websiteName}`,
+                    html: `If you have forgotten your password, you can log in using this link: <a href="https://${controller.req.headers.host}/profile?session=${session.sid}">Log in</a> and then reset your password`,
+                  }
+                  sendEmail(emailOptions, options.mailAuth)
+                })
               }
-              sendEmail(emailOptions, options.mailAuth)
             })
-          }
-        })
+          })
+        }
       })
     },
     newUser: function (controller: Thalia.Controller) {

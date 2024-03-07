@@ -185,6 +185,11 @@ const router: Thalia.Router = function (
               },
             },
             req: request,
+            ip: (
+              request.headers['x-real-ip'] ||
+              request.connection.remoteAddress ||
+              ''
+            ).toString(),
             db: website.seq || null,
             views: website.views,
             workspacePath: website.workspacePath,

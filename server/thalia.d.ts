@@ -71,9 +71,8 @@ declare module Thalia {
       deleteCookie: (cookieName: string) => void
       end: (result: any) => void
     }
-    req?: IncomingMessage & {
-      ip?: string
-    }
+    req: IncomingMessage
+    ip: string
     db?: SequelizeWrapper | null
     views?: {
       [key: string]: string

@@ -702,6 +702,7 @@ export function users(options: SecurityOptions) {
             }
             return obj
           }, {}),
+          unverified: !user.verified,
           admin: user.role === 'admin',
         }
         user.getSessions().then((sessions: Session[]) => {
@@ -931,6 +932,48 @@ export function users(options: SecurityOptions) {
           }
         })
       })
+    },
+    verifyEmail: function (controller: Thalia.Controller) {
+      const query = controller.query
+      console.log('query', query)
+
+      if (query && query.session) {
+        controller.db.Session.findOne({
+          where: {
+            sid: query.session,
+          },
+        }).then((session: Session) => {
+          if (session) {
+            controller.db.User.update(
+              { verified: true },
+              { where: { id: session.userId } }
+            ).then(() => {
+              controller.res.end('Email verified')
+            })
+          } else {
+            controller.res.end('Email not verified. No session found.')
+          }
+        })
+      } else {
+        checkSession(controller, function ([views, user]) {
+          const name = controller.name || 'thalia'
+          const emailOptions: EmailOptions = {
+            from: options.mailFrom,
+            to: user.email,
+            subject: `Verify Email`,
+            html: `Hi ${
+              user.name
+            },<br>Please verify your email address by clicking this link: <a href="https://${
+              controller.req.headers.host
+            }/verifyEmail?session=${
+              controller.cookies[`_${name}_login`]
+            }">Verify Email</a>`,
+          }
+
+          sendEmail(emailOptions, options.mailAuth)
+          controller.res.end('Verification email sent, please check your email.')
+        })
+      }
     },
     invite: function (controller: Thalia.Controller) {
       checkSession(controller, function ([views, user]) {

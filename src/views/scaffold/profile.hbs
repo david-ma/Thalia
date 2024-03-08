@@ -1,5 +1,10 @@
 <div class="box">
   <h2>Profile</h2>
+
+  {{#if unverified}}
+  <div class="warning"><p>Your email has not been verified. Please click this <a href="/verifyEmail">link</a> to send an email to verify it.</p></div>
+  {{/if}}
+
   <form action="/profile" method="post">
     <table>
       {{#each user}}

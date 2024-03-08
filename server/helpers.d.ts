@@ -47,6 +47,7 @@ export declare function users(options: SecurityOptions): {
     recoverAccount: (controller: Thalia.Controller) => void;
     newUser: (controller: Thalia.Controller) => void;
     createNewUser: (controller: Thalia.Controller) => void;
+    verifyEmail: (controller: Thalia.Controller) => void;
     invite: (controller: Thalia.Controller) => void;
 };
 declare const _default: {

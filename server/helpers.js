@@ -467,6 +467,7 @@ function users(options) {
                         }
                         return obj;
                     }, {}),
+                    unverified: !user.verified,
                     admin: user.role === 'admin',
                 };
                 user.getSessions().then((sessions) => {
@@ -643,6 +644,39 @@ function users(options) {
                     }
                 });
             });
+        },
+        verifyEmail: function (controller) {
+            const query = controller.query;
+            console.log('query', query);
+            if (query && query.session) {
+                controller.db.Session.findOne({
+                    where: {
+                        sid: query.session,
+                    },
+                }).then((session) => {
+                    if (session) {
+                        controller.db.User.update({ verified: true }, { where: { id: session.userId } }).then(() => {
+                            controller.res.end('Email verified');
+                        });
+                    }
+                    else {
+                        controller.res.end('Email not verified. No session found.');
+                    }
+                });
+            }
+            else {
+                (0, exports.checkSession)(controller, function ([views, user]) {
+                    const name = controller.name || 'thalia';
+                    const emailOptions = {
+                        from: options.mailFrom,
+                        to: user.email,
+                        subject: `Verify Email`,
+                        html: `Hi ${user.name},<br>Please verify your email address by clicking this link: <a href="https://${controller.req.headers.host}/verifyEmail?session=${controller.cookies[`_${name}_login`]}">Verify Email</a>`,
+                    };
+                    sendEmail(emailOptions, options.mailAuth);
+                    controller.res.end('Verification email sent, please check your email.');
+                });
+            }
         },
         invite: function (controller) {
             (0, exports.checkSession)(controller, function ([views, user]) {

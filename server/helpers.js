@@ -537,7 +537,8 @@ function users(options) {
             });
         },
         recoverAccount: function (controller) {
-            controller.db.Audit.create({
+            console.log('Someone is trying to recoverAccount');
+            var blah = controller.db.Audit.create({
                 action: 'recoverAccount',
                 ip: controller.ip,
                 data: controller.req.headers,
@@ -577,9 +578,10 @@ function users(options) {
                                         from: options.mailFrom,
                                         to: Email,
                                         subject: `Account Recovery for ${options.websiteName}`,
-                                        html: `If you have forgotten your password, you can log in using this link: <a href="https://${controller.req.headers.host}/profile?session=${session.sid}">Log in</a> and then reset your password`,
+                                        html: `Hi ${user.name},<br>This is an account recovery email. If you have forgotten your password, you can log in using this link: <a href="https://${controller.req.headers.host}/profile?session=${session.sid}">Log in</a> and then reset your password<br>If you did not request this email, please ignore it.`,
                                     };
                                     sendEmail(emailOptions, options.mailAuth);
+                                    controller.res.end('Recovery email sent, please check your email');
                                 });
                             }
                         });

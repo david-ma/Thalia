@@ -58,6 +58,13 @@ export interface AuditAttributes {
 export interface AuditModel extends Model<AuditAttributes>, AuditAttributes {
 }
 export declare class Audit extends Model<AuditModel, AuditAttributes> {
+    id: number;
+    ip: string;
+    userId: number;
+    sessionId: string;
+    action: string;
+    blob: object;
+    timestamp: Date;
 }
 export type AuditStatic = ModelStatic<Audit> & {
     new (values?: object, options?: BuildOptions): AuditModel;

@@ -140,7 +140,15 @@ export interface AuditAttributes {
 }
 
 export interface AuditModel extends Model<AuditAttributes>, AuditAttributes {}
-export class Audit extends Model<AuditModel, AuditAttributes> {}
+export class Audit extends Model<AuditModel, AuditAttributes> {
+  public id!: number
+  public ip!: string
+  public userId!: number
+  public sessionId!: string
+  public action!: string
+  public blob!: object
+  public timestamp!: Date
+}
 
 // export type AuditStatic = typeof Model & {
 export type AuditStatic = ModelStatic<Audit> & {

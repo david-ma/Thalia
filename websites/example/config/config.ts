@@ -1,15 +1,12 @@
 import { users, SecurityOptions } from 'thalia'
 
+import { cred } from './cred'
+
 const securityOptions: SecurityOptions = {
   websiteName: 'default',
   mailFrom: 'Thalia <thalia@david-ma.net>',
-  mailAuth: {
-    user: '',
-    pass: '',
-  },
+  mailAuth: cred.mailAuth,
 }
-
-securityOptions.mailAuth = require('./cred.js').mailAuth
 
 exports.config = {
   domains: [],

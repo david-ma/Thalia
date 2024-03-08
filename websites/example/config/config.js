@@ -1,15 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const thalia_1 = require("thalia");
+const cred_1 = require("./cred");
 const securityOptions = {
     websiteName: 'default',
     mailFrom: 'Thalia <thalia@david-ma.net>',
-    mailAuth: {
-        user: '',
-        pass: '',
-    },
+    mailAuth: cred_1.cred.mailAuth,
 };
-securityOptions.mailAuth = require('./cred.js').mailAuth;
 exports.config = {
     domains: [],
     data: false,

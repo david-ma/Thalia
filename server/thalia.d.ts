@@ -20,6 +20,14 @@ declare module Thalia {
   export type MysqlWrapper = unknown
   export type SequelizeWrapper = any
 
+// TODO: This should really be something like this:
+//   export type SequelizeWrapper = {
+//     [key: string]: ModelStatic<Model>
+//     // sequelize: Sequelize
+//   }
+
+
+
   export type Proxy = {
     host?: string
     filter?: string

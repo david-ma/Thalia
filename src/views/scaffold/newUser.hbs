@@ -1,12 +1,12 @@
 <div class="box">
   <h2>New User</h2>
   <form action="/createNewUser" method="post">
-    {{> input field="Name" required helpText="Your name"}}
-    {{> input field="Email" required type="email" helpText="Your email"}}
-    {{> input field="Password" required type="password" helpText="Your password"}}
+    {{> input field="Name" required=true helpText="Your name"}}
+    {{> input field="Email" required=true type="email" helpText="Your email"}}
+    {{> input field="Password" required=true type="password" helpText="Your password"}}
 
     {{!-- capcha --}}
-    {{> input field="Captcha" required helpText="Please type the letters and numbers below"}}
+    {{> input field="Captcha" required=true helpText="Please type the letters and numbers below"}}
     <img src="/captcha" alt="captcha" />
 
     <input type="submit" value="Create" />

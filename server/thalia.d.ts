@@ -80,6 +80,9 @@ declare module Thalia {
       end: (result: any) => void
     }
     req: IncomingMessage
+    response: ServerResponse<IncomingMessage>
+    request: IncomingMessage
+    routeFile: (file: string) => void
     ip: string
     db?: SequelizeWrapper | null
     views?: {

@@ -229,24 +229,25 @@ define("requestHandlers", ["require", "exports", "fs", "path", "sass"], function
                 }
                 return proxies;
             }
-            if (fs.existsSync(path.resolve(baseUrl, 'db_bootstrap.js'))) {
+            if (fs.existsSync(path.resolve(baseUrl, 'config', 'db_bootstrap.js'))) {
+                const start = Date.now();
                 try {
-                    const start = Date.now();
-                    handle.websites[site].seq = require(path.resolve(baseUrl, 'db_bootstrap.js')).seq;
-                    console.log(`${Date.now() - start} ms - Database bootstrap.js ${site}`);
+                    const { seqOptions, seq } = require(path.resolve(baseUrl, 'config', 'db_bootstrap.js'));
+                    handle.websites[site].seq = seq;
+                    seq.sequelize.authenticate().then(() => {
+                        console.log(`${Date.now() - start} ms - Database db_bootstrap.js ${site}`);
+                    }, (err) => {
+                        console.log(`${Date.now() - start} ms - Database db_bootstrap.js ${site}`);
+                        console.error(`Error connecting to database in ${site}/config/db_bootstrap.js ${err.message}`);
+                        console.log('Options:', seqOptions || 'No options provided');
+                        process.exit(1);
+                    });
                 }
                 catch (e) {
+                    console.log(`${Date.now() - start} ms - Database db_bootstrap.js ${site}`);
+                    console.log(`Couldn't load db_bootstrap.js for ${site}`);
                     console.log(e);
-                }
-            }
-            else if (fs.existsSync(path.resolve(baseUrl, 'config', 'db_bootstrap.js'))) {
-                try {
-                    const start = Date.now();
-                    handle.websites[site].seq = require(path.resolve(baseUrl, 'config', 'db_bootstrap.js')).seq;
-                    console.log(`${Date.now() - start} ms - Database bootstrap.js ${site}`);
-                }
-                catch (e) {
-                    console.log(e);
+                    process.exit(1);
                 }
             }
             if (fs.existsSync(path.resolve(baseUrl, 'views'))) {

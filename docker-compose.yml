@@ -1,9 +1,10 @@
 services:
   web:
     build: .
-    image: frostickle/thalia:4.0
+    image: frostickle/thalia:1.0.4
     ports:
       - '1337:1337'
     environment:
       - NODE_ENV=docker
+      - NODE_OPTIONS=--max-http-header-size=65536
     restart: always

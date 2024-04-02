@@ -12,6 +12,7 @@ echo
 SITE="${1:-example}"
 PORT="${2:-1337}"
 STANDALONE="${3:-false}"
+export NODE_OPTIONS='--max-http-header-size=65536'
 
 if test -d "websites/$SITE"; then
     echo "Developing $SITE"

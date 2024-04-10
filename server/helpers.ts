@@ -971,7 +971,9 @@ export function users(options: SecurityOptions) {
           }
 
           sendEmail(emailOptions, options.mailAuth)
-          controller.res.end('Verification email sent, please check your email.')
+          controller.res.end(
+            'Verification email sent, please check your email.'
+          )
         })
       }
     },
@@ -1044,18 +1046,18 @@ export { crud, Views, Session, User, Audit }
 // https://gist.github.com/elvuel/2348206#file-oauth-rb-L5
 // '-._~0-9A-Za-z' # These are the only characters that should not be encoded.
 const oauthDictionary = {
-  '!': '%21',
-  '*': '%2A',
+  '\\!': '%21',
+  '\\*': '%2A',
   "'": '%27',
-  '(': '%28',
-  ')': '%29',
+  '\\(': '%28',
+  '\\)': '%29',
   ',': '%2C',
   ':': '%3A',
   ';': '%3B',
   '@': '%40',
-  $: '%24',
-  '/': '%2F',
-  '+': '%2B',
+  '\\$': '%24',
+  '\\/': '%2F',
+  '\\+': '%2B',
 }
 
 export function oauthEscape(string: string) {
@@ -1068,7 +1070,7 @@ export function oauthEscape(string: string) {
   return encodeURIComponent(string).replace(
     new RegExp(Object.keys(oauthDictionary).join('|'), 'g'),
     function (match) {
-      return oauthDictionary[match]
+      return oauthDictionary[match] || oauthDictionary[`\\${match}`]
     }
   )
 }

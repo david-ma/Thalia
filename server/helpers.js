@@ -726,18 +726,18 @@ function parseFields(fields) {
 }
 exports.default = { crud };
 const oauthDictionary = {
-    '!': '%21',
-    '*': '%2A',
+    '\\!': '%21',
+    '\\*': '%2A',
     "'": '%27',
-    '(': '%28',
-    ')': '%29',
+    '\\(': '%28',
+    '\\)': '%29',
     ',': '%2C',
     ':': '%3A',
     ';': '%3B',
     '@': '%40',
-    $: '%24',
-    '/': '%2F',
-    '+': '%2B',
+    '\\$': '%24',
+    '\\/': '%2F',
+    '\\+': '%2B',
 };
 function oauthEscape(string) {
     if (string === undefined) {
@@ -747,7 +747,7 @@ function oauthEscape(string) {
         throw 'Array passed to _oauthEscape';
     }
     return encodeURIComponent(string).replace(new RegExp(Object.keys(oauthDictionary).join('|'), 'g'), function (match) {
-        return oauthDictionary[match];
+        return oauthDictionary[match] || oauthDictionary[`\\${match}`];
     });
 }
 exports.oauthEscape = oauthEscape;

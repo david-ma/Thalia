@@ -1,7 +1,7 @@
 {
   "name": "thalia",
   "private": true,
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "Yet another server framework for serving websites",
   "main": "./server/helpers.js",
   "types": "./server/helpers.d.ts",
@@ -13,10 +13,9 @@
     }
   },
   "bin": {
-    "thalia": "./bin/thalia"
+    "thalia": "./bin/thalia.js"
   },
   "dependencies": {
-    "amdefine": "^1.0.1",
     "formidable": "^3.5.1",
     "handlebars": "^4.7.8",
     "http-proxy": "^1.18.1",
@@ -26,7 +25,6 @@
     "nodemailer": "^6.9.13",
     "pg": "^8.11.5",
     "pg-hstore": "^2.3.4",
-    "requirejs": "^2.3.6",
     "sass": "^1.74.1",
     "sequelize": "^6.37.2",
     "socket.io": "^4.7.5",
@@ -52,6 +50,7 @@
     "@types/puppeteer": "^5.4.7",
     "@types/sequelize": "^4.28.20",
     "@types/showdown": "^1.9.4",
+    "@types/socket.io": "^3.0.2",
     "@types/validator": "^13.11.9",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
@@ -92,7 +91,7 @@
     "node": ">=10"
   },
   "scripts": {
-    "start": "node server/thalia.js",
+    "start": "node bin/thalia.js",
     "build": "./build.sh",
     "watch": "./watch.sh",
     "test": "./test.sh",
@@ -101,7 +100,7 @@
     "develop": "./develop.sh"
   },
   "nodemonConfig": {
-    "exec": "node server/thalia.js",
+    "exec": "node bin/thalia.js",
     "verbose": true,
     "watch": [
       "./server/thalia.js",
@@ -127,14 +126,10 @@
       "@typescript-eslint"
     ],
     "rules": {
-      "no-unused-vars": "off",
-      "@typescript-eslint/no-unused-vars": [
-        "error"
-      ],
-      "no-useless-constructor": "off",
-      "@typescript-eslint/no-useless-constructor": [
-        "error"
-      ]
+      "no-unused-vars": 0,
+      "@typescript-eslint/no-unused-vars": 1,
+      "no-useless-constructor": 0,
+      "@typescript-eslint/no-useless-constructor": 1
     },
     "parserOptions": {
       "ecmaVersion": 2020

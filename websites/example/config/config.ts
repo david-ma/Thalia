@@ -1,4 +1,4 @@
-import { users, SecurityOptions } from 'thalia'
+import { users, SecurityOptions } from '../../../server/helpers'
 
 import { cred } from './cred'
 

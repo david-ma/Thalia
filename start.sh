@@ -10,4 +10,4 @@ export NODE_OPTIONS='--max-http-header-size=65536'
 
 echo Hello user, running David Ma\'s nodejs server at localhost
 echo
-node server/thalia.js --site $SITE --port $PORT
+node bin/thalia.js --site $SITE --port $PORT

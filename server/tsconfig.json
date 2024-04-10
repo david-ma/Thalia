@@ -1,25 +1,15 @@
 {
   "compilerOptions": {
-    "module": "AMD",
+    "declaration": true,
+    "target": "ES2020",
+    "module": "CommonJS",
     "moduleResolution": "Node",
-    "esModuleInterop": true,
-    "skipLibCheck": false,
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
     "removeComments": true,
-    "outFile": "thalia.js",
     "assumeChangesOnlyAffectDirectDependencies": true,
     "incremental": true,
-    "target": "ES2020"
-  },
-  "files": [
-    "moduleShim.ts",
-    "requestHandlers.ts",
-    "router.ts",
-    "server.ts",
-    "socket.ts",
-    "index.ts"
-  ]
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    "noImplicitReturns": false,
+    "noUnusedLocals": false
+  }
 }

@@ -16,7 +16,7 @@ import formidable = require('formidable')
 let blacklist: string[] = []
 try {
   blacklist = require('../blacklist').blacklist
-  console.log('This is the blacklist:', blacklist)
+  // console.log('This is the blacklist:', blacklist)
 } catch (e) {}
 
 // This part of the server starts the server on port 80 and logs stuff to the std.out

@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@jest/globals'
 
-import { htmlEscape, oauthEscape } from '../server/helpers'
+import { htmlEscape, oauthEscape, sortParams } from '../server/helpers'
 
 // We should really just write these HTML Entities to a dom and read them
 const statements = [
@@ -61,5 +61,41 @@ describe('Test oauthEscape', () => {
     test(`oauthEscape(${input})`, () => {
       expect(oauthEscape(input)).toBe(oauthExpected)
     })
+  })
+})
+
+describe('Test sortParams', () => {
+  test('sortParams', () => {
+    expect(sortParams).toBeTruthy()
+  })
+
+  test('sortParams', () => {
+    const params = {
+      b: 'b',
+      a: 'a',
+      c: 'c',
+    }
+    expect(JSON.stringify(sortParams(params))).toBe(
+      JSON.stringify({
+        a: 'a',
+        b: 'b',
+        c: 'c',
+      })
+    )
+  })
+
+  test('sortParams', () => {
+    const params = {
+      b: 'Second statement',
+      a: 'First stuff',
+      c: 12345,
+    }
+    expect(JSON.stringify(sortParams(params))).toEqual(
+      JSON.stringify({
+        a: 'First stuff',
+        b: 'Second statement',
+        c: 12345,
+      })
+    )
   })
 })

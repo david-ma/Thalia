@@ -54,3 +54,32 @@ const statements = [
         });
     });
 });
+(0, globals_1.describe)('Test sortParams', () => {
+    (0, globals_1.test)('sortParams', () => {
+        (0, globals_1.expect)(helpers_1.sortParams).toBeTruthy();
+    });
+    (0, globals_1.test)('sortParams', () => {
+        const params = {
+            b: 'b',
+            a: 'a',
+            c: 'c',
+        };
+        (0, globals_1.expect)(JSON.stringify((0, helpers_1.sortParams)(params))).toBe(JSON.stringify({
+            a: 'a',
+            b: 'b',
+            c: 'c',
+        }));
+    });
+    (0, globals_1.test)('sortParams', () => {
+        const params = {
+            b: 'Second statement',
+            a: 'First stuff',
+            c: 12345,
+        };
+        (0, globals_1.expect)(JSON.stringify((0, helpers_1.sortParams)(params))).toEqual(JSON.stringify({
+            a: 'First stuff',
+            b: 'Second statement',
+            c: 12345,
+        }));
+    });
+});

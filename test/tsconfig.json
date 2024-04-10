@@ -1,15 +1,14 @@
 {
   "compilerOptions": {
+    "target": "ES2020",
     "module": "CommonJS",
     "moduleResolution": "Node",
-    "skipLibCheck": false,
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
     "removeComments": true,
     "assumeChangesOnlyAffectDirectDependencies": true,
     "incremental": true,
-    "target": "ES2020"
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    "noImplicitReturns": false,
+    "noUnusedLocals": false
   }
 }

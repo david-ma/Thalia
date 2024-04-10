@@ -13,7 +13,7 @@ const puppeteer = require("puppeteer");
     })
         .on('requestfailed', request => console.log(`${request.failure().errorText} ${request.url()}`));
     await page.goto('http://localhost:1337/blog/breathe');
-    const hrefs = await page.$$eval('a', links => links.map((a) => a.href));
+    const hrefs = await page.$$eval('a', (links) => links.map((a) => a.href));
     console.log(hrefs);
     page.goto(hrefs[1]);
     hrefs.forEach(function (link, i) {

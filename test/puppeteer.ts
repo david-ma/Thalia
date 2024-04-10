@@ -20,7 +20,9 @@ import * as puppeteer from 'puppeteer';
 
   await page.goto('http://localhost:1337/blog/breathe')
 
-  const hrefs = await page.$$eval('a', links => links.map((a: HTMLLinkElement) => a.href))
+  const hrefs = await page.$$eval('a', (links) =>
+    links.map((a: HTMLAnchorElement) => a.href)
+  )
 
   console.log(hrefs)
 

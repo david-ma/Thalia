@@ -802,7 +802,7 @@ function htmlEscape(string) {
         throw 'Array passed to escapeHtml';
     }
     return string.replace(new RegExp(Object.keys(htmlDictionary).join('|'), 'g'), function (match) {
-        return htmlDictionary[match];
+        return htmlDictionary[match] || htmlDictionary[`\\${match}`];
     });
 }
 exports.htmlEscape = htmlEscape;

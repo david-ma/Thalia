@@ -1127,7 +1127,7 @@ export function htmlEscape(string: string) {
   return string.replace(
     new RegExp(Object.keys(htmlDictionary).join('|'), 'g'),
     function (match) {
-      return htmlDictionary[match]
+      return htmlDictionary[match] || htmlDictionary[`\\${match}`]
     }
   )
 }

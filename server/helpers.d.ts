@@ -55,3 +55,6 @@ declare const _default: {
 };
 export default _default;
 export { crud, Views, Session, User, Audit };
+export declare function oauthEscape(string: string): string;
+export declare function htmlEscape(string: string): string;
+export declare function sortParams(object: object): {};

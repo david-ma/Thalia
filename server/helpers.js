@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Audit = exports.User = exports.Session = exports.crud = exports.users = exports.checkSession = exports.emailNewAccount = exports.checkEmail = exports.createSession = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = exports.Thalia = void 0;
+exports.sortParams = exports.htmlEscape = exports.oauthEscape = exports.Audit = exports.User = exports.Session = exports.crud = exports.users = exports.checkSession = exports.emailNewAccount = exports.checkEmail = exports.createSession = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = exports.Thalia = void 0;
 const sequelize_1 = require("sequelize");
 const thalia_1 = require("./thalia");
 Object.defineProperty(exports, "Thalia", { enumerable: true, get: function () { return thalia_1.Thalia; } });
@@ -725,3 +725,97 @@ function parseFields(fields) {
     }, {});
 }
 exports.default = { crud };
+const oauthDictionary = {
+    '!': '%21',
+    '*': '%2A',
+    "'": '%27',
+    '(': '%28',
+    ')': '%29',
+    ',': '%2C',
+    ':': '%3A',
+    ';': '%3B',
+    '@': '%40',
+    $: '%24',
+    '/': '%2F',
+    '+': '%2B',
+};
+function oauthEscape(string) {
+    if (string === undefined) {
+        return '';
+    }
+    if (string instanceof Array) {
+        throw 'Array passed to _oauthEscape';
+    }
+    return encodeURIComponent(string).replace(new RegExp(Object.keys(oauthDictionary).join('|'), 'g'), function (match) {
+        return oauthDictionary[match];
+    });
+}
+exports.oauthEscape = oauthEscape;
+const htmlDictionary = {
+    '&': '&amp;',
+    ';': '&semi;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '!': '&excl;',
+    '=': '&equals;',
+    '#': '&num;',
+    '%': '&percnt;',
+    '\\(': '&lpar;',
+    '\\)': '&rpar;',
+    '\\*': '&ast;',
+    '\\+': '&plus;',
+    ',': '&comma;',
+    '\\.': '&period;',
+    '@': '&commat;',
+    '\\[': '&lsqb;',
+    '\\': '&bsol;',
+    '\\]': '&rsqb;',
+    '\\^': '&Hat;',
+    '{': '&lcub;',
+    '\\|': '&verbar;',
+    '}': '&rcub;',
+    '~': '&tilde;',
+    "'": '&apos;',
+    '"': '&quot;',
+    '`': '&grave;',
+    '’': '&rsquo;',
+    '‘': '&lsquo;',
+    '“': '&ldquo;',
+    '”': '&rdquo;',
+    '–': '&ndash;',
+    '—': '&mdash;',
+    '…': '&hellip;',
+    '©': '&copy;',
+    '®': '&reg;',
+    '™': '&trade;',
+    '°': '&deg;',
+    µ: '&micro;',
+    '½': '&frac12;',
+    '¼': '&frac14;',
+    '¾': '&frac34;',
+};
+function htmlEscape(string) {
+    if (string === undefined) {
+        return '';
+    }
+    if (string instanceof Array) {
+        throw 'Array passed to escapeHtml';
+    }
+    return string.replace(new RegExp(Object.keys(htmlDictionary).join('|'), 'g'), function (match) {
+        return htmlDictionary[match];
+    });
+}
+exports.htmlEscape = htmlEscape;
+function sortParams(object) {
+    const keys = Object.keys(object).sort();
+    const result = {};
+    keys.forEach(function (key) {
+        let value = object[key];
+        if (typeof value === 'string') {
+            value = htmlEscape(value);
+        }
+        result[key] = value;
+    });
+    return result;
+}
+exports.sortParams = sortParams;

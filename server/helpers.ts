@@ -1040,3 +1040,108 @@ function parseFields(fields: { [key: string]: string[] }): {
 
 export default { crud }
 export { crud, Views, Session, User, Audit }
+
+// https://gist.github.com/elvuel/2348206#file-oauth-rb-L5
+// '-._~0-9A-Za-z' # These are the only characters that should not be encoded.
+const oauthDictionary = {
+  '!': '%21',
+  '*': '%2A',
+  "'": '%27',
+  '(': '%28',
+  ')': '%29',
+  ',': '%2C',
+  ':': '%3A',
+  ';': '%3B',
+  '@': '%40',
+  $: '%24',
+  '/': '%2F',
+  '+': '%2B',
+}
+
+export function oauthEscape(string: string) {
+  if (string === undefined) {
+    return ''
+  }
+  if ((string as any) instanceof Array) {
+    throw 'Array passed to _oauthEscape'
+  }
+  return encodeURIComponent(string).replace(
+    new RegExp(Object.keys(oauthDictionary).join('|'), 'g'),
+    function (match) {
+      return oauthDictionary[match]
+    }
+  )
+}
+
+const htmlDictionary = {
+  '&': '&amp;',
+  ';': '&semi;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '!': '&excl;',
+  '=': '&equals;',
+  '#': '&num;',
+  '%': '&percnt;',
+  '\\(': '&lpar;',
+  '\\)': '&rpar;',
+  '\\*': '&ast;',
+  '\\+': '&plus;',
+  ',': '&comma;',
+  '\\.': '&period;',
+  '@': '&commat;',
+  '\\[': '&lsqb;',
+  '\\': '&bsol;',
+  '\\]': '&rsqb;',
+  '\\^': '&Hat;',
+  '{': '&lcub;',
+  '\\|': '&verbar;',
+  '}': '&rcub;',
+  '~': '&tilde;',
+  "'": '&apos;',
+  '"': '&quot;',
+  '`': '&grave;',
+  '’': '&rsquo;',
+  '‘': '&lsquo;',
+  '“': '&ldquo;',
+  '”': '&rdquo;',
+  '–': '&ndash;',
+  '—': '&mdash;',
+  '…': '&hellip;',
+  '©': '&copy;',
+  '®': '&reg;',
+  '™': '&trade;',
+  '°': '&deg;',
+  µ: '&micro;',
+  '½': '&frac12;',
+  '¼': '&frac14;',
+  '¾': '&frac34;',
+}
+
+export function htmlEscape(string: string) {
+  if (string === undefined) {
+    return ''
+  }
+  if ((string as any) instanceof Array) {
+    throw 'Array passed to escapeHtml'
+  }
+  return string.replace(
+    new RegExp(Object.keys(htmlDictionary).join('|'), 'g'),
+    function (match) {
+      return htmlDictionary[match]
+    }
+  )
+}
+
+export function sortParams(object: object) {
+  const keys = Object.keys(object).sort()
+  const result = {}
+  keys.forEach(function (key) {
+    let value = object[key]
+    if (typeof value === 'string') {
+      value = htmlEscape(value)
+    }
+    result[key] = value
+  })
+  // console.log(result)
+  return result
+}

@@ -300,11 +300,6 @@ var copySingleFile = function (done) {
         .pipe(dest(singleFile.dest));
 }
 
-var copyThalia = function (done) {
-    return src(`server/thalia.js`)
-        .pipe(dest(`websites/${site}/server/`));
-}
-
 // Watch for changes
 var watchSource = function (done) {
 
@@ -331,8 +326,6 @@ var watchSource = function (done) {
     };
 
     watch(`websites/${site}/dist/**/*.js`, series(reloadBrowser));
-
-    if (fs.existsSync(`websites/${site}/server/thalia.js`)) watch(`server/thalia.js`, series(copyThalia));
 
     if(siteConfig && siteConfig.publish && siteConfig.publish.dist) {
       console.log("watching for published files")

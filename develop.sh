@@ -43,7 +43,10 @@ cd ..
 
 cd websites/$SITE
 
-    if test -f "tsconfig.json"; then
+    if test -f "webpack.config.js"; then
+        echo "$SITE/webpack.config.js exists. Running Webpack."
+        pnpm develop:webpack &
+    elif test -f "tsconfig.json"; then
         echo "$SITE/tsconfig.json exists."
         tsc --preserveWatchOutput --watch &
     else

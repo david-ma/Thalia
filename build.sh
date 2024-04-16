@@ -14,7 +14,10 @@ cd server
 cd ..
 cd websites/$SITE
 
-    if test -f "tsconfig.json"; then
+    if test -f "webpack.config.js"; then
+        echo "$SITE/webpack.config.js exists. Running Webpack."
+        npm build &
+    elif test -f "tsconfig.json"; then
         echo "tsconfig.json exists."
         tsc &
     else

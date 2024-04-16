@@ -33,12 +33,11 @@
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
-    "@types/d3": "^5.16.7",
+    "@types/d3": "^7.4.3",
     "@types/d3-collection": "^1.0.13",
     "@types/d3-selection": "^3.0.10",
     "@types/d3-selection-multi": "^1.0.14",
     "@types/d3-voronoi": "^1.1.12",
-    "@types/datatables.net": "1.10.28",
     "@types/formidable": "^3.4.5",
     "@types/http-proxy": "^1.17.14",
     "@types/jest": "^29.5.12",

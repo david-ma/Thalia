@@ -4,7 +4,6 @@ exports.sortParams = exports.htmlEscape = exports.oauthEscape = exports.Audit = 
 const sequelize_1 = require("sequelize");
 const thalia_1 = require("./thalia");
 Object.defineProperty(exports, "Thalia", { enumerable: true, get: function () { return thalia_1.Thalia; } });
-const sequelize_2 = require("sequelize");
 const path = require('path');
 const requestHandlers_1 = require("./requestHandlers");
 const formidable = require("formidable");
@@ -296,13 +295,13 @@ const SequelizeDataTableTypes = {
 };
 const checkSequelizeDataTableTypes = function (type) {
     switch (type) {
-        case sequelize_2.DataTypes.STRING:
+        case sequelize_1.DataTypes.STRING:
             return 'string';
-        case sequelize_2.DataTypes.TEXT:
+        case sequelize_1.DataTypes.TEXT:
             return 'string';
-        case sequelize_2.DataTypes.INTEGER:
+        case sequelize_1.DataTypes.INTEGER:
             return 'num';
-        case sequelize_2.DataTypes.BIGINT:
+        case sequelize_1.DataTypes.BIGINT:
             return 'num';
         default:
             return 'string';

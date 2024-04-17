@@ -1,4 +1,4 @@
 import { Options } from 'sequelize';
-import { seqObject } from '../../../server/helpers';
-export declare function securityFactory(seqOptions: Options): seqObject;
-export declare function smugmugFactory(seqOptions: Options): seqObject;
+import { SeqObject } from '../../../server/helpers';
+export declare function securityFactory(seqOptions: Options): SeqObject;
+export declare function smugmugFactory(seqOptions: Options): SeqObject;

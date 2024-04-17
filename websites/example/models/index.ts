@@ -1,8 +1,8 @@
 import { Sequelize, Options } from 'sequelize'
 import { UserFactory, SessionFactory, AuditFactory } from './security'
-import { seqObject } from '../../../server/helpers'
+import { SeqObject } from '../../../server/helpers'
 
-export function securityFactory(seqOptions: Options) : seqObject {
+export function securityFactory(seqOptions: Options): SeqObject {
   if (!seqOptions.dialect) {
     seqOptions.dialect = 'sqlite'
     seqOptions.storage = seqOptions.storage || `${__dirname}/database.sqlite`
@@ -12,7 +12,7 @@ export function securityFactory(seqOptions: Options) : seqObject {
     decimalNumbers: true,
   }
   seqOptions.define = seqOptions.define || { underscored: true }
-  const sequelize = new Sequelize(seqOptions)
+  const sequelize: any = new Sequelize(seqOptions)
   const User = UserFactory(sequelize)
   const Session = SessionFactory(sequelize)
   const Audit = AuditFactory(sequelize)
@@ -35,7 +35,7 @@ export function securityFactory(seqOptions: Options) : seqObject {
 }
 
 import { AlbumFactory, ImageFactory } from './smugmug'
-export function smugmugFactory(seqOptions: Options) : seqObject {
+export function smugmugFactory(seqOptions: Options): SeqObject {
   if (!seqOptions.dialect) {
     seqOptions.dialect = 'sqlite'
     seqOptions.storage = seqOptions.storage || `${__dirname}/database.sqlite`
@@ -45,7 +45,7 @@ export function smugmugFactory(seqOptions: Options) : seqObject {
     decimalNumbers: true,
   }
   seqOptions.define = seqOptions.define || { underscored: true }
-  const sequelize = new Sequelize(seqOptions)
+  const sequelize: any = new Sequelize(seqOptions)
   const Album = AlbumFactory(sequelize)
   const Image = ImageFactory(sequelize)
 

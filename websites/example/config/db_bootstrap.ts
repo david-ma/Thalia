@@ -26,9 +26,9 @@ if (process.env.NODE_ENV === 'docker') {
   seqOptions.port = 5432
 }
 
-import { seqObject } from '../../../server/helpers'
+import { SeqObject } from '../../../server/helpers'
 
-const seq: seqObject = securityFactory(seqOptions)
+const seq: SeqObject = securityFactory(seqOptions)
 
 seq.sequelize
   .sync({

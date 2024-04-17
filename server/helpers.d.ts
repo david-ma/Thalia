@@ -1,3 +1,4 @@
+import { ModelStatic, Sequelize } from 'sequelize';
 import { Thalia } from './thalia';
 export { Thalia };
 import { Views } from './requestHandlers';
@@ -12,15 +13,15 @@ declare function crud(options: {
 };
 export declare function setHandlebarsContent(content: string, Handlebars: any): Promise<any>;
 export declare function loadViewsAsPartials(views: Views, Handlebars: any): void;
-import { Model, Sequelize } from 'sequelize';
-interface seqObject {
-    [key: string]: typeof Model | Sequelize;
+type SeqObject = {
     sequelize: Sequelize;
-}
+} & Omit<{
+    [key: string]: ModelStatic<any>;
+}, 'sequelize'>;
 import { User, Session, Audit } from '../websites/example/models/security';
 export { Album, Image, AlbumStatic, ImageStatic, } from '../websites/example/models/smugmug';
 import { securityFactory, smugmugFactory } from '../websites/example/models';
-export { securityFactory, smugmugFactory, seqObject };
+export { securityFactory, smugmugFactory, SeqObject };
 export declare function createSession(userId: number, controller: Thalia.Controller, noCookie?: boolean): Promise<any>;
 type emailNewAccountConfig = {
     email: string;

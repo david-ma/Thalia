@@ -1,8 +1,8 @@
 // Calling this file helpers.ts because util is reserved
-import { ModelStatic, Op } from 'sequelize'
+import { ModelStatic, Op, DataTypes, Sequelize } from 'sequelize'
+
 import { Thalia } from './thalia'
 export { Thalia }
-import { DataTypes } from 'sequelize'
 
 const path = require('path')
 import { Views, loadMustacheTemplate } from './requestHandlers'
@@ -470,12 +470,14 @@ const checkSequelizeDataTableTypes = function (type) {
   }
 }
 
-import { Model, Sequelize } from 'sequelize'
-
-interface seqObject {
-  [key: string]: typeof Model | Sequelize
+type SeqObject = {
   sequelize: Sequelize
-}
+} & Omit<
+  {
+    [key: string]: ModelStatic<any>
+  },
+  'sequelize'
+>
 
 // Security stuff. Maybe put in another file..?
 import { User, Session, Audit } from '../websites/example/models/security'
@@ -487,7 +489,7 @@ export {
 } from '../websites/example/models/smugmug'
 
 import { securityFactory, smugmugFactory } from '../websites/example/models'
-export { securityFactory, smugmugFactory, seqObject }
+export { securityFactory, smugmugFactory, SeqObject }
 
 export async function createSession(
   userId: number,

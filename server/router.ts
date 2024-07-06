@@ -210,6 +210,11 @@ const router: Thalia.Router = function (
           fs.existsSync(website.data.concat(pathname)) &&
           fs.lstatSync(website.data.concat(pathname)).isFile()
         ) {
+          // CORS
+          safeSetHeader(response, 'Access-Control-Allow-Origin', '*')
+
+          // Chunked?
+          // response.setHeader('Transfer-Encoding', 'chunked')
           routeFile(website.data.concat(pathname))
 
           // if there is a matching .gz file in the data folder
@@ -292,6 +297,11 @@ const router: Thalia.Router = function (
       const filetype = mime.getType(filename)
       try {
         safeSetHeader(response, 'Content-Type', filetype)
+        safeSetHeader(
+          response,
+          'Expires',
+          new Date(Date.now() + 32536000000).toUTCString()
+        )
       } catch (e) {
         console.error(e)
       }
@@ -301,8 +311,10 @@ const router: Thalia.Router = function (
         response.end(file)
         return
       }
+      console.log("First")
 
       fs.stat(filename, function (err: any, stats: any) {
+        console.log("Second")
         if (err) {
           response.writeHead(503)
           response.end(err)
@@ -313,8 +325,13 @@ const router: Thalia.Router = function (
           } catch (e) {
             console.error(e)
           }
-          if (website.cache) {
-            if (stats.size > 10240) {
+
+          console.log("We're here, doing this.")
+          console.log("Filesize: " + stats.size)
+          console.log("Filetype: " + filetype)
+          if (false) {
+            if (true) {
+            // if (stats.size > 10240) {
               // cache files bigger than 10kb?
               // https://web.dev/http-cache/
 
@@ -404,10 +421,13 @@ const router: Thalia.Router = function (
           }
         }
       })
+      console.log("Third")
 
       fs.readFile(filename, function (err: any, file: any) {
+        console.log("Fourth")
         if (err) {
           fs.readdir(filename, function (e: any, dir: any) {
+            console.log("Fifth")
             if (
               !e &&
               dir &&

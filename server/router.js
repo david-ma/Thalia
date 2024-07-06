@@ -151,6 +151,7 @@ const router = function (website, pathname, response, request) {
             else if (website.data &&
                 fs.existsSync(website.data.concat(pathname)) &&
                 fs.lstatSync(website.data.concat(pathname)).isFile()) {
+                safeSetHeader(response, 'Access-Control-Allow-Origin', '*');
                 routeFile(website.data.concat(pathname));
             }
             else if (website.data &&
@@ -213,6 +214,7 @@ const router = function (website, pathname, response, request) {
             const filetype = mime.getType(filename);
             try {
                 safeSetHeader(response, 'Content-Type', filetype);
+                safeSetHeader(response, 'Expires', new Date(Date.now() + 32536000000).toUTCString());
             }
             catch (e) {
                 console.error(e);
@@ -222,7 +224,9 @@ const router = function (website, pathname, response, request) {
                 response.end(file);
                 return;
             };
+            console.log("First");
             fs.stat(filename, function (err, stats) {
+                console.log("Second");
                 if (err) {
                     response.writeHead(503);
                     response.end(err);
@@ -235,8 +239,11 @@ const router = function (website, pathname, response, request) {
                     catch (e) {
                         console.error(e);
                     }
-                    if (website.cache) {
-                        if (stats.size > 10240) {
+                    console.log("We're here, doing this.");
+                    console.log("Filesize: " + stats.size);
+                    console.log("Filetype: " + filetype);
+                    if (false) {
+                        if (true) {
                             try {
                                 safeSetHeader(response, 'Cache-Control', 'public, max-age=600');
                                 safeSetHeader(response, 'Expires', new Date(Date.now() + 600000).toUTCString());
@@ -299,9 +306,12 @@ const router = function (website, pathname, response, request) {
                     }
                 }
             });
+            console.log("Third");
             fs.readFile(filename, function (err, file) {
+                console.log("Fourth");
                 if (err) {
                     fs.readdir(filename, function (e, dir) {
+                        console.log("Fifth");
                         if (!e &&
                             dir &&
                             dir instanceof Array &&

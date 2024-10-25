@@ -1136,13 +1136,16 @@ export function htmlEscape(string: string) {
   )
 }
 
+import Handlebars = require('handlebars')
 export function sortParams(object: object) {
   const keys = Object.keys(object).sort()
   const result = {}
   keys.forEach(function (key) {
     let value = object[key]
     if (typeof value === 'string') {
-      value = htmlEscape(value)
+      // value = htmlEscape(value)
+      console.log("Using Handlebars to escape the expression")
+      value = Handlebars.escapeExpression(value)
     }
     result[key] = value
   })

@@ -403,6 +403,7 @@ exports.buildAll = function(done) {
 exports.develop = series(
     getWorkEnv,
     startBrowserSync,
+    compileBoilerplate,
     parallelBuildTasks,
     watchSource
 );

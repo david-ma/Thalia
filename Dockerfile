@@ -14,6 +14,7 @@ ADD https://api.github.com/repos/david-ma/Thalia/git/refs/heads/master Thalia_ve
 RUN git clone --depth=1 https://github.com/david-ma/Thalia.git
 WORKDIR /usr/app/Thalia
 RUN pnpm install --ignore-scripts --prod
+RUN pnpm install --prod
 
 USER chrome
 

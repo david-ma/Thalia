@@ -805,13 +805,15 @@ function htmlEscape(string) {
     });
 }
 exports.htmlEscape = htmlEscape;
+const Handlebars = require("handlebars");
 function sortParams(object) {
     const keys = Object.keys(object).sort();
     const result = {};
     keys.forEach(function (key) {
         let value = object[key];
         if (typeof value === 'string') {
-            value = htmlEscape(value);
+            console.log("Using Handlebars to escape the expression");
+            value = Handlebars.escapeExpression(value);
         }
         result[key] = value;
     });

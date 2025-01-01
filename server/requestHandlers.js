@@ -274,12 +274,13 @@ const handle = {
                 });
             };
             const promises = [
+                readAllViewsInFolder(path.resolve(__dirname, '..', 'websites', 'example', 'views')),
                 readAllViewsInFolder(path.resolve(__dirname, '..', 'src', 'views')),
                 readAllViewsInFolder(path.resolve(baseUrl, 'views')),
             ];
             Promise.all(promises)
-                .then(([scaffoldViews, projectViews]) => {
-                return _.merge(scaffoldViews, projectViews);
+                .then(([exampleViews, scaffoldViews, projectViews]) => {
+                return _.merge(exampleViews, scaffoldViews, projectViews);
             })
                 .then((views) => {
                 handle.websites[site].views = views;

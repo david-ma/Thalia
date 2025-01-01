@@ -3,6 +3,10 @@ import { Thalia } from './thalia';
 export { Thalia };
 import { Views } from './requestHandlers';
 export type SecurityMiddleware = (controller: Thalia.Controller, success: ([views, user]: [Views, User]) => void, failure?: () => void) => Promise<void>;
+export declare function showWebpage(name: string, options?: {
+    wrapper?: string;
+    variables?: object;
+}): (router: Thalia.Controller) => void;
 declare function crud(options: {
     tableName: string;
     references?: string[];
@@ -18,10 +22,11 @@ type SeqObject = {
 } & Omit<{
     [key: string]: ModelStatic<any>;
 }, 'sequelize'>;
+type seqObject = SeqObject;
 import { User, Session, Audit } from '../websites/example/models/security';
 export { Album, Image, AlbumStatic, ImageStatic, } from '../websites/example/models/smugmug';
 import { securityFactory, smugmugFactory } from '../websites/example/models';
-export { securityFactory, smugmugFactory, SeqObject };
+export { securityFactory, smugmugFactory, SeqObject, seqObject };
 export declare function createSession(userId: number, controller: Thalia.Controller, noCookie?: boolean): Promise<any>;
 type emailNewAccountConfig = {
     email: string;

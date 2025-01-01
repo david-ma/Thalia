@@ -1,12 +1,34 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sortParams = exports.htmlEscape = exports.oauthEscape = exports.Audit = exports.User = exports.Session = exports.crud = exports.users = exports.checkSession = exports.emailNewAccount = exports.checkEmail = exports.createSession = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = exports.Thalia = void 0;
+exports.sortParams = exports.htmlEscape = exports.oauthEscape = exports.Audit = exports.User = exports.Session = exports.crud = exports.users = exports.checkSession = exports.emailNewAccount = exports.checkEmail = exports.createSession = exports.smugmugFactory = exports.securityFactory = exports.Image = exports.Album = exports.loadViewsAsPartials = exports.setHandlebarsContent = exports.showWebpage = exports.Thalia = void 0;
 const sequelize_1 = require("sequelize");
 const thalia_1 = require("./thalia");
 Object.defineProperty(exports, "Thalia", { enumerable: true, get: function () { return thalia_1.Thalia; } });
 const path = require('path');
 const requestHandlers_1 = require("./requestHandlers");
 const formidable = require("formidable");
+function showWebpage(name, options) {
+    options = options || {};
+    return function (router) {
+        router.readAllViews((views) => {
+            const wrapper = options.wrapper || name;
+            const template = router.handlebars.compile(views[wrapper]);
+            loadViewsAsPartials(views, router.handlebars);
+            setHandlebarsContent(views[name], router.handlebars).then(() => {
+                try {
+                    const html = template(options.variables || {});
+                    router.res.end(html);
+                }
+                catch (error) {
+                    console.log('Error loading content', error);
+                    router.response.writeHead(500, { 'Content-Type': 'text/plain' });
+                    router.response.end('Error loading webpage: ' + error.message);
+                }
+            });
+        });
+    };
+}
+exports.showWebpage = showWebpage;
 function crud(options) {
     const references = options.references || [];
     return {
@@ -812,7 +834,7 @@ function sortParams(object) {
     keys.forEach(function (key) {
         let value = object[key];
         if (typeof value === 'string') {
-            console.log("Using Handlebars to escape the expression");
+            console.log('Using Handlebars to escape the expression');
             value = Handlebars.escapeExpression(value);
         }
         result[key] = value;

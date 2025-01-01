@@ -444,12 +444,15 @@ const handle: Thalia.Handle = {
       // Consider adding partials only for it's own website?
       // There's a possibility of name collisions if we don't.
       const promises: Promise<Views>[] = [
+        readAllViewsInFolder(
+          path.resolve(__dirname, '..', 'websites', 'example', 'views')
+        ),
         readAllViewsInFolder(path.resolve(__dirname, '..', 'src', 'views')),
         readAllViewsInFolder(path.resolve(baseUrl, 'views')),
       ]
       Promise.all(promises)
-        .then(([scaffoldViews, projectViews]: any) => {
-          return _.merge(scaffoldViews, projectViews)
+        .then(([exampleViews, scaffoldViews, projectViews]: any) => {
+          return _.merge(exampleViews, scaffoldViews, projectViews)
         })
         .then((views) => {
           // readAllViewsInFolder(path.resolve(baseUrl, 'views')).then((views) => {

@@ -15,6 +15,33 @@ export type SecurityMiddleware = (
   failure?: () => void
 ) => Promise<void>
 
+export function showWebpage(
+  name: string,
+  options?: {
+    wrapper?: string
+    variables?: object
+  }
+) {
+  options = options || {}
+  return function (router: Thalia.Controller) {
+    router.readAllViews((views) => {
+      const wrapper = options.wrapper || name
+      const template = router.handlebars.compile(views[wrapper])
+      loadViewsAsPartials(views, router.handlebars)
+      setHandlebarsContent(views[name], router.handlebars).then(() => {
+        try {
+          const html = template(options.variables || {})
+          router.res.end(html)
+        } catch (error) {
+          console.log('Error loading content', error)
+          router.response.writeHead(500, { 'Content-Type': 'text/plain' })
+          router.response.end('Error loading webpage: ' + error.message)
+        }
+      })
+    })
+  }
+}
+
 /**
  * Scaffold for CRUD operations
  * - Create
@@ -201,7 +228,7 @@ const noSecurity: SecurityMiddleware = async function (
 // import sass = require('sass')
 const sass = require('sass')
 
-// Should we have a single funciton to:
+// Should we have a single function to:
 // Compile wrapper, load content and partials? All in one?
 // function servePage(controller: Thalia.Controller, page: string, data?: object) {
 //   controller.readAllViews(function (views) {
@@ -478,6 +505,7 @@ type SeqObject = {
   },
   'sequelize'
 >
+type seqObject = SeqObject
 
 // Security stuff. Maybe put in another file..?
 import { User, Session, Audit } from '../websites/example/models/security'
@@ -489,7 +517,7 @@ export {
 } from '../websites/example/models/smugmug'
 
 import { securityFactory, smugmugFactory } from '../websites/example/models'
-export { securityFactory, smugmugFactory, SeqObject }
+export { securityFactory, smugmugFactory, SeqObject, seqObject }
 
 export async function createSession(
   userId: number,
@@ -692,6 +720,10 @@ export type SecurityOptions = {
   }
 }
 
+/**
+ * This is a user factory
+ * It gives you a bunch of functions to manage users
+ */
 export function users(options: SecurityOptions) {
   return {
     profile: function (controller: Thalia.Controller) {
@@ -1144,7 +1176,7 @@ export function sortParams(object: object) {
     let value = object[key]
     if (typeof value === 'string') {
       // value = htmlEscape(value)
-      console.log("Using Handlebars to escape the expression")
+      console.log('Using Handlebars to escape the expression')
       value = Handlebars.escapeExpression(value)
     }
     result[key] = value

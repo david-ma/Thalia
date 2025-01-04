@@ -1,7 +1,7 @@
 {
   "name": "thalia",
   "private": true,
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Yet another server framework for serving websites",
   "main": "./server/helpers.js",
   "types": "./server/helpers.d.ts",
@@ -25,7 +25,7 @@
     "nodemailer": "^6.9.13",
     "pg": "^8.11.5",
     "pg-hstore": "^2.3.4",
-    "sass": "^1.74.1",
+    "sass": "1.77.6",
     "sequelize": "^6.37.2",
     "socket.io": "^4.7.5",
     "sqlite3": "^5.1.7",

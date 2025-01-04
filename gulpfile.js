@@ -61,6 +61,7 @@ function compileBoilerplate(done){
             input: 'src/**/*'+staticSrc,
             output: workspace+'/dist/'
         },
+        public: workspace+'/public',
         views: workspace+'/views/**/*.(mustache|hbs)',
         scaffold: 'src/views/**/*',
         reload: './'+workspace+'/dist/'
@@ -320,7 +321,11 @@ var watchSource = function (done) {
     watch(paths.scaffold, series(reloadBrowser));
 
     try {
-        watch(paths.public, series(reloadBrowser));
+        if (paths.public) {
+            watch(paths.public, series(reloadBrowser));
+        } else {
+            console.log(`No public folder for ${site}`);
+        }
     } catch(e) {
         console.log("No public folder", e);
     };

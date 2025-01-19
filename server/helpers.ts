@@ -66,7 +66,8 @@ function crud(options: {
       controller: Thalia.Controller
     ) {
       const Handlebars = controller.handlebars
-      const hideColumns = options.hideColumns || []
+      const hideColumns = [...options.hideColumns, 'createdAt', 'deletedAt']
+
       const security = options.security || noSecurity
       security(controller, function ([views, usermodel]) {
         const table: ModelStatic<any> = controller.db[options.tableName]
@@ -258,11 +259,12 @@ function crud(options: {
 
               loadViewsAsPartials(views, Handlebars)
 
-              // table.get
+              // These attributes are not user-editable
               const filteredAttributes = [
                 'id',
                 'createdAt',
                 'updatedAt',
+                'deletedAt',
                 ...hideColumns,
               ]
 
@@ -272,8 +274,6 @@ function crud(options: {
                 fields: Object.keys(table.getAttributes()).filter(
                   (key) => !filteredAttributes.includes(key)
                 ),
-                attributes: Object.keys(table.getAttributes()),
-                json_attributes: JSON.stringify(table.getAttributes()),
               }
 
               const html = template(data)
@@ -322,6 +322,7 @@ function crud(options: {
                   })
 
                   // This could probably be cleaner...
+                  // Get the other tables that this table references?
                   const links = references
                     .map((reference) => {
                       const table = controller.db[reference]
@@ -372,7 +373,7 @@ function crud(options: {
           //   break
           case 'read':
           case 'show':
-          default: // Read page
+          default: // Show/Read page
             Promise.all([
               new Promise<Views>(controller.readAllViews),
               loadMustacheTemplate(

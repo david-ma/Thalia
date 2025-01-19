@@ -34,7 +34,7 @@ function crud(options) {
     return {
         [options.tableName.toLowerCase()]: function (controller) {
             const Handlebars = controller.handlebars;
-            const hideColumns = options.hideColumns || [];
+            const hideColumns = [...options.hideColumns, 'createdAt', 'deletedAt'];
             const security = options.security || noSecurity;
             security(controller, function ([views, usermodel]) {
                 const table = controller.db[options.tableName];
@@ -164,14 +164,13 @@ function crud(options) {
                                 'id',
                                 'createdAt',
                                 'updatedAt',
+                                'deletedAt',
                                 ...hideColumns,
                             ];
                             const data = {
                                 title: options.tableName,
                                 controllerName: options.tableName.toLowerCase(),
                                 fields: Object.keys(table.getAttributes()).filter((key) => !filteredAttributes.includes(key)),
-                                attributes: Object.keys(table.getAttributes()),
-                                json_attributes: JSON.stringify(table.getAttributes()),
                             };
                             const html = template(data);
                             controller.res.end(html);

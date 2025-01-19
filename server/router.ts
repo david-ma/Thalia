@@ -52,7 +52,8 @@ const router: Thalia.Router = function (
    * - Internal page alias
    * - Services / functions
    * - /data/ folder might have a file
-   * - otherwise, we serve the file normally
+   * - otherwise, we serve the file normally from that website's dist -> public folder
+   * - otherwise, we serve the file from the example public folder
    *
    * - When serving the file normally, we need to check the header to see if it can be zipped or should be zipped.
    */
@@ -230,9 +231,50 @@ const router: Thalia.Router = function (
             fs.lstatSync(website.dist.concat(pathname, '/index.html')).isFile())
         ) {
           routeFile(website.dist.concat(pathname))
-        } else {
-          // Otherwise, route as normal to the public folder
+        } else if (
+          // Check if the file exists in the workspace public folder
+          (website.folder &&
+            fs.existsSync(website.folder.concat(pathname)) &&
+            fs.lstatSync(website.folder.concat(pathname)).isFile()) ||
+          (website.folder &&
+            fs.existsSync(website.folder.concat(pathname, '/index.html')) &&
+            fs
+              .lstatSync(website.folder.concat(pathname, '/index.html'))
+              .isFile())
+        ) {
           routeFile(website.folder.concat(pathname))
+        } else if (
+          // Otherwise, try to rout to the example public folder
+          (fs.existsSync(
+            __dirname.concat('/../websites/example/public').concat(pathname)
+          ) &&
+            fs
+              .lstatSync(
+                __dirname.concat('/../websites/example/public').concat(pathname)
+              )
+              .isFile()) ||
+          (fs.existsSync(
+            __dirname
+              .concat('/../websites/example/public')
+              .concat(pathname, '/index.html')
+          ) &&
+            fs
+              .lstatSync(
+                __dirname
+                  .concat('/../websites/example/public')
+                  .concat(pathname, '/index.html')
+              )
+              .isFile())
+        ) {
+          routeFile(
+            __dirname.concat('/../websites/example/public').concat(pathname)
+          )
+        } else {
+          // If we can't find the file, serve a 404
+          // console.log('Error 404, file not found: ' + pathname)
+          console.log(`Error 404, file not found: [${website.name}]${pathname}`)
+          response.writeHead(404, { 'Content-Type': 'text/plain' })
+          response.end('Error 404, file not found\n')
         }
       }
     })

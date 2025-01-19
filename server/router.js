@@ -166,8 +166,34 @@ const router = function (website, pathname, response, request) {
                     fs.lstatSync(website.dist.concat(pathname, '/index.html')).isFile())) {
                 routeFile(website.dist.concat(pathname));
             }
-            else {
+            else if ((website.folder &&
+                fs.existsSync(website.folder.concat(pathname)) &&
+                fs.lstatSync(website.folder.concat(pathname)).isFile()) ||
+                (website.folder &&
+                    fs.existsSync(website.folder.concat(pathname, '/index.html')) &&
+                    fs
+                        .lstatSync(website.folder.concat(pathname, '/index.html'))
+                        .isFile())) {
                 routeFile(website.folder.concat(pathname));
+            }
+            else if ((fs.existsSync(__dirname.concat('/../websites/example/public').concat(pathname)) &&
+                fs
+                    .lstatSync(__dirname.concat('/../websites/example/public').concat(pathname))
+                    .isFile()) ||
+                (fs.existsSync(__dirname
+                    .concat('/../websites/example/public')
+                    .concat(pathname, '/index.html')) &&
+                    fs
+                        .lstatSync(__dirname
+                        .concat('/../websites/example/public')
+                        .concat(pathname, '/index.html'))
+                        .isFile())) {
+                routeFile(__dirname.concat('/../websites/example/public').concat(pathname));
+            }
+            else {
+                console.log(`Error 404, file not found: [${website.name}]${pathname}`);
+                response.writeHead(404, { 'Content-Type': 'text/plain' });
+                response.end('Error 404, file not found\n');
             }
         }
     })

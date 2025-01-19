@@ -7,6 +7,15 @@ import mime = require('mime')
 import zlib = require('zlib')
 import url = require('url')
 
+function isRoutable(target_folder: string, local_path: string) {
+  return (
+    (fs.existsSync(target_folder.concat(local_path)) &&
+      fs.lstatSync(target_folder.concat(local_path)).isFile()) ||
+    (fs.existsSync(target_folder.concat(local_path, '/index.html')) &&
+      fs.lstatSync(target_folder.concat(local_path, '/index.html')).isFile())
+  )
+}
+
 const router: Thalia.Router = function (
   website: Thalia.Website,
   pathname: string,
@@ -222,49 +231,17 @@ const router: Thalia.Router = function (
           routeFile(website.data.concat(pathname, '.gz'))
 
           // if there is a matching compiled file
-        } else if (
-          (website.dist &&
-            fs.existsSync(website.dist.concat(pathname)) &&
-            fs.lstatSync(website.dist.concat(pathname)).isFile()) ||
-          (website.dist &&
-            fs.existsSync(website.dist.concat(pathname, '/index.html')) &&
-            fs.lstatSync(website.dist.concat(pathname, '/index.html')).isFile())
-        ) {
+        } else if (website.dist && isRoutable(website.dist, pathname)) {
           routeFile(website.dist.concat(pathname))
         } else if (
           // Check if the file exists in the workspace public folder
-          (website.folder &&
-            fs.existsSync(website.folder.concat(pathname)) &&
-            fs.lstatSync(website.folder.concat(pathname)).isFile()) ||
-          (website.folder &&
-            fs.existsSync(website.folder.concat(pathname, '/index.html')) &&
-            fs
-              .lstatSync(website.folder.concat(pathname, '/index.html'))
-              .isFile())
+          website.folder &&
+          isRoutable(website.folder, pathname)
         ) {
           routeFile(website.folder.concat(pathname))
         } else if (
           // Otherwise, try to rout to the example public folder
-          (fs.existsSync(
-            __dirname.concat('/../websites/example/public').concat(pathname)
-          ) &&
-            fs
-              .lstatSync(
-                __dirname.concat('/../websites/example/public').concat(pathname)
-              )
-              .isFile()) ||
-          (fs.existsSync(
-            __dirname
-              .concat('/../websites/example/public')
-              .concat(pathname, '/index.html')
-          ) &&
-            fs
-              .lstatSync(
-                __dirname
-                  .concat('/../websites/example/public')
-                  .concat(pathname, '/index.html')
-              )
-              .isFile())
+          isRoutable(__dirname.concat('/../websites/example/public'), pathname)
         ) {
           routeFile(
             __dirname.concat('/../websites/example/public').concat(pathname)

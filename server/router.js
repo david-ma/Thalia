@@ -5,6 +5,12 @@ const fs = require("fs");
 const mime = require("mime");
 const zlib = require("zlib");
 const url = require("url");
+function isRoutable(target_folder, local_path) {
+    return ((fs.existsSync(target_folder.concat(local_path)) &&
+        fs.lstatSync(target_folder.concat(local_path)).isFile()) ||
+        (fs.existsSync(target_folder.concat(local_path, '/index.html')) &&
+            fs.lstatSync(target_folder.concat(local_path, '/index.html')).isFile()));
+}
 const router = function (website, pathname, response, request) {
     safeSetHeader(response, 'Access-Control-Allow-Headers', '*');
     const route = new Promise(function (resolve, reject) {
@@ -158,36 +164,14 @@ const router = function (website, pathname, response, request) {
                 safeSetHeader(response, 'Content-Encoding', 'gzip');
                 routeFile(website.data.concat(pathname, '.gz'));
             }
-            else if ((website.dist &&
-                fs.existsSync(website.dist.concat(pathname)) &&
-                fs.lstatSync(website.dist.concat(pathname)).isFile()) ||
-                (website.dist &&
-                    fs.existsSync(website.dist.concat(pathname, '/index.html')) &&
-                    fs.lstatSync(website.dist.concat(pathname, '/index.html')).isFile())) {
+            else if (website.dist && isRoutable(website.dist, pathname)) {
                 routeFile(website.dist.concat(pathname));
             }
-            else if ((website.folder &&
-                fs.existsSync(website.folder.concat(pathname)) &&
-                fs.lstatSync(website.folder.concat(pathname)).isFile()) ||
-                (website.folder &&
-                    fs.existsSync(website.folder.concat(pathname, '/index.html')) &&
-                    fs
-                        .lstatSync(website.folder.concat(pathname, '/index.html'))
-                        .isFile())) {
+            else if (website.folder &&
+                isRoutable(website.folder, pathname)) {
                 routeFile(website.folder.concat(pathname));
             }
-            else if ((fs.existsSync(__dirname.concat('/../websites/example/public').concat(pathname)) &&
-                fs
-                    .lstatSync(__dirname.concat('/../websites/example/public').concat(pathname))
-                    .isFile()) ||
-                (fs.existsSync(__dirname
-                    .concat('/../websites/example/public')
-                    .concat(pathname, '/index.html')) &&
-                    fs
-                        .lstatSync(__dirname
-                        .concat('/../websites/example/public')
-                        .concat(pathname, '/index.html'))
-                        .isFile())) {
+            else if (isRoutable(__dirname.concat('/../websites/example/public'), pathname)) {
                 routeFile(__dirname.concat('/../websites/example/public').concat(pathname));
             }
             else {

@@ -1,2 +1,20 @@
-default crud create page
+<h1>This is a Create page</h1>
 
+<a href="/{{controllerName}}">Back to table {{title}}</a>
+
+<form action="/{{controllerName}}/create" method="post">
+  <div>
+    <table>
+
+      {{#each fields}}
+      <tr>
+        <td style="text-transform: capitalize;">{{this}}</td>
+        <td>
+          <input name="{{this}}" type="text" value="" placeholder='Enter "{{this}}" here' required>
+        </td>
+      </tr>
+      {{/each}}
+    </table>
+  </div>
+  <button id='saveButton'>Save</button>
+</form>

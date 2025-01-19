@@ -1,12 +1,12 @@
-<h1>This is a Read page</h1>
+<h1>This is a Show page</h1>
 
-<a href="/{{controller}}">Back to table {{title}}</a>
+<a href="/{{controllerName}}">Back to table {{title}}</a>
 
 <div>
   <table></table>
 </div>
 
-<button id="editButton" onclick="window.location.href='/{{controller}}/edit/{{id}}'">Edit</button>
+<button id="editButton" onclick="window.location.href='/{{controllerName}}/edit/{{id}}'">Edit</button>
 
 <script>
   var data = {{{ json }}}

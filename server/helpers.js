@@ -112,6 +112,26 @@ function crud(options) {
                         });
                         break;
                     case 'create':
+                        parseForm(controller).then(function ([fields, files]) {
+                            if (!Object.keys(fields).length) {
+                                controller.res.end('Error, No fields');
+                                return;
+                            }
+                            table
+                                .create(fields)
+                                .then((result) => {
+                                controller.res.end(`<script>window.location = '/${options.tableName.toLowerCase()}/${result.dataValues[primaryKey]}'</script>`);
+                            }, (e) => {
+                                console.log('Error creating item', e);
+                                controller.res.end('Error creating item');
+                            })
+                                .catch((e) => {
+                                console.log('Error creating item', e);
+                                controller.res.end('Error creating item');
+                            });
+                        });
+                        break;
+                    case 'new':
                         Promise.all([
                             new Promise(controller.readAllViews),
                             (0, requestHandlers_1.loadMustacheTemplate)(path.join(__dirname, '..', 'src', 'views', 'partials', 'wrapper.hbs')),
@@ -126,9 +146,18 @@ function crud(options) {
                                 Handlebars.registerPartial('content', views.create);
                             }
                             loadViewsAsPartials(views, Handlebars);
+                            const filteredAttributes = [
+                                'id',
+                                'createdAt',
+                                'updatedAt',
+                                ...hideColumns,
+                            ];
                             const data = {
                                 title: options.tableName,
-                                controller: options.tableName.toLowerCase(),
+                                controllerName: options.tableName.toLowerCase(),
+                                fields: Object.keys(table.getAttributes()).filter((key) => !filteredAttributes.includes(key)),
+                                attributes: Object.keys(table.getAttributes()),
+                                json_attributes: JSON.stringify(table.getAttributes()),
                             };
                             const html = template(data);
                             controller.res.end(html);
@@ -197,6 +226,8 @@ function crud(options) {
                             controller.res.end('Error rendering template');
                         });
                         break;
+                    case 'read':
+                    case 'show':
                     default:
                         Promise.all([
                             new Promise(controller.readAllViews),
@@ -205,7 +236,7 @@ function crud(options) {
                             const template = Handlebars.compile(loadedTemplate.content);
                             Handlebars.registerPartial('scripts', loadedTemplate.scripts);
                             Handlebars.registerPartial('styles', loadedTemplate.styles);
-                            Handlebars.registerPartial('content', views.read);
+                            Handlebars.registerPartial('content', views.show);
                             loadViewsAsPartials(views, Handlebars);
                             table
                                 .findOne({
@@ -227,7 +258,7 @@ function crud(options) {
                                 const data = {
                                     id: controller.path[0],
                                     title: options.tableName,
-                                    controller: options.tableName.toLowerCase(),
+                                    controllerName: options.tableName.toLowerCase(),
                                     values,
                                     json: JSON.stringify(values),
                                     attributes: Object.keys(values),

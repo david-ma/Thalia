@@ -260,6 +260,9 @@ const handle = {
                 Promise.all(promises)
                     .then(([exampleViews, thaliaViews, websiteViews]) => {
                     return _.merge(thaliaViews, exampleViews, websiteViews);
+                }, (error) => {
+                    console.error('Error reading views', error);
+                    return {};
                 })
                     .then(callback);
             };

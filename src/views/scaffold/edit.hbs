@@ -1,12 +1,16 @@
-<h1>This is a Read page</h1>
+<h1>This is an Edit page</h1>
 
 <a href="/{{controller}}">Back to table {{title}}</a>
 
-<div>
-  <table></table>
-</div>
+<form action="/{{controller}}/update/{{id}}" method="post">
+  {{!-- table --}}
+  <div>
+    <table></table>
+  </div>
 
-<button id="editButton" onclick="window.location.href='/{{controller}}/edit/{{id}}'">Edit</button>
+  {{!-- save button --}}
+  <button id='saveButton'>Save</button>
+</form>
 
 <script>
   var data = {{{ json }}}
@@ -27,7 +31,9 @@
         value = `<img src="${value}" />`
       }
 
-      return `<td>${key}</td><td>${value}</td>`
+      return `<td>${key}</td><td>
+      <input name="${key}" type="text" value="${value}" />
+      </td>`
     })
 
 </script>

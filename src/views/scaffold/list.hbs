@@ -2,19 +2,6 @@
 
 <p>Put list stuff here</p>
 
-<style>
-  p.blob {
-    line-break: anywhere;
-  }
-  table {
-    width: 100%;
-
-  }
-  td {
-    border: 1px solid black;
-  }
-</style>
-
 <div>
   <table id="myTable"></table>
 </div>
@@ -62,7 +49,8 @@
 
     if (column.data === '{{ primaryKey }}') {
       column.render = function (data, type, row, meta) {
-        return `<a href="/{{controllerName}}/${data}">${data}</a>`
+        return `<a href="/{{controllerName}}/${data}">${data}</a>
+        <span style="float:right"><a href="/{{controllerName}}/edit/${data}">📝</a></span>`
       }
     }
 

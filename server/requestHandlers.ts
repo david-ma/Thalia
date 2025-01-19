@@ -418,6 +418,9 @@ const handle: Thalia.Handle = {
             // Use the website's views if they exist, otherwise use the default views
             // TODO: Allow themes to be applied in the middle?
             return _.merge(thaliaViews, exampleViews, websiteViews)
+          }, (error) => {
+            console.error('Error reading views', error)
+            return {}
           })
           .then(callback)
       }

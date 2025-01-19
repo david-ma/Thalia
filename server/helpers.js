@@ -47,6 +47,93 @@ function crud(options) {
                     case 'json':
                         dataTableJson(controller, table, hideColumns, references);
                         break;
+                    case 'update':
+                        parseForm(controller).then(function ([fields, files]) {
+                            table
+                                .update(fields, {
+                                where: {
+                                    [primaryKey]: controller.path[1],
+                                },
+                            })
+                                .then((result) => {
+                                controller.res.end(`<script>window.location = '/${options.tableName.toLowerCase()}/${controller.path[1]}'</script>`);
+                            }, (e) => {
+                                console.log('Error updating item', e);
+                                controller.res.end('Error updating item');
+                            });
+                        });
+                        break;
+                    case 'edit':
+                        Promise.all([
+                            new Promise(controller.readAllViews),
+                            (0, requestHandlers_1.loadMustacheTemplate)(path.join(__dirname, '..', 'src', 'views', 'partials', 'wrapper.hbs')),
+                        ]).then(([views, loadedTemplate]) => {
+                            const template = Handlebars.compile(loadedTemplate.content);
+                            Handlebars.registerPartial('scripts', loadedTemplate.scripts);
+                            Handlebars.registerPartial('styles', loadedTemplate.styles);
+                            if (views[`${options.tableName.toLowerCase()}Edit`]) {
+                                Handlebars.registerPartial('content', views[`${options.tableName.toLowerCase()}Edit`]);
+                            }
+                            else {
+                                Handlebars.registerPartial('content', views.edit);
+                            }
+                            loadViewsAsPartials(views, Handlebars);
+                            table
+                                .findOne({
+                                where: {
+                                    [primaryKey]: controller.path[1],
+                                },
+                            })
+                                .then((item) => {
+                                if (!item) {
+                                    controller.res.end('Item not found');
+                                    return;
+                                }
+                                const values = Object.entries(item.dataValues).reduce((obj, [key, value]) => {
+                                    if (!hideColumns.includes(key)) {
+                                        obj[key] = value;
+                                    }
+                                    return obj;
+                                }, {});
+                                const data = {
+                                    id: controller.path[1],
+                                    title: options.tableName,
+                                    controller: options.tableName.toLowerCase(),
+                                    values,
+                                    json: JSON.stringify(values),
+                                    attributes: Object.keys(values),
+                                };
+                                const html = template(data);
+                                controller.res.end(html);
+                            }, (e) => {
+                                console.log('Error finding item', e);
+                                controller.res.end(`Error finding item: ${uriPath[0]}`);
+                            });
+                        });
+                        break;
+                    case 'create':
+                        Promise.all([
+                            new Promise(controller.readAllViews),
+                            (0, requestHandlers_1.loadMustacheTemplate)(path.join(__dirname, '..', 'src', 'views', 'partials', 'wrapper.hbs')),
+                        ]).then(([views, loadedTemplate]) => {
+                            const template = Handlebars.compile(loadedTemplate.content);
+                            Handlebars.registerPartial('scripts', loadedTemplate.scripts);
+                            Handlebars.registerPartial('styles', loadedTemplate.styles);
+                            if (views[`${options.tableName.toLowerCase()}Create`]) {
+                                Handlebars.registerPartial('content', views[`${options.tableName.toLowerCase()}Create`]);
+                            }
+                            else {
+                                Handlebars.registerPartial('content', views.create);
+                            }
+                            loadViewsAsPartials(views, Handlebars);
+                            const data = {
+                                title: options.tableName,
+                                controller: options.tableName.toLowerCase(),
+                            };
+                            const html = template(data);
+                            controller.res.end(html);
+                        });
+                        break;
                     case '':
                         Promise.all([
                             new Promise(controller.readAllViews),
@@ -60,7 +147,12 @@ function crud(options) {
                             const template = Handlebars.compile(loadedTemplate.content);
                             Handlebars.registerPartial('scripts', loadedTemplate.scripts);
                             Handlebars.registerPartial('styles', loadedTemplate.styles);
-                            Handlebars.registerPartial('content', views.list);
+                            if (views[`${options.tableName.toLowerCase()}List`]) {
+                                Handlebars.registerPartial('content', views[`${options.tableName.toLowerCase()}List`]);
+                            }
+                            else {
+                                Handlebars.registerPartial('content', views.list);
+                            }
                             loadViewsAsPartials(views, Handlebars);
                             const attributes = table.getAttributes();
                             const primaryKey = Object.keys(attributes).filter((key) => {
@@ -96,6 +188,9 @@ function crud(options) {
                             };
                             const html = template(data);
                             controller.res.end(html);
+                        }, (e) => {
+                            console.log('Error rendering template??', e);
+                            controller.res.end('Error rendering template');
                         })
                             .catch((e) => {
                             console.log('Error rendering template', e);
@@ -119,6 +214,10 @@ function crud(options) {
                                 },
                             })
                                 .then((item) => {
+                                if (!item) {
+                                    controller.res.end('Item not found');
+                                    return;
+                                }
                                 const values = Object.entries(item.dataValues).reduce((obj, [key, value]) => {
                                     if (!hideColumns.includes(key)) {
                                         obj[key] = value;
@@ -126,6 +225,7 @@ function crud(options) {
                                     return obj;
                                 }, {});
                                 const data = {
+                                    id: controller.path[0],
                                     title: options.tableName,
                                     controller: options.tableName.toLowerCase(),
                                     values,
@@ -448,32 +548,41 @@ const checkSession = async function (controller, success, naive) {
             return;
         }
     }
-    return Promise.all([
-        new Promise(controller.readAllViews).then((views) => {
-            loadViewsAsPartials(views, controller.handlebars);
-            return views;
-        }),
-        controller.db.Session.findOne({
-            where: {
-                sid: login_token,
-            },
-        }).then((session) => session
-            ? controller.db.User.findOne({
+    try {
+        return Promise.all([
+            new Promise(controller.readAllViews).then((views) => {
+                loadViewsAsPartials(views, controller.handlebars);
+                return views;
+            }, (err) => {
+                console.log('Error loading views', err);
+                return Promise.reject('Error loading views');
+            }),
+            controller.db.Session.findOne({
                 where: {
-                    id: session.userId,
+                    sid: login_token,
                 },
-            })
-            : Promise.reject('No session found. Please log in.')),
-    ]).then(function ([views, user]) {
-        if (user.locked) {
-            controller.res.end('Your account is locked. Please contact an admin.');
-            return;
-        }
-        success([views, user]);
-    }, function (err) {
-        console.log('ERROR!', err);
-        controller.res.end('<meta http-equiv="refresh" content="0; url=/logout">');
-    });
+            }).then((session) => session
+                ? controller.db.User.findOne({
+                    where: {
+                        id: session.userId,
+                    },
+                })
+                : Promise.reject('No session found. Please log in.')),
+        ]).then(function ([views, user]) {
+            if (user.locked) {
+                controller.res.end('Your account is locked. Please contact an admin.');
+                return;
+            }
+            success([views, user]);
+        }, function (err) {
+            console.log('ERROR!', err);
+            controller.res.end('<meta http-equiv="refresh" content="0; url=/logout">');
+        });
+    }
+    catch (error) {
+        console.log('Error checking session', error);
+        return Promise.reject('Error checking session');
+    }
 };
 exports.checkSession = checkSession;
 function users(options) {

@@ -82,6 +82,140 @@ function crud(options: {
           case 'json': // JSON for DataTables.net list
             dataTableJson(controller, table, hideColumns, references)
             break
+          case 'update': // receive an update POST
+            parseForm(controller).then(function ([fields, files]) {
+              table
+                .update(fields, {
+                  where: {
+                    [primaryKey]: controller.path[1],
+                  },
+                })
+                .then(
+                  (result) => {
+                    // Go to show page
+
+                    controller.res.end(
+                      `<script>window.location = '/${options.tableName.toLowerCase()}/${
+                        controller.path[1]
+                      }'</script>`
+                    )
+
+                    // controller.res.end('Updated')
+                  },
+                  (e) => {
+                    console.log('Error updating item', e)
+                    controller.res.end('Error updating item')
+                  }
+                )
+            })
+            break
+          case 'edit': // Edit page
+            Promise.all([
+              new Promise<Views>(controller.readAllViews),
+              loadMustacheTemplate(
+                path.join(
+                  __dirname,
+                  '..',
+                  'src',
+                  'views',
+                  'partials',
+                  'wrapper.hbs'
+                )
+              ),
+            ]).then(([views, loadedTemplate]) => {
+              const template = Handlebars.compile(loadedTemplate.content)
+              Handlebars.registerPartial('scripts', loadedTemplate.scripts)
+              Handlebars.registerPartial('styles', loadedTemplate.styles)
+              if (views[`${options.tableName.toLowerCase()}Edit`]) {
+                Handlebars.registerPartial(
+                  'content',
+                  views[`${options.tableName.toLowerCase()}Edit`]
+                )
+              } else {
+                Handlebars.registerPartial('content', views.edit)
+              }
+
+              loadViewsAsPartials(views, Handlebars)
+
+              table
+                .findOne({
+                  where: {
+                    [primaryKey]: controller.path[1],
+                  },
+                })
+                .then(
+                  (item) => {
+                    if (!item) {
+                      controller.res.end('Item not found')
+                      return
+                    }
+                    const values = Object.entries(item.dataValues).reduce(
+                      (obj, [key, value]) => {
+                        if (!hideColumns.includes(key)) {
+                          obj[key] = value
+                        }
+                        return obj
+                      },
+                      {}
+                    )
+
+                    const data = {
+                      id: controller.path[1],
+                      title: options.tableName,
+                      controller: options.tableName.toLowerCase(),
+                      values,
+                      json: JSON.stringify(values),
+                      attributes: Object.keys(values),
+                    }
+
+                    const html = template(data)
+                    controller.res.end(html)
+                  },
+                  (e) => {
+                    console.log('Error finding item', e)
+                    controller.res.end(`Error finding item: ${uriPath[0]}`)
+                  }
+                )
+            })
+            break
+          case 'create': // Create page
+            Promise.all([
+              new Promise<Views>(controller.readAllViews),
+              loadMustacheTemplate(
+                path.join(
+                  __dirname,
+                  '..',
+                  'src',
+                  'views',
+                  'partials',
+                  'wrapper.hbs'
+                )
+              ),
+            ]).then(([views, loadedTemplate]) => {
+              const template = Handlebars.compile(loadedTemplate.content)
+              Handlebars.registerPartial('scripts', loadedTemplate.scripts)
+              Handlebars.registerPartial('styles', loadedTemplate.styles)
+
+              if (views[`${options.tableName.toLowerCase()}Create`]) {
+                Handlebars.registerPartial(
+                  'content',
+                  views[`${options.tableName.toLowerCase()}Create`]
+                )
+              } else {
+                Handlebars.registerPartial('content', views.create)
+              }
+
+              loadViewsAsPartials(views, Handlebars)
+
+              const data = {
+                title: options.tableName,
+                controller: options.tableName.toLowerCase(),
+              }
+
+              const html = template(data)
+              controller.res.end(html)
+            })
+            break
           case '': // List
             Promise.all([
               new Promise<Views>(controller.readAllViews),
@@ -100,56 +234,71 @@ function crud(options: {
                 console.log('Error loading views')
                 return Promise.reject(e)
               })
-              .then(([views, loadedTemplate]) => {
-                const template = Handlebars.compile(loadedTemplate.content)
-                Handlebars.registerPartial('scripts', loadedTemplate.scripts)
-                Handlebars.registerPartial('styles', loadedTemplate.styles)
-                Handlebars.registerPartial('content', views.list)
-                loadViewsAsPartials(views, Handlebars)
+              .then(
+                ([views, loadedTemplate]) => {
+                  const template = Handlebars.compile(loadedTemplate.content)
+                  Handlebars.registerPartial('scripts', loadedTemplate.scripts)
+                  Handlebars.registerPartial('styles', loadedTemplate.styles)
 
-                const attributes = table.getAttributes()
+                  if (views[`${options.tableName.toLowerCase()}List`]) {
+                    Handlebars.registerPartial(
+                      'content',
+                      views[`${options.tableName.toLowerCase()}List`]
+                    )
+                  } else {
+                    Handlebars.registerPartial('content', views.list)
+                  }
 
-                const primaryKey = Object.keys(attributes).filter((key) => {
-                  return attributes[key].primaryKey
-                })
+                  loadViewsAsPartials(views, Handlebars)
 
-                // This could probably be cleaner...
-                const links = references
-                  .map((reference) => {
-                    const table = controller.db[reference]
-                    const name = reference
-                    const tableName = table.tableName
-                    const attribute = Object.values(attributes).filter(
-                      (attribute) => {
-                        return (
-                          attribute.references &&
-                          typeof attribute.references === 'object' &&
-                          attribute.references.model === tableName
-                        )
-                      }
-                    )[0]
+                  const attributes = table.getAttributes()
 
-                    if (attribute) {
-                      return JSON.stringify({
-                        name,
-                        tableName,
-                        attribute,
-                      })
-                    } else {
-                      return null
-                    }
+                  const primaryKey = Object.keys(attributes).filter((key) => {
+                    return attributes[key].primaryKey
                   })
-                  .filter((link) => link !== null)
 
-                const data = {
-                  title: options.tableName,
-                  controllerName: options.tableName.toLowerCase(),
-                  links,
-                  primaryKey,
+                  // This could probably be cleaner...
+                  const links = references
+                    .map((reference) => {
+                      const table = controller.db[reference]
+                      const name = reference
+                      const tableName = table.tableName
+                      const attribute = Object.values(attributes).filter(
+                        (attribute) => {
+                          return (
+                            attribute.references &&
+                            typeof attribute.references === 'object' &&
+                            attribute.references.model === tableName
+                          )
+                        }
+                      )[0]
+
+                      if (attribute) {
+                        return JSON.stringify({
+                          name,
+                          tableName,
+                          attribute,
+                        })
+                      } else {
+                        return null
+                      }
+                    })
+                    .filter((link) => link !== null)
+
+                  const data = {
+                    title: options.tableName,
+                    controllerName: options.tableName.toLowerCase(),
+                    links,
+                    primaryKey,
+                  }
+                  const html = template(data)
+                  controller.res.end(html)
+                },
+                (e) => {
+                  console.log('Error rendering template??', e)
+                  controller.res.end('Error rendering template')
                 }
-                const html = template(data)
-                controller.res.end(html)
-              })
+              )
               .catch((e) => {
                 console.log('Error rendering template', e)
                 controller.res.end('Error rendering template')
@@ -183,6 +332,10 @@ function crud(options: {
                 })
                 .then(
                   (item) => {
+                    if (!item) {
+                      controller.res.end('Item not found')
+                      return
+                    }
                     const values = Object.entries(item.dataValues).reduce(
                       (obj, [key, value]) => {
                         if (!hideColumns.includes(key)) {
@@ -194,6 +347,7 @@ function crud(options: {
                     )
 
                     const data = {
+                      id: controller.path[0],
                       title: options.tableName,
                       controller: options.tableName.toLowerCase(),
                       values,
@@ -674,41 +828,54 @@ export const checkSession: SecurityMiddleware = async function (
     }
   }
 
-  return Promise.all([
-    new Promise(controller.readAllViews).then((views: Views) => {
-      loadViewsAsPartials(views, controller.handlebars)
-      return views
-    }),
-    controller.db.Session.findOne({
-      where: {
-        sid: login_token,
+  try {
+    return Promise.all([
+      new Promise(controller.readAllViews).then(
+        (views: Views) => {
+          loadViewsAsPartials(views, controller.handlebars)
+          return views
+        },
+        (err) => {
+          console.log('Error loading views', err)
+          return Promise.reject('Error loading views')
+        }
+      ),
+      controller.db.Session.findOne({
+        where: {
+          sid: login_token,
+        },
+      }).then((session: Session) =>
+        session
+          ? controller.db.User.findOne({
+              where: {
+                id: session.userId,
+              },
+            })
+          : Promise.reject('No session found. Please log in.')
+      ),
+    ]).then(
+      function ([views, user]) {
+        if (user.locked) {
+          controller.res.end('Your account is locked. Please contact an admin.')
+          return
+        }
+        success([views, user])
       },
-    }).then((session: Session) =>
-      session
-        ? controller.db.User.findOne({
-            where: {
-              id: session.userId,
-            },
-          })
-        : Promise.reject('No session found. Please log in.')
-    ),
-  ]).then(
-    function ([views, user]) {
-      if (user.locked) {
-        controller.res.end('Your account is locked. Please contact an admin.')
-        return
+      function (err) {
+        // No session found
+        console.log('ERROR!', err)
+        // Send the user to the logout page
+        // So they logout
+        // And then they get sent to the login page again
+        controller.res.end(
+          '<meta http-equiv="refresh" content="0; url=/logout">'
+        )
       }
-      success([views, user])
-    },
-    function (err) {
-      // No session found
-      console.log('ERROR!', err)
-      // Send the user to the logout page
-      // So they logout
-      // And then they get sent to the login page again
-      controller.res.end('<meta http-equiv="refresh" content="0; url=/logout">')
-    }
-  )
+    )
+  } catch (error) {
+    console.log('Error checking session', error)
+    return Promise.reject('Error checking session')
+  }
 }
 
 export type SecurityOptions = {

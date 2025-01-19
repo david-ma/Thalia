@@ -178,6 +178,26 @@ function crud(options: {
                 )
             })
             break
+          case 'delete':
+            table
+              .destroy({
+                where: {
+                  [primaryKey]: controller.path[1],
+                },
+              })
+              .then(
+                (result) => {
+                  controller.res.end(
+                    `<script>window.location = '/${options.tableName.toLowerCase()}'</script>`
+                  )
+                },
+                (e) => {
+                  console.log('Error deleting item', e)
+                  controller.res.end('Error deleting item')
+                }
+              )
+
+            break
           case 'create': // Create action
             parseForm(controller).then(function ([fields, files]) {
               // Make sure fields are not completely empty

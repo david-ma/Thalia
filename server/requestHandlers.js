@@ -15,25 +15,16 @@ class Website {
             this.dist = '';
             this.cache = typeof config.cache === 'boolean' ? config.cache : true;
             this.folder =
-                typeof config.folder === 'string'
-                    ? config.folder
-                    : path.resolve(process.cwd(), 'websites', site, 'public');
+                typeof config.folder === 'string' ? config.folder : path.resolve(process.cwd(), 'websites', site, 'public');
             this.workspacePath =
-                typeof config.workspacePath === 'string'
-                    ? config.workspacePath
-                    : path.resolve(process.cwd(), 'websites', site);
+                typeof config.workspacePath === 'string' ? config.workspacePath : path.resolve(process.cwd(), 'websites', site);
             this.domains = typeof config.domains === 'object' ? config.domains : [];
             this.pages = typeof config.pages === 'object' ? config.pages : {};
-            this.redirects =
-                typeof config.redirects === 'object' ? config.redirects : {};
+            this.redirects = typeof config.redirects === 'object' ? config.redirects : {};
             this.services = typeof config.services === 'object' ? config.services : {};
-            this.controllers =
-                typeof config.controllers === 'object' ? config.controllers : {};
+            this.controllers = typeof config.controllers === 'object' ? config.controllers : {};
             this.proxies = typeof config.proxies === 'object' ? config.proxies : {};
-            this.sockets =
-                typeof config.sockets === 'object'
-                    ? config.sockets
-                    : { on: [], emit: [] };
+            this.sockets = typeof config.sockets === 'object' ? config.sockets : { on: [], emit: [] };
             this.security =
                 typeof config.security === 'object'
                     ? config.security
@@ -168,8 +159,7 @@ const handle = {
                             console.log();
                         }
                         else {
-                            if (err.requireStack &&
-                                err.requireStack[0].indexOf('thalia.js') > 0) {
+                            if (err.requireStack && err.requireStack[0].indexOf('thalia.js') > 0) {
                                 console.log(`${site} does not use config.js, just serve the public folder`);
                             }
                             else {
@@ -187,9 +177,7 @@ const handle = {
     addWebsite: function (site, config) {
         config = config || {};
         handle.websites[site] = new Website(site, config);
-        const baseUrl = config.standAlone
-            ? config.workspacePath
-            : path.resolve(__dirname, '..', 'websites', site);
+        const baseUrl = config.standAlone ? config.workspacePath : path.resolve(__dirname, '..', 'websites', site);
         if (fs.existsSync(path.resolve(baseUrl, 'data'))) {
             handle.websites[site].data = path.resolve(baseUrl, 'data');
         }
@@ -206,7 +194,7 @@ const handle = {
         }
         else {
             Object.keys(handle.websites[site].proxies).forEach(function (domain) {
-                const rawProxy = (handle.websites[site].proxies)[domain];
+                const rawProxy = handle.websites[site].proxies[domain];
                 handle.proxies[domain] = makeProxy(handle.proxies[domain], rawProxy);
             });
         }
@@ -303,9 +291,7 @@ const handle = {
                         .filter((file) => file.match(/.mustache|.hbs/))
                         .forEach((file) => {
                         const webpage = file.split(/.mustache|.hbs/)[0];
-                        if ((config.mustacheIgnore
-                            ? config.mustacheIgnore.indexOf(webpage) === -1
-                            : true) &&
+                        if ((config.mustacheIgnore ? config.mustacheIgnore.indexOf(webpage) === -1 : true) &&
                             !handle.websites[site].controllers[webpage]) {
                             handle.websites[site].controllers[webpage] = function (controller) {
                                 if (handle.websites[site].cache) {

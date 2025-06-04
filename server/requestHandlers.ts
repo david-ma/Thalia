@@ -62,28 +62,19 @@ class Website implements Thalia.WebsiteConfig {
       this.dist = '' // Used to be false. Todo: Check if this is ok
       this.cache = typeof config.cache === 'boolean' ? config.cache : true
       this.folder =
-        typeof config.folder === 'string'
-          ? config.folder
-          : path.resolve(process.cwd(), 'websites', site, 'public')
+        typeof config.folder === 'string' ? config.folder : path.resolve(process.cwd(), 'websites', site, 'public')
       // : 'websites/' + site + '/public'
 
       this.workspacePath =
-        typeof config.workspacePath === 'string'
-          ? config.workspacePath
-          : path.resolve(process.cwd(), 'websites', site)
+        typeof config.workspacePath === 'string' ? config.workspacePath : path.resolve(process.cwd(), 'websites', site)
 
       this.domains = typeof config.domains === 'object' ? config.domains : []
       this.pages = typeof config.pages === 'object' ? config.pages : {}
-      this.redirects =
-        typeof config.redirects === 'object' ? config.redirects : {}
+      this.redirects = typeof config.redirects === 'object' ? config.redirects : {}
       this.services = typeof config.services === 'object' ? config.services : {}
-      this.controllers =
-        typeof config.controllers === 'object' ? config.controllers : {}
+      this.controllers = typeof config.controllers === 'object' ? config.controllers : {}
       this.proxies = typeof config.proxies === 'object' ? config.proxies : {}
-      this.sockets =
-        typeof config.sockets === 'object'
-          ? config.sockets
-          : { on: [], emit: [] }
+      this.sockets = typeof config.sockets === 'object' ? config.sockets : { on: [], emit: [] }
       this.security =
         typeof config.security === 'object'
           ? config.security
@@ -180,42 +171,12 @@ const handle: Thalia.Handle = {
       try {
         const start = Date.now()
 
-        if (
-          fs.existsSync(
-            path.resolve(__dirname, '..', 'websites', site, 'config.js')
-          )
-        ) {
-          config = require(path.resolve(
-            __dirname,
-            '..',
-            'websites',
-            site,
-            'config'
-          )).config
-        } else if (
-          fs.existsSync(
-            path.resolve(
-              __dirname,
-              '..',
-              'websites',
-              site,
-              'config',
-              'config.js'
-            )
-          )
-        ) {
-          config = require(path.resolve(
-            __dirname,
-            '..',
-            'websites',
-            site,
-            'config',
-            'config'
-          )).config
+        if (fs.existsSync(path.resolve(__dirname, '..', 'websites', site, 'config.js'))) {
+          config = require(path.resolve(__dirname, '..', 'websites', site, 'config')).config
+        } else if (fs.existsSync(path.resolve(__dirname, '..', 'websites', site, 'config', 'config.js'))) {
+          config = require(path.resolve(__dirname, '..', 'websites', site, 'config', 'config')).config
         } else {
-          console.log(
-            `No config provided for ${site}, just serving the public folder`
-          )
+          console.log(`No config provided for ${site}, just serving the public folder`)
         }
         console.log(`${Date.now() - start} ms - config.js for ${site}`)
       } catch (err) {
@@ -237,61 +198,24 @@ const handle: Thalia.Handle = {
           console.log('Adding site: ' + site)
           let config: Thalia.WebsiteConfig = {}
           try {
-            if (
-              fs.existsSync(
-                path.resolve(__dirname, '..', 'websites', site, 'config.js')
-              )
-            ) {
-              config = require(path.resolve(
-                __dirname,
-                '..',
-                'websites',
-                site,
-                'config'
-              )).config
-            } else if (
-              fs.existsSync(
-                path.resolve(
-                  __dirname,
-                  '..',
-                  'websites',
-                  site,
-                  'config',
-                  'config.js'
-                )
-              )
-            ) {
-              config = require(path.resolve(
-                __dirname,
-                '..',
-                'websites',
-                site,
-                'config',
-                'config'
-              )).config
+            if (fs.existsSync(path.resolve(__dirname, '..', 'websites', site, 'config.js'))) {
+              config = require(path.resolve(__dirname, '..', 'websites', site, 'config')).config
+            } else if (fs.existsSync(path.resolve(__dirname, '..', 'websites', site, 'config', 'config.js'))) {
+              config = require(path.resolve(__dirname, '..', 'websites', site, 'config', 'config')).config
             } else {
-              console.log(
-                `No config provided for ${site}, just serve the public folder`
-              )
+              console.log(`No config provided for ${site}, just serve the public folder`)
             }
           } catch (err) {
             if (err.code !== 'MODULE_NOT_FOUND') {
-              console.log(
-                'Warning, your config script for ' + site + ' is broken!'
-              )
+              console.log('Warning, your config script for ' + site + ' is broken!')
               console.error(err)
               console.log()
             } else {
               // Note, we want this to be silent if config.js is missing, because we can just serve the public/dist folders.
               // but log an error if config.js requires something that is not available.
 
-              if (
-                err.requireStack &&
-                err.requireStack[0].indexOf('thalia.js') > 0
-              ) {
-                console.log(
-                  `${site} does not use config.js, just serve the public folder`
-                )
+              if (err.requireStack && err.requireStack[0].indexOf('thalia.js') > 0) {
+                console.log(`${site} does not use config.js, just serve the public folder`)
               } else {
                 // Do we want errors to appear in standard error? Or standard log??? Both???
                 console.error(`Error loading config for ${site}`)
@@ -315,9 +239,7 @@ const handle: Thalia.Handle = {
     config = config || {}
     handle.websites[site] = new Website(site, config)
 
-    const baseUrl = config.standAlone
-      ? config.workspacePath
-      : path.resolve(__dirname, '..', 'websites', site)
+    const baseUrl = config.standAlone ? config.workspacePath : path.resolve(__dirname, '..', 'websites', site)
 
     // If dist or data exist, enable them.
     if (fs.existsSync(path.resolve(baseUrl, 'data'))) {
@@ -329,18 +251,14 @@ const handle: Thalia.Handle = {
 
     // Proxy things
     if (Array.isArray(handle.websites[site].proxies)) {
-      ;(<Thalia.rawProxy[]>handle.websites[site].proxies).forEach(function (
-        proxy: Thalia.rawProxy
-      ) {
+      ;(<Thalia.rawProxy[]>handle.websites[site].proxies).forEach(function (proxy: Thalia.rawProxy) {
         proxy.domains.forEach((domain) => {
           handle.proxies[domain] = makeProxy(handle.proxies[domain], proxy)
         })
       })
     } else {
       Object.keys(handle.websites[site].proxies).forEach(function (domain) {
-        const rawProxy: Thalia.rawProxy = (<{ [key: string]: Thalia.rawProxy }>(
-          handle.websites[site].proxies
-        ))[domain]
+        const rawProxy: Thalia.rawProxy = (<{ [key: string]: Thalia.rawProxy }>handle.websites[site].proxies)[domain]
 
         handle.proxies[domain] = makeProxy(handle.proxies[domain], rawProxy)
       })
@@ -369,12 +287,7 @@ const handle: Thalia.Handle = {
       const start = Date.now()
       try {
         console.log(`Loading db_bootstrap.js for ${site}`)
-        const { SequelizeWrapper } = require(path.resolve(
-          baseUrl,
-          'config',
-          'db_bootstrap.js'
-        ))
-
+        const { SequelizeWrapper } = require(path.resolve(baseUrl, 'config', 'db_bootstrap.js'))
       } catch (e) {
         console.log(`Error loading db_bootstrap.js for ${site}`)
         console.log(e)
@@ -382,35 +295,23 @@ const handle: Thalia.Handle = {
       }
 
       try {
-        const { seqOptions, seq } = require(path.resolve(
-          baseUrl,
-          'config',
-          'db_bootstrap.js'
-        ))
+        const { seqOptions, seq } = require(path.resolve(baseUrl, 'config', 'db_bootstrap.js'))
 
         handle.websites[site].seq = seq
 
         seq.sequelize.authenticate().then(
           () => {
-            console.log(
-              `${Date.now() - start} ms - Database db_bootstrap.js ${site}`
-            )
+            console.log(`${Date.now() - start} ms - Database db_bootstrap.js ${site}`)
           },
           (err: Error) => {
-            console.log(
-              `${Date.now() - start} ms - Database db_bootstrap.js ${site}`
-            )
-            console.error(
-              `Error connecting to database in ${site}/config/db_bootstrap.js ${err.message}`
-            )
+            console.log(`${Date.now() - start} ms - Database db_bootstrap.js ${site}`)
+            console.error(`Error connecting to database in ${site}/config/db_bootstrap.js ${err.message}`)
             console.log('Options:', seqOptions || 'No options provided')
             process.exit(1)
           }
         )
       } catch (e) {
-        console.log(
-          `${Date.now() - start} ms - Database db_bootstrap.js ${site}`
-        )
+        console.log(`${Date.now() - start} ms - Database db_bootstrap.js ${site}`)
         console.log(`Couldn't load db_bootstrap.js for ${site}`)
         console.log(e)
         process.exit(1)
@@ -424,33 +325,26 @@ const handle: Thalia.Handle = {
       // Stupid hack for development if you don't want to cache the views :(
       handle.websites[site].readAllViews = function (callback: ViewCallback) {
         const promises: Promise<Views>[] = [
-          readAllViewsInFolder(
-            path.resolve(__dirname, '..', 'websites', 'example', 'views')
-          ),
+          readAllViewsInFolder(path.resolve(__dirname, '..', 'websites', 'example', 'views')),
           readAllViewsInFolder(path.resolve(__dirname, '..', 'src', 'views')),
           readAllViewsInFolder(path.resolve(baseUrl, 'views')),
         ]
         Promise.all(promises)
-          .then(([exampleViews, thaliaViews, websiteViews]: any) => {
-            // Use the website's views if they exist, otherwise use the default views
-            // TODO: Allow themes to be applied in the middle?
-            return _.merge(thaliaViews, exampleViews, websiteViews)
-          }, (error) => {
-            console.error('Error reading views', error)
-            return {}
-          })
+          .then(
+            ([exampleViews, thaliaViews, websiteViews]: any) => {
+              // Use the website's views if they exist, otherwise use the default views
+              // TODO: Allow themes to be applied in the middle?
+              return _.merge(thaliaViews, exampleViews, websiteViews)
+            },
+            (error) => {
+              console.error('Error reading views', error)
+              return {}
+            }
+          )
           .then(callback)
       }
-      handle.websites[site].readTemplate = function (config: {
-        template: string
-        content: string
-        callback: any
-      }) {
-        readTemplate(
-          config.template,
-          path.resolve(baseUrl, 'views'),
-          config.content
-        )
+      handle.websites[site].readTemplate = function (config: { template: string; content: string; callback: any }) {
+        readTemplate(config.template, path.resolve(baseUrl, 'views'), config.content)
           .catch((e) => {
             console.error('error here?', e)
             config.callback(e)
@@ -464,9 +358,7 @@ const handle: Thalia.Handle = {
       // Consider adding partials only for it's own website?
       // There's a possibility of name collisions if we don't.
       const promises: Promise<Views>[] = [
-        readAllViewsInFolder(
-          path.resolve(__dirname, '..', 'websites', 'example', 'views')
-        ),
+        readAllViewsInFolder(path.resolve(__dirname, '..', 'websites', 'example', 'views')),
         readAllViewsInFolder(path.resolve(__dirname, '..', 'src', 'views')),
         readAllViewsInFolder(path.resolve(baseUrl, 'views')),
       ]
@@ -486,28 +378,18 @@ const handle: Thalia.Handle = {
                 .forEach((file: string) => {
                   const webpage = file.split(/.mustache|.hbs/)[0]
                   if (
-                    (config.mustacheIgnore
-                      ? config.mustacheIgnore.indexOf(webpage) === -1
-                      : true) &&
+                    (config.mustacheIgnore ? config.mustacheIgnore.indexOf(webpage) === -1 : true) &&
                     !handle.websites[site].controllers[webpage]
                   ) {
-                    handle.websites[site].controllers[webpage] = function (
-                      controller: Thalia.Controller
-                    ) {
+                    handle.websites[site].controllers[webpage] = function (controller: Thalia.Controller) {
                       if (handle.websites[site].cache) {
                         registerAllViewsAsPartials(views)
-                        controller.res.end(
-                          Handlebars.compile(views[webpage])({})
-                        )
+                        controller.res.end(Handlebars.compile(views[webpage])({}))
                       } else {
-                        readAllViewsInFolder(
-                          path.resolve(baseUrl, 'views')
-                        ).then((views) => {
+                        readAllViewsInFolder(path.resolve(baseUrl, 'views')).then((views) => {
                           handle.websites[site].views = views
                           registerAllViewsAsPartials(views)
-                          controller.res.end(
-                            Handlebars.compile(views[webpage])({})
-                          )
+                          controller.res.end(Handlebars.compile(views[webpage])({}))
                         })
                       }
                     }
@@ -677,18 +559,13 @@ async function readAllViewsInFolder(folder: string): Promise<Views> {
                       })
                     })
                     .catch((e: any) => {
-                      console.log(
-                        'Error in readAllViewsInFolder, reading the file:',
-                        filename
-                      )
+                      console.log('Error in readAllViewsInFolder, reading the file:', filename)
                       console.log('error', e)
                     })
                 } else {
                   fsPromise.lstat(`${folder}/${filename}`).then((d: any) => {
                     if (d.isDirectory()) {
-                      readAllViewsInFolder(`${folder}/${filename}`).then((d) =>
-                        resolve(d)
-                      )
+                      readAllViewsInFolder(`${folder}/${filename}`).then((d) => resolve(d))
                     } else {
                       // console.log(`${filename} is not a folder`);
                       resolve({})

@@ -1,5 +1,5 @@
 // Calling this file helpers.ts because util is reserved
-import { ModelStatic, Op, DataTypes, Sequelize } from 'sequelize'
+import { ModelStatic, Op, DataTypes, Sequelize, Model } from 'sequelize'
 
 import { Thalia } from './thalia'
 export { Thalia }
@@ -281,6 +281,7 @@ function crud(options: {
             })
             break
           case '': // List
+          case 'list':
             Promise.all([
               new Promise<Views>(controller.readAllViews),
               loadMustacheTemplate(
@@ -720,6 +721,14 @@ const checkSequelizeDataTableTypes = function (type) {
   }
 }
 
+export type DatabaseInstance = {
+  sequelize: Sequelize
+  models: {
+    [key: string]: ModelStatic<any>
+  }
+}
+
+// SeqObject and seqObject should be Deprecated. Use DatabaseInstance instead.
 type SeqObject = {
   sequelize: Sequelize
 } & Omit<

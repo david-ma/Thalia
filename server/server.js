@@ -17,46 +17,45 @@ function start(router, handle, port) {
     let server = null;
     function onRequest(request, response) {
         const host = request.headers['x-host'] || request.headers.host;
-        let spam = false;
         const ip = request.headers['X-Real-IP'] ||
             request.headers['x-real-ip'] ||
             request.connection.remoteAddress ||
             request.socket.remoteAddress;
-        if (ip) {
-            if (!host || blacklist.some((thing) => ip.includes(thing))) {
-                spam = true;
-                response.writeHead(403);
-                response.end('Go away');
-            }
+        if (!ip || !host || blacklist.some((thing) => ip.includes(thing))) {
+            response.writeHead(403);
+            response.end('Go away');
+            return;
         }
-        if (!spam) {
-            const hostname = host.split(':')[0];
-            const site = handle.getWebsite(hostname);
-            const urlObject = url.parse(request.url, true);
-            const proxies = handle.proxies[hostname];
-            const filterWord = url.parse(request.url).pathname.split('/')[1];
-            const proxy = proxies
-                ? proxies[filterWord] || proxies['*'] || null
-                : null;
-            if (proxy) {
-                if (!proxy.silent)
-                    log();
-                webProxy(proxy);
-            }
-            else {
+        const hostname = host.split(':')[0];
+        const site = handle.getWebsite(hostname);
+        const urlObject = url.parse(request.url, true);
+        const proxies = handle.proxies[hostname];
+        const filterWord = url.parse(request.url).pathname.split('/')[1];
+        const proxy = proxies ? proxies[filterWord] || proxies['*'] || null : null;
+        if (proxy) {
+            if (!proxy.silent)
                 log();
-                router(site, urlObject.pathname, response, request);
-            }
-            function log() {
-                console.log();
-                console.log(`Request for ${host}${urlObject.href} At ${getDateTime()} From ${ip}`);
-            }
+            webProxy(proxy);
+        }
+        else {
+            log();
+            router(site, urlObject.pathname, response, request);
+        }
+        function log() {
+            console.log();
+            console.log(`Request for ${host}${urlObject.href} At ${getDateTime()} From ${ip}`);
         }
         function webProxy(config) {
+            console.log('Proxy found, trying to proxy', config);
             if (config.password) {
                 const cookies = getCookies(request);
                 if (cookies[`password${config.filter || ''}`] !== encode(config.password)) {
                     loginPage(config.password, config.filter);
+                    return;
+                }
+                if (config.host === '127.0.0.1' && config.port === 80 && !config.filter) {
+                    log();
+                    router(site, urlObject.pathname, response, request);
                     return;
                 }
             }
@@ -82,7 +81,8 @@ function start(router, handle, port) {
             if (request.url.indexOf('login') >= 0) {
                 const form = new formidable.IncomingForm();
                 form.parse(request, (err, fields) => {
-                    if (fields.password && fields.password === password) {
+                    console.log('Fields is:', fields);
+                    if ((fields.password && fields.password === password) || fields.password[0] === password) {
                         const encodedPassword = encode(password);
                         response.setHeader('Set-Cookie', [
                             `password${filter || ''}=${encodedPassword};path=/;max-age=${24 * 60 * 60}`,
@@ -114,7 +114,7 @@ function start(router, handle, port) {
     const io = socketIO.listen(server, {});
     (0, socket_1.socketInit)(io, handle);
     server.on('error', function (e) {
-        console.log("Server error", e);
+        console.log('Server error', e);
     });
     server.on('upgrade', function (request, socket, head) {
         'use strict';
@@ -130,8 +130,7 @@ function start(router, handle, port) {
             else {
                 proxyConfig = proxies['*'];
             }
-            const proxyServer = httpProxy
-                .createProxyServer({
+            const proxyServer = httpProxy.createProxyServer({
                 ws: true,
                 target: {
                     host: proxyConfig && proxyConfig.host ? proxyConfig.host : '127.0.0.1',
@@ -172,9 +171,7 @@ function getCookies(request) {
     const cookies = {};
     if (request.headers.cookie) {
         request.headers.cookie.split(';').forEach(function (d) {
-            cookies[d.split('=')[0].trim()] = d
-                .substring(d.split('=')[0].length + 1)
-                .trim();
+            cookies[d.split('=')[0].trim()] = d.substring(d.split('=')[0].length + 1).trim();
         });
     }
     return cookies;

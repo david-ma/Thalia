@@ -9,7 +9,9 @@ import httpProxy = require('http-proxy')
 // import httpsProxy = require('https-proxy-agent')
 
 import { Server as SocketIoServer } from 'socket.io'
-const socketIO = new SocketIoServer({ /* options */ });
+const socketIO = new SocketIoServer({
+  /* options */
+})
 
 import formidable = require('formidable')
 
@@ -24,10 +26,7 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
   let server = null
 
   function onRequest(request: IncomingMessage, response: ServerResponse) {
-    const host: string =
-      (request.headers['x-host'] as string) || request.headers.host
-
-    let spam = false
+    const host: string = (request.headers['x-host'] as string) || request.headers.host
 
     const ip =
       request.headers['X-Real-IP'] ||
@@ -35,50 +34,50 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
       request.connection.remoteAddress ||
       request.socket.remoteAddress
 
-    if (ip) {
-      if (!host || blacklist.some((thing) => ip.includes(thing))) {
-        spam = true
-        // console.log(`Spam request from ${ip}`);
+    if (!ip || !host || blacklist.some((thing) => ip.includes(thing))) {
+      // console.debug('Blocked request from:', ip, 'to', host)
 
-        response.writeHead(403)
-        response.end('Go away')
-      }
+      response.writeHead(403)
+      response.end('Go away')
+      return
     }
 
-    if (!spam) {
-      // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
-      const hostname = host.split(':')[0]
+    // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
+    const hostname = host.split(':')[0]
 
-      const site = handle.getWebsite(hostname)
-      const urlObject: url.UrlWithParsedQuery = url.parse(request.url, true)
+    const site = handle.getWebsite(hostname)
+    const urlObject: url.UrlWithParsedQuery = url.parse(request.url, true)
 
-      const proxies: Thalia.Proxies = handle.proxies[hostname]
-      const filterWord = url.parse(request.url).pathname.split('/')[1]
-      const proxy: Thalia.Proxy = proxies
-        ? proxies[filterWord] || proxies['*'] || null
-        : null
+    const proxies: Thalia.Proxies = handle.proxies[hostname]
+    const filterWord = url.parse(request.url).pathname.split('/')[1]
+    const proxy: Thalia.Proxy = proxies ? proxies[filterWord] || proxies['*'] || null : null
 
-      if (proxy) {
-        if (!proxy.silent) log()
-        webProxy(proxy)
-      } else {
-        log()
-        router(site, urlObject.pathname, response, request)
-      }
+    if (proxy) {
+      if (!proxy.silent) log()
+      webProxy(proxy)
+    } else {
+      log()
+      router(site, urlObject.pathname, response, request)
+    }
 
-      function log() {
-        console.log()
-        console.log(
-          `Request for ${host}${urlObject.href} At ${getDateTime()} From ${ip}`
-        )
-      }
+    function log() {
+      console.log()
+      console.log(`Request for ${host}${urlObject.href} At ${getDateTime()} From ${ip}`)
     }
 
     function webProxy(config: Thalia.Proxy) {
+      console.log('Proxy found, trying to proxy', config)
+
       if (config.password) {
         const cookies: Cookies = getCookies(request)
         if (cookies[`password${config.filter || ''}`] !== encode(config.password)) {
           loginPage(config.password, config.filter)
+          return
+        }
+
+        if (config.host === '127.0.0.1' && config.port === 80 && !config.filter) {
+          log()
+          router(site, urlObject.pathname, response, request)
           return
         }
       }
@@ -112,8 +111,9 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
     function loginPage(password: string, filter: string) {
       if (request.url.indexOf('login') >= 0) {
         const form = new formidable.IncomingForm()
-        form.parse(request, (err :any, fields :any) => {
-          if (fields.password && fields.password === password) {
+        form.parse(request, (err: any, fields: any) => {
+          console.log('Fields is:', fields)
+          if ((fields.password && fields.password === password) || fields.password[0] === password) {
             const encodedPassword = encode(password)
             response.setHeader('Set-Cookie', [
               `password${filter || ''}=${encodedPassword};path=/;max-age=${24 * 60 * 60}`,
@@ -149,15 +149,14 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
   const io = socketIO.listen(server, {})
   socketInit(io, handle)
 
-  server.on('error', function(e: any) {
-    console.log("Server error", e)
+  server.on('error', function (e: any) {
+    console.log('Server error', e)
   })
 
   server.on('upgrade', function (request: any, socket: any, head: any) {
     'use strict'
 
-    let host: string =
-      (request.headers['x-host'] as string) || request.headers.host
+    let host: string = (request.headers['x-host'] as string) || request.headers.host
     // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
     host = host.split(':')[0]
 
@@ -174,27 +173,26 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
 
       // HTTP Proxy options
       // https://github.com/http-party/node-http-proxy/blob/HEAD/lib/http-proxy.js#L26-L42
-      const proxyServer = httpProxy
-        .createProxyServer({
-          ws: true,
-          target: {
-            host: proxyConfig && proxyConfig.host ? proxyConfig.host : '127.0.0.1',
-            port: proxyConfig && proxyConfig.port ? proxyConfig.port : 80,
-          },
-        })
-        
-        proxyServer.on('error', function (err: any, req: any, res: any) {
-          'use strict'
-          console.log(err)
-          try {
-            res.writeHead(500)
-            res.end(proxyConfig.message)
-          } catch (e) {
-            console.log('Error doing upgraded proxy!', e)
-          }
-        })
+      const proxyServer = httpProxy.createProxyServer({
+        ws: true,
+        target: {
+          host: proxyConfig && proxyConfig.host ? proxyConfig.host : '127.0.0.1',
+          port: proxyConfig && proxyConfig.port ? proxyConfig.port : 80,
+        },
+      })
 
-        proxyServer.ws(request, socket, head)
+      proxyServer.on('error', function (err: any, req: any, res: any) {
+        'use strict'
+        console.log(err)
+        try {
+          res.writeHead(500)
+          res.end(proxyConfig.message)
+        } catch (e) {
+          console.log('Error doing upgraded proxy!', e)
+        }
+      })
+
+      proxyServer.ws(request, socket, head)
     }
   })
 
@@ -234,9 +232,7 @@ function getCookies(request: IncomingMessage) {
   const cookies: Cookies = {}
   if (request.headers.cookie) {
     request.headers.cookie.split(';').forEach(function (d: any) {
-      cookies[d.split('=')[0].trim()] = d
-        .substring(d.split('=')[0].length + 1)
-        .trim()
+      cookies[d.split('=')[0].trim()] = d.substring(d.split('=')[0].length + 1).trim()
     })
   }
   return cookies

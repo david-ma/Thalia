@@ -57,7 +57,7 @@ export interface AuditAttributes {
 }
 export interface AuditModel extends Model<AuditAttributes>, AuditAttributes {
 }
-export declare class Audit extends Model<AuditModel, AuditAttributes> {
+export declare class Audit extends Model implements AuditAttributes {
     id: number;
     ip: string;
     userId: number;

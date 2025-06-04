@@ -40,7 +40,7 @@ export declare module Thalia {
   }
 
   export type rawProxy = {
-    host: string
+    host?: string
     domains?: string[]
     filter?: string
     message?: string

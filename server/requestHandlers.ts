@@ -5,7 +5,9 @@ const fsPromise = fs.promises
 import path = require('path')
 import sass = require('sass')
 
-// Each website should have their own Handlebars instace? Frame?
+import { DatabaseInstance } from './helpers'
+
+// Each website should have their own Handlebars instance? Frame?
 // https://handlebarsjs.com/api-reference/utilities.html#handlebars-createframe-data
 const Handlebars = require('handlebars')
 
@@ -42,6 +44,7 @@ class Website implements Thalia.WebsiteConfig {
 
   viewableFolders: boolean | Array<string>
   seq: Thalia.SequelizeWrapper
+  db?: DatabaseInstance
   readAllViews: {
     (callback: ViewCallback): void
   }
@@ -364,6 +367,20 @@ const handle: Thalia.Handle = {
     // If sequelize is set up in config, using db_bootstrap.js, load it.
     if (fs.existsSync(path.resolve(baseUrl, 'config', 'db_bootstrap.js'))) {
       const start = Date.now()
+      try {
+        console.log(`Loading db_bootstrap.js for ${site}`)
+        const { SequelizeWrapper } = require(path.resolve(
+          baseUrl,
+          'config',
+          'db_bootstrap.js'
+        ))
+
+      } catch (e) {
+        console.log(`Error loading db_bootstrap.js for ${site}`)
+        console.log(e)
+        process.exit(1)
+      }
+
       try {
         const { seqOptions, seq } = require(path.resolve(
           baseUrl,

@@ -177,6 +177,7 @@ function crud(options) {
                         });
                         break;
                     case '':
+                    case 'list':
                         Promise.all([
                             new Promise(controller.readAllViews),
                             (0, requestHandlers_1.loadMustacheTemplate)(path.join(__dirname, '..', 'src', 'views', 'partials', 'wrapper.hbs')),

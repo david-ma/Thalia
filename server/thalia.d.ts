@@ -28,7 +28,7 @@ export declare namespace Thalia {
         [key: string]: Proxy;
     };
     type rawProxy = {
-        host: string;
+        host?: string;
         domains?: string[];
         filter?: string;
         message?: string;

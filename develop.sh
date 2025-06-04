@@ -74,11 +74,13 @@ cd ../..
 
 
 if [ "$STANDALONE" = true ] ; then
-    echo "Running standalone nodemon thalia"
+    echo "Running standalone nodemon -q thalia"
     cd websites/$SITE
     pnpm nodemon thalia
 else
-    ./node_modules/.bin/nodemon $SITE $PORT
+# stdout to /dev/null to avoid "debugger listening on port 9229" message
+    # ./node_modules/.bin/nodemon $SITE $PORT > /dev/null
+    ./node_modules/.bin/nodemon -q $SITE $PORT
 fi
 
 

@@ -74,9 +74,7 @@ export interface SessionAttributes {
   loggedOut: boolean
 }
 
-export interface SessionModel
-  extends Model<SessionAttributes>,
-    SessionAttributes {}
+export interface SessionModel extends Model<SessionAttributes>, SessionAttributes {}
 export class Session extends Model implements SessionAttributes {
   public sid!: string
   public expires!: Date
@@ -140,7 +138,7 @@ export interface AuditAttributes {
 }
 
 export interface AuditModel extends Model<AuditAttributes>, AuditAttributes {}
-export class Audit extends Model<AuditModel, AuditAttributes> {
+export class Audit extends Model implements AuditAttributes {
   public id!: number
   public ip!: string
   public userId!: number

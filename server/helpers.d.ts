@@ -17,6 +17,12 @@ declare function crud(options: {
 };
 export declare function setHandlebarsContent(content: string, Handlebars: any): Promise<any>;
 export declare function loadViewsAsPartials(views: Views, Handlebars: any): void;
+export type DatabaseInstance = {
+    sequelize: Sequelize;
+    models: {
+        [key: string]: ModelStatic<any>;
+    };
+};
 type SeqObject = {
     sequelize: Sequelize;
 } & Omit<{

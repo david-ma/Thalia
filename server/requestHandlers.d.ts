@@ -1,4 +1,5 @@
 import { Thalia } from './thalia';
+import { DatabaseInstance } from './helpers';
 declare class Website implements Thalia.WebsiteConfig {
     name: string;
     data: string;
@@ -23,6 +24,7 @@ declare class Website implements Thalia.WebsiteConfig {
     };
     viewableFolders: boolean | Array<string>;
     seq: Thalia.SequelizeWrapper;
+    db?: DatabaseInstance;
     readAllViews: {
         (callback: ViewCallback): void;
     };

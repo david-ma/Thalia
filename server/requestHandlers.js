@@ -231,6 +231,15 @@ const handle = {
         if (fs.existsSync(path.resolve(baseUrl, 'config', 'db_bootstrap.js'))) {
             const start = Date.now();
             try {
+                console.log(`Loading db_bootstrap.js for ${site}`);
+                const { SequelizeWrapper } = require(path.resolve(baseUrl, 'config', 'db_bootstrap.js'));
+            }
+            catch (e) {
+                console.log(`Error loading db_bootstrap.js for ${site}`);
+                console.log(e);
+                process.exit(1);
+            }
+            try {
                 const { seqOptions, seq } = require(path.resolve(baseUrl, 'config', 'db_bootstrap.js'));
                 handle.websites[site].seq = seq;
                 seq.sequelize.authenticate().then(() => {

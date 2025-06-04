@@ -26,12 +26,15 @@ export function securityFactory(seqOptions: Options): SeqObject {
   Audit.belongsTo(Session, { foreignKey: 'sessionId', targetKey: 'sid' })
   Session.hasMany(Audit, { foreignKey: 'sessionId', sourceKey: 'sid' })
 
+  // const blob: SeqObject =
   return {
     sequelize,
     User,
     Session,
     Audit,
   }
+
+  // return blob
 }
 
 import { AlbumFactory, ImageFactory } from './smugmug'

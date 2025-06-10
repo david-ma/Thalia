@@ -36,6 +36,54 @@ class Website {
         this.config = config;
         this.rootPath = config.rootPath;
     }
+    handleRequest(req, res) {
+        console.log(req.url);
+        // Only handle GET requests for now
+        if (req.method !== 'GET') {
+            res.writeHead(405);
+            res.end('Method Not Allowed');
+            return;
+        }
+        // Get the requested file path
+        const url = new URL(req.url || '/', `http://${req.headers.host}`);
+        const pathname = url.pathname === '/' ? '/index.html' : url.pathname;
+        const filePath = path_1.default.join(this.rootPath, pathname);
+        // Check if file exists
+        if (!fs_1.default.existsSync(filePath)) {
+            res.writeHead(404);
+            res.end('Not Found');
+            return;
+        }
+        // Stream the file
+        const stream = fs_1.default.createReadStream(filePath);
+        stream.on('error', (error) => {
+            console.error('Error streaming file:', error);
+            res.writeHead(500);
+            res.end('Internal Server Error');
+        });
+        // Set content type based on file extension
+        const contentType = this.getContentType(filePath);
+        res.setHeader('Content-Type', contentType);
+        // Pipe the file to the response
+        stream.pipe(res);
+    }
+    getContentType(filePath) {
+        const ext = filePath.split('.').pop()?.toLowerCase();
+        const contentTypes = {
+            'html': 'text/html',
+            'css': 'text/css',
+            'js': 'text/javascript',
+            'json': 'application/json',
+            'png': 'image/png',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'gif': 'image/gif',
+            'svg': 'image/svg+xml',
+            'ico': 'image/x-icon',
+            'txt': 'text/plain'
+        };
+        return contentTypes[ext || ''] || 'application/octet-stream';
+    }
     /**
      * Loads a website from its configuration
      * @param config - The website configuration
@@ -44,11 +92,11 @@ class Website {
     static async load(config) {
         return new Website(config);
     }
-    static async loadAll(options) {
+    static loadAll(options) {
         if (options.mode == 'multiplex') {
             // Check if the root path exists
             // Load all websites from the root path
-            const websites = await fs_1.default.readdirSync('websites');
+            const websites = fs_1.default.readdirSync(options.rootPath);
             return websites.map(website => new Website({
                 name: website,
                 rootPath: path_1.default.join(options.rootPath, website)

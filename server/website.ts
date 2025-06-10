@@ -22,6 +22,7 @@
 import { Website as IWebsite, WebsiteConfig, ServerOptions } from './types'
 import fs from 'fs'
 import path from 'path'
+import { IncomingMessage, ServerResponse } from 'http'
 
 export class Website implements IWebsite {
   public readonly name: string
@@ -38,6 +39,71 @@ export class Website implements IWebsite {
     this.rootPath = config.rootPath
   }
 
+  public handleRequest(req: IncomingMessage, res: ServerResponse): void {
+    console.log(req.url)
+
+
+    // Only handle GET requests for now
+    if (req.method !== 'GET') {
+      res.writeHead(405)
+      res.end('Method Not Allowed')
+      return
+    }
+
+    // Get the requested file path
+    const url = new URL(req.url || '/', `http://${req.headers.host}`)
+    const pathname = url.pathname === '/' ? '/index.html' : url.pathname
+    const filePath = path.join(this.rootPath, pathname)
+
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      res.writeHead(404)
+      res.end('Not Found')
+      return
+    }
+
+    // Stream the file
+    const stream = fs.createReadStream(filePath)
+    stream.on('error', (error) => {
+      console.error('Error streaming file:', error)
+      res.writeHead(500)
+      res.end('Internal Server Error')
+    })
+
+    // Set content type based on file extension
+    const contentType = this.getContentType(filePath)
+    res.setHeader('Content-Type', contentType)
+
+    // Pipe the file to the response
+    stream.pipe(res)
+  }
+
+
+
+
+
+
+
+  private getContentType(filePath: string): string {
+    const ext = filePath.split('.').pop()?.toLowerCase()
+    const contentTypes: { [key: string]: string } = {
+      'html': 'text/html',
+      'css': 'text/css',
+      'js': 'text/javascript',
+      'json': 'application/json',
+      'png': 'image/png',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'gif': 'image/gif',
+      'svg': 'image/svg+xml',
+      'ico': 'image/x-icon',
+      'txt': 'text/plain'
+    }
+    return contentTypes[ext || ''] || 'application/octet-stream'
+  }
+
+
+
   /**
    * Loads a website from its configuration
    * @param config - The website configuration
@@ -48,11 +114,11 @@ export class Website implements IWebsite {
   }
 
 
-  public static async loadAll(options: ServerOptions): Promise<Website[]> {
+  public static loadAll(options: ServerOptions): Website[] {
     if (options.mode == 'multiplex') {
       // Check if the root path exists
       // Load all websites from the root path
-      const websites = await fs.readdirSync('websites')
+      const websites = fs.readdirSync(options.rootPath)
       return websites.map(website => new Website({
         name: website,
         rootPath: path.join(options.rootPath, website)

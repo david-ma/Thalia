@@ -31,15 +31,16 @@ exports.Thalia = exports.Website = exports.Server = void 0;
 const process_1 = require("process");
 const server_1 = require("./server");
 Object.defineProperty(exports, "Server", { enumerable: true, get: function () { return server_1.Server; } });
-Object.defineProperty(exports, "Website", { enumerable: true, get: function () { return server_1.Website; } });
+const website_1 = require("./website");
+Object.defineProperty(exports, "Website", { enumerable: true, get: function () { return website_1.Website; } });
 const path_1 = __importDefault(require("path"));
 // Re-export types
 __exportStar(require("./types"), exports);
 // Main Thalia class for easy initialization
 class Thalia {
     constructor(options) {
-        this.websites = server_1.Website.loadAll(options);
-        this.server = new server_1.Server(options, websites);
+        this.websites = website_1.Website.loadAll(options);
+        this.server = new server_1.Server(options, this.websites);
     }
     async start() {
         await this.server.start();

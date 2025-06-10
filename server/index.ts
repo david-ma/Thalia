@@ -10,8 +10,9 @@
  */
 
 import { cwd } from 'process'
-import { Server, Website } from './server'
+import { Server } from './server'
 import { ServerOptions } from './types'
+import { Website } from './website'
 import path from 'path'
 
 // Re-export types
@@ -29,7 +30,7 @@ export class Thalia {
 
   constructor(options: ServerOptions) {
     this.websites = Website.loadAll(options)
-    this.server = new Server(options, websites)
+    this.server = new Server(options, this.websites)
   }
 
   public async start(): Promise<void> {

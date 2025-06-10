@@ -8,8 +8,9 @@
  * Find the port
  *
  */
-import { Server, Website } from './server';
+import { Server } from './server';
 import { ServerOptions } from './types';
+import { Website } from './website';
 export * from './types';
 export { Server, Website };
 export declare class Thalia {

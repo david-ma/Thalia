@@ -6,18 +6,18 @@
 /// <reference types="node" />
 import { EventEmitter } from 'events';
 import { ServerMode, ServerOptions } from './types';
+import { Router } from './router';
+import { Website } from './types';
 export declare class Server extends EventEmitter {
     private httpServer;
     private port;
     private mode;
-    private rootPath;
-    constructor(options: ServerOptions);
+    router: Router;
+    constructor(options: ServerOptions, websites: Website[]);
     private handleRequest;
-    private getContentType;
     start(): Promise<void>;
     stop(): Promise<void>;
     getMode(): ServerMode;
     getPort(): number;
-    getRootPath(): string;
 }
 //# sourceMappingURL=server.d.ts.map

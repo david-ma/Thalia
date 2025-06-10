@@ -1,3 +1,5 @@
+/// <reference types="node" />
+import { IncomingMessage, ServerResponse } from 'http';
 export type ServerMode = 'standalone' | 'multiplex' | 'dev';
 export interface ServerOptions {
     project: string;
@@ -13,5 +15,6 @@ export interface Website {
     readonly name: string;
     readonly config: WebsiteConfig;
     readonly rootPath: string;
+    handleRequest(req: IncomingMessage, res: ServerResponse): void;
 }
 //# sourceMappingURL=types.d.ts.map

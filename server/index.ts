@@ -63,6 +63,7 @@ if (project == 'default') {
 } else {
   console.log(`Running in standalone mode for project: ${project}`)
   options.mode = 'standalone'
+  options.rootPath = path.join(options.rootPath, 'websites', project)
 }
 
 const thalia = new Thalia(options)

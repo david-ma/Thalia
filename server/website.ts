@@ -40,20 +40,14 @@ export class Website implements IWebsite {
   }
 
   public handleRequest(req: IncomingMessage, res: ServerResponse): void {
-    console.log(req.url)
-
-
-    // Only handle GET requests for now
-    if (req.method !== 'GET') {
-      res.writeHead(405)
-      res.end('Method Not Allowed')
-      return
-    }
+    console.log("We have a request for: ", req.url)
 
     // Get the requested file path
     const url = new URL(req.url || '/', `http://${req.headers.host}`)
     const pathname = url.pathname === '/' ? '/index.html' : url.pathname
+
     const filePath = path.join(this.rootPath, 'public', pathname)
+    console.log("Looking for file: ", filePath)
 
     // Check if file exists
     if (!fs.existsSync(filePath)) {
@@ -127,7 +121,7 @@ export class Website implements IWebsite {
 
     return [new Website({
       name: options.project,
-      rootPath: "Rootpath"
+      rootPath: options.rootPath
     })]
   }
 

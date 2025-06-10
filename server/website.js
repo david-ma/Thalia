@@ -44,6 +44,8 @@ class Website {
         const controllerStr = controller.toString();
         const params = controllerStr.slice(controllerStr.indexOf('(') + 1, controllerStr.indexOf(')')).split(',');
         if (params.length !== 3) {
+            console.log(Object.entries(controller));
+            console.error(`Controller: ${controllerStr} must accept exactly 3 parameters (res, req, website)`);
             throw new Error(`Controller must accept exactly 3 parameters (res, req, website)`);
         }
         return controller;

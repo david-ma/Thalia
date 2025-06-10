@@ -32,11 +32,11 @@ interface Views {
 }
 
 interface Controller {
-  (args: {
-    res: ServerResponse
-    req: IncomingMessage
+  (
+    res: ServerResponse,
+    req: IncomingMessage,
     website: Website
-  }): void
+  ): void
 }
 
 export class Website implements IWebsite {
@@ -252,13 +252,13 @@ export class Website implements IWebsite {
 
 export const controllerFactories = {
   redirectTo: (url: string) => {
-    return (res: ServerResponse, req: IncomingMessage, website: Website) => {
+    return (res: ServerResponse, _req: IncomingMessage, _website: Website) => {
       res.writeHead(302, { Location: url })
       res.end()
     }
   },
   serveFile: (url: string) => {
-    return (res: ServerResponse, req: IncomingMessage, website: Website) => {
+    return (res: ServerResponse, _req: IncomingMessage, website: Website) => {
       const filePath = path.join(website.rootPath, 'public', url)
       const stream = fs.createReadStream(filePath)
       stream.pipe(res)
@@ -269,7 +269,7 @@ export const controllerFactories = {
 /**
  * Read the latest 10 logs from the log directory
  */
-export const latestlogs = async (res: ServerResponse, req: IncomingMessage, website: Website) => {
+export const latestlogs = async (res: ServerResponse, _req: IncomingMessage, website: Website) => {
   try {
     const logDirectory = path.join(website.rootPath, 'public', 'log')
 
@@ -310,7 +310,7 @@ export const latestlogs = async (res: ServerResponse, req: IncomingMessage, webs
     res.end(html)
 
   } catch (error) {
-    console.error('Error in latestlogs:', error)
+    console.error(`Error in ${website.name}/latestlogs: ${error instanceof Error ? error.message : 'Unknown error'}`)
     res.writeHead(500, { 'Content-Type': 'text/html' })
     res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }

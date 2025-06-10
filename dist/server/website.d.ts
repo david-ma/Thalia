@@ -23,11 +23,7 @@ import { Website as IWebsite, WebsiteConfig, ServerOptions } from './types';
 import { IncomingMessage, ServerResponse } from 'http';
 import Handlebars from 'handlebars';
 interface Controller {
-    (args: {
-        res: ServerResponse;
-        req: IncomingMessage;
-        website: Website;
-    }): void;
+    (res: ServerResponse, req: IncomingMessage, website: Website): void;
 }
 export declare class Website implements IWebsite {
     readonly name: string;
@@ -60,12 +56,12 @@ export declare class Website implements IWebsite {
     static loadAllWebsites(options: ServerOptions): Website[];
 }
 export declare const controllerFactories: {
-    redirectTo: (url: string) => (res: ServerResponse, req: IncomingMessage, website: Website) => void;
-    serveFile: (url: string) => (res: ServerResponse, req: IncomingMessage, website: Website) => void;
+    redirectTo: (url: string) => (res: ServerResponse, _req: IncomingMessage, _website: Website) => void;
+    serveFile: (url: string) => (res: ServerResponse, _req: IncomingMessage, website: Website) => void;
 };
 /**
  * Read the latest 10 logs from the log directory
  */
-export declare const latestlogs: (res: ServerResponse, req: IncomingMessage, website: Website) => Promise<void>;
+export declare const latestlogs: (res: ServerResponse, _req: IncomingMessage, website: Website) => Promise<void>;
 export {};
 //# sourceMappingURL=website.d.ts.map

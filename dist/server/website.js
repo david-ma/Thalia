@@ -212,13 +212,13 @@ class Website {
 exports.Website = Website;
 exports.controllerFactories = {
     redirectTo: (url) => {
-        return (res, req, website) => {
+        return (res, _req, _website) => {
             res.writeHead(302, { Location: url });
             res.end();
         };
     },
     serveFile: (url) => {
-        return (res, req, website) => {
+        return (res, _req, website) => {
             const filePath = path_1.default.join(website.rootPath, 'public', url);
             const stream = fs_1.default.createReadStream(filePath);
             stream.pipe(res);
@@ -228,7 +228,7 @@ exports.controllerFactories = {
 /**
  * Read the latest 10 logs from the log directory
  */
-const latestlogs = async (res, req, website) => {
+const latestlogs = async (res, _req, website) => {
     try {
         const logDirectory = path_1.default.join(website.rootPath, 'public', 'log');
         // Get list of log files
@@ -261,7 +261,7 @@ const latestlogs = async (res, req, website) => {
         res.end(html);
     }
     catch (error) {
-        console.error('Error in latestlogs:', error);
+        console.error(`Error in ${website.name}/latestlogs: ${error instanceof Error ? error.message : 'Unknown error'}`);
         res.writeHead(500, { 'Content-Type': 'text/html' });
         res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

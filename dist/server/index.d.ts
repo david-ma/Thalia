@@ -6,16 +6,10 @@
  * server initialization.
  */
 import { Server } from './server';
-import { Website } from './core/website';
-import { Router } from './core/router';
-import { Handler } from './core/handler';
-import { AuthHandler } from './core/auth';
-import { ProxyHandler } from './core/proxy';
 import { ServerOptions } from './core/types';
-import { Thalia as ThaliaInterface } from './core/thalia';
 export * from './core/types';
-export { Server, Website, Router, Handler, AuthHandler, ProxyHandler };
-export declare class Thalia implements ThaliaInterface {
+export { Server };
+export declare class Thalia {
     private server;
     constructor(options: ServerOptions);
     start(): Promise<void>;

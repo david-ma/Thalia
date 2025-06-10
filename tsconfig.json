@@ -52,7 +52,5 @@
     "dist",
     "websites",
     "public",
-    "**/*.test.ts",
-    "**/*.spec.ts"
   ]
 } 

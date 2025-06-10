@@ -4,433 +4,102 @@
  *
  * Class which allows initialisation of a server.
  */
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Server = exports.start = void 0;
+exports.Server = void 0;
 const http_1 = require("http");
-const socket_io_1 = require("socket.io");
 const events_1 = require("events");
-const path = __importStar(require("path"));
-const fs = __importStar(require("fs"));
-// server.ts
-const http = require("http");
-const url = require("url");
-const httpProxy = require("http-proxy");
-const formidable = require("formidable");
-// This part of the server starts the server on port 80 and logs stuff to the std.out
-function start(router, handle, port) {
-    let server = null;
-    function onRequest(request, response) {
-        const host = request.headers['x-host'] || request.headers.host;
-        const ip = request.headers['X-Real-IP'] ||
-            request.headers['x-real-ip'] ||
-            request.connection.remoteAddress ||
-            request.socket.remoteAddress;
-        // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
-        const hostname = host.split(':')[0];
-        const site = handle.getWebsite(hostname);
-        const urlObject = url.parse(request.url, true);
-        const proxies = handle.proxies[hostname];
-        const filterWord = url.parse(request.url).pathname.split('/')[1];
-        const proxy = proxies ? proxies[filterWord] || proxies['*'] || null : null;
-        if (proxy) {
-            if (!proxy.silent)
-                log();
-            webProxy(proxy);
-        }
-        else {
-            log();
-            router(site, urlObject.pathname, response, request);
-        }
-        function log() {
-            console.log();
-            console.log(`Request for ${host}${urlObject.href} At ${getDateTime()} From ${ip}`);
-        }
-        function webProxy(config) {
-            console.log('Proxy found, trying to proxy', config);
-            if (config.password) {
-                const cookies = getCookies(request);
-                if (cookies[`password${config.filter || ''}`] !== encode(config.password)) {
-                    loginPage(config.password, config.filter);
-                    return;
-                }
-                if (config.host === '127.0.0.1' && config.port === 80 && !config.filter) {
-                    log();
-                    router(site, urlObject.pathname, response, request);
-                    return;
-                }
-            }
-            const message = config.message || 'Error, server is down.';
-            const target = `http://${config.host || '127.0.0.1'}:${config.port || 80}`;
-            const proxyServer = httpProxy.createProxyServer({
-                // preserveHeaderKeyCase: true,
-                // autoRewrite: true,
-                // followRedirects: true,
-                // protocolRewrite: "http",
-                // changeOrigin: true,
-                target: target,
-            });
-            proxyServer.on('error', function (err, req, res) {
-                'use strict';
-                console.log(err);
-                try {
-                    res.writeHead(500);
-                    res.end(message);
-                }
-                catch (e) {
-                    console.log('Error doing proxy!', e);
-                }
-            });
-            proxyServer.web(request, response);
-        }
-        function loginPage(password, filter) {
-            if (request.url.indexOf('login') >= 0) {
-                const form = new formidable.IncomingForm();
-                form.parse(request, (err, fields) => {
-                    console.log('Fields is:', fields);
-                    if ((fields.password && fields.password === password) || fields.password[0] === password) {
-                        const encodedPassword = encode(password);
-                        response.setHeader('Set-Cookie', [
-                            `password${filter || ''}=${encodedPassword};path=/;max-age=${24 * 60 * 60}`,
-                        ]);
-                        const url = `//${host}/${filter || ''}`;
-                        response.writeHead(303, { 'Content-Type': 'text/html' });
-                        response.end(`<html><head><meta http-equiv="refresh" content="0;url='${url}'"></head>
-<body>Login Successful, redirecting to: <a href='${url}'>${url}</a></body></html>`);
-                    }
-                    else {
-                        response.writeHead(401);
-                        response.end('Wrong password');
-                    }
-                });
-            }
-            else {
-                response.writeHead(200);
-                if (filter) {
-                    response.end(simpleLoginPage.replace('/login', `/${filter}/login`));
-                }
-                else {
-                    response.end(simpleLoginPage);
-                }
-            }
-        }
-    }
-    console.log('Server has started on port: ' + port);
-    server = http.createServer(onRequest).listen(port);
-    server.on('error', function (e) {
-        console.log('Server error', e);
-    });
-    server.on('upgrade', function (request, socket, head) {
-        'use strict';
-        let host = request.headers['x-host'] || request.headers.host;
-        // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
-        host = host.split(':')[0];
-        const proxies = handle.proxies[host];
-        let filterWord = url.parse(request.url).pathname.split('/')[1];
-        if (proxies) {
-            let proxyConfig = null;
-            if (filterWord) {
-                proxyConfig = proxies[filterWord];
-            }
-            else {
-                proxyConfig = proxies['*'];
-            }
-            // HTTP Proxy options
-            // https://github.com/http-party/node-http-proxy/blob/HEAD/lib/http-proxy.js#L26-L42
-            const proxyServer = httpProxy.createProxyServer({
-                ws: true,
-                target: {
-                    host: proxyConfig && proxyConfig.host ? proxyConfig.host : '127.0.0.1',
-                    port: proxyConfig && proxyConfig.port ? proxyConfig.port : 80,
-                },
-            });
-            proxyServer.on('error', function (err, req, res) {
-                'use strict';
-                console.log(err);
-                try {
-                    res.writeHead(500);
-                    res.end(proxyConfig.message);
-                }
-                catch (e) {
-                    console.log('Error doing upgraded proxy!', e);
-                }
-            });
-            proxyServer.ws(request, socket, head);
-        }
-    });
-    return server;
-}
-exports.start = start;
-function getDateTime() {
-    //    var date = new Date();
-    const date = new Date(Date.now() + 36000000);
-    // add 10 hours... such a shitty way to make it australian time...
-    let hour = date.getHours();
-    hour = (hour < 10 ? '0' : '') + hour;
-    let min = date.getMinutes();
-    min = (min < 10 ? '0' : '') + min;
-    const year = date.getFullYear();
-    let month = date.getMonth() + 1;
-    month = (month < 10 ? '0' : '') + month;
-    let day = date.getDate();
-    day = (day < 10 ? '0' : '') + day;
-    return year + ':' + month + ':' + day + ' ' + hour + ':' + min;
-}
-function getCookies(request) {
-    const cookies = {};
-    if (request.headers.cookie) {
-        request.headers.cookie.split(';').forEach(function (d) {
-            cookies[d.split('=')[0].trim()] = d.substring(d.split('=')[0].length + 1).trim();
-        });
-    }
-    return cookies;
-}
-const salt = Math.floor(Math.random() * 999);
-function encode(string) {
-    'use strict';
-    // const buff = new Buffer(string)
-    const buff = Buffer.from(string);
-    return buff.toString('base64') + salt;
-}
-const simpleLoginPage = `<html>
-<head>
-<title>Login</title>
-<style>
-div {
-    text-align: center;
-    width: 300px;
-    margin: 200px auto;
-    background: lightblue;
-    padding: 10px 20px;
-    border-radius: 15px;
-}
-</style>
-</head>
-<body>
-<div>
-    <h1>Enter Password</h1>
-    <form action="/login" method="post">
-        <input type="password" placeholder="Enter Password" name="password" autofocus required>
-        <button type="submit">Login</button>
-    </form>
-</div>
-</body>
-</html>`;
-/**
- * ThaliaServer - Core server implementation
- *
- * The server is responsible for:
- * 1. Creating and managing the HTTP server
- * 2. Setting up WebSocket connections
- * 3. Managing server lifecycle (start/stop)
- * 4. Emitting events for important server state changes
- *
- * The server is the top-level component that:
- * - Listens on a specified port
- * - Handles incoming HTTP requests
- * - Manages WebSocket connections
- * - Provides server-wide configuration
- *
- * It does NOT handle:
- * - Request routing (handled by Router)
- * - Request processing (handled by Handler)
- * - Website-specific logic (handled by Website)
- */
+const path_1 = require("path");
+const fs_1 = require("fs");
 class Server extends events_1.EventEmitter {
-    /**
-     * Creates a new ThaliaServer instance
-     * @param options - Server configuration options
-     */
     constructor(options) {
         super();
-        this.port = options.port;
-        this.mode = options.mode;
+        this.httpServer = null;
+        this.port = options.port || 3000;
+        this.mode = options.mode || 'development';
         this.rootPath = options.rootPath || process.cwd();
-        // Create HTTP server
-        this.httpServer = (0, http_1.createServer)(this.handleRequest.bind(this));
-        // Create Socket.IO server
-        this.socketServer = new socket_io_1.Server(this.httpServer, {
-            cors: {
-                origin: '*',
-                methods: ['GET', 'POST']
-            }
-        });
-        // Set up error handling
-        this.httpServer.on('error', (error) => {
-            this.emit('error', error);
-        });
-        // Set up socket connection handling
-        this.socketServer.on('connection', (socket) => {
-            this.emit('connection', socket);
-        });
     }
-    async handleRequest(req, res) {
-        try {
-            // Only handle GET requests
-            if (req.method !== 'GET') {
-                res.writeHead(405);
-                res.end('Method Not Allowed');
-                return;
-            }
-            // Get the requested path
-            const requestUrl = req.url || '/';
-            const host = req.headers.host || 'localhost';
-            const url = new URL(requestUrl, `http://${host}`);
-            const requestPath = url.pathname;
-            // Determine the project name from the host
-            const projectName = this.mode === 'multiplex' ? host.split('.')[0] : 'example';
-            // Build the file path
-            const filePath = path.join(this.rootPath, 'websites', projectName, 'public', requestPath === '/' ? 'index.html' : requestPath);
-            // Check if file exists
-            try {
-                await fs.promises.access(filePath);
-            }
-            catch {
-                res.writeHead(404);
-                res.end('Not Found');
-                return;
-            }
-            // Get file stats
-            const stats = await fs.promises.stat(filePath);
-            if (!stats.isFile()) {
-                res.writeHead(404);
-                res.end('Not Found');
-                return;
-            }
-            // Set content type
-            const ext = path.extname(filePath);
-            const contentType = this.getContentType(ext);
-            res.setHeader('Content-Type', contentType);
-            // Stream the file
-            const stream = fs.createReadStream(filePath);
-            stream.pipe(res);
-            // Handle stream errors
-            stream.on('error', (error) => {
-                console.error('Error streaming file:', error);
-                if (!res.headersSent) {
-                    res.writeHead(500);
-                    res.end('Internal Server Error');
-                }
-            });
+    handleRequest(req, res) {
+        // Only handle GET requests for now
+        if (req.method !== 'GET') {
+            res.writeHead(405);
+            res.end('Method Not Allowed');
+            return;
         }
-        catch (error) {
-            console.error('Error handling request:', error);
-            if (!res.headersSent) {
-                res.writeHead(500);
-                res.end('Internal Server Error');
-            }
+        // Get the requested file path
+        const url = new URL(req.url || '/', `http://${req.headers.host}`);
+        const path = url.pathname === '/' ? '/index.html' : url.pathname;
+        const filePath = (0, path_1.join)(this.rootPath, path);
+        // Check if file exists
+        if (!(0, fs_1.existsSync)(filePath)) {
+            res.writeHead(404);
+            res.end('Not Found');
+            return;
         }
+        // Stream the file
+        const stream = (0, fs_1.createReadStream)(filePath);
+        stream.on('error', (error) => {
+            console.error('Error streaming file:', error);
+            res.writeHead(500);
+            res.end('Internal Server Error');
+        });
+        // Set content type based on file extension
+        const contentType = this.getContentType(filePath);
+        res.setHeader('Content-Type', contentType);
+        // Pipe the file to the response
+        stream.pipe(res);
     }
-    getContentType(ext) {
+    getContentType(filePath) {
+        const ext = filePath.split('.').pop()?.toLowerCase();
         const contentTypes = {
-            '.html': 'text/html',
-            '.css': 'text/css',
-            '.js': 'text/javascript',
-            '.json': 'application/json',
-            '.png': 'image/png',
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.gif': 'image/gif',
-            '.svg': 'image/svg+xml',
-            '.ico': 'image/x-icon',
-            '.txt': 'text/plain'
+            'html': 'text/html',
+            'css': 'text/css',
+            'js': 'text/javascript',
+            'json': 'application/json',
+            'png': 'image/png',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'gif': 'image/gif',
+            'svg': 'image/svg+xml',
+            'ico': 'image/x-icon',
+            'txt': 'text/plain'
         };
-        return contentTypes[ext] || 'application/octet-stream';
+        return contentTypes[ext || ''] || 'application/octet-stream';
     }
-    /**
-     * Starts the server and begins listening for connections
-     * @returns Promise that resolves when the server is started
-     */
     async start() {
-        return new Promise((resolve, reject) => {
-            try {
-                this.httpServer.listen(this.port, () => {
-                    console.log(`Server running in ${this.mode} mode on port ${this.port}`);
-                    this.emit('started');
-                    resolve();
-                });
-            }
-            catch (error) {
-                reject(error);
-            }
+        return new Promise((resolve) => {
+            this.httpServer = (0, http_1.createServer)(this.handleRequest.bind(this));
+            this.httpServer.listen(this.port, () => {
+                console.log(`Server running at http://localhost:${this.port}`);
+                this.emit('started');
+                resolve();
+            });
         });
     }
-    /**
-     * Stops the server and closes all connections
-     * @returns Promise that resolves when the server is stopped
-     */
     async stop() {
         return new Promise((resolve, reject) => {
-            try {
-                this.socketServer.close(() => {
-                    this.httpServer.close(() => {
-                        console.log('Server stopped');
-                        this.emit('stopped');
-                        resolve();
-                    });
-                });
+            if (!this.httpServer) {
+                resolve();
+                return;
             }
-            catch (error) {
-                reject(error);
-            }
+            this.httpServer.close((err) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                this.httpServer = null;
+                this.emit('stopped');
+                resolve();
+            });
         });
     }
-    /**
-     * Gets the current server mode
-     * @returns The server mode
-     */
     getMode() {
         return this.mode;
     }
-    /**
-     * Gets the port the server is listening on
-     * @returns The server port
-     */
     getPort() {
         return this.port;
     }
-    /**
-     * Gets the root path of the server
-     * @returns The server root path
-     */
     getRootPath() {
         return this.rootPath;
-    }
-    /**
-     * Gets the underlying HTTP server instance
-     * @returns The HTTP server
-     */
-    getHttpServer() {
-        return this.httpServer;
-    }
-    /**
-     * Gets the Socket.IO server instance
-     * @returns The Socket.IO server
-     */
-    getSocketServer() {
-        return this.socketServer;
     }
 }
 exports.Server = Server;

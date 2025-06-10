@@ -6,30 +6,19 @@
  * server initialization.
  */
 
-import { Server } from './server'
-import { Website } from './core/website'
-import { Router } from './core/router'
-import { Handler } from './core/handler'
-import { AuthHandler } from './core/auth'
-import { ProxyHandler } from './core/proxy'
+import { Server } from './core/server'
 import { ServerOptions } from './core/types'
-import { Thalia as ThaliaInterface } from './core/thalia'
 
 // Re-export types
 export * from './core/types'
 
 // Export main components
 export {
-  Server,
-  Website,
-  Router,
-  Handler,
-  AuthHandler,
-  ProxyHandler
+  Server
 }
 
 // Main Thalia class for easy initialization
-export class Thalia implements ThaliaInterface {
+export class Thalia {
   private server: Server
 
   constructor(options: ServerOptions) {

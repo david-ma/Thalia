@@ -1,4 +1,4 @@
-import { Server } from '../server'
+import { Server } from './server'
 import { ServerOptions } from './types'
 
 export interface Thalia {

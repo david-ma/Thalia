@@ -21,19 +21,9 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Thalia = exports.ProxyHandler = exports.AuthHandler = exports.Handler = exports.Router = exports.Website = exports.Server = void 0;
+exports.Thalia = exports.Server = void 0;
 const server_1 = require("./server");
 Object.defineProperty(exports, "Server", { enumerable: true, get: function () { return server_1.Server; } });
-const website_1 = require("./core/website");
-Object.defineProperty(exports, "Website", { enumerable: true, get: function () { return website_1.Website; } });
-const router_1 = require("./core/router");
-Object.defineProperty(exports, "Router", { enumerable: true, get: function () { return router_1.Router; } });
-const handler_1 = require("./core/handler");
-Object.defineProperty(exports, "Handler", { enumerable: true, get: function () { return handler_1.Handler; } });
-const auth_1 = require("./core/auth");
-Object.defineProperty(exports, "AuthHandler", { enumerable: true, get: function () { return auth_1.AuthHandler; } });
-const proxy_1 = require("./core/proxy");
-Object.defineProperty(exports, "ProxyHandler", { enumerable: true, get: function () { return proxy_1.ProxyHandler; } });
 // Re-export types
 __exportStar(require("./core/types"), exports);
 // Main Thalia class for easy initialization

@@ -22,13 +22,9 @@
 import { IncomingMessage, ServerResponse } from 'http'
 import { Thalia, Website } from './types'
 import { Router } from './router'
-import { ProxyHandler } from './proxy'
-import { AuthHandler } from './auth'
 
 export class Handler {
   private router: Router
-  private proxyHandler: ProxyHandler
-  private authHandler: AuthHandler
   private website: Website
 
   /**
@@ -38,19 +34,10 @@ export class Handler {
   constructor(website: Website) {
     this.website = website
     this.router = new Router()
-    this.proxyHandler = new ProxyHandler()
-    this.authHandler = new AuthHandler()
 
     // Set up routes from website config
     if (website.config.routes) {
       website.config.routes.forEach(route => this.router.addRoute(route))
-    }
-
-    // Set up proxies from website config
-    if (website.config.proxy) {
-      website.config.proxy.forEach(proxy => {
-        this.proxyHandler.addProxy(proxy.host, proxy)
-      })
     }
   }
 

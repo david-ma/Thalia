@@ -1,7 +1,7 @@
 {
   "name": "thalia",
   "private": true,
-  "version": "1.1.2",
+  "version": "2.0.0",
   "description": "Yet another server framework for serving websites",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -41,26 +41,11 @@
   "dependencies": {
     "formidable": "^3.5.1",
     "handlebars": "^4.7.8",
-    "http-proxy": "^1.18.1",
-    "http-proxy-middleware": "^3.0.5",
-    "mime": "^2.6.0",
-    "minimist": "^1.2.8",
-    "nodemailer": "^6.9.13",
-    "pg": "^8.11.5",
-    "pg-hstore": "^2.3.4",
-    "sass": "1.77.6",
-    "sequelize": "^6.37.2",
-    "socket.io": "^4.7.5",
-    "sqlite3": "^5.1.7"
+    "sass": "1.77.6"
   },
   "devDependencies": {
     "@types/formidable": "^3.4.5",
-    "@types/http-proxy": "^1.17.14",
-    "@types/mime": "^2.0.3",
     "@types/node": "^20.12.5",
-    "@types/nodemailer": "^6.4.14",
-    "@types/sequelize": "^4.28.20",
-    "@types/socket.io": "^3.0.2",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "autoprefixer": "10.2.6",

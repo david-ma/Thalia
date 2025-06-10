@@ -24,6 +24,7 @@ import fs from 'fs'
 import path from 'path'
 import { IncomingMessage, ServerResponse } from 'http'
 import Handlebars from 'handlebars'
+import sass from 'sass'
 
 export class Website implements IWebsite {
   public readonly name: string
@@ -31,7 +32,7 @@ export class Website implements IWebsite {
   public readonly rootPath: string
 
   private static handlebars = Handlebars.create()
-  private templates: Map<string, Handlebars.TemplateDelegate> = new Map()
+  public templates: Map<string, Handlebars.TemplateDelegate> = new Map()
 
   /**
    * Creates a new Website instance
@@ -56,18 +57,25 @@ export class Website implements IWebsite {
   }
 
   public handleRequest(req: IncomingMessage, res: ServerResponse): void {
-    console.log("We have a request for: ", req.url)
+    // console.debug("We have a request for: ", req.url)
 
     // Get the requested file path
     const url = new URL(req.url || '/', `http://${req.headers.host}`)
     const pathname = url.pathname === '/' ? '/index.html' : url.pathname
 
     const filePath = path.join(this.rootPath, 'public', pathname)
-    console.log("Looking for file: ", filePath)
+    const sourcePath = filePath.replace('public', 'src')
+
+    // If we're looking for a css file, check if the scss exists
+    if (filePath.endsWith('.css') && fs.existsSync(sourcePath.replace('.css', '.scss'))) {
+      const scss = fs.readFileSync(sourcePath.replace('.css', '.scss'), 'utf8')
+      const css = sass.renderSync({ data: scss }).css.toString()
+      res.writeHead(200, { 'Content-Type': 'text/css' })
+      res.end(css)
+      return
+    }
 
     const handlebarsTemplate = filePath.replace('.html', '.hbs').replace('public', 'src')
-    console.log("Looking for handlebars template: ", handlebarsTemplate)
-
     // Check if the file is a handlebars template
     if (filePath.endsWith('.html') && fs.existsSync(handlebarsTemplate)) {
       const template = fs.readFileSync(handlebarsTemplate, 'utf8')
@@ -100,9 +108,6 @@ export class Website implements IWebsite {
     // Pipe the file to the response
     stream.pipe(res)
   }
-
-
-
 
 
 

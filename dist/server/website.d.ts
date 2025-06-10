@@ -21,12 +21,13 @@
 /// <reference types="node" />
 import { Website as IWebsite, WebsiteConfig, ServerOptions } from './types';
 import { IncomingMessage, ServerResponse } from 'http';
+import Handlebars from 'handlebars';
 export declare class Website implements IWebsite {
     readonly name: string;
     readonly config: WebsiteConfig;
     readonly rootPath: string;
     private static handlebars;
-    private templates;
+    templates: Map<string, Handlebars.TemplateDelegate>;
     /**
      * Creates a new Website instance
      * @param config - The website configuration

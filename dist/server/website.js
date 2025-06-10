@@ -27,6 +27,7 @@ exports.Website = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const handlebars_1 = __importDefault(require("handlebars"));
+const sass_1 = __importDefault(require("sass"));
 class Website {
     /**
      * Creates a new Website instance
@@ -47,14 +48,21 @@ class Website {
         }
     }
     handleRequest(req, res) {
-        console.log("We have a request for: ", req.url);
+        // console.debug("We have a request for: ", req.url)
         // Get the requested file path
         const url = new URL(req.url || '/', `http://${req.headers.host}`);
         const pathname = url.pathname === '/' ? '/index.html' : url.pathname;
         const filePath = path_1.default.join(this.rootPath, 'public', pathname);
-        console.log("Looking for file: ", filePath);
+        const sourcePath = filePath.replace('public', 'src');
+        // If we're looking for a css file, check if the scss exists
+        if (filePath.endsWith('.css') && fs_1.default.existsSync(sourcePath.replace('.css', '.scss'))) {
+            const scss = fs_1.default.readFileSync(sourcePath.replace('.css', '.scss'), 'utf8');
+            const css = sass_1.default.renderSync({ data: scss }).css.toString();
+            res.writeHead(200, { 'Content-Type': 'text/css' });
+            res.end(css);
+            return;
+        }
         const handlebarsTemplate = filePath.replace('.html', '.hbs').replace('public', 'src');
-        console.log("Looking for handlebars template: ", handlebarsTemplate);
         // Check if the file is a handlebars template
         if (filePath.endsWith('.html') && fs_1.default.existsSync(handlebarsTemplate)) {
             const template = fs_1.default.readFileSync(handlebarsTemplate, 'utf8');

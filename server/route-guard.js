@@ -40,33 +40,47 @@ class RouteGuard {
                 const correctPassword = this.saltPassword(matchingRoute.password);
                 const cookies = this.parseCookies(req);
                 const cookieName = `auth_${website.name}${matchingRoute.path}`;
-                if (req.method === 'POST') {
-                    const form = (0, formidable_1.default)({ multiples: false });
-                    form.parse(req, (err, fields) => {
-                        if (err) {
-                            console.error('Error parsing form data:', err);
-                            res.writeHead(400, { 'Content-Type': 'text/html' });
-                            res.end('Invalid form data');
-                            return true;
-                        }
-                        const password = this.saltPassword(fields?.['password']?.[0] ?? '');
-                        if (password === correctPassword) {
-                            res.setHeader('Set-Cookie', `${cookieName}=${password}; Path=/`);
-                            res.writeHead(302, { 'Location': pathname });
-                            res.end();
-                            return true;
-                        }
-                        else {
-                            const login_html = website.handlebars.compile(website.handlebars.partials['login'])({
-                                route: url.pathname,
-                                message: 'Invalid password'
-                            });
-                            res.writeHead(401, { 'Content-Type': 'text/html' });
-                            res.end(login_html);
-                            return true;
-                        }
-                    });
+                if (pathname === `${matchingRoute.path}/logout`) {
+                    res.setHeader('Set-Cookie', `${cookieName}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
+                    res.writeHead(302, { 'Location': '/' });
+                    res.end();
                     return true;
+                }
+                else if (req.method === 'POST') {
+                    try {
+                        const form = (0, formidable_1.default)({ multiples: false });
+                        form.parse(req, (err, fields) => {
+                            if (err) {
+                                console.error('Error parsing form data:', err);
+                                res.writeHead(400, { 'Content-Type': 'text/html' });
+                                res.end('Invalid form data');
+                                return true;
+                            }
+                            const password = this.saltPassword(fields?.['password']?.[0] ?? '');
+                            if (password === correctPassword) {
+                                res.setHeader('Set-Cookie', `${cookieName}=${password}; Path=/`);
+                                res.writeHead(302, { 'Location': pathname });
+                                res.end();
+                                return true;
+                            }
+                            else {
+                                const login_html = website.handlebars.compile(website.handlebars.partials['login'])({
+                                    route: url.pathname,
+                                    message: 'Invalid password'
+                                });
+                                res.writeHead(401, { 'Content-Type': 'text/html' });
+                                res.end(login_html);
+                                return true;
+                            }
+                        });
+                        return true;
+                    }
+                    catch (err) {
+                        console.error('Error parsing form data:', err);
+                        res.writeHead(400, { 'Content-Type': 'text/html' });
+                        res.end('Invalid form data');
+                        return true;
+                    }
                 }
                 else if (cookies[cookieName] === correctPassword) {
                 }

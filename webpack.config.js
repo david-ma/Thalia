@@ -14,12 +14,13 @@ function getProjectFilePath(filePath) {
   const projectFile = path.join(__dirname, 'websites', projectName, filePath);
   const exampleFile = path.join(__dirname, 'websites', 'example', filePath);
   
+  // Always prefer project file if it exists
   return fs.existsSync(projectFile) ? projectFile : exampleFile;
 }
 
 // Register Handlebars partials
 function registerPartials() {
-  // Register the example partials first
+  // Register the example partials first (they'll be overwritten by project partials if they exist)
   const examplePartialsDir = path.join(__dirname, 'websites', 'example', 'src/partials');
   if (fs.existsSync(examplePartialsDir)) {
     const examplePartialFiles = fs.readdirSync(examplePartialsDir);
@@ -32,8 +33,8 @@ function registerPartials() {
     });
   }
 
+  // Register the project partials, overwriting any example partials
   const partialsDir = getProjectFilePath('src/partials');
-  // Register the project partials, overwriting the example partials if they exist
   if (fs.existsSync(partialsDir)) {
     const partialFiles = fs.readdirSync(partialsDir);
     partialFiles.forEach(file => {
@@ -111,7 +112,9 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js', '.json'],
     alias: {
-      '@': path.resolve(__dirname, `websites/${projectName}/src`)
+      '@': path.resolve(__dirname, `websites/${projectName}/src`),
+      // Add aliases to ensure project files take precedence
+      'example': path.resolve(__dirname, 'websites/example/src')
     }
   },
   module: {
@@ -144,12 +147,16 @@ module.exports = {
             loader: 'handlebars-loader',
             options: {
               partialDirs: [
-                path.join(__dirname, 'websites', 'example', 'src/partials'),
-                getProjectFilePath('src/partials')
+                // Project partials first (they'll take precedence)
+                getProjectFilePath('src/partials'),
+                // Example partials as fallback
+                path.join(__dirname, 'websites', 'example', 'src/partials')
               ],
               helperDirs: [
-                path.join(__dirname, 'websites', 'example', 'src/helpers'),
-                getProjectFilePath('src/helpers')
+                // Project helpers first (they'll take precedence)
+                getProjectFilePath('src/helpers'),
+                // Example helpers as fallback
+                path.join(__dirname, 'websites', 'example', 'src/helpers')
               ]
             }
           }

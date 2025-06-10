@@ -32,12 +32,12 @@ function checkFileConflicts(project) {
   // Skip if neither directory exists
   if (!fs.existsSync(srcDir) && !fs.existsSync(exampleSrcDir)) return;
 
-  const fileMap = new Map(); // Map of base names to their full paths and extensions
-  const htmlFiles = new Set(); // Track HTML template files
-
-  // Helper function to process files from a directory
-  function processDirectory(dir, isExample = false) {
+  // Helper function to check conflicts within a directory
+  function checkDirectoryConflicts(dir, dirName) {
     if (!fs.existsSync(dir)) return;
+
+    const fileMap = new Map(); // Map of base names to their full paths and extensions
+    const htmlFiles = new Set(); // Track HTML template files
 
     const files = fs.readdirSync(dir, { recursive: true });
     files.forEach(file => {
@@ -68,53 +68,48 @@ function checkFileConflicts(project) {
         if (conflictingTypes[ext] === existing.ext) {
           const relativePath1 = path.relative(process.cwd(), fullPath);
           const relativePath2 = path.relative(process.cwd(), existing.path);
-          const source1 = isExample ? 'example' : project;
-          const source2 = existing.isExample ? 'example' : project;
           throw new Error(
-            `File conflict detected between ${source1} and ${source2}:\n` +
+            `File type conflict detected in ${dirName}:\n` +
             `  - ${relativePath1}\n` +
             `  - ${relativePath2}\n` +
-            `These files would compile to the same target: ${baseName}${ext}`
+            `These files would compile to the same target but have different source types.\n` +
+            `Please choose one file type and remove the other.\n` +
+            `Note: Project files with the same name and extension will automatically override example files.`
           );
         }
       }
 
-      fileMap.set(baseName, { path: fullPath, ext, isExample });
+      fileMap.set(baseName, { path: fullPath, ext });
     });
-  }
 
-  // Process both directories
-  processDirectory(exampleSrcDir, true);
-  processDirectory(srcDir, false);
+    // Check for multiple HTML templates that would output to the same file
+    if (htmlFiles.size > 1) {
+      const conflictingFiles = Array.from(htmlFiles).map(name => {
+        const htmlPath = path.join(dir, `${name}.html`);
+        const hbsPath = path.join(dir, `${name}.hbs`);
+        return [
+          fs.existsSync(htmlPath) ? path.relative(process.cwd(), htmlPath) : null,
+          fs.existsSync(hbsPath) ? path.relative(process.cwd(), hbsPath) : null
+        ].filter(Boolean);
+      }).filter(files => files.length > 1);
 
-  // Check for multiple HTML templates that would output to the same file
-  if (htmlFiles.size > 1) {
-    const conflictingFiles = Array.from(htmlFiles).map(name => {
-      const htmlPath = path.join(srcDir, `${name}.html`);
-      const hbsPath = path.join(srcDir, `${name}.hbs`);
-      const exampleHtmlPath = path.join(exampleSrcDir, `${name}.html`);
-      const exampleHbsPath = path.join(exampleSrcDir, `${name}.hbs`);
-      
-      return [
-        fs.existsSync(htmlPath) ? { path: htmlPath, isExample: false } : null,
-        fs.existsSync(hbsPath) ? { path: hbsPath, isExample: false } : null,
-        fs.existsSync(exampleHtmlPath) ? { path: exampleHtmlPath, isExample: true } : null,
-        fs.existsSync(exampleHbsPath) ? { path: exampleHbsPath, isExample: true } : null
-      ].filter(Boolean);
-    }).filter(files => files.length > 1);
-
-    if (conflictingFiles.length > 0) {
-      throw new Error(
-        `Multiple HTML templates would compile to the same output file:\n` +
-        conflictingFiles.map(files => {
-          const fileList = files.map(f => 
-            `  - ${path.relative(process.cwd(), f.path)} (from ${f.isExample ? 'example' : project})`
-          ).join('\n');
-          return `${fileList}\n    These would all compile to: ${path.basename(files[0].path, path.extname(files[0].path))}.html`;
-        }).join('\n')
-      );
+      if (conflictingFiles.length > 0) {
+        throw new Error(
+          `Multiple HTML templates would compile to the same output file in ${dirName}:\n` +
+          conflictingFiles.map(files => 
+            `  - ${files.join('\n  - ')}\n` +
+            `    These would all compile to: ${path.basename(files[0], path.extname(files[0]))}.html\n` +
+            `    Please choose one template type (.html or .hbs) and remove the other.\n` +
+            `    Note: Project files with the same name and extension will automatically override example files.`
+          ).join('\n')
+        );
+      }
     }
   }
+
+  // Check conflicts in both directories independently
+  checkDirectoryConflicts(exampleSrcDir, 'example');
+  checkDirectoryConflicts(srcDir, project);
 }
 
 // Format error message for better readability

@@ -29,7 +29,7 @@ export class Thalia {
   private websites: Website[]
 
   constructor(options: ServerOptions) {
-    this.websites = Website.loadAll(options)
+    this.websites = Website.loadAllWebsites(options)
     this.server = new Server(options, this.websites)
   }
 

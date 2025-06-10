@@ -25,6 +25,8 @@ export declare class Website implements IWebsite {
     readonly name: string;
     readonly config: WebsiteConfig;
     readonly rootPath: string;
+    private static handlebars;
+    private templates;
     /**
      * Creates a new Website instance
      * @param config - The website configuration
@@ -38,6 +40,6 @@ export declare class Website implements IWebsite {
      * @returns Promise resolving to a new Website instance
      */
     static load(config: WebsiteConfig): Promise<Website>;
-    static loadAll(options: ServerOptions): Website[];
+    static loadAllWebsites(options: ServerOptions): Website[];
 }
 //# sourceMappingURL=website.d.ts.map

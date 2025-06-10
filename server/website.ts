@@ -23,11 +23,15 @@ import { Website as IWebsite, WebsiteConfig, ServerOptions } from './types'
 import fs from 'fs'
 import path from 'path'
 import { IncomingMessage, ServerResponse } from 'http'
+import Handlebars from 'handlebars'
 
 export class Website implements IWebsite {
   public readonly name: string
   public readonly config: WebsiteConfig
   public readonly rootPath: string
+
+  private static handlebars = Handlebars.create()
+  private templates: Map<string, Handlebars.TemplateDelegate> = new Map()
 
   /**
    * Creates a new Website instance
@@ -37,6 +41,18 @@ export class Website implements IWebsite {
     this.name = config.name
     this.config = config
     this.rootPath = config.rootPath
+
+    // Read all the partials from the partials folder
+    const partialsPath = path.join(this.rootPath, 'src', 'partials')
+    if (fs.existsSync(partialsPath)) {
+      const partials = fs.readdirSync(partialsPath)
+      partials.forEach(partial => {
+        Website.handlebars.registerPartial(
+          partial.replace('.hbs', ''),
+          fs.readFileSync(path.join(partialsPath, partial), 'utf8')
+        )
+      })
+    }
   }
 
   public handleRequest(req: IncomingMessage, res: ServerResponse): void {
@@ -48,6 +64,19 @@ export class Website implements IWebsite {
 
     const filePath = path.join(this.rootPath, 'public', pathname)
     console.log("Looking for file: ", filePath)
+
+    const handlebarsTemplate = filePath.replace('.html', '.hbs').replace('public', 'src')
+    console.log("Looking for handlebars template: ", handlebarsTemplate)
+
+    // Check if the file is a handlebars template
+    if (filePath.endsWith('.html') && fs.existsSync(handlebarsTemplate)) {
+      const template = fs.readFileSync(handlebarsTemplate, 'utf8')
+      const compiledTemplate = Website.handlebars.compile(template)
+      const html = compiledTemplate({})
+      res.writeHead(200, { 'Content-Type': 'text/html' })
+      res.end(html)
+      return
+    }
 
     // Check if file exists
     if (!fs.existsSync(filePath)) {
@@ -108,7 +137,7 @@ export class Website implements IWebsite {
   }
 
 
-  public static loadAll(options: ServerOptions): Website[] {
+  public static loadAllWebsites(options: ServerOptions): Website[] {
     if (options.mode == 'multiplex') {
       // Check if the root path exists
       // Load all websites from the root path
@@ -124,5 +153,4 @@ export class Website implements IWebsite {
       rootPath: options.rootPath
     })]
   }
-
 } 

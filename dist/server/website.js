@@ -26,15 +26,25 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Website = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const handlebars_1 = __importDefault(require("handlebars"));
 class Website {
     /**
      * Creates a new Website instance
      * @param config - The website configuration
      */
     constructor(config) {
+        this.templates = new Map();
         this.name = config.name;
         this.config = config;
         this.rootPath = config.rootPath;
+        // Read all the partials from the partials folder
+        const partialsPath = path_1.default.join(this.rootPath, 'src', 'partials');
+        if (fs_1.default.existsSync(partialsPath)) {
+            const partials = fs_1.default.readdirSync(partialsPath);
+            partials.forEach(partial => {
+                Website.handlebars.registerPartial(partial.replace('.hbs', ''), fs_1.default.readFileSync(path_1.default.join(partialsPath, partial), 'utf8'));
+            });
+        }
     }
     handleRequest(req, res) {
         console.log("We have a request for: ", req.url);
@@ -43,6 +53,17 @@ class Website {
         const pathname = url.pathname === '/' ? '/index.html' : url.pathname;
         const filePath = path_1.default.join(this.rootPath, 'public', pathname);
         console.log("Looking for file: ", filePath);
+        const handlebarsTemplate = filePath.replace('.html', '.hbs').replace('public', 'src');
+        console.log("Looking for handlebars template: ", handlebarsTemplate);
+        // Check if the file is a handlebars template
+        if (filePath.endsWith('.html') && fs_1.default.existsSync(handlebarsTemplate)) {
+            const template = fs_1.default.readFileSync(handlebarsTemplate, 'utf8');
+            const compiledTemplate = Website.handlebars.compile(template);
+            const html = compiledTemplate({});
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(html);
+            return;
+        }
         // Check if file exists
         if (!fs_1.default.existsSync(filePath)) {
             res.writeHead(404);
@@ -87,7 +108,7 @@ class Website {
     static async load(config) {
         return new Website(config);
     }
-    static loadAll(options) {
+    static loadAllWebsites(options) {
         if (options.mode == 'multiplex') {
             // Check if the root path exists
             // Load all websites from the root path
@@ -104,4 +125,5 @@ class Website {
     }
 }
 exports.Website = Website;
+Website.handlebars = handlebars_1.default.create();
 //# sourceMappingURL=website.js.map

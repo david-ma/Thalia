@@ -39,7 +39,7 @@ __exportStar(require("./types"), exports);
 // Main Thalia class for easy initialization
 class Thalia {
     constructor(options) {
-        this.websites = website_1.Website.loadAll(options);
+        this.websites = website_1.Website.loadAllWebsites(options);
         this.server = new server_1.Server(options, this.websites);
     }
     async start() {

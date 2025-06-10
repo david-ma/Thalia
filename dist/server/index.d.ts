@@ -1,16 +1,20 @@
 /**
- * Thalia - Main entry point
+ * index.ts - Main entry point for Thalia
  *
  * This file serves as the main entry point for the Thalia framework.
- * It exports all components and provides the main Thalia class for
- * server initialization.
+ *
+ * Find the default project
+ * Find out if we're running in standalone mode or multiplex mode
+ * Find the port
+ *
  */
-import { Server } from './server';
-import { ServerOptions } from './core/types';
-export * from './core/types';
-export { Server };
+import { Server, Website } from './server';
+import { ServerOptions } from './types';
+export * from './types';
+export { Server, Website };
 export declare class Thalia {
     private server;
+    private websites;
     constructor(options: ServerOptions);
     start(): Promise<void>;
     stop(): Promise<void>;

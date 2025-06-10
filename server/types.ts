@@ -1,12 +1,11 @@
-import { IncomingMessage, ServerResponse } from 'http'
-
 // Server Types
 export type ServerMode = 'standalone' | 'multiplex' | 'dev'
 
 export interface ServerOptions {
+  project: string
   port: number
   mode: ServerMode
-  rootPath?: string
+  rootPath: string
 }
 
 // Website Types

@@ -19,16 +19,14 @@
  * - Request processing (handled by Handler)
  */
 
-import { Thalia, WebsiteConfig } from './types'
-import { Router } from './router'
-import { Handler } from './handler'
+import { Website as IWebsite, WebsiteConfig, ServerOptions } from './types'
+import fs from 'fs'
+import path from 'path'
 
-export class Website implements Thalia.Website {
+export class Website implements IWebsite {
   public readonly name: string
   public readonly config: WebsiteConfig
   public readonly rootPath: string
-  public readonly router: Router
-  public readonly handler: Handler
 
   /**
    * Creates a new Website instance
@@ -38,13 +36,6 @@ export class Website implements Thalia.Website {
     this.name = config.name
     this.config = config
     this.rootPath = config.rootPath
-    this.router = new Router()
-    this.handler = new Handler(this)
-
-    // Set up routes from config
-    if (config.routes) {
-      config.routes.forEach(route => this.router.addRoute(route))
-    }
   }
 
   /**
@@ -55,4 +46,23 @@ export class Website implements Thalia.Website {
   public static async load(config: WebsiteConfig): Promise<Website> {
     return new Website(config)
   }
+
+
+  public static async loadAll(options: ServerOptions): Promise<Website[]> {
+    if (options.mode == 'multiplex') {
+      // Check if the root path exists
+      // Load all websites from the root path
+      const websites = await fs.readdirSync('websites')
+      return websites.map(website => new Website({
+        name: website,
+        rootPath: path.join(options.rootPath, website)
+      }))
+    }
+
+    return [new Website({
+      name: options.project,
+      rootPath: "Rootpath"
+    })]
+  }
+
 } 

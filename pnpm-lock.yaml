@@ -121,6 +121,9 @@ devDependencies:
   postcss-loader:
     specifier: ^8.1.1
     version: 8.1.1(postcss@8.4.38)(typescript@4.9.5)(webpack@5.99.9)
+  prettier:
+    specifier: ^3.5.3
+    version: 3.5.3
   sass-loader:
     specifier: ^14.2.1
     version: 14.2.1(sass@1.77.6)(webpack@5.99.9)
@@ -4946,6 +4949,12 @@ packages:
   /prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
+    dev: true
+
+  /prettier@3.5.3:
+    resolution: {integrity: sha512-QQtaxnoDJeAkDvDKWCLiwIXkTgRhwYDEQCghU9Z6q03iyek/rxRh/2lC3HB7P8sWT2xC/y5JDctPLBIGzHKbhw==}
+    engines: {node: '>=14'}
+    hasBin: true
     dev: true
 
   /pretty-error@4.0.0:

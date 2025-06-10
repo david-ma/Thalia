@@ -5,7 +5,7 @@
  */
 /// <reference types="node" />
 import { EventEmitter } from 'events';
-import { ServerMode, ServerOptions } from './core/types';
+import { ServerMode, ServerOptions } from './types';
 export declare class Server extends EventEmitter {
     private httpServer;
     private port;

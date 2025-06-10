@@ -3,13 +3,17 @@
   "private": true,
   "version": "1.1.2",
   "description": "Yet another server framework for serving websites",
-  "main": "./server/helpers.js",
-  "types": "./server/helpers.d.ts",
+  "main": "./dist/server/core/index.js",
+  "types": "./dist/server/core/index.d.ts",
   "exports": {
-    "default": {
-      "import": "./server/helpers.js",
-      "require": "./server/helpers.js",
-      "types": "./server/helpers.d.ts"
+    ".": {
+      "import": "./dist/server/core/index.js",
+      "require": "./dist/server/core/index.js",
+      "types": "./dist/server/core/index.d.ts"
+    },
+    "./bin/*": {
+      "import": "./dist/bin/*.js",
+      "require": "./dist/bin/*.js"
     }
   },
   "bin": {

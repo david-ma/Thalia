@@ -62,8 +62,8 @@ class Website {
         this.domains.push(`www.${this.name}.com`);
         this.domains.push(`${this.name}.david-ma.net`);
         // Load controllers
-        const controllers = this.config.controllers || [];
-        console.log("Loaded controllers: ", controllers);
+        this.controllers = this.config.controllers || [];
+        console.log("Loaded controllers: ", this.controllers);
         // Test the controllers?
     }
     /**
@@ -120,6 +120,14 @@ class Website {
         const pathname = url.pathname === '/' ? '/index.html' : url.pathname;
         const filePath = path_1.default.join(this.rootPath, 'public', pathname);
         const sourcePath = filePath.replace('public', 'src');
+        const controllerPath = pathname.split('/')[1];
+        if (controllerPath) {
+            const controller = this.controllers[controllerPath];
+            if (controller) {
+                controller(res, req, this);
+                return;
+            }
+        }
         // If we're looking for a css file, check if the scss exists
         if (filePath.endsWith('.css') && fs_1.default.existsSync(sourcePath.replace('.css', '.scss'))) {
             const scss = fs_1.default.readFileSync(sourcePath.replace('.css', '.scss'), 'utf8');

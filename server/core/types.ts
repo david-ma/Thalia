@@ -175,6 +175,24 @@ export namespace Thalia {
     getControllerForPath(path: string): ((controller: Controller) => Promise<void> | void) | null
     getServiceForPath(path: string): Service | null
   }
+
+  // Handle Types
+  export interface Handle {
+    websites: { [key: string]: Website }
+    loadWebsite(name: string): Promise<Website>
+    getWebsite(name: string): Website | null
+  }
+
+  // Raw Proxy Types
+  export interface rawProxy {
+    host?: string
+    domains?: string[]
+    filter?: string
+    message?: string
+    port?: number
+    password?: string
+    silent?: boolean
+  }
 }
 
 export type Views = {
@@ -191,6 +209,8 @@ export type Thalia = {
       handlebars: any
     ): Controller
   }
+  Handle: Thalia.Handle
+  rawProxy: Thalia.rawProxy
 }
 
 export type Controller = {
@@ -198,7 +218,6 @@ export type Controller = {
   res: ServerResponse
   website: Website
   db: DatabaseInstance
-  handlebars: any
   path: string[]
   readAllViews: (callback: (views: Views) => void) => void
   setCookie: (name: string, value: string, expires?: Date) => void

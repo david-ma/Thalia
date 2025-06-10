@@ -1,5 +1,5 @@
 // requestHandlers.ts
-import { Thalia } from './thalia'
+import { Thalia } from './core/types'
 import fs = require('fs')
 const fsPromise = fs.promises
 import path = require('path')

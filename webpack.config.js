@@ -13,14 +13,14 @@ const projectName = process.env.PROJECT || 'example';
 function getProjectFilePath(filePath) {
   const projectFile = path.join(__dirname, 'websites', projectName, filePath);
   const exampleFile = path.join(__dirname, 'websites', 'example', filePath);
-
+  
   return fs.existsSync(projectFile) ? projectFile : exampleFile;
 }
 
-// Register Handlebars partials 
+// Register Handlebars partials
 function registerPartials() {
   // Register the example partials first
-  const examplePartialsDir = getProjectFilePath('src/partials');
+  const examplePartialsDir = path.join(__dirname, 'websites', 'example', 'src/partials');
   if (fs.existsSync(examplePartialsDir)) {
     const examplePartialFiles = fs.readdirSync(examplePartialsDir);
     examplePartialFiles.forEach(file => {
@@ -53,47 +53,53 @@ const templateFile = getProjectFilePath('src/index.hbs');
 // Register partials before creating the plugin
 registerPartials();
 
-// Check for file conflicts in src directory
-function checkFileConflicts() {
-  const srcDir = getProjectFilePath('src');
-  if (!fs.existsSync(srcDir)) return;
-
-  const files = fs.readdirSync(srcDir, { recursive: true });
-  const fileMap = new Map(); // Map of base names to their extensions
-
-  files.forEach(file => {
-    const ext = path.extname(file);
-    const baseName = path.basename(file, ext);
-    const fullPath = path.join(srcDir, file);
-
-    // Skip directories
-    if (fs.statSync(fullPath).isDirectory()) return;
-
-    // Check for conflicts between different file types
-    if (fileMap.has(baseName)) {
-      const existingExt = fileMap.get(baseName);
-      const conflictingTypes = {
-        '.html': '.hbs',
-        '.hbs': '.html',
-        '.js': '.ts',
-        '.ts': '.js',
-        '.css': '.scss',
-        '.scss': '.css'
-      };
-
-      if (conflictingTypes[ext] === existingExt) {
-        throw new Error(
-          `File conflict detected in src directory: ${baseName}${ext} and ${baseName}${existingExt}`
-        );
-      }
+// Create plugins array
+const plugins = [
+  new CleanWebpackPlugin(),
+  new HtmlWebpackPlugin({
+    template: templateFile,
+    filename: 'index.html',
+    templateParameters: {
+      title: 'Example Project',
+      subtitle: 'A modern web development framework',
+      siteName: 'Thalia Framework',
+      currentYear: new Date().getFullYear(),
+      features: [
+        {
+          title: 'TypeScript',
+          description: 'Modern type-safe JavaScript development'
+        },
+        {
+          title: 'SCSS',
+          description: 'Powerful CSS preprocessing'
+        },
+        {
+          title: 'Handlebars',
+          description: 'Flexible templating system'
+        }
+      ]
     }
+  }),
+  new ForkTsCheckerWebpackPlugin()
+];
 
-    fileMap.set(baseName, ext);
-  });
+// Only add CopyPlugin if the source directory exists
+const srcDir = getProjectFilePath('src');
+if (fs.existsSync(srcDir)) {
+  plugins.push(
+    new CopyPlugin({
+      patterns: [
+        {
+          from: srcDir,
+          to: path.resolve(__dirname, `websites/${projectName}/public`),
+          globOptions: {
+            ignore: ['**/*.ts', '**/*.scss', '**/*.hbs']
+          }
+        }
+      ]
+    })
+  );
 }
-
-// Check for conflicts before building
-checkFileConflicts();
 
 module.exports = {
   entry: entryPoint,
@@ -133,7 +139,21 @@ module.exports = {
       },
       {
         test: /\.hbs$/,
-        use: 'handlebars-loader'
+        use: [
+          {
+            loader: 'handlebars-loader',
+            options: {
+              partialDirs: [
+                path.join(__dirname, 'websites', 'example', 'src/partials'),
+                getProjectFilePath('src/partials')
+              ],
+              helperDirs: [
+                path.join(__dirname, 'websites', 'example', 'src/helpers'),
+                getProjectFilePath('src/helpers')
+              ]
+            }
+          }
+        ]
       },
       {
         test: /\.(png|svg|jpg|jpeg|gif)$/i,
@@ -145,45 +165,7 @@ module.exports = {
       }
     ]
   },
-  plugins: [
-    new CleanWebpackPlugin(),
-    new HtmlWebpackPlugin({
-      template: templateFile,
-      filename: 'index.html',
-      templateParameters: {
-        title: 'Example Project',
-        subtitle: 'A modern web development framework',
-        siteName: 'Thalia Framework',
-        currentYear: new Date().getFullYear(),
-        features: [
-          {
-            title: 'TypeScript',
-            description: 'Modern type-safe JavaScript development'
-          },
-          {
-            title: 'SCSS',
-            description: 'Powerful CSS preprocessing'
-          },
-          {
-            title: 'Handlebars',
-            description: 'Flexible templating system'
-          }
-        ]
-      }
-    }),
-    new CopyPlugin({
-      patterns: [
-        {
-          from: getProjectFilePath('src'),
-          to: path.resolve(__dirname, `websites/${projectName}/public`),
-          globOptions: {
-            ignore: ['**/*.ts', '**/*.scss', '**/*.hbs']
-          }
-        }
-      ]
-    }),
-    new ForkTsCheckerWebpackPlugin()
-  ],
+  plugins,
   optimization: {
     moduleIds: 'deterministic',
     runtimeChunk: 'single',

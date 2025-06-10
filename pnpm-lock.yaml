@@ -113,7 +113,7 @@ devDependencies:
     specifier: ^12.0.2
     version: 12.0.2(webpack@5.99.9)
   css-loader:
-    specifier: ^6.10.0
+    specifier: ^6.11.0
     version: 6.11.0(webpack@5.99.9)
   css-minimizer-webpack-plugin:
     specifier: ^6.0.0
@@ -140,13 +140,13 @@ devDependencies:
     specifier: ^7.34.1
     version: 7.34.1(eslint@7.32.0)
   fork-ts-checker-webpack-plugin:
-    specifier: ^9.0.2
+    specifier: ^9.1.0
     version: 9.1.0(typescript@4.9.5)(webpack@5.99.9)
   handlebars-loader:
     specifier: ^1.7.3
     version: 1.7.3(handlebars@4.7.8)
   html-webpack-plugin:
-    specifier: ^5.6.0
+    specifier: ^5.6.3
     version: 5.6.3(webpack@5.99.9)
   nodemon:
     specifier: ^3.1.0
@@ -155,10 +155,10 @@ devDependencies:
     specifier: ^8.4.38
     version: 8.4.38
   postcss-loader:
-    specifier: ^8.1.0
+    specifier: ^8.1.1
     version: 8.1.1(postcss@8.4.38)(typescript@4.9.5)(webpack@5.99.9)
   sass-loader:
-    specifier: ^14.1.0
+    specifier: ^14.2.1
     version: 14.2.1(sass@1.77.6)(webpack@5.99.9)
   sequelize-cli:
     specifier: ^6.6.2
@@ -167,22 +167,22 @@ devDependencies:
     specifier: ^3.3.4
     version: 3.3.4(webpack@5.99.9)
   terser-webpack-plugin:
-    specifier: ^5.3.10
+    specifier: ^5.3.14
     version: 5.3.14(webpack@5.99.9)
   ts-loader:
-    specifier: ^9.5.1
+    specifier: ^9.5.2
     version: 9.5.2(typescript@4.9.5)(webpack@5.99.9)
   typescript:
     specifier: ^4.9.5
     version: 4.9.5
   webpack:
-    specifier: ^5.90.3
+    specifier: ^5.99.9
     version: 5.99.9(webpack-cli@5.1.4)
   webpack-cli:
     specifier: ^5.1.4
     version: 5.1.4(webpack-dev-server@5.2.2)(webpack@5.99.9)
   webpack-dev-server:
-    specifier: ^5.0.2
+    specifier: ^5.2.2
     version: 5.2.2(webpack-cli@5.1.4)(webpack@5.99.9)
   webpack-merge:
     specifier: ^5.10.0
@@ -1499,7 +1499,7 @@ packages:
       postcss: ^8.1.0
     dependencies:
       browserslist: 4.23.0
-      caniuse-lite: 1.0.30001607
+      caniuse-lite: 1.0.30001721
       colorette: 1.4.0
       fraction.js: 4.3.7
       normalize-range: 0.1.2
@@ -1617,7 +1617,7 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      caniuse-lite: 1.0.30001607
+      caniuse-lite: 1.0.30001721
       electron-to-chromium: 1.4.730
       node-releases: 2.0.14
       update-browserslist-db: 1.0.13(browserslist@4.23.0)
@@ -1712,13 +1712,9 @@ packages:
     resolution: {integrity: sha512-bsTwuIg/BZZK/vreVTYYbSWoe2F+71P7K5QGEX+pT250DZbfU1MQ5prOKpPR+LL6uWKK3KMwMCAS74QB3Um1uw==}
     dependencies:
       browserslist: 4.23.0
-      caniuse-lite: 1.0.30001607
+      caniuse-lite: 1.0.30001721
       lodash.memoize: 4.1.2
       lodash.uniq: 4.5.0
-    dev: true
-
-  /caniuse-lite@1.0.30001607:
-    resolution: {integrity: sha512-WcvhVRjXLKFB/kmOFVwELtMxyhq3iM/MvmXcyCe2PNf166c39mptscOc/45TTS96n2gpNV2z7+NakArTWZCQ3w==}
     dev: true
 
   /caniuse-lite@1.0.30001721:
@@ -3583,7 +3579,7 @@ packages:
       source-map: 0.6.1
       wordwrap: 1.0.0
     optionalDependencies:
-      uglify-js: 3.17.4
+      uglify-js: 3.19.3
 
   /has-bigints@1.0.2:
     resolution: {integrity: sha512-tSvCKtBr9lkF0Ex0aQiP9N+OpV4zi2r/Nee5VkRDbaqv35RLYMzbwQfFSZZH0kR+Rd6302UJZ2p/bJCEoR3VoQ==}
@@ -5105,8 +5101,8 @@ packages:
     engines: {node: '>=18'}
     dev: true
 
-  /pg-cloudflare@1.1.1:
-    resolution: {integrity: sha512-xWPagP/4B6BgFO+EKz3JONXv3YDgvkbVrGw2mTo3D6tVDQRh1e7cqVGvyR3BE+eQgAvx1XhW/iEASj4/jCWl3Q==}
+  /pg-cloudflare@1.2.5:
+    resolution: {integrity: sha512-OOX22Vt0vOSRrdoUPKJ8Wi2OpE/o/h9T8X1s4qSkCedbNah9ei2W2765be8iMVxQUsvgT7zIAT2eIa9fs5+vtg==}
     requiresBuild: true
     dev: false
     optional: true
@@ -5165,7 +5161,7 @@ packages:
       pg-types: 2.2.0
       pgpass: 1.0.5
     optionalDependencies:
-      pg-cloudflare: 1.1.1
+      pg-cloudflare: 1.2.5
     dev: false
 
   /pgpass@1.0.5:
@@ -6881,8 +6877,8 @@ packages:
     hasBin: true
     dev: true
 
-  /uglify-js@3.17.4:
-    resolution: {integrity: sha512-T9q82TJI9e/C1TAxYvfb16xO120tMVFZrGA3f9/P4424DNu6ypK103y0GPFVa17yotwSyZW5iYXgjYHkGrJW/g==}
+  /uglify-js@3.19.3:
+    resolution: {integrity: sha512-v3Xu+yuwBXisp6QYTcH4UbH+xYJXqnq2m/LtQVWKWzYc1iehYnLixoQDN9FH6/j9/oybfd6W9Ghwkl8+UMKTKQ==}
     engines: {node: '>=0.8.0'}
     hasBin: true
     requiresBuild: true

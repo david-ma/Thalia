@@ -11,12 +11,15 @@ class Router {
         if (websites.length === 0) {
             throw new Error('No websites provided');
         }
+        this.default = websites[0];
         // Create a map of websites
         this.websites = websites.reduce((acc, website) => {
+            if (website.name == 'default') {
+                this.default = website;
+            }
             acc[website.name] = website;
             return acc;
         }, {});
-        this.default = websites[0];
     }
     getWebsite(domain) {
         // // Get the website name from the path

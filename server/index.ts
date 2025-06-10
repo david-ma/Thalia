@@ -57,7 +57,7 @@ let options: ServerOptions = {
 }
 
 if (project == 'default') {
-  console.log(`Running in multiplex mode for project`)
+  console.log(`Running in multiplex mode. Loading all projects.`)
   options.mode = 'multiplex'
   options.rootPath = path.join(options.rootPath, 'websites')
 } else {

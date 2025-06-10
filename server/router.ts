@@ -14,14 +14,17 @@ export class Router {
     if (websites.length === 0) {
       throw new Error('No websites provided')
     }
+    this.default = websites[0]!
 
     // Create a map of websites
     this.websites = websites.reduce((acc, website) => {
+      if (website.name == 'default') {
+        this.default = website
+      }
       acc[website.name] = website
       return acc
     }, {} as { [key: string]: Website })
 
-    this.default = websites[0]!
   }
 
   public getWebsite(domain: string): Website {

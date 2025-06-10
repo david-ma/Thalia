@@ -62,7 +62,7 @@ let options = {
     port: port
 };
 if (project == 'default') {
-    console.log(`Running in multiplex mode for project`);
+    console.log(`Running in multiplex mode. Loading all projects.`);
     options.mode = 'multiplex';
     options.rootPath = path_1.default.join(options.rootPath, 'websites');
 }

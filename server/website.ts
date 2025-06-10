@@ -32,14 +32,18 @@ interface Views {
 }
 
 interface Controller {
-  (res: ServerResponse, req: IncomingMessage, website: Website): void
+  (args: {
+    res: ServerResponse
+    req: IncomingMessage
+    website: Website
+  }): void
 }
 
 export class Website implements IWebsite {
   public readonly name: string
   public readonly rootPath: string
   public config: WebsiteConfig
-  private handlebars = Handlebars.create()
+  public handlebars = Handlebars.create()
   public domains: string[] = []
   public controllers: { [key: string]: Controller } = {}
 
@@ -246,3 +250,68 @@ export class Website implements IWebsite {
 }
 
 
+export const controllerFactories = {
+  redirectTo: (url: string) => {
+    return (res: ServerResponse, req: IncomingMessage, website: Website) => {
+      res.writeHead(302, { Location: url })
+      res.end()
+    }
+  },
+  serveFile: (url: string) => {
+    return (res: ServerResponse, req: IncomingMessage, website: Website) => {
+      const filePath = path.join(website.rootPath, 'public', url)
+      const stream = fs.createReadStream(filePath)
+      stream.pipe(res)
+    }
+  },
+}
+
+/**
+ * Read the latest 10 logs from the log directory
+ */
+export const latestlogs = async (res: ServerResponse, req: IncomingMessage, website: Website) => {
+  try {
+    const logDirectory = path.join(website.rootPath, 'public', 'log')
+
+    // Get list of log files
+    const logs = fs.readdirSync(logDirectory)
+      .filter(filename => !filename.startsWith('.'))
+      .slice(-10)
+
+    if (logs.length === 0) {
+      res.writeHead(200, { 'Content-Type': 'text/html' })
+      res.end('No logs found')
+      return
+    }
+
+    // Get stats for all logs
+    const stats = await Promise.all(
+      logs.map(log => fs.promises.stat(path.join(logDirectory, log)))
+    )
+
+    // Prepare data for template
+    const data = {
+      stats: logs.map((log, i) => ({
+        filename: log,
+        size: stats[i]?.size ?? 0,
+        created: stats[i]?.birthtime?.toLocaleString() ?? 'Unknown',
+        lastModified: stats[i]?.mtime?.toLocaleString() ?? 'Unknown'
+      }))
+    }
+
+    // Get and compile template
+    const template = website.handlebars.partials['logs']
+    if (!template) {
+      throw new Error('logs template not found')
+    }
+
+    const html = website.handlebars.compile(template)(data)
+    res.writeHead(200, { 'Content-Type': 'text/html' })
+    res.end(html)
+
+  } catch (error) {
+    console.error('Error in latestlogs:', error)
+    res.writeHead(500, { 'Content-Type': 'text/html' })
+    res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}

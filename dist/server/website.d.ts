@@ -21,14 +21,19 @@
 /// <reference types="node" />
 import { Website as IWebsite, WebsiteConfig, ServerOptions } from './types';
 import { IncomingMessage, ServerResponse } from 'http';
+import Handlebars from 'handlebars';
 interface Controller {
-    (res: ServerResponse, req: IncomingMessage, website: Website): void;
+    (args: {
+        res: ServerResponse;
+        req: IncomingMessage;
+        website: Website;
+    }): void;
 }
 export declare class Website implements IWebsite {
     readonly name: string;
     readonly rootPath: string;
     config: WebsiteConfig;
-    private handlebars;
+    handlebars: typeof Handlebars;
     domains: string[];
     controllers: {
         [key: string]: Controller;
@@ -54,5 +59,13 @@ export declare class Website implements IWebsite {
     private getContentType;
     static loadAllWebsites(options: ServerOptions): Website[];
 }
+export declare const controllerFactories: {
+    redirectTo: (url: string) => (res: ServerResponse, req: IncomingMessage, website: Website) => void;
+    serveFile: (url: string) => (res: ServerResponse, req: IncomingMessage, website: Website) => void;
+};
+/**
+ * Read the latest 10 logs from the log directory
+ */
+export declare const latestlogs: (res: ServerResponse, req: IncomingMessage, website: Website) => Promise<void>;
 export {};
 //# sourceMappingURL=website.d.ts.map

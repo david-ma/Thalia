@@ -3,7 +3,6 @@ import http from 'http'
 import { RouteRule } from './types'
 import { Website } from './website'
 import formidable from 'formidable'
-import { URLSearchParams } from 'url'
 
 export class RouteGuard {
   private routes: { [key: string]: RouteRule } = {}
@@ -55,11 +54,8 @@ export class RouteGuard {
 
         // Check if they're posting
         if (req.method === 'POST') {
-          console.log("We're posting")
-
           const form = formidable({ multiples: false })
-          form.parse(req, (err, fields, files) => {
-
+          form.parse(req, (err, fields) => {
             if (err) {
               console.error('Error parsing form data:', err)
               res.writeHead(400, { 'Content-Type': 'text/html' })
@@ -73,13 +69,15 @@ export class RouteGuard {
               res.setHeader('Set-Cookie', `${cookieName}=${password}; Path=/`)
               res.writeHead(302, { 'Location': pathname })
               res.end()
+              return true
             } else {
               const login_html = website.handlebars.compile(website.handlebars.partials['login'])({
-                route: matchingRoute.path,
+                route: url.pathname,
                 message: 'Invalid password'
               })
               res.writeHead(401, { 'Content-Type': 'text/html' })
               res.end(login_html)
+              return true
             }
           })
           return true
@@ -89,7 +87,7 @@ export class RouteGuard {
         } else {
           // If the user doesn't have the login cookie, get the login page
           const login_html = website.handlebars.compile(website.handlebars.partials['login'])({
-            route: matchingRoute.path
+            route: url.pathname
           })
 
           res.writeHead(401, { 'Content-Type': 'text/html' })

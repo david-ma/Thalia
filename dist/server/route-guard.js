@@ -46,9 +46,8 @@ class RouteGuard {
                 const cookieName = `auth_${website.name}${matchingRoute.path}`;
                 // Check if they're posting
                 if (req.method === 'POST') {
-                    console.log("We're posting");
                     const form = (0, formidable_1.default)({ multiples: false });
-                    form.parse(req, (err, fields, files) => {
+                    form.parse(req, (err, fields) => {
                         if (err) {
                             console.error('Error parsing form data:', err);
                             res.writeHead(400, { 'Content-Type': 'text/html' });
@@ -60,14 +59,16 @@ class RouteGuard {
                             res.setHeader('Set-Cookie', `${cookieName}=${password}; Path=/`);
                             res.writeHead(302, { 'Location': pathname });
                             res.end();
+                            return true;
                         }
                         else {
                             const login_html = website.handlebars.compile(website.handlebars.partials['login'])({
-                                route: matchingRoute.path,
+                                route: url.pathname,
                                 message: 'Invalid password'
                             });
                             res.writeHead(401, { 'Content-Type': 'text/html' });
                             res.end(login_html);
+                            return true;
                         }
                     });
                     return true;
@@ -79,7 +80,7 @@ class RouteGuard {
                 else {
                     // If the user doesn't have the login cookie, get the login page
                     const login_html = website.handlebars.compile(website.handlebars.partials['login'])({
-                        route: matchingRoute.path
+                        route: url.pathname
                     });
                     res.writeHead(401, { 'Content-Type': 'text/html' });
                     res.end(login_html);

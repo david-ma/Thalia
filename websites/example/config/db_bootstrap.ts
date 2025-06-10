@@ -26,7 +26,7 @@ if (process.env.NODE_ENV === 'docker') {
   seqOptions.port = 5432
 }
 
-import { SeqObject } from '../../../server/helpers'
+import { SeqObject } from '../../../server/core/database'
 
 const seq: SeqObject = securityFactory(seqOptions)
 

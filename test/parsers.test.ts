@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@jest/globals'
 
-import { htmlEscape, oauthEscape, sortParams } from '../server/helpers'
+import { htmlEscape, oauthEscape, sortParams } from '../server/core/util'
 
 // We should really just write these HTML Entities to a dom and read them
 const statements = [

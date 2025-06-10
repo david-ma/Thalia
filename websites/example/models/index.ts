@@ -1,6 +1,6 @@
 import { Sequelize, Options } from 'sequelize'
 import { UserFactory, SessionFactory, AuditFactory } from './security'
-import { SeqObject } from '../../../server/helpers'
+import { SeqObject } from '../../../server/core/database'
 
 export function securityFactory(seqOptions: Options): SeqObject {
   if (!seqOptions.dialect) {

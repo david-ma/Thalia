@@ -1,4 +1,4 @@
-import { users, SecurityOptions } from '../../../server/helpers'
+import { users, SecurityOptions } from '../../../server/core/security'
 
 import { cred } from './cred'
 

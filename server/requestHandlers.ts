@@ -5,7 +5,7 @@ const fsPromise = fs.promises
 import path = require('path')
 import sass = require('sass')
 
-import { DatabaseInstance } from './helpers'
+import { DatabaseInstance } from './core/database'
 
 // Each website should have their own Handlebars instance? Frame?
 // https://handlebarsjs.com/api-reference/utilities.html#handlebars-createframe-data

@@ -1,0 +1,19 @@
+{
+  "name": "thalia-project",
+  "version": "1.0.0",
+  "description": "A Thalia website project",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "thalia",
+    "dev": "thalia --dev",
+    "build": "thalia --build",
+    "serve": "thalia --serve"
+  },
+  "dependencies": {
+    "thalia": "^1.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.5",
+    "typescript": "^4.9.5"
+  }
+} 

@@ -2,6 +2,8 @@ import { IncomingMessage, ServerResponse } from 'http'
 import { Socket } from 'socket.io'
 import { Model, ModelStatic, Sequelize } from 'sequelize'
 import * as Handlebars from 'handlebars'
+import { DatabaseInstance } from './database'
+import { User } from './security'
 
 export namespace Thalia {
   // Database Types
@@ -172,5 +174,55 @@ export namespace Thalia {
     getProxyForHost(host: string): Proxy | null
     getControllerForPath(path: string): ((controller: Controller) => Promise<void> | void) | null
     getServiceForPath(path: string): Service | null
+  }
+}
+
+export type Views = {
+  [key: string]: string
+}
+
+export type Thalia = {
+  Controller: {
+    new (
+      req: IncomingMessage,
+      res: ServerResponse,
+      website: Website,
+      db: DatabaseInstance,
+      handlebars: any
+    ): Controller
+  }
+}
+
+export type Controller = {
+  req: IncomingMessage
+  res: ServerResponse
+  website: Website
+  db: DatabaseInstance
+  handlebars: any
+  path: string[]
+  readAllViews: (callback: (views: Views) => void) => void
+  setCookie: (name: string, value: string, expires?: Date) => void
+  getCookie: (name: string) => string
+  deleteCookie: (name: string) => void
+}
+
+export type Website = {
+  config: {
+    name: string
+    folder: string
+    domains: string[]
+    controllers: {
+      [key: string]: (controller: Controller) => void
+    }
+    services: {
+      [key: string]: (res: ServerResponse, req: IncomingMessage, db: DatabaseInstance, words: string[]) => void
+    }
+    sockets: {
+      on: {
+        name: string
+        callback: (socket: Socket, data: any) => void
+      }[]
+      emit: ((socket: Socket) => void)[]
+    }
   }
 } 

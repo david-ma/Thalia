@@ -1,9 +1,6 @@
 import './styles/main.scss';
-import { renderApp } from './app';
 
+// Add any client-side JavaScript functionality here
 document.addEventListener('DOMContentLoaded', () => {
-  const app = document.getElementById('app');
-  if (app) {
-    renderApp(app);
-  }
+  console.log('Application started');
 }); 

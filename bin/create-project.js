@@ -39,5 +39,5 @@ if (fs.existsSync(packageJsonPath)) {
 console.log(`Project "${projectName}" created successfully!`);
 console.log(`\nTo start development:`);
 console.log(`1. cd websites/${projectName}`);
-console.log(`2. npm install`);
-console.log(`3. npm run dev`); 
+console.log(`2. pnpm install`);
+console.log(`3. pnpm dev`); 

@@ -32,7 +32,7 @@ export interface PathSecurity {
 // Route Types
 export interface RouteRule {
   domains: string[]        // Which domains this rule applies to
-  path: string            // The subpath to match (e.g., '/api' or '/admin')
+  path?: string            // The subpath to match (e.g., '/api' or '/admin')
   password?: string       // If set, requires this password
   target?: {              // Optional proxy target
     host: string

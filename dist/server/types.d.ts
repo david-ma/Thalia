@@ -25,7 +25,7 @@ export interface PathSecurity {
 }
 export interface RouteRule {
     domains: string[];
-    path: string;
+    path?: string;
     password?: string;
     target?: {
         host: string;

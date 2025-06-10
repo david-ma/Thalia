@@ -19,8 +19,9 @@ class RouteGuard {
         routes.forEach(route => {
             // Ensure required fields
             if (!route.path) {
-                console.warn(`Route missing path in ${this.website.name}`);
-                return;
+                route.path = '/';
+                // console.warn(`Route missing path in ${this.website.name}`)
+                // return
             }
             // Add route for each domain
             route.domains.forEach(domain => {
@@ -63,7 +64,7 @@ class RouteGuard {
                             const password = this.saltPassword(fields?.['password']?.[0] ?? '');
                             if (password === correctPassword) {
                                 res.setHeader('Set-Cookie', `${cookieName}=${password}; Path=/`);
-                                res.writeHead(302, { 'Location': pathname });
+                                res.writeHead(302, { 'Location': url.pathname });
                                 res.end();
                                 return true;
                             }

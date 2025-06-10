@@ -61,10 +61,20 @@ class Website {
         this.domains.push(`${this.name}.com`);
         this.domains.push(`www.${this.name}.com`);
         this.domains.push(`${this.name}.david-ma.net`);
-        // Load controllers
-        this.controllers = this.config.controllers || [];
-        console.log("Loaded controllers: ", this.controllers);
-        // Test the controllers?
+        // Load and validate controllers
+        const rawControllers = this.config.controllers || {};
+        for (const [name, controller] of Object.entries(rawControllers)) {
+            this.controllers[name] = this.validateController(controller);
+        }
+        // console.debug("Loaded controllers: ", Object.keys(this.controllers))
+    }
+    validateController(controller) {
+        const controllerStr = controller.toString();
+        const params = controllerStr.slice(controllerStr.indexOf('(') + 1, controllerStr.indexOf(')')).split(',');
+        if (params.length !== 3) {
+            throw new Error(`Controller must accept exactly 3 parameters (res, req, website)`);
+        }
+        return controller;
     }
     /**
      * Load partials from the following paths:

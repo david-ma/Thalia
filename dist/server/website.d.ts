@@ -39,6 +39,7 @@ export declare class Website implements IWebsite {
      */
     constructor(config: WebsiteConfig);
     private loadConfig;
+    private validateController;
     /**
      * Load partials from the following paths:
      * - thalia/src/views

@@ -15,3 +15,4 @@ export declare class ProxyHandler {
     getProxyForHost(host: string): ProxyConfig | null;
     createProxyMiddleware(config: ProxyConfig): import("http-proxy-middleware").RequestHandler<IncomingMessage, ServerResponse<IncomingMessage>, (err?: any) => void>;
 }
+//# sourceMappingURL=proxy.d.ts.map

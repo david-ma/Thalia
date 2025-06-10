@@ -39,3 +39,4 @@ export declare class Website implements Thalia.Website {
      */
     static load(config: WebsiteConfig): Promise<Website>;
 }
+//# sourceMappingURL=website.d.ts.map

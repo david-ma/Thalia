@@ -10,6 +10,9 @@ import { IncomingMessage, ServerResponse } from 'http'
 import { createServer, Server as HttpServer } from 'http'
 import { Server as SocketServer } from 'socket.io'
 import { EventEmitter } from 'events'
+import * as path from 'path'
+import * as fs from 'fs'
+import { ServerMode, ServerOptions } from './core/types'
 
 // server.ts
 import http = require('http')
@@ -278,15 +281,7 @@ div {
  * - Website-specific logic (handled by Website)
  */
 
-export type ServerMode = 'standalone' | 'multiplex' | 'dev'
-
-export interface ServerOptions {
-  port: number
-  mode: ServerMode
-  rootPath?: string
-}
-
-export class ThaliaServer extends EventEmitter {
+export class Server extends EventEmitter {
   private httpServer: HttpServer
   private socketServer: SocketServer
   private port: number
@@ -304,7 +299,7 @@ export class ThaliaServer extends EventEmitter {
     this.rootPath = options.rootPath || process.cwd()
     
     // Create HTTP server
-    this.httpServer = createServer()
+    this.httpServer = createServer(this.handleRequest.bind(this))
     
     // Create Socket.IO server
     this.socketServer = new SocketServer(this.httpServer, {
@@ -314,7 +309,7 @@ export class ThaliaServer extends EventEmitter {
       }
     })
 
-    // Set up basic error handling
+    // Set up error handling
     this.httpServer.on('error', (error: Error) => {
       this.emit('error', error)
     })
@@ -325,6 +320,93 @@ export class ThaliaServer extends EventEmitter {
     })
   }
 
+  private async handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    try {
+      // Only handle GET requests
+      if (req.method !== 'GET') {
+        res.writeHead(405)
+        res.end('Method Not Allowed')
+        return
+      }
+
+      // Get the requested path
+      const requestUrl = req.url || '/'
+      const host = req.headers.host || 'localhost'
+      const url = new URL(requestUrl, `http://${host}`)
+      const requestPath = url.pathname
+
+      // Determine the project name from the host
+      const projectName = this.mode === 'multiplex' ? host.split('.')[0] : 'example'
+
+      // Build the file path
+      const filePath = path.join(
+        this.rootPath,
+        'websites',
+        projectName,
+        'public',
+        requestPath === '/' ? 'index.html' : requestPath
+      )
+
+      // Check if file exists
+      try {
+        await fs.promises.access(filePath)
+      } catch {
+        res.writeHead(404)
+        res.end('Not Found')
+        return
+      }
+
+      // Get file stats
+      const stats = await fs.promises.stat(filePath)
+      if (!stats.isFile()) {
+        res.writeHead(404)
+        res.end('Not Found')
+        return
+      }
+
+      // Set content type
+      const ext = path.extname(filePath)
+      const contentType = this.getContentType(ext)
+      res.setHeader('Content-Type', contentType)
+
+      // Stream the file
+      const stream = fs.createReadStream(filePath)
+      stream.pipe(res)
+
+      // Handle stream errors
+      stream.on('error', (error) => {
+        console.error('Error streaming file:', error)
+        if (!res.headersSent) {
+          res.writeHead(500)
+          res.end('Internal Server Error')
+        }
+      })
+    } catch (error) {
+      console.error('Error handling request:', error)
+      if (!res.headersSent) {
+        res.writeHead(500)
+        res.end('Internal Server Error')
+      }
+    }
+  }
+
+  private getContentType(ext: string): string {
+    const contentTypes: { [key: string]: string } = {
+      '.html': 'text/html',
+      '.css': 'text/css',
+      '.js': 'text/javascript',
+      '.json': 'application/json',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.svg': 'image/svg+xml',
+      '.ico': 'image/x-icon',
+      '.txt': 'text/plain'
+    }
+    return contentTypes[ext] || 'application/octet-stream'
+  }
+
   /**
    * Starts the server and begins listening for connections
    * @returns Promise that resolves when the server is started
@@ -333,7 +415,7 @@ export class ThaliaServer extends EventEmitter {
     return new Promise((resolve, reject) => {
       try {
         this.httpServer.listen(this.port, () => {
-          console.log(`Thalia server running in ${this.mode} mode on port ${this.port}`)
+          console.log(`Server running in ${this.mode} mode on port ${this.port}`)
           this.emit('started')
           resolve()
         })
@@ -352,7 +434,7 @@ export class ThaliaServer extends EventEmitter {
       try {
         this.socketServer.close(() => {
           this.httpServer.close(() => {
-            console.log('Thalia server stopped')
+            console.log('Server stopped')
             this.emit('stopped')
             resolve()
           })

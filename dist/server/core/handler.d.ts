@@ -38,3 +38,4 @@ export declare class Handler {
      */
     handle(req: IncomingMessage, res: ServerResponse): Promise<void>;
 }
+//# sourceMappingURL=handler.d.ts.map

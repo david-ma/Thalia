@@ -6,7 +6,7 @@
  * server initialization.
  */
 
-import { ThaliaServer } from './server'
+import { Server } from './server'
 import { Website } from './core/website'
 import { Router } from './core/router'
 import { Handler } from './core/handler'
@@ -20,7 +20,7 @@ export * from './core/types'
 
 // Export main components
 export {
-  ThaliaServer,
+  Server,
   Website,
   Router,
   Handler,
@@ -30,10 +30,10 @@ export {
 
 // Main Thalia class for easy initialization
 export class Thalia implements ThaliaInterface {
-  private server: ThaliaServer
+  private server: Server
 
   constructor(options: ServerOptions) {
-    this.server = new ThaliaServer(options)
+    this.server = new Server(options)
   }
 
   public async start(): Promise<void> {
@@ -44,7 +44,7 @@ export class Thalia implements ThaliaInterface {
     await this.server.stop()
   }
 
-  public getServer(): ThaliaServer {
+  public getServer(): Server {
     return this.server
   }
 } 

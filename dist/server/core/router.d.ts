@@ -44,3 +44,4 @@ export declare class Router {
      */
     private matchRoute;
 }
+//# sourceMappingURL=router.d.ts.map

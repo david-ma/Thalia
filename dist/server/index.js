@@ -21,9 +21,9 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Thalia = exports.ProxyHandler = exports.AuthHandler = exports.Handler = exports.Router = exports.Website = exports.ThaliaServer = void 0;
+exports.Thalia = exports.ProxyHandler = exports.AuthHandler = exports.Handler = exports.Router = exports.Website = exports.Server = void 0;
 const server_1 = require("./server");
-Object.defineProperty(exports, "ThaliaServer", { enumerable: true, get: function () { return server_1.ThaliaServer; } });
+Object.defineProperty(exports, "Server", { enumerable: true, get: function () { return server_1.Server; } });
 const website_1 = require("./core/website");
 Object.defineProperty(exports, "Website", { enumerable: true, get: function () { return website_1.Website; } });
 const router_1 = require("./core/router");
@@ -39,7 +39,7 @@ __exportStar(require("./core/types"), exports);
 // Main Thalia class for easy initialization
 class Thalia {
     constructor(options) {
-        this.server = new server_1.ThaliaServer(options);
+        this.server = new server_1.Server(options);
     }
     async start() {
         await this.server.start();

@@ -1,10 +1,10 @@
-import { ThaliaServer } from '../server'
+import { Server } from '../server'
 import { ServerOptions } from './types'
 
 export interface Thalia {
   start(): Promise<void>
   stop(): Promise<void>
-  getServer(): ThaliaServer
+  getServer(): Server
 }
 
 export interface ThaliaConstructor {

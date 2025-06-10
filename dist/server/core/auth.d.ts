@@ -24,3 +24,4 @@ export declare class AuthHandler {
     getSessionFromCookie(req: IncomingMessage): string | null;
     private hashPassword;
 }
+//# sourceMappingURL=auth.d.ts.map

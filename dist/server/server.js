@@ -4,11 +4,36 @@
  *
  * Class which allows initialisation of a server.
  */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ThaliaServer = exports.start = void 0;
+exports.Server = exports.start = void 0;
 const http_1 = require("http");
 const socket_io_1 = require("socket.io");
 const events_1 = require("events");
+const path = __importStar(require("path"));
+const fs = __importStar(require("fs"));
 // server.ts
 const http = require("http");
 const url = require("url");
@@ -213,7 +238,27 @@ div {
 </div>
 </body>
 </html>`;
-class ThaliaServer extends events_1.EventEmitter {
+/**
+ * ThaliaServer - Core server implementation
+ *
+ * The server is responsible for:
+ * 1. Creating and managing the HTTP server
+ * 2. Setting up WebSocket connections
+ * 3. Managing server lifecycle (start/stop)
+ * 4. Emitting events for important server state changes
+ *
+ * The server is the top-level component that:
+ * - Listens on a specified port
+ * - Handles incoming HTTP requests
+ * - Manages WebSocket connections
+ * - Provides server-wide configuration
+ *
+ * It does NOT handle:
+ * - Request routing (handled by Router)
+ * - Request processing (handled by Handler)
+ * - Website-specific logic (handled by Website)
+ */
+class Server extends events_1.EventEmitter {
     /**
      * Creates a new ThaliaServer instance
      * @param options - Server configuration options
@@ -224,7 +269,7 @@ class ThaliaServer extends events_1.EventEmitter {
         this.mode = options.mode;
         this.rootPath = options.rootPath || process.cwd();
         // Create HTTP server
-        this.httpServer = (0, http_1.createServer)();
+        this.httpServer = (0, http_1.createServer)(this.handleRequest.bind(this));
         // Create Socket.IO server
         this.socketServer = new socket_io_1.Server(this.httpServer, {
             cors: {
@@ -232,7 +277,7 @@ class ThaliaServer extends events_1.EventEmitter {
                 methods: ['GET', 'POST']
             }
         });
-        // Set up basic error handling
+        // Set up error handling
         this.httpServer.on('error', (error) => {
             this.emit('error', error);
         });
@@ -240,6 +285,79 @@ class ThaliaServer extends events_1.EventEmitter {
         this.socketServer.on('connection', (socket) => {
             this.emit('connection', socket);
         });
+    }
+    async handleRequest(req, res) {
+        try {
+            // Only handle GET requests
+            if (req.method !== 'GET') {
+                res.writeHead(405);
+                res.end('Method Not Allowed');
+                return;
+            }
+            // Get the requested path
+            const requestUrl = req.url || '/';
+            const host = req.headers.host || 'localhost';
+            const url = new URL(requestUrl, `http://${host}`);
+            const requestPath = url.pathname;
+            // Determine the project name from the host
+            const projectName = this.mode === 'multiplex' ? host.split('.')[0] : 'example';
+            // Build the file path
+            const filePath = path.join(this.rootPath, 'websites', projectName, 'public', requestPath === '/' ? 'index.html' : requestPath);
+            // Check if file exists
+            try {
+                await fs.promises.access(filePath);
+            }
+            catch {
+                res.writeHead(404);
+                res.end('Not Found');
+                return;
+            }
+            // Get file stats
+            const stats = await fs.promises.stat(filePath);
+            if (!stats.isFile()) {
+                res.writeHead(404);
+                res.end('Not Found');
+                return;
+            }
+            // Set content type
+            const ext = path.extname(filePath);
+            const contentType = this.getContentType(ext);
+            res.setHeader('Content-Type', contentType);
+            // Stream the file
+            const stream = fs.createReadStream(filePath);
+            stream.pipe(res);
+            // Handle stream errors
+            stream.on('error', (error) => {
+                console.error('Error streaming file:', error);
+                if (!res.headersSent) {
+                    res.writeHead(500);
+                    res.end('Internal Server Error');
+                }
+            });
+        }
+        catch (error) {
+            console.error('Error handling request:', error);
+            if (!res.headersSent) {
+                res.writeHead(500);
+                res.end('Internal Server Error');
+            }
+        }
+    }
+    getContentType(ext) {
+        const contentTypes = {
+            '.html': 'text/html',
+            '.css': 'text/css',
+            '.js': 'text/javascript',
+            '.json': 'application/json',
+            '.png': 'image/png',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.gif': 'image/gif',
+            '.svg': 'image/svg+xml',
+            '.ico': 'image/x-icon',
+            '.txt': 'text/plain'
+        };
+        return contentTypes[ext] || 'application/octet-stream';
     }
     /**
      * Starts the server and begins listening for connections
@@ -249,7 +367,7 @@ class ThaliaServer extends events_1.EventEmitter {
         return new Promise((resolve, reject) => {
             try {
                 this.httpServer.listen(this.port, () => {
-                    console.log(`Thalia server running in ${this.mode} mode on port ${this.port}`);
+                    console.log(`Server running in ${this.mode} mode on port ${this.port}`);
                     this.emit('started');
                     resolve();
                 });
@@ -268,7 +386,7 @@ class ThaliaServer extends events_1.EventEmitter {
             try {
                 this.socketServer.close(() => {
                     this.httpServer.close(() => {
-                        console.log('Thalia server stopped');
+                        console.log('Server stopped');
                         this.emit('stopped');
                         resolve();
                     });
@@ -315,5 +433,5 @@ class ThaliaServer extends events_1.EventEmitter {
         return this.socketServer;
     }
 }
-exports.ThaliaServer = ThaliaServer;
+exports.Server = Server;
 //# sourceMappingURL=server.js.map

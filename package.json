@@ -17,13 +17,32 @@
     }
   },
   "bin": {
-    "thalia": "./bin/thalia.js"
+    "thalia": "./dist/bin/thalia.js",
+    "thalia-init": "./dist/bin/create-project.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "start": "node dist/bin/thalia.js",
+    "build": "node dist/bin/build.js",
+    "dev": "node dist/bin/develop.js",
+    "serve": "node dist/bin/thalia.js --serve",
+    "init": "node dist/bin/create-project.js",
+    "build:ts": "tsc",
+    "watch:ts": "tsc -w",
+    "watch:scss": "sass --watch src/scss:public/css",
+    "clean": "rimraf dist public",
+    "buildServer": "cd server; tsc",
+    "prepublishOnly": "npm run build:ts"
   },
   "dependencies": {
     "formidable": "^3.5.1",
     "handlebars": "^4.7.8",
     "http-proxy": "^1.18.1",
-    "lodash": "^4.17.21",
     "mime": "^2.6.0",
     "minimist": "^1.2.8",
     "nodemailer": "^6.9.13",
@@ -32,41 +51,28 @@
     "sass": "1.77.6",
     "sequelize": "^6.37.2",
     "socket.io": "^4.7.5",
-    "sqlite3": "^5.1.7",
-    "zlib": "^1.0.5"
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-    "@types/d3": "^7.4.3",
-    "@types/d3-collection": "^1.0.13",
-    "@types/d3-selection": "^3.0.10",
-    "@types/d3-selection-multi": "^1.0.14",
-    "@types/d3-voronoi": "^1.1.12",
     "@types/formidable": "^3.4.5",
     "@types/http-proxy": "^1.17.14",
-    "@types/jquery": "^3.5.29",
-    "@types/lodash": "^4.17.0",
     "@types/mime": "^2.0.3",
     "@types/node": "^20.12.5",
     "@types/nodemailer": "^6.4.14",
     "@types/sequelize": "^4.28.20",
-    "@types/showdown": "^1.9.4",
     "@types/socket.io": "^3.0.2",
-    "@types/validator": "^13.11.9",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "autoprefixer": "10.2.6",
     "clean-webpack-plugin": "^4.0.0",
-    "concurrently": "^9.1.2",
     "copy-webpack-plugin": "^12.0.2",
     "css-loader": "^6.11.0",
     "css-minimizer-webpack-plugin": "^6.0.0",
     "eslint": "^7.32.0",
     "eslint-config-standard": "^16.0.3",
-    "eslint-config-standard-jsx": "^10.0.0",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^5.2.0",
-    "eslint-plugin-react": "^7.34.1",
     "fork-ts-checker-webpack-plugin": "^9.1.0",
     "handlebars-loader": "^1.7.3",
     "html-webpack-plugin": "^5.6.3",
@@ -74,7 +80,6 @@
     "postcss": "^8.4.38",
     "postcss-loader": "^8.1.1",
     "sass-loader": "^14.2.1",
-    "sequelize-cli": "^6.6.2",
     "style-loader": "^3.3.4",
     "terser-webpack-plugin": "^5.3.14",
     "ts-loader": "^9.5.2",
@@ -87,24 +92,12 @@
   "engines": {
     "node": ">=10"
   },
-  "scripts": {
-    "start": "node bin/thalia.js",
-    "build": "node bin/build.js",
-    "dev": "node bin/develop.js",
-    "start:project": "node bin/thalia.js --project",
-    "build:ts": "tsc",
-    "watch:ts": "tsc -w",
-    "watch:scss": "sass --watch src/scss:public/css",
-    "clean": "rimraf dist public",
-    "buildServer": "cd server; tsc",
-    "create-project": "node bin/create-project.js"
-  },
   "nodemonConfig": {
-    "exec": "node bin/thalia.js",
+    "exec": "node dist/bin/thalia.js",
     "verbose": true,
     "watch": [
-      "./server/thalia.js",
-      "./server/helpers.js",
+      "./dist/server/core/*.js",
+      "./dist/server/core/**/*.js",
       "./websites/**/config.js",
       "./websites/**/config/*.js",
       "./websites/**/db_bootstrap.js",

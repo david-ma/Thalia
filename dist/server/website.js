@@ -29,6 +29,7 @@ const path_1 = __importDefault(require("path"));
 const handlebars_1 = __importDefault(require("handlebars"));
 const sass_1 = __importDefault(require("sass"));
 const process_1 = require("process");
+const route_guard_1 = require("./route-guard");
 class Website {
     /**
      * Creates a new Website instance
@@ -38,11 +39,13 @@ class Website {
         this.handlebars = handlebars_1.default.create();
         this.domains = [];
         this.controllers = {};
+        this.routes = {};
         this.name = config.name;
         this.config = config;
         this.rootPath = config.rootPath;
         this.loadPartials();
         this.loadConfig();
+        this.routeGuard = new route_guard_1.RouteGuard(this);
     }
     loadConfig() {
         // check if we have a config.js in the project folder, and import it if it exists
@@ -126,8 +129,11 @@ class Website {
         return views;
     }
     handleRequest(req, res) {
-        // console.debug("We have a request for: ", req.url)
-        // Get the requested file path
+        // Let the route guard handle the request first
+        if (this.routeGuard.handleRequest(req, res)) {
+            return; // Request was handled by the guard
+        }
+        // Continue with normal request handling
         const url = new URL(req.url || '/', `http://${req.headers.host}`);
         const pathname = url.pathname === '/' ? '/index.html' : url.pathname;
         const filePath = path_1.default.join(this.rootPath, 'public', pathname);
@@ -204,11 +210,10 @@ class Website {
                 rootPath: path_1.default.join(options.rootPath, website)
             }));
         }
-        const website = new Website({
-            name: options.project,
-            rootPath: options.rootPath
-        });
-        return [website];
+        return [new Website({
+                name: options.project,
+                rootPath: options.rootPath
+            })];
     }
 }
 exports.Website = Website;

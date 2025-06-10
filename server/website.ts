@@ -19,13 +19,14 @@
  * - Request processing (handled by Handler)
  */
 
-import { Website as IWebsite, WebsiteConfig, ServerOptions } from './types'
+import { Website as IWebsite, WebsiteConfig, ServerOptions, RouteRule } from './types'
 import fs from 'fs'
 import path from 'path'
 import { IncomingMessage, ServerResponse } from 'http'
 import Handlebars from 'handlebars'
 import sass from 'sass'
 import { cwd } from 'process'
+import { RouteGuard } from './route-guard'
 
 interface Views {
   [key: string]: string;
@@ -46,6 +47,8 @@ export class Website implements IWebsite {
   public handlebars = Handlebars.create()
   public domains: string[] = []
   public controllers: { [key: string]: Controller } = {}
+  public routes: { [key: string]: RouteRule } = {}
+  private routeGuard: RouteGuard
 
   /**
    * Creates a new Website instance
@@ -57,6 +60,7 @@ export class Website implements IWebsite {
     this.rootPath = config.rootPath
     this.loadPartials()
     this.loadConfig()
+    this.routeGuard = new RouteGuard(this)
   }
 
   private loadConfig() {
@@ -151,15 +155,17 @@ export class Website implements IWebsite {
   }
 
   public handleRequest(req: IncomingMessage, res: ServerResponse): void {
-    // console.debug("We have a request for: ", req.url)
+    // Let the route guard handle the request first
+    if (this.routeGuard.handleRequest(req, res)) {
+      return // Request was handled by the guard
+    }
 
-    // Get the requested file path
+    // Continue with normal request handling
     const url = new URL(req.url || '/', `http://${req.headers.host}`)
     const pathname = url.pathname === '/' ? '/index.html' : url.pathname
 
     const filePath = path.join(this.rootPath, 'public', pathname)
     const sourcePath = filePath.replace('public', 'src')
-
 
     const controllerPath = pathname.split('/')[1]
     if (controllerPath) {
@@ -243,11 +249,10 @@ export class Website implements IWebsite {
       }))
     }
 
-    const website = new Website({
+    return [new Website({
       name: options.project,
       rootPath: options.rootPath
-    })
-    return [website]
+    })]
   }
 }
 

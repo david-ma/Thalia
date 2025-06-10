@@ -9,16 +9,19 @@ const path_1 = __importDefault(require("path"));
 const handlebars_1 = __importDefault(require("handlebars"));
 const sass_1 = __importDefault(require("sass"));
 const process_1 = require("process");
+const route_guard_1 = require("./route-guard");
 class Website {
     constructor(config) {
         this.handlebars = handlebars_1.default.create();
         this.domains = [];
         this.controllers = {};
+        this.routes = {};
         this.name = config.name;
         this.config = config;
         this.rootPath = config.rootPath;
         this.loadPartials();
         this.loadConfig();
+        this.routeGuard = new route_guard_1.RouteGuard(this);
     }
     loadConfig() {
         if (fs_1.default.existsSync(path_1.default.join(this.rootPath, 'config', 'config.js'))) {
@@ -88,6 +91,9 @@ class Website {
         return views;
     }
     handleRequest(req, res) {
+        if (this.routeGuard.handleRequest(req, res)) {
+            return;
+        }
         const url = new URL(req.url || '/', `http://${req.headers.host}`);
         const pathname = url.pathname === '/' ? '/index.html' : url.pathname;
         const filePath = path_1.default.join(this.rootPath, 'public', pathname);
@@ -156,11 +162,10 @@ class Website {
                 rootPath: path_1.default.join(options.rootPath, website)
             }));
         }
-        const website = new Website({
-            name: options.project,
-            rootPath: options.rootPath
-        });
-        return [website];
+        return [new Website({
+                name: options.project,
+                rootPath: options.rootPath
+            })];
     }
 }
 exports.Website = Website;

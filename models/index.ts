@@ -1,31 +1,53 @@
 import { Sequelize, Options } from '@sequelize/core'
+import { MariaDbDialect } from '@sequelize/mariadb'
 import { User, UserFactory } from './security'
 import { Session, SessionFactory } from './security'
 import { Audit, AuditFactory } from './security'
 import { SeqObject } from './types'
+import { AlbumFactory, ImageFactory } from './smugmug'
 
-export function securityFactory(seqOptions: Options): SeqObject {
-  if (!seqOptions.dialect) {
-    seqOptions.dialect = 'mariadb'
+export interface DatabaseConfig {
+  dialect: 'mariadb'
+  host: string
+  port: number
+  database: string
+  user: string
+  password: string
+  logging?: false | ((sql: string, timing?: number) => void)
+  pool?: {
+    max?: number
+    min?: number
+    acquire?: number
+    idle?: number
   }
-  
-  seqOptions.logging = seqOptions.logging || false
-  seqOptions.dialectOptions = seqOptions.dialectOptions || {
-    decimalNumbers: true,
-  }
-  seqOptions.define = seqOptions.define || { 
-    underscored: true,
-    timestamps: true
+}
+
+export function securityFactory(config: DatabaseConfig): SeqObject {
+  const options: Options<MariaDbDialect> = {
+    dialect: 'mariadb',
+    host: config.host,
+    port: config.port,
+    database: config.database,
+    user: config.user,
+    password: config.password,
+    logging: config.logging ?? false,
+    pool: config.pool || {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    },
+    define: {
+      underscored: true,
+      timestamps: true
+    }
   }
 
-  const sequelize = new Sequelize(seqOptions)
-  
-  // Initialize models
+  const sequelize = new Sequelize(options)
   const User = UserFactory(sequelize)
   const Session = SessionFactory(sequelize)
   const Audit = AuditFactory(sequelize)
 
-  // Set up associations
   Session.belongsTo(User, { foreignKey: 'userId', targetKey: 'id' })
   User.hasMany(Session, { foreignKey: 'userId', sourceKey: 'id' })
 
@@ -46,18 +68,45 @@ export function securityFactory(seqOptions: Options): SeqObject {
 // Export all models
 export * from './security'
 
-import { AlbumFactory, ImageFactory } from './smugmug'
-export function smugmugFactory(seqOptions: Options): SeqObject {
-  if (!seqOptions.dialect) {
-    seqOptions.dialect = 'sqlite'
-    seqOptions.storage = seqOptions.storage || `${__dirname}/database.sqlite`
+export interface SmugmugConfig {
+  dialect: 'sqlite3'
+  storage: string
+  logging?: false | ((sql: string, timing?: number) => void)
+  pool?: {
+    max?: number
+    min?: number
+    acquire?: number
+    idle?: number
   }
-  seqOptions.logging = seqOptions.logging || false
-  seqOptions.dialectOptions = seqOptions.dialectOptions || {
-    decimalNumbers: true,
+}
+
+export interface SmugmugObject extends SeqObject {
+  Album: typeof AlbumFactory
+  Image: typeof ImageFactory
+}
+
+export function smugmugFactory(config: DatabaseConfig): SeqObject {
+  const options: Options<MariaDbDialect> = {
+    dialect: 'mariadb',
+    host: config.host,
+    port: config.port,
+    database: config.database,
+    user: config.user,
+    password: config.password,
+    logging: config.logging ?? false,
+    pool: config.pool || {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    },
+    define: {
+      underscored: true,
+      timestamps: true
+    }
   }
-  seqOptions.define = seqOptions.define || { underscored: true }
-  const sequelize: any = new Sequelize(seqOptions)
+
+  const sequelize = new Sequelize(options)
   const Album = AlbumFactory(sequelize)
   const Image = ImageFactory(sequelize)
 

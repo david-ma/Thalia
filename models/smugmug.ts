@@ -1,34 +1,24 @@
 import {
-  ModelStatic,
+  Model,
   DataTypes,
   Sequelize,
-  BuildOptions,
-  Model,
-} from 'sequelize'
+  InferAttributes,
+  InferCreationAttributes,
+  CreationOptional,
+} from '@sequelize/core'
 
-export interface AlbumAttributes {
-  id: string
-  description: string
-  name: string
-  privacy: string
-  url: string
-  password: string
-}
-export interface AlbumModel extends Model<AlbumAttributes>, AlbumAttributes {}
-export class Album extends Model {
-  public id!: string
-  public description!: string
-  public name!: string
-  public privacy!: string
-  public url!: string
-  public password!: string
+export class Album extends Model<InferAttributes<Album>, InferCreationAttributes<Album>> {
+  declare id: string
+  declare description: string
+  declare name: string
+  declare privacy: string
+  declare url: string
+  declare password: string
+  declare createdAt: CreationOptional<Date>
+  declare updatedAt: CreationOptional<Date>
 }
 
-export type AlbumStatic = ModelStatic<Album> & {
-  new (values?: object, options?: BuildOptions): AlbumModel
-}
-
-export function AlbumFactory(sequelize: Sequelize): AlbumStatic {
+export function AlbumFactory(sequelize: Sequelize): typeof Album {
   return Album.init({
     id: {
       type: DataTypes.STRING,
@@ -45,46 +35,27 @@ export function AlbumFactory(sequelize: Sequelize): AlbumStatic {
   })
 }
 
-export interface ImageAttributes {
-  id: string
-  caption: string
-  albumId: string
-  filename: string
-  url: string
-  originalSize: number
-  originalWidth: number
-  originalHeight: number
-  thumbnailUrl: string
-  archivedUri: string
-  archivedSize: number
-  archivedMD5: string
-  imageKey: string
-  preferredDisplayFileExtension: string
-  uri: string
-}
-export interface ImageModel extends Model<ImageAttributes>, ImageAttributes {}
-export class Image extends Model {
-  public id!: string
-  public caption!: string
-  public albumId!: string
-  public filename!: string
-  public url!: string
-  public originalSize!: number
-  public originalWidth!: number
-  public originalHeight!: number
-  public thumbnailUrl!: string
-  public archivedUri!: string
-  public archivedSize!: number
-  public archivedMD5!: string
-  public imageKey!: string
-  public preferredDisplayFileExtension!: string
-  public uri!: string
-}
-export type ImageStatic = ModelStatic<Image> & {
-  new (values?: object, options?: BuildOptions): ImageModel
+export class Image extends Model<InferAttributes<Image>, InferCreationAttributes<Image>> {
+  declare id: string
+  declare caption: string
+  declare albumId: string
+  declare filename: string
+  declare url: string
+  declare originalSize: number
+  declare originalWidth: number
+  declare originalHeight: number
+  declare thumbnailUrl: string
+  declare archivedUri: string
+  declare archivedSize: number
+  declare archivedMD5: string
+  declare imageKey: string
+  declare preferredDisplayFileExtension: string
+  declare uri: string
+  declare createdAt: CreationOptional<Date>
+  declare updatedAt: CreationOptional<Date>
 }
 
-export function ImageFactory(sequelize: Sequelize): ImageStatic {
+export function ImageFactory(sequelize: Sequelize): typeof Image {
   return Image.init({
     id: {
       type: DataTypes.STRING,

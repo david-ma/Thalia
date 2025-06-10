@@ -68,4 +68,3 @@ export declare const controllerFactories: {
  */
 export declare const latestlogs: (res: ServerResponse, _req: IncomingMessage, website: Website) => Promise<void>;
 export {};
-//# sourceMappingURL=website.d.ts.map

@@ -11,6 +11,16 @@
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
+    "./models": {
+      "import": "./dist/models/index.js",
+      "require": "./dist/models/index.js",
+      "types": "./dist/models/index.d.ts"
+    },
+    "./core": {
+      "import": "./dist/server/core/index.js",
+      "require": "./dist/server/core/index.js",
+      "types": "./dist/server/core/index.d.ts"
+    },
     "./bin/*": {
       "import": "./dist/bin/*.js",
       "require": "./dist/bin/*.js"
@@ -39,9 +49,11 @@
     "prepublishOnly": "npm run build:ts"
   },
   "dependencies": {
+    "@sequelize/mariadb": "7.0.0-alpha.46",
     "formidable": "^3.5.1",
     "handlebars": "^4.7.8",
-    "sass": "1.77.6"
+    "sass": "1.77.6",
+    "sequelize": "git://github.com/sequelize/sequelize.git#v7.0.0-alpha.46"
   },
   "devDependencies": {
     "@types/formidable": "^3.4.5",
@@ -49,7 +61,6 @@
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "autoprefixer": "10.2.6",
-    "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^12.0.2",
     "css-loader": "^6.11.0",
     "css-minimizer-webpack-plugin": "^6.0.0",

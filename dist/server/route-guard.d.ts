@@ -12,4 +12,3 @@ export declare class RouteGuard {
     private handleProxy;
     private parseCookies;
 }
-//# sourceMappingURL=route-guard.d.ts.map

@@ -41,16 +41,26 @@
     "noUncheckedIndexedAccess": true,
     "noPropertyAccessFromIndexSignature": true,
     "exactOptionalPropertyTypes": true,
-    "noErrorTruncation": true
+    "noErrorTruncation": true,
+
+    // Path Aliases
+    "baseUrl": ".",
+    "paths": {
+      "@thalia/*": ["server/*"],
+      "@thalia/core/*": ["server/core/*"],
+      "@thalia/models/*": ["models/*"]
+    }
   },
   "include": [
     "server/**/*",
-    "bin/**/*"
+    "models/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "websites",
     "public",
+    "examples",
+    "tests"
   ]
 } 

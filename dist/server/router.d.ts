@@ -9,4 +9,3 @@ export declare class Router {
     constructor(websites: Website[]);
     getWebsite(domain: string): Website;
 }
-//# sourceMappingURL=router.d.ts.map

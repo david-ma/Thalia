@@ -21,4 +21,3 @@ export declare class Thalia {
     stop(): Promise<void>;
     getServer(): Server;
 }
-//# sourceMappingURL=index.d.ts.map

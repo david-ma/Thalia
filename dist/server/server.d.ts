@@ -21,4 +21,3 @@ export declare class Server extends EventEmitter {
     getMode(): ServerMode;
     getPort(): number;
 }
-//# sourceMappingURL=server.d.ts.map

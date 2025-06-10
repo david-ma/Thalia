@@ -1,6 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+// const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const fs = require('fs');
 const Handlebars = require('handlebars');
@@ -56,7 +56,7 @@ registerPartials();
 
 // Create plugins array
 const plugins = [
-  new CleanWebpackPlugin(),
+  // new CleanWebpackPlugin(), // This is far too old. Just clean the dist folder ourselves?
   new HtmlWebpackPlugin({
     template: templateFile,
     filename: 'index.html',

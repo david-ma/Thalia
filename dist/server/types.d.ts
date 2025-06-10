@@ -47,4 +47,3 @@ export interface Website {
     readonly rootPath: string;
     handleRequest(req: IncomingMessage, res: ServerResponse): void;
 }
-//# sourceMappingURL=types.d.ts.map

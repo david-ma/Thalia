@@ -15,22 +15,25 @@ export class Server extends EventEmitter {
   private port: number
   private mode: ServerMode
   public router: Router
+  private project: string
 
   constructor(options: ServerOptions, websites: Website[]) {
     super()
     this.port = options.port || 3000
     this.mode = options.mode || 'development'
+    this.project = options.project || 'default'
 
     this.router = new Router(websites)
   }
 
   private handleRequest(req: IncomingMessage, res: ServerResponse): void {
-    const website = this.router.getWebsite(req.url || '/')
+    const domain = req.headers.host?.split(':')[0]
+    const website = this.router.getWebsite(domain || this.project)
     if (website) {
       website.handleRequest(req, res)
     } else {
       res.writeHead(404)
-      res.end('Not Found')
+      res.end('No website Found')
     }
   }
 

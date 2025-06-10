@@ -47,7 +47,7 @@ class Website {
         // Get the requested file path
         const url = new URL(req.url || '/', `http://${req.headers.host}`);
         const pathname = url.pathname === '/' ? '/index.html' : url.pathname;
-        const filePath = path_1.default.join(this.rootPath, pathname);
+        const filePath = path_1.default.join(this.rootPath, 'public', pathname);
         // Check if file exists
         if (!fs_1.default.existsSync(filePath)) {
             res.writeHead(404);

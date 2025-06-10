@@ -5,7 +5,8 @@
 import { Website } from './types';
 export declare class Router {
     private websites;
+    private default;
     constructor(websites: Website[]);
-    getWebsite(path: string): Website | null;
+    getWebsite(domain: string): Website;
 }
 //# sourceMappingURL=router.d.ts.map

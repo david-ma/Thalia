@@ -13,6 +13,7 @@ export declare class Server extends EventEmitter {
     private port;
     private mode;
     router: Router;
+    private project;
     constructor(options: ServerOptions, websites: Website[]);
     private handleRequest;
     start(): Promise<void>;

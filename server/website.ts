@@ -53,7 +53,7 @@ export class Website implements IWebsite {
     // Get the requested file path
     const url = new URL(req.url || '/', `http://${req.headers.host}`)
     const pathname = url.pathname === '/' ? '/index.html' : url.pathname
-    const filePath = path.join(this.rootPath, pathname)
+    const filePath = path.join(this.rootPath, 'public', pathname)
 
     // Check if file exists
     if (!fs.existsSync(filePath)) {

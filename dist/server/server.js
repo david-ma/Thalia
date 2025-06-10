@@ -15,16 +15,18 @@ class Server extends events_1.EventEmitter {
         this.httpServer = null;
         this.port = options.port || 3000;
         this.mode = options.mode || 'development';
+        this.project = options.project || 'default';
         this.router = new router_1.Router(websites);
     }
     handleRequest(req, res) {
-        const website = this.router.getWebsite(req.url || '/');
+        const domain = req.headers.host?.split(':')[0];
+        const website = this.router.getWebsite(domain || this.project);
         if (website) {
             website.handleRequest(req, res);
         }
         else {
             res.writeHead(404);
-            res.end('Not Found');
+            res.end('No website Found');
         }
     }
     async start() {

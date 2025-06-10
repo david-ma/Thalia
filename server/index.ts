@@ -4,57 +4,42 @@ const requestHandlers = require('./requestHandlers')
 const fs = require('fs')
 
 function startServer() {
-  var argv = require('minimist')(process.argv.slice(2))
+  const argv = require('minimist')(process.argv.slice(2), {
+    string: ['project', 'port'],
+    default: {
+      port: '1337',
+      project: 'default'
+    }
+  })
 
-  let port: string = '1337' // change the port here?
-  const pattern = /^\d{0,5}$/
-  let workspace = 'default'
+  const port = argv.port
+  const project = argv.project
 
-  if (process.argv[2] !== null && pattern.exec(process.argv[2])) {
-    port = process.argv[2]
-  } else if (process.argv[3] !== null && pattern.exec(process.argv[3])) {
-    port = process.argv[3]
-  }
-
-  // Todo: we should check that the workspace exists, otherwise leave it as default
-  if (
-    process.argv[2] !== null &&
-    process.argv[2] !== undefined &&
-    !pattern.exec(process.argv[2])
-  ) {
-    workspace = process.argv[2]
-  } else if (
-    process.argv[3] !== null &&
-    process.argv[3] !== undefined &&
-    !pattern.exec(process.argv[3])
-  ) {
-    workspace = process.argv[3]
-  }
-
-  if (argv.s !== undefined) {
-    workspace = argv.w
-  }
-  if (argv.site !== undefined) {
-    workspace = argv.site
-  }
-
-  if (argv.p !== undefined && pattern.exec(argv.port)) {
-    port = argv.p
-  }
-  if (argv.port !== undefined && pattern.exec(argv.port)) {
-    port = argv.port
-  }
-
-  if (fs.existsSync(`websites/${workspace}`)) {
-    console.log(`Setting workspace to websites/${workspace}`)
-  } else if (fs.existsSync('config.js') || fs.existsSync('config/config.js')) {
-    console.log('Thalia running in stand alone mode.')
-  } else {
-    console.error(`Error. ${workspace} is an invalid workspace`)
+  // Validate port
+  const portPattern = /^\d{0,5}$/
+  if (!portPattern.test(port)) {
+    console.error('Invalid port number. Must be between 0 and 65535')
     process.exit(1)
   }
 
-  requestHandlers.handle.index.localhost = workspace
+  // If no project specified, run in multi-project mode
+  if (!project) {
+    console.log('Running in multi-project mode - serving all projects')
+    requestHandlers.handle.index.localhost = 'default'
+  } else {
+    // Validate project exists
+    if (fs.existsSync(`websites/${project}`)) {
+      console.log(`Setting project to websites/${project}`)
+      requestHandlers.handle.index.localhost = project
+    } else if (fs.existsSync('config.js') || fs.existsSync('config/config.js')) {
+      console.log('Thalia running in stand alone mode')
+      requestHandlers.handle.index.localhost = project
+    } else {
+      console.error(`Error: ${project} is an invalid project`)
+      process.exit(1)
+    }
+  }
+
   requestHandlers.handle.loadAllWebsites()
   server.start(router.router, requestHandlers.handle, port)
 }

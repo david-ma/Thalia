@@ -8,7 +8,7 @@ export declare class RouteGuard {
     constructor(website: Website);
     private loadRoutes;
     private saltPassword;
-    handleRequest(req: IncomingMessage, res: ServerResponse, website: Website): boolean;
+    handleRequest(req: IncomingMessage, res: ServerResponse, website: Website, optionalPathname?: string): boolean;
     private handleProxy;
     private parseCookies;
 }

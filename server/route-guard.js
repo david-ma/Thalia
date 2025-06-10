@@ -29,9 +29,9 @@ class RouteGuard {
         const buff = Buffer.from(password + this.salt);
         return encodeURIComponent(buff.toString('base64'));
     }
-    handleRequest(req, res, website) {
+    handleRequest(req, res, website, optionalPathname) {
         const url = new URL(req.url || '/', `http://${req.headers.host}`);
-        const pathname = url.pathname === '/' ? '/index.html' : url.pathname;
+        const pathname = optionalPathname ?? url.pathname ?? '/';
         const host = req.headers.host || 'localhost';
         const matchingRoute = Object.entries(this.routes).find(([key]) => pathname.startsWith(key.replace(host, '')))?.[1];
         if (matchingRoute) {

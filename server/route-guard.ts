@@ -35,9 +35,9 @@ export class RouteGuard {
     return encodeURIComponent(buff.toString('base64'))
   }
 
-  public handleRequest(req: IncomingMessage, res: ServerResponse, website: Website): boolean {
+  public handleRequest(req: IncomingMessage, res: ServerResponse, website: Website, optionalPathname?: string): boolean {
     const url = new URL(req.url || '/', `http://${req.headers.host}`)
-    const pathname = url.pathname === '/' ? '/index.html' : url.pathname
+    const pathname = optionalPathname ?? url.pathname ?? '/'
     const host = req.headers.host || 'localhost'
 
     const matchingRoute = Object.entries(this.routes).find(([key]) =>

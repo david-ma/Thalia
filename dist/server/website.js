@@ -130,15 +130,21 @@ class Website {
     }
     handleRequest(req, res, pathname) {
         // Let the route guard handle the request first
-        if (this.routeGuard.handleRequest(req, res, this)) {
+        if (this.routeGuard.handleRequest(req, res, this, pathname)) {
             return; // Request was handled by the guard
         }
         // Continue with normal request handling
         const url = new URL(req.url || '/', `http://${req.headers.host}`);
         pathname = pathname || url.pathname;
+        const parts = pathname.split('/');
+        if (parts.some(part => part === '..')) {
+            res.writeHead(400);
+            res.end('Bad Request');
+            return;
+        }
         const filePath = path_1.default.join(this.rootPath, 'public', pathname);
         const sourcePath = filePath.replace('public', 'src');
-        const controllerPath = pathname.split('/')[1];
+        const controllerPath = parts[1];
         if (controllerPath) {
             const controller = this.controllers[controllerPath];
             if (controller) {

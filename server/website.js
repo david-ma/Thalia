@@ -91,14 +91,20 @@ class Website {
         return views;
     }
     handleRequest(req, res, pathname) {
-        if (this.routeGuard.handleRequest(req, res, this)) {
+        if (this.routeGuard.handleRequest(req, res, this, pathname)) {
             return;
         }
         const url = new URL(req.url || '/', `http://${req.headers.host}`);
         pathname = pathname || url.pathname;
+        const parts = pathname.split('/');
+        if (parts.some(part => part === '..')) {
+            res.writeHead(400);
+            res.end('Bad Request');
+            return;
+        }
         const filePath = path_1.default.join(this.rootPath, 'public', pathname);
         const sourcePath = filePath.replace('public', 'src');
-        const controllerPath = pathname.split('/')[1];
+        const controllerPath = parts[1];
         if (controllerPath) {
             const controller = this.controllers[controllerPath];
             if (controller) {
@@ -128,12 +134,16 @@ class Website {
             return;
         }
         else if (fs_1.default.statSync(filePath).isDirectory()) {
-            const indexPath = path_1.default.join(filePath, 'index.html');
-            if (fs_1.default.existsSync(indexPath)) {
-                const stream = fs_1.default.createReadStream(indexPath);
-                stream.pipe(res);
-                return;
+            try {
+                const indexPath = path_1.default.join(url.pathname, 'index.html');
+                this.handleRequest(req, res, indexPath);
             }
+            catch (error) {
+                console.error("Error serving index.html for ", url.pathname, error);
+                res.writeHead(404);
+                res.end('Not Found');
+            }
+            return;
         }
         const stream = fs_1.default.createReadStream(filePath);
         stream.on('error', (error) => {

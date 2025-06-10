@@ -1,23 +1,25 @@
-/**
- * Thalia server.
- * 
- * Class which allows initialisation of a server.
- */
-
-
-
 import { IncomingMessage, ServerResponse } from 'http'
-import { createServer, Server as HttpServer } from 'http'
-import { Server as SocketServer } from 'socket.io'
-import { EventEmitter } from 'events'
+import { socketInit } from './socket'
+import { Thalia } from './thalia'
 
 // server.ts
 import http = require('http')
 import url = require('url')
 import httpProxy = require('http-proxy')
+// import httpsProxy = require('https-proxy-agent')
 
+import { Server as SocketIoServer } from 'socket.io'
+const socketIO = new SocketIoServer({
+  /* options */
+})
 
 import formidable = require('formidable')
+
+let blacklist: string[] = []
+try {
+  blacklist = require('../blacklist').blacklist
+  // console.log('This is the blacklist:', blacklist)
+} catch (e) {}
 
 // This part of the server starts the server on port 80 and logs stuff to the std.out
 function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
@@ -31,6 +33,14 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
       request.headers['x-real-ip'] ||
       request.connection.remoteAddress ||
       request.socket.remoteAddress
+
+    if (!ip || !host || blacklist.some((thing) => ip.includes(thing))) {
+      // console.debug('Blocked request from:', ip, 'to', host)
+
+      response.writeHead(403)
+      response.end('Go away')
+      return
+    }
 
     // let port = host.split(":")[1] ? parseInt(host.split(":")[1]) : 80
     const hostname = host.split(':')[0]
@@ -134,6 +144,10 @@ function start(router: Thalia.Router, handle: Thalia.Handle, port: string) {
 
   console.log('Server has started on port: ' + port)
   server = http.createServer(onRequest).listen(port)
+
+  // const io = new socketIO.listen(server, {})
+  const io = socketIO.listen(server, {})
+  socketInit(io, handle)
 
   server.on('error', function (e: any) {
     console.log('Server error', e)
@@ -256,150 +270,3 @@ div {
 </div>
 </body>
 </html>`
-
-/**
- * ThaliaServer - Core server implementation
- * 
- * The server is responsible for:
- * 1. Creating and managing the HTTP server
- * 2. Setting up WebSocket connections
- * 3. Managing server lifecycle (start/stop)
- * 4. Emitting events for important server state changes
- * 
- * The server is the top-level component that:
- * - Listens on a specified port
- * - Handles incoming HTTP requests
- * - Manages WebSocket connections
- * - Provides server-wide configuration
- * 
- * It does NOT handle:
- * - Request routing (handled by Router)
- * - Request processing (handled by Handler)
- * - Website-specific logic (handled by Website)
- */
-
-export type ServerMode = 'standalone' | 'multiplex' | 'dev'
-
-export interface ServerOptions {
-  port: number
-  mode: ServerMode
-  rootPath?: string
-}
-
-export class ThaliaServer extends EventEmitter {
-  private httpServer: HttpServer
-  private socketServer: SocketServer
-  private port: number
-  private mode: ServerMode
-  private rootPath: string
-
-  /**
-   * Creates a new ThaliaServer instance
-   * @param options - Server configuration options
-   */
-  constructor(options: ServerOptions) {
-    super()
-    this.port = options.port
-    this.mode = options.mode
-    this.rootPath = options.rootPath || process.cwd()
-    
-    // Create HTTP server
-    this.httpServer = createServer()
-    
-    // Create Socket.IO server
-    this.socketServer = new SocketServer(this.httpServer, {
-      cors: {
-        origin: '*',
-        methods: ['GET', 'POST']
-      }
-    })
-
-    // Set up basic error handling
-    this.httpServer.on('error', (error: Error) => {
-      this.emit('error', error)
-    })
-
-    // Set up socket connection handling
-    this.socketServer.on('connection', (socket) => {
-      this.emit('connection', socket)
-    })
-  }
-
-  /**
-   * Starts the server and begins listening for connections
-   * @returns Promise that resolves when the server is started
-   */
-  public async start(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        this.httpServer.listen(this.port, () => {
-          console.log(`Thalia server running in ${this.mode} mode on port ${this.port}`)
-          this.emit('started')
-          resolve()
-        })
-      } catch (error) {
-        reject(error)
-      }
-    })
-  }
-
-  /**
-   * Stops the server and closes all connections
-   * @returns Promise that resolves when the server is stopped
-   */
-  public async stop(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        this.socketServer.close(() => {
-          this.httpServer.close(() => {
-            console.log('Thalia server stopped')
-            this.emit('stopped')
-            resolve()
-          })
-        })
-      } catch (error) {
-        reject(error)
-      }
-    })
-  }
-
-  /**
-   * Gets the current server mode
-   * @returns The server mode
-   */
-  public getMode(): ServerMode {
-    return this.mode
-  }
-
-  /**
-   * Gets the port the server is listening on
-   * @returns The server port
-   */
-  public getPort(): number {
-    return this.port
-  }
-
-  /**
-   * Gets the root path of the server
-   * @returns The server root path
-   */
-  public getRootPath(): string {
-    return this.rootPath
-  }
-
-  /**
-   * Gets the underlying HTTP server instance
-   * @returns The HTTP server
-   */
-  public getHttpServer(): HttpServer {
-    return this.httpServer
-  }
-
-  /**
-   * Gets the Socket.IO server instance
-   * @returns The Socket.IO server
-   */
-  public getSocketServer(): SocketServer {
-    return this.socketServer
-  }
-}

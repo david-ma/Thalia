@@ -1,14 +1,14 @@
 {
-  "extends": "../tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "../dist/server",
+    "outDir": "../../dist/core",
     "rootDir": ".",
     "composite": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
     "incremental": true,
-    "tsBuildInfoFile": "../dist/server/.tsbuildinfo"
+    "tsBuildInfoFile": "../../dist/core/.tsbuildinfo"
   },
   "include": [
     "**/*"
@@ -18,8 +18,5 @@
     "dist",
     "**/*.test.ts",
     "**/*.spec.ts"
-  ],
-  "references": [
-    { "path": "../core" }
   ]
-}
+} 

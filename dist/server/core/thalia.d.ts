@@ -1,9 +1,10 @@
-import { Thalia as ThaliaTypes } from './types';
-export declare class Thalia {
-    private server;
-    private websites;
-    private handlers;
-    constructor(options?: ThaliaTypes.ServerOptions);
-    start(port: number, project?: string): Promise<void>;
-    stop(): void;
+import { ThaliaServer } from '../server';
+import { ServerOptions } from './types';
+export interface Thalia {
+    start(): Promise<void>;
+    stop(): Promise<void>;
+    getServer(): ThaliaServer;
+}
+export interface ThaliaConstructor {
+    new (options: ServerOptions): Thalia;
 }

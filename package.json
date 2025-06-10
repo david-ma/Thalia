@@ -42,6 +42,7 @@
     "formidable": "^3.5.1",
     "handlebars": "^4.7.8",
     "http-proxy": "^1.18.1",
+    "http-proxy-middleware": "^3.0.5",
     "mime": "^2.6.0",
     "minimist": "^1.2.8",
     "nodemailer": "^6.9.13",

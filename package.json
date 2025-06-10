@@ -32,7 +32,6 @@
     "zlib": "^1.0.5"
   },
   "devDependencies": {
-    "@jest/globals": "^29.7.0",
     "@types/d3": "^7.4.3",
     "@types/d3-collection": "^1.0.13",
     "@types/d3-selection": "^3.0.10",
@@ -40,13 +39,11 @@
     "@types/d3-voronoi": "^1.1.12",
     "@types/formidable": "^3.4.5",
     "@types/http-proxy": "^1.17.14",
-    "@types/jest": "^29.5.12",
     "@types/jquery": "^3.5.29",
     "@types/lodash": "^4.17.0",
     "@types/mime": "^2.0.3",
     "@types/node": "^20.12.5",
     "@types/nodemailer": "^6.4.14",
-    "@types/puppeteer": "^7.0.4",
     "@types/sequelize": "^4.28.20",
     "@types/showdown": "^1.9.4",
     "@types/socket.io": "^3.0.2",
@@ -54,13 +51,9 @@
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "autoprefixer": "10.2.6",
-    "browser-sync": "^2.29.3",
-    "cssnano": "5.0.5",
-    "d3": "^5.16.0",
-    "d3-selection": "^2.0.0",
-    "d3-selection-multi": "^1.0.1",
-    "d3-transition": "^3.0.1",
-    "del": "6.0.0",
+    "clean-webpack-plugin": "^4.0.0",
+    "css-loader": "^6.10.0",
+    "css-minimizer-webpack-plugin": "^6.0.0",
     "eslint": "^7.32.0",
     "eslint-config-standard": "^16.0.3",
     "eslint-config-standard-jsx": "^10.0.0",
@@ -68,39 +61,32 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^5.2.0",
     "eslint-plugin-react": "^7.34.1",
-    "gulp": "4.0.2",
-    "gulp-cli": "^2.3.0",
-    "gulp-concat": "2.6.1",
-    "gulp-flatmap": "1.0.2",
-    "gulp-postcss": "9.0.0",
-    "gulp-rename": "2.0.0",
-    "gulp-sass": "5.0.0",
-    "gulp-terser": "2.0.1",
-    "jest": "^29.7.0",
-    "jest-puppeteer": "^10.0.1",
-    "jshint": "2.13.0",
-    "jshint-stylish": "2.2.1",
-    "lazypipe": "1.0.2",
+    "fork-ts-checker-webpack-plugin": "^9.0.2",
+    "handlebars-loader": "^1.7.3",
+    "html-webpack-plugin": "^5.6.0",
     "nodemon": "^3.1.0",
     "postcss": "^8.4.38",
-    "puppeteer": "^22.6.3",
-    "readline-sync": "^1.4.10",
+    "postcss-loader": "^8.1.0",
+    "sass-loader": "^14.1.0",
     "sequelize-cli": "^6.6.2",
+    "style-loader": "^3.3.4",
+    "terser-webpack-plugin": "^5.3.10",
+    "ts-loader": "^9.5.1",
     "typescript": "^4.9.5",
-    "x-ray": "^2.3.4",
-    "yargs": "^17.7.2"
+    "webpack": "^5.90.3",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.0.2",
+    "webpack-merge": "^5.10.0"
   },
   "engines": {
     "node": ">=10"
   },
   "scripts": {
     "start": "node bin/thalia.js",
-    "build": "./build.sh",
-    "watch": "./watch.sh",
-    "test": "./test.sh",
+    "build": "webpack --config webpack.prod.js",
+    "dev": "webpack serve --config webpack.dev.js",
     "buildServer": "cd server; tsc",
-    "watchTests": "cd test; tsc --preserveWatchOutput --watch",
-    "develop": "./develop.sh"
+    "develop": "nodemon"
   },
   "nodemonConfig": {
     "exec": "node bin/thalia.js",
@@ -119,8 +105,7 @@
       "views/*",
       "public/*",
       "*.ts",
-      "tsconfig.json",
-      "gulpfile.js"
+      "tsconfig.json"
     ],
     "delay": "500"
   },
@@ -139,10 +124,7 @@
     },
     "env": {
       "es6": true
-    },
-    "ignorePatterns": [
-      "gulpfile.js"
-    ]
+    }
   },
   "repository": {
     "type": "git",

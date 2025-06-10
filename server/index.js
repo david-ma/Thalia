@@ -38,6 +38,7 @@ function startServer() {
             process.exit(1);
         }
     }
+    console.log("Starting server for project:", project);
     requestHandlers.handle.loadAllWebsites();
     server.start(router.router, requestHandlers.handle, port);
 }

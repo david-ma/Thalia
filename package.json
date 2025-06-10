@@ -87,6 +87,11 @@
     "start": "node bin/thalia.js",
     "build": "node bin/build.js",
     "dev": "node bin/develop.js",
+    "start:project": "node bin/thalia.js --project",
+    "build:ts": "tsc",
+    "watch:ts": "tsc -w",
+    "watch:scss": "sass --watch src/scss:public/css",
+    "clean": "rimraf dist public",
     "buildServer": "cd server; tsc",
     "create-project": "node bin/create-project.js"
   },

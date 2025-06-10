@@ -94,7 +94,8 @@ class Website implements Thalia.WebsiteConfig {
 const handle: Thalia.Handle = {
   websites: {},
   index: { localhost: 'default' },
-  loadAllWebsites: function () {
+  loadAllWebsites: function (project: string = 'default') {
+    
     const standAlone: boolean = !fs.existsSync('websites')
 
     if (standAlone) {

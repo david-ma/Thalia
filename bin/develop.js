@@ -4,7 +4,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 // Get project name from command line arguments
-const projectName = process.argv[3] || 'example';
+const projectName = process.argv[2] || 'example';
 if (!projectName) {
   console.error('Please specify a project name');
   console.error('Usage: node bin/develop.js <project-name>');

@@ -1,47 +1,38 @@
-import * as server from './server'
-import * as router from './router'
-const requestHandlers = require('./requestHandlers')
-const fs = require('fs')
+import { Thalia } from './core/thalia'
 
-function startServer() {
-  const argv = require('minimist')(process.argv.slice(2), {
-    string: ['project', 'port'],
-    default: {
-      port: '1337',
-      project: 'default'
-    }
+export async function startServer(options: { port?: number; project?: string } = {}): Promise<void> {
+  const port = options.port || 3000
+  const project = options.project
+
+  const server = new Thalia({
+    defaultProject: project,
+    rootPath: process.cwd()
   })
 
-  const port = argv.port
-  const project = argv.project
-
-  // Validate port
-  const portPattern = /^\d{0,5}$/
-  if (!portPattern.test(port)) {
-    console.error('Invalid port number. Must be between 0 and 65535')
-    process.exit(1)
+  await server.start(port)
+  console.log(`Server started on port ${port}`)
+  if (project) {
+    console.log(`Serving project: ${project}`)
   }
+}
 
-  // If no project specified, run in multi-project mode
-  if (!project) {
-    console.log('Running in multi-project mode - serving all projects')
-    requestHandlers.handle.index.localhost = 'default'
-  } else {
-    // Validate project exists
-    if (fs.existsSync(`websites/${project}`)) {
-      console.log(`Setting project to websites/${project}`)
-      requestHandlers.handle.index.localhost = project
-    } else if (fs.existsSync('config.js') || fs.existsSync('config/config.js')) {
-      console.log('Thalia running in stand alone mode')
-      requestHandlers.handle.index.localhost = project
-    } else {
-      console.error(`Error: ${project} is an invalid project`)
-      process.exit(1)
+// Allow running directly from command line
+if (require.main === module) {
+  const args = process.argv.slice(2)
+  const options: { port?: number; project?: string } = {}
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--port' && i + 1 < args.length) {
+      options.port = parseInt(args[i + 1], 10)
+      i++
+    } else if (args[i] === '--project' && i + 1 < args.length) {
+      options.project = args[i + 1]
+      i++
     }
   }
 
-  requestHandlers.handle.loadAllWebsites()
-  server.start(router.router, requestHandlers.handle, port)
+  startServer(options).catch(err => {
+    console.error('Failed to start server:', err)
+    process.exit(1)
+  })
 }
-
-export { startServer }

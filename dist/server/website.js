@@ -128,14 +128,14 @@ class Website {
         });
         return views;
     }
-    handleRequest(req, res) {
+    handleRequest(req, res, pathname) {
         // Let the route guard handle the request first
         if (this.routeGuard.handleRequest(req, res, this)) {
             return; // Request was handled by the guard
         }
         // Continue with normal request handling
         const url = new URL(req.url || '/', `http://${req.headers.host}`);
-        const pathname = url.pathname === '/' ? '/index.html' : url.pathname;
+        pathname = pathname || url.pathname;
         const filePath = path_1.default.join(this.rootPath, 'public', pathname);
         const sourcePath = filePath.replace('public', 'src');
         const controllerPath = pathname.split('/')[1];
@@ -168,6 +168,18 @@ class Website {
         if (!fs_1.default.existsSync(filePath)) {
             res.writeHead(404);
             res.end('Not Found');
+            return;
+        }
+        else if (fs_1.default.statSync(filePath).isDirectory()) {
+            try {
+                const indexPath = path_1.default.join(url.pathname, 'index.html');
+                this.handleRequest(req, res, indexPath);
+            }
+            catch (error) {
+                console.error("Error serving index.html for ", url.pathname, error);
+                res.writeHead(404);
+                res.end('Not Found');
+            }
             return;
         }
         // Stream the file

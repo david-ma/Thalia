@@ -55,7 +55,7 @@ export declare class Website implements IWebsite {
      */
     private loadPartials;
     private readAllViewsInFolder;
-    handleRequest(req: IncomingMessage, res: ServerResponse): void;
+    handleRequest(req: IncomingMessage, res: ServerResponse, pathname?: string): void;
     private getContentType;
     static loadAllWebsites(options: ServerOptions): Website[];
 }

@@ -154,7 +154,7 @@ export class Website implements IWebsite {
     return views
   }
 
-  public handleRequest(req: IncomingMessage, res: ServerResponse): void {
+  public handleRequest(req: IncomingMessage, res: ServerResponse, pathname?: string): void {
     // Let the route guard handle the request first
     if (this.routeGuard.handleRequest(req, res, this)) {
       return // Request was handled by the guard
@@ -162,8 +162,8 @@ export class Website implements IWebsite {
 
     // Continue with normal request handling
     const url = new URL(req.url || '/', `http://${req.headers.host}`)
-    const pathname = url.pathname === '/' ? '/index.html' : url.pathname
 
+    pathname = pathname || url.pathname
     const filePath = path.join(this.rootPath, 'public', pathname)
     const sourcePath = filePath.replace('public', 'src')
 
@@ -200,6 +200,16 @@ export class Website implements IWebsite {
     if (!fs.existsSync(filePath)) {
       res.writeHead(404)
       res.end('Not Found')
+      return
+    } else if (fs.statSync(filePath).isDirectory()) {
+      try {
+        const indexPath = path.join(url.pathname, 'index.html')
+        this.handleRequest(req, res, indexPath)
+      } catch (error) {
+        console.error("Error serving index.html for ", url.pathname, error)
+        res.writeHead(404)
+        res.end('Not Found')
+      }
       return
     }
 

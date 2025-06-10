@@ -90,12 +90,12 @@ class Website {
         });
         return views;
     }
-    handleRequest(req, res) {
+    handleRequest(req, res, pathname) {
         if (this.routeGuard.handleRequest(req, res, this)) {
             return;
         }
         const url = new URL(req.url || '/', `http://${req.headers.host}`);
-        const pathname = url.pathname === '/' ? '/index.html' : url.pathname;
+        pathname = pathname || url.pathname;
         const filePath = path_1.default.join(this.rootPath, 'public', pathname);
         const sourcePath = filePath.replace('public', 'src');
         const controllerPath = pathname.split('/')[1];
@@ -126,6 +126,14 @@ class Website {
             res.writeHead(404);
             res.end('Not Found');
             return;
+        }
+        else if (fs_1.default.statSync(filePath).isDirectory()) {
+            const indexPath = path_1.default.join(filePath, 'index.html');
+            if (fs_1.default.existsSync(indexPath)) {
+                const stream = fs_1.default.createReadStream(indexPath);
+                stream.pipe(res);
+                return;
+            }
         }
         const stream = fs_1.default.createReadStream(filePath);
         stream.on('error', (error) => {

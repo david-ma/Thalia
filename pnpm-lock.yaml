@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@sequelize/core':
+    specifier: 7.0.0-alpha.46
+    version: 7.0.0-alpha.46
   '@sequelize/mariadb':
     specifier: 7.0.0-alpha.46
     version: 7.0.0-alpha.46
@@ -17,9 +20,6 @@ dependencies:
   sass:
     specifier: 1.77.6
     version: 1.77.6
-  sequelize:
-    specifier: git://github.com/sequelize/sequelize.git#v7.0.0-alpha.46
-    version: github.com/sequelize/sequelize/3629de34373c76a843c2fed960860970d1de966c
 
 devDependencies:
   '@types/formidable':
@@ -5386,11 +5386,3 @@ packages:
   /yallist@4.0.0:
     resolution: {integrity: sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==}
     dev: true
-
-  github.com/sequelize/sequelize/3629de34373c76a843c2fed960860970d1de966c:
-    resolution: {tarball: https://codeload.github.com/sequelize/sequelize/tar.gz/3629de34373c76a843c2fed960860970d1de966c}
-    name: '@sequelize/monorepo'
-    version: 0.0.0
-    prepare: true
-    requiresBuild: true
-    dev: false

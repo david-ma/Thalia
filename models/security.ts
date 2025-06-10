@@ -1,29 +1,23 @@
-import { ModelStatic, DataTypes, Sequelize } from 'sequelize'
-import { BuildOptions, Model } from 'sequelize'
+import { Model, InferAttributes, InferCreationAttributes, CreationOptional, DataTypes, Sequelize } from '@sequelize/core'
 
-export interface UserAttributes {
-  name: string
-  email: string
-  password: string
-  photo: string
-}
+// User Model
+export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
+  declare id: CreationOptional<number>
+  declare name: string
+  declare email: string
+  declare password: string
+  declare photo: CreationOptional<string>
+  declare role: CreationOptional<string>
+  declare locked: CreationOptional<boolean>
+  declare verified: CreationOptional<boolean>
+  declare createdAt: CreationOptional<Date>
+  declare updatedAt: CreationOptional<Date>
 
-export class User extends Model {
-  public id!: number
-
-  public name!: string
-  public email!: string
-  public password!: string
-  public photo: string
-  public role: string
-  public locked: boolean
-  public verified: boolean
-
-  public isAdmin() {
-    return this.role.indexOf('admin') > -1
+  isAdmin(): boolean {
+    return this.role?.indexOf('admin') > -1
   }
 
-  public getSessions() {
+  async getSessions() {
     return Session.findAll({
       where: {
         userId: this.id,
@@ -31,8 +25,8 @@ export class User extends Model {
     })
   }
 
-  public logout(sessionId: string) {
-    Session.destroy({
+  async logout(sessionId: string) {
+    return Session.destroy({
       where: {
         userId: this.id,
         sid: sessionId,
@@ -41,71 +35,107 @@ export class User extends Model {
   }
 }
 
-export interface UserModel extends Model<UserAttributes>, UserAttributes {}
-
-// export type UserStatic = typeof Model & {
-export type UserStatic = ModelStatic<User> & {
-  new (values?: object, options?: BuildOptions): UserModel
-}
-
-export function UserFactory(sequelize: Sequelize): UserStatic {
+export function UserFactory(sequelize: Sequelize) {
   return User.init(
     {
-      name: DataTypes.STRING,
-      email: DataTypes.STRING,
-      password: DataTypes.STRING,
-      photo: DataTypes.STRING,
-      role: DataTypes.STRING,
-      locked: DataTypes.BOOLEAN,
-      verified: DataTypes.BOOLEAN,
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+        validate: {
+          isEmail: true,
+        },
+      },
+      password: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      photo: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      role: {
+        type: DataTypes.STRING,
+        defaultValue: 'user',
+        validate: {
+          isIn: [['admin', 'user', 'guest']],
+        },
+      },
+      locked: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+      verified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+      createdAt: DataTypes.DATE,
+      updatedAt: DataTypes.DATE,
     },
     {
       sequelize,
       tableName: 'users',
+      hooks: {
+        beforeCreate: async (user: User) => {
+          if (user.password) {
+            // TODO: Add password hashing
+            // user.password = await hashPassword(user.password)
+          }
+        },
+      },
     }
   )
 }
 
-export interface SessionAttributes {
-  sid: string
-  expires: Date
-  data: Object
-  userId: number
-  loggedOut: boolean
-}
+// Session Model
+export class Session extends Model<InferAttributes<Session>, InferCreationAttributes<Session>> {
+  declare sid: string
+  declare expires: Date
+  declare data: CreationOptional<Record<string, any>>
+  declare userId: CreationOptional<number>
+  declare loggedOut: CreationOptional<boolean>
+  declare createdAt: CreationOptional<Date>
+  declare updatedAt: CreationOptional<Date>
 
-export interface SessionModel extends Model<SessionAttributes>, SessionAttributes {}
-export class Session extends Model implements SessionAttributes {
-  public sid!: string
-  public expires!: Date
-  public data!: Object
-  public userId!: number
-  public loggedOut!: boolean
-
-  // Worry about this later
-  public getUser() {
+  async getUser() {
     return User.findByPk(this.userId)
   }
-  // getUser() {
-  //   console.log('running getUser')
-  //   // return User.findByPk(this.userId)
-  // }
 }
-// export type SessionStatic = typeof Model & {
-export type SessionStatic = ModelStatic<Session> & {
-  new (values?: object, options?: BuildOptions): SessionModel
-}
-export function SessionFactory(sequelize: Sequelize): SessionStatic {
+
+export function SessionFactory(sequelize: Sequelize) {
   return Session.init(
     {
       sid: {
         type: DataTypes.STRING,
         primaryKey: true,
       },
-      expires: DataTypes.DATE,
-      data: DataTypes.JSON,
-      userId: DataTypes.INTEGER,
-      loggedOut: DataTypes.BOOLEAN,
+      expires: {
+        type: DataTypes.DATE,
+        allowNull: false,
+      },
+      data: {
+        type: DataTypes.JSON,
+        allowNull: true,
+      },
+      userId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      loggedOut: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+      createdAt: DataTypes.DATE,
+      updatedAt: DataTypes.DATE,
     },
     {
       sequelize,
@@ -114,51 +144,57 @@ export function SessionFactory(sequelize: Sequelize): SessionStatic {
   )
 }
 
-// export function SessionFactory(sequelize: Sequelize): SessionStatic {
-//   return <SessionStatic>sequelize.define('Session', {
-//     sid: {
-//       type: DataTypes.STRING,
-//       primaryKey: true,
-//     },
-//     expires: DataTypes.DATE,
-//     data: DataTypes.JSON,
-//     userId: DataTypes.INTEGER,
-//     loggedOut: DataTypes.BOOLEAN,
-//   })
-// }
-
-export interface AuditAttributes {
-  id: number
-  ip: string
-  userId: number
-  sessionId: string
-  action: string
-  blob: object
-  timestamp: Date
+// Audit Model
+export class Audit extends Model<InferAttributes<Audit>, InferCreationAttributes<Audit>> {
+  declare id: CreationOptional<number>
+  declare userId: CreationOptional<number>
+  declare ip: string
+  declare sessionId: CreationOptional<string>
+  declare action: string
+  declare blob: CreationOptional<Record<string, any>>
+  declare timestamp: CreationOptional<Date>
+  declare createdAt: CreationOptional<Date>
+  declare updatedAt: CreationOptional<Date>
 }
 
-export interface AuditModel extends Model<AuditAttributes>, AuditAttributes {}
-export class Audit extends Model implements AuditAttributes {
-  public id!: number
-  public ip!: string
-  public userId!: number
-  public sessionId!: string
-  public action!: string
-  public blob!: object
-  public timestamp!: Date
-}
-
-// export type AuditStatic = typeof Model & {
-export type AuditStatic = ModelStatic<Audit> & {
-  new (values?: object, options?: BuildOptions): AuditModel
-}
-export function AuditFactory(sequelize: Sequelize): AuditStatic {
-  return <AuditStatic>sequelize.define('Audit', {
-    userId: DataTypes.INTEGER,
-    ip: DataTypes.STRING,
-    sessionId: DataTypes.STRING,
-    action: DataTypes.STRING,
-    blob: DataTypes.JSON,
-    timestamp: DataTypes.DATE,
-  })
+export function AuditFactory(sequelize: Sequelize) {
+  return Audit.init(
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      userId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      ip: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      sessionId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      action: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      blob: {
+        type: DataTypes.JSON,
+        allowNull: true,
+      },
+      timestamp: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+      },
+      createdAt: DataTypes.DATE,
+      updatedAt: DataTypes.DATE,
+    },
+    {
+      sequelize,
+      tableName: 'audits',
+    }
+  )
 }

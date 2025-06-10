@@ -2,7 +2,7 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "outDir": "../dist/server",
-    "rootDir": ".",
+    // "rootDir": ".",
     "composite": true,
     "declaration": true,
     "declarationMap": true,
@@ -11,7 +11,8 @@
     "tsBuildInfoFile": "../dist/server/.tsbuildinfo"
   },
   "include": [
-    "**/*"
+    "**/*",
+    "../models/**/*"
   ],
   "exclude": [
     "node_modules",

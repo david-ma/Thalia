@@ -49,11 +49,11 @@
     "prepublishOnly": "npm run build:ts"
   },
   "dependencies": {
+    "@sequelize/core": "7.0.0-alpha.46",
     "@sequelize/mariadb": "7.0.0-alpha.46",
     "formidable": "^3.5.1",
     "handlebars": "^4.7.8",
-    "sass": "1.77.6",
-    "sequelize": "git://github.com/sequelize/sequelize.git#v7.0.0-alpha.46"
+    "sass": "1.77.6"
   },
   "devDependencies": {
     "@types/formidable": "^3.4.5",

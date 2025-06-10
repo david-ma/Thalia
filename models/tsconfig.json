@@ -2,7 +2,7 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "outDir": "../dist/models",
-    "rootDir": ".",
+    "rootDir": "../",
     "composite": true,
     "declaration": true,
     "declarationMap": true,

@@ -1,6 +1,34 @@
 import formidable from 'formidable'
 
 /**
+ * Deep merges two objects, similar to lodash's merge
+ */
+export function merge<T extends object>(target: T, source: object): T {
+  const output = { ...target }
+  if (isObject(target) && isObject(source)) {
+    Object.keys(source).forEach(key => {
+      if (isObject(source[key])) {
+        if (!(key in target)) {
+          Object.assign(output, { [key]: source[key] })
+        } else {
+          output[key] = merge(target[key], source[key])
+        }
+      } else {
+        Object.assign(output, { [key]: source[key] })
+      }
+    })
+  }
+  return output
+}
+
+/**
+ * Checks if a value is a plain object
+ */
+function isObject(item: any): item is object {
+  return item && typeof item === 'object' && !Array.isArray(item)
+}
+
+/**
  * Escapes HTML special characters in a string
  */
 export function htmlEscape(string: string): string {

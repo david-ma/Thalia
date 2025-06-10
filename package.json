@@ -3,13 +3,13 @@
   "private": true,
   "version": "1.1.2",
   "description": "Yet another server framework for serving websites",
-  "main": "./dist/server/core/index.js",
-  "types": "./dist/server/core/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/server/core/index.js",
-      "require": "./dist/server/core/index.js",
-      "types": "./dist/server/core/index.d.ts"
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     },
     "./bin/*": {
       "import": "./dist/bin/*.js",
@@ -22,16 +22,15 @@
   },
   "files": [
     "dist",
-    "bin",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "start": "node dist/bin/thalia.js",
-    "build": "node dist/bin/build.js",
-    "dev": "node dist/bin/develop.js",
-    "serve": "node dist/bin/thalia.js --serve",
-    "init": "node dist/bin/create-project.js",
+    "start": "node bin/thalia.js",
+    "build": "node bin/build.js",
+    "dev": "node bin/develop.js",
+    "serve": "node bin/thalia.js --serve",
+    "init": "node bin/create-project.js",
     "build:ts": "tsc",
     "watch:ts": "tsc -w",
     "watch:scss": "sass --watch src/scss:public/css",
@@ -93,11 +92,11 @@
     "node": ">=10"
   },
   "nodemonConfig": {
-    "exec": "node dist/bin/thalia.js",
+    "exec": "node bin/thalia.js",
     "verbose": true,
     "watch": [
-      "./dist/server/core/*.js",
-      "./dist/server/core/**/*.js",
+      "./server/core/*.js",
+      "./server/core/**/*.js",
       "./websites/**/config.js",
       "./websites/**/config/*.js",
       "./websites/**/db_bootstrap.js",

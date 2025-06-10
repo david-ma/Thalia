@@ -1,4 +1,8 @@
-import { Thalia } from './core/thalia'
+// Re-export everything from core
+export * from './core'
+
+// Export the main Thalia class
+export { Thalia } from './thalia'
 
 export async function startServer(options: { port?: number; project?: string } = {}): Promise<void> {
   const port = options.port || 3000

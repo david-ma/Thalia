@@ -6,6 +6,7 @@ import path = require('path')
 import sass = require('sass')
 
 import { DatabaseInstance } from './core/database'
+import { merge } from './core/util'
 
 // Each website should have their own Handlebars instance? Frame?
 // https://handlebarsjs.com/api-reference/utilities.html#handlebars-createframe-data
@@ -88,6 +89,20 @@ class Website implements Thalia.WebsiteConfig {
     } else {
       console.log("Config isn't an object")
     }
+  }
+
+  private async getViews(): Promise<Record<string, string>> {
+    const thaliaViews = await readAllViewsInFolder(path.join(process.cwd(), 'views'))
+    const exampleViews = await readAllViewsInFolder(path.join(process.cwd(), 'websites', 'example', 'views'))
+    const websiteViews = await readAllViewsInFolder(path.join(process.cwd(), 'websites', this.name, 'views'))
+    return merge(merge(thaliaViews, exampleViews), websiteViews)
+  }
+
+  private async getScaffoldViews(): Promise<Record<string, string>> {
+    const exampleViews = await readAllViewsInFolder(path.join(process.cwd(), 'websites', 'example', 'views'))
+    const scaffoldViews = await readAllViewsInFolder(path.join(process.cwd(), 'websites', 'scaffold', 'views'))
+    const projectViews = await readAllViewsInFolder(path.join(process.cwd(), 'websites', this.name, 'views'))
+    return merge(merge(exampleViews, scaffoldViews), projectViews)
   }
 }
 
@@ -335,7 +350,7 @@ const handle: Thalia.Handle = {
             ([exampleViews, thaliaViews, websiteViews]: any) => {
               // Use the website's views if they exist, otherwise use the default views
               // TODO: Allow themes to be applied in the middle?
-              return _.merge(thaliaViews, exampleViews, websiteViews)
+              return merge(merge(thaliaViews, exampleViews), websiteViews)
             },
             (error) => {
               console.error('Error reading views', error)
@@ -365,7 +380,7 @@ const handle: Thalia.Handle = {
       ]
       Promise.all(promises)
         .then(([exampleViews, scaffoldViews, projectViews]: any) => {
-          return _.merge(exampleViews, scaffoldViews, projectViews)
+          return merge(merge(exampleViews, scaffoldViews), projectViews)
         })
         .then((views) => {
           // readAllViewsInFolder(path.resolve(baseUrl, 'views')).then((views) => {

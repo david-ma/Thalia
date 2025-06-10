@@ -86,7 +86,8 @@
     "build": "webpack --config webpack.prod.js",
     "dev": "webpack serve --config webpack.dev.js",
     "buildServer": "cd server; tsc",
-    "develop": "nodemon"
+    "develop": "nodemon",
+    "create-project": "node bin/create-project.js"
   },
   "nodemonConfig": {
     "exec": "node bin/thalia.js",

@@ -3,17 +3,20 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
+// Get project name from environment or default to 'example'
+const projectName = process.env.PROJECT || 'example';
+
 module.exports = {
-  entry: './src/index.ts',
+  entry: `./websites/${projectName}/src/index.ts`,
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, `websites/${projectName}/dist`),
     filename: '[name].[contenthash].js',
     publicPath: '/'
   },
   resolve: {
     extensions: ['.ts', '.js', '.json'],
     alias: {
-      '@': path.resolve(__dirname, 'src')
+      '@': path.resolve(__dirname, `websites/${projectName}/src`)
     }
   },
   module: {
@@ -56,7 +59,7 @@ module.exports = {
   plugins: [
     new CleanWebpackPlugin(),
     new HtmlWebpackPlugin({
-      template: './src/index.html'
+      template: `./websites/${projectName}/src/index.html`
     }),
     new ForkTsCheckerWebpackPlugin()
   ],

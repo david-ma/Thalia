@@ -25,14 +25,17 @@ import path from 'path'
 import { IncomingMessage, ServerResponse } from 'http'
 import Handlebars from 'handlebars'
 import sass from 'sass'
+import { cwd } from 'process'
+
+interface Views {
+  [key: string]: string;
+}
 
 export class Website implements IWebsite {
   public readonly name: string
   public readonly config: WebsiteConfig
   public readonly rootPath: string
-
-  private static handlebars = Handlebars.create()
-  public templates: Map<string, Handlebars.TemplateDelegate> = new Map()
+  private handlebars = Handlebars.create()
 
   /**
    * Creates a new Website instance
@@ -42,18 +45,60 @@ export class Website implements IWebsite {
     this.name = config.name
     this.config = config
     this.rootPath = config.rootPath
+    this.loadPartials()
+  }
 
-    // Read all the partials from the partials folder
-    const partialsPath = path.join(this.rootPath, 'src', 'partials')
-    if (fs.existsSync(partialsPath)) {
-      const partials = fs.readdirSync(partialsPath)
-      partials.forEach(partial => {
-        Website.handlebars.registerPartial(
-          partial.replace('.hbs', ''),
-          fs.readFileSync(path.join(partialsPath, partial), 'utf8')
-        )
-      })
+  /**
+   * Load partials from the following paths:
+   * - thalia/src/views
+   * - thalia/websites/example/src/partials
+   * - thalia/websites/$PROJECT/src/partials
+   * 
+   * The order is important, because later paths will override earlier paths.
+   */
+  private loadPartials() {
+    const paths = [
+      path.join(cwd(), 'src', 'views'),
+      path.join(cwd(), 'websites', 'example', 'src', 'partials'),
+      path.join(this.rootPath, 'src', 'partials')
+    ]
+
+    for (const path of paths) {
+      if (fs.existsSync(path)) {
+        this.readAllViewsInFolder(path)
+      }
     }
+  }
+
+  private readAllViewsInFolder(folder: string): Views {
+    const views: Views = {}
+
+    try {
+      const entries = fs.readdirSync(folder, { withFileTypes: true })
+
+      for (const entry of entries) {
+        const fullPath = path.join(folder, entry.name)
+
+        if (entry.isDirectory()) {
+          // Recursively read subdirectories
+          const subViews = this.readAllViewsInFolder(fullPath)
+          Object.assign(views, subViews)
+        } else if (entry.name.match(/\.(hbs|mustache)$/)) {
+          // Read template files
+          const content = fs.readFileSync(fullPath, 'utf8')
+          const name = entry.name.replace(/\.(hbs|mustache)$/, '')
+          views[name] = content
+        }
+      }
+    } catch (error) {
+      console.error(`Error reading views from ${folder}:`, error)
+    }
+
+    Object.entries(views).forEach(([name, content]) => {
+      this.handlebars.registerPartial(name, content)
+    })
+
+    return views
   }
 
   public handleRequest(req: IncomingMessage, res: ServerResponse): void {
@@ -79,7 +124,7 @@ export class Website implements IWebsite {
     // Check if the file is a handlebars template
     if (filePath.endsWith('.html') && fs.existsSync(handlebarsTemplate)) {
       const template = fs.readFileSync(handlebarsTemplate, 'utf8')
-      const compiledTemplate = Website.handlebars.compile(template)
+      const compiledTemplate = this.handlebars.compile(template)
       const html = compiledTemplate({})
       res.writeHead(200, { 'Content-Type': 'text/html' })
       res.end(html)
@@ -109,9 +154,6 @@ export class Website implements IWebsite {
     stream.pipe(res)
   }
 
-
-
-
   private getContentType(filePath: string): string {
     const ext = filePath.split('.').pop()?.toLowerCase()
     const contentTypes: { [key: string]: string } = {
@@ -131,17 +173,6 @@ export class Website implements IWebsite {
   }
 
 
-
-  /**
-   * Loads a website from its configuration
-   * @param config - The website configuration
-   * @returns Promise resolving to a new Website instance
-   */
-  public static async load(config: WebsiteConfig): Promise<Website> {
-    return new Website(config)
-  }
-
-
   public static loadAllWebsites(options: ServerOptions): Website[] {
     if (options.mode == 'multiplex') {
       // Check if the root path exists
@@ -153,9 +184,12 @@ export class Website implements IWebsite {
       }))
     }
 
-    return [new Website({
+    const website = new Website({
       name: options.project,
       rootPath: options.rootPath
-    })]
+    })
+    return [website]
   }
-} 
+}
+
+

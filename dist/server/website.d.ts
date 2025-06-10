@@ -21,26 +21,28 @@
 /// <reference types="node" />
 import { Website as IWebsite, WebsiteConfig, ServerOptions } from './types';
 import { IncomingMessage, ServerResponse } from 'http';
-import Handlebars from 'handlebars';
 export declare class Website implements IWebsite {
     readonly name: string;
     readonly config: WebsiteConfig;
     readonly rootPath: string;
-    private static handlebars;
-    templates: Map<string, Handlebars.TemplateDelegate>;
+    private handlebars;
     /**
      * Creates a new Website instance
      * @param config - The website configuration
      */
     constructor(config: WebsiteConfig);
+    /**
+     * Load partials from the following paths:
+     * - thalia/src/views
+     * - thalia/websites/example/src/partials
+     * - thalia/websites/$PROJECT/src/partials
+     *
+     * The order is important, because later paths will override earlier paths.
+     */
+    private loadPartials;
+    private readAllViewsInFolder;
     handleRequest(req: IncomingMessage, res: ServerResponse): void;
     private getContentType;
-    /**
-     * Loads a website from its configuration
-     * @param config - The website configuration
-     * @returns Promise resolving to a new Website instance
-     */
-    static load(config: WebsiteConfig): Promise<Website>;
     static loadAllWebsites(options: ServerOptions): Website[];
 }
 //# sourceMappingURL=website.d.ts.map

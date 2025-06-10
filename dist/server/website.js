@@ -28,24 +28,65 @@ const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const handlebars_1 = __importDefault(require("handlebars"));
 const sass_1 = __importDefault(require("sass"));
+const process_1 = require("process");
 class Website {
     /**
      * Creates a new Website instance
      * @param config - The website configuration
      */
     constructor(config) {
-        this.templates = new Map();
+        this.handlebars = handlebars_1.default.create();
         this.name = config.name;
         this.config = config;
         this.rootPath = config.rootPath;
-        // Read all the partials from the partials folder
-        const partialsPath = path_1.default.join(this.rootPath, 'src', 'partials');
-        if (fs_1.default.existsSync(partialsPath)) {
-            const partials = fs_1.default.readdirSync(partialsPath);
-            partials.forEach(partial => {
-                Website.handlebars.registerPartial(partial.replace('.hbs', ''), fs_1.default.readFileSync(path_1.default.join(partialsPath, partial), 'utf8'));
-            });
+        this.loadPartials();
+    }
+    /**
+     * Load partials from the following paths:
+     * - thalia/src/views
+     * - thalia/websites/example/src/partials
+     * - thalia/websites/$PROJECT/src/partials
+     *
+     * The order is important, because later paths will override earlier paths.
+     */
+    loadPartials() {
+        const paths = [
+            path_1.default.join((0, process_1.cwd)(), 'src', 'views'),
+            path_1.default.join((0, process_1.cwd)(), 'websites', 'example', 'src', 'partials'),
+            path_1.default.join(this.rootPath, 'src', 'partials')
+        ];
+        for (const path of paths) {
+            if (fs_1.default.existsSync(path)) {
+                this.readAllViewsInFolder(path);
+            }
         }
+    }
+    readAllViewsInFolder(folder) {
+        const views = {};
+        try {
+            const entries = fs_1.default.readdirSync(folder, { withFileTypes: true });
+            for (const entry of entries) {
+                const fullPath = path_1.default.join(folder, entry.name);
+                if (entry.isDirectory()) {
+                    // Recursively read subdirectories
+                    const subViews = this.readAllViewsInFolder(fullPath);
+                    Object.assign(views, subViews);
+                }
+                else if (entry.name.match(/\.(hbs|mustache)$/)) {
+                    // Read template files
+                    const content = fs_1.default.readFileSync(fullPath, 'utf8');
+                    const name = entry.name.replace(/\.(hbs|mustache)$/, '');
+                    views[name] = content;
+                }
+            }
+        }
+        catch (error) {
+            console.error(`Error reading views from ${folder}:`, error);
+        }
+        Object.entries(views).forEach(([name, content]) => {
+            this.handlebars.registerPartial(name, content);
+        });
+        return views;
     }
     handleRequest(req, res) {
         // console.debug("We have a request for: ", req.url)
@@ -66,7 +107,7 @@ class Website {
         // Check if the file is a handlebars template
         if (filePath.endsWith('.html') && fs_1.default.existsSync(handlebarsTemplate)) {
             const template = fs_1.default.readFileSync(handlebarsTemplate, 'utf8');
-            const compiledTemplate = Website.handlebars.compile(template);
+            const compiledTemplate = this.handlebars.compile(template);
             const html = compiledTemplate({});
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end(html);
@@ -108,14 +149,6 @@ class Website {
         };
         return contentTypes[ext || ''] || 'application/octet-stream';
     }
-    /**
-     * Loads a website from its configuration
-     * @param config - The website configuration
-     * @returns Promise resolving to a new Website instance
-     */
-    static async load(config) {
-        return new Website(config);
-    }
     static loadAllWebsites(options) {
         if (options.mode == 'multiplex') {
             // Check if the root path exists
@@ -126,12 +159,12 @@ class Website {
                 rootPath: path_1.default.join(options.rootPath, website)
             }));
         }
-        return [new Website({
-                name: options.project,
-                rootPath: options.rootPath
-            })];
+        const website = new Website({
+            name: options.project,
+            rootPath: options.rootPath
+        });
+        return [website];
     }
 }
 exports.Website = Website;
-Website.handlebars = handlebars_1.default.create();
 //# sourceMappingURL=website.js.map

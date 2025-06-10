@@ -1,0 +1,27 @@
+<html>
+<head>
+<title>Login</title>
+<style>
+div {
+    text-align: center;
+    width: 300px;
+    margin: 200px auto;
+    background: lightblue;
+    padding: 10px 20px;
+    border-radius: 15px;
+}
+</style>
+</head>
+<body>
+<div>
+    <h1>Enter Password</h1>
+    <form action="{{ route }}" method="post">
+        <input type="password" placeholder="Enter Password" name="password" autofocus required>
+        <button type="submit">Login</button>
+        {{#if message}}
+            <p style="color: red;">{{ message }}</p>
+        {{/if}}
+    </form>
+</div>
+</body>
+</html>

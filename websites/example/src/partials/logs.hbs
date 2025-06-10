@@ -1,0 +1,27 @@
+<style>
+  th,
+  td {
+    border-left: solid 1px black;
+    border-bottom: solid 1px black;
+    padding: 2px;
+  }
+</style>
+
+Hello user, your latest 10 logs are:
+
+<table>
+  <tr>
+    <th>Filename</th>
+    <th>Size (bytes)</th>
+    <th>Created</th>
+    <th>Last Modified</th>
+  </tr>
+  {{#stats}}
+  <tr>
+    <td><a href="/log/{{filename}}">{{filename}}</a></td>
+    <td>{{size}}</td>
+    <td>{{created}}</td>
+    <td>{{lastModified}}</td>
+  </tr>
+  {{/stats}}
+</table>

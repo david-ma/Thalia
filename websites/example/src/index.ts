@@ -1,6 +1,6 @@
 import './styles/main.scss';
 
-// Add any client-side JavaScript functionality here
+// Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('Application started');
+  console.log('Application initialized');
 }); 

@@ -49,7 +49,7 @@ function registerPartials() {
 
 // Get entry point with fallback
 const entryPoint = getProjectFilePath('src/index.ts');
-const templateFile = getProjectFilePath('src/index.hbs');
+const templateFile = getProjectFilePath('views/index.hbs');
 
 // Register partials before creating the plugin
 registerPartials();
@@ -95,6 +95,24 @@ if (fs.existsSync(srcDir)) {
           to: path.resolve(__dirname, `websites/${projectName}/public`),
           globOptions: {
             ignore: ['**/*.ts', '**/*.scss', '**/*.hbs']
+          }
+        }
+      ]
+    })
+  );
+}
+
+// Add CopyPlugin for views directory
+const viewsDir = getProjectFilePath('views');
+if (fs.existsSync(viewsDir)) {
+  plugins.push(
+    new CopyPlugin({
+      patterns: [
+        {
+          from: viewsDir,
+          to: path.resolve(__dirname, `websites/${projectName}/public/views`),
+          globOptions: {
+            ignore: ['**/*.hbs']
           }
         }
       ]

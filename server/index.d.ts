@@ -1,2 +1,4 @@
-declare function startServer(): void;
-export { startServer };
+export declare function startServer(options?: {
+    port?: number;
+    project?: string;
+}): Promise<void>;

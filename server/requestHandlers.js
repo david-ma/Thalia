@@ -45,7 +45,7 @@ exports.Website = Website;
 const handle = {
     websites: {},
     index: { localhost: 'default' },
-    loadAllWebsites: function () {
+    loadAllWebsites: function (project = 'default') {
         const standAlone = !fs.existsSync('websites');
         if (standAlone) {
             console.log('Serving stand alone website');

@@ -19,7 +19,8 @@ function getProjects() {
     .filter(file => {
       const fullPath = path.join(websitesDir, file);
       return fs.statSync(fullPath).isDirectory() && 
-             fs.existsSync(path.join(fullPath, 'src'));
+             (fs.existsSync(path.join(fullPath, 'src')) || 
+              fs.existsSync(path.join(fullPath, 'views')));
     });
 }
 
@@ -27,17 +28,20 @@ function getProjects() {
 function checkFileConflicts(project) {
   console.log(`Checking for file conflicts in ${project}`);
   const srcDir = path.join(__dirname, '..', 'websites', project, 'src');
+  const viewsDir = path.join(__dirname, '..', 'websites', project, 'views');
   const exampleSrcDir = path.join(__dirname, '..', 'websites', 'example', 'src');
+  const exampleViewsDir = path.join(__dirname, '..', 'websites', 'example', 'views');
   
-  // Skip if neither directory exists
-  if (!fs.existsSync(srcDir) && !fs.existsSync(exampleSrcDir)) return;
+  // Skip if no directories exist
+  if (!fs.existsSync(srcDir) && !fs.existsSync(viewsDir) && 
+      !fs.existsSync(exampleSrcDir) && !fs.existsSync(exampleViewsDir)) return;
 
   // Helper function to check conflicts within a directory
   function checkDirectoryConflicts(dir, dirName) {
     if (!fs.existsSync(dir)) return;
 
     const fileMap = new Map(); // Map of base names to their full paths and extensions
-    const htmlFiles = new Set(); // Track HTML template files
+    const templateFiles = new Set(); // Track template files
 
     const files = fs.readdirSync(dir, { recursive: true });
     files.forEach(file => {
@@ -48,17 +52,15 @@ function checkFileConflicts(project) {
       // Skip directories
       if (fs.statSync(fullPath).isDirectory()) return;
 
-      // Track HTML template files
-      if (ext === '.html' || ext === '.hbs') {
-        htmlFiles.add(baseName);
+      // Track template files
+      if (ext === '.hbs') {
+        templateFiles.add(baseName);
       }
 
       // Check for conflicts between different file types
       if (fileMap.has(baseName)) {
         const existing = fileMap.get(baseName);
         const conflictingTypes = {
-          '.html': '.hbs',
-          '.hbs': '.html',
           '.js': '.ts',
           '.ts': '.js',
           '.css': '.scss',
@@ -81,35 +83,13 @@ function checkFileConflicts(project) {
 
       fileMap.set(baseName, { path: fullPath, ext });
     });
-
-    // Check for multiple HTML templates that would output to the same file
-    if (htmlFiles.size > 1) {
-      const conflictingFiles = Array.from(htmlFiles).map(name => {
-        const htmlPath = path.join(dir, `${name}.html`);
-        const hbsPath = path.join(dir, `${name}.hbs`);
-        return [
-          fs.existsSync(htmlPath) ? path.relative(process.cwd(), htmlPath) : null,
-          fs.existsSync(hbsPath) ? path.relative(process.cwd(), hbsPath) : null
-        ].filter(Boolean);
-      }).filter(files => files.length > 1);
-
-      if (conflictingFiles.length > 0) {
-        throw new Error(
-          `Multiple HTML templates would compile to the same output file in ${dirName}:\n` +
-          conflictingFiles.map(files => 
-            `  - ${files.join('\n  - ')}\n` +
-            `    These would all compile to: ${path.basename(files[0], path.extname(files[0]))}.html\n` +
-            `    Please choose one template type (.html or .hbs) and remove the other.\n` +
-            `    Note: Project files with the same name and extension will automatically override example files.`
-          ).join('\n')
-        );
-      }
-    }
   }
 
-  // Check conflicts in both directories independently
-  checkDirectoryConflicts(exampleSrcDir, 'example');
-  checkDirectoryConflicts(srcDir, project);
+  // Check conflicts in all directories independently
+  checkDirectoryConflicts(exampleSrcDir, 'example/src');
+  checkDirectoryConflicts(exampleViewsDir, 'example/views');
+  checkDirectoryConflicts(srcDir, `${project}/src`);
+  checkDirectoryConflicts(viewsDir, `${project}/views`);
 }
 
 // Format error message for better readability
@@ -117,7 +97,7 @@ function formatError(error) {
   const message = error.message || error;
   
   // Check if it's a file conflict error
-  if (message.includes('File conflict detected') || message.includes('Multiple HTML templates')) {
+  if (message.includes('File conflict detected')) {
     return `\n🚫 ${message}\n\nTo resolve this conflict:\n` +
            `1. Choose which file you want to keep\n` +
            `2. Delete or rename the conflicting file\n` +
@@ -139,6 +119,12 @@ function buildProject(project) {
   try {
     // Check for conflicts before running webpack
     checkFileConflicts(project);
+    
+    // Create public directory if it doesn't exist
+    const publicDir = path.join(__dirname, '..', 'websites', project, 'public');
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
     
     execSync(`PROJECT=${project} webpack --config webpack.prod.js`, {
       stdio: 'inherit'
@@ -172,7 +158,7 @@ if (projectName) {
   const projects = getProjects();
   if (projects.length === 0) {
     console.error('\n🚫 No projects found in websites directory');
-    console.error('\nMake sure you have at least one project with a src directory in the websites folder');
+    console.error('\nMake sure you have at least one project with a src or views directory in the websites folder');
     process.exit(1);
   }
 

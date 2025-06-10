@@ -132,6 +132,29 @@ export class RouteGuard {
       }
     }
 
+    // Handle WebSocket and other upgrades
+    if (req.headers.upgrade) {
+      const proxyReq = http.request(options)
+      proxyReq.on('upgrade', (proxyRes, proxySocket, _proxyHead) => {
+        res.writeHead(proxyRes.statusCode || 101, proxyRes.headers)
+        const clientSocket = res.socket
+        if (clientSocket) {
+          proxySocket.pipe(clientSocket)
+          clientSocket.pipe(proxySocket)
+        }
+      })
+
+      proxyReq.on('error', (error) => {
+        console.error(`Proxy upgrade error for ${route.path}:`, error)
+        res.writeHead(500)
+        res.end('Proxy Upgrade Error')
+      })
+
+      req.pipe(proxyReq)
+      return
+    }
+
+    // Handle regular HTTP requests
     const proxyReq = http.request(options, (proxyRes) => {
       res.writeHead(proxyRes.statusCode || 500, proxyRes.headers)
       proxyRes.pipe(res)

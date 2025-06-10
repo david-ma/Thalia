@@ -112,6 +112,24 @@ class RouteGuard {
                 host: route.target.host
             }
         };
+        if (req.headers.upgrade) {
+            const proxyReq = http_1.default.request(options);
+            proxyReq.on('upgrade', (proxyRes, proxySocket, _proxyHead) => {
+                res.writeHead(proxyRes.statusCode || 101, proxyRes.headers);
+                const clientSocket = res.socket;
+                if (clientSocket) {
+                    proxySocket.pipe(clientSocket);
+                    clientSocket.pipe(proxySocket);
+                }
+            });
+            proxyReq.on('error', (error) => {
+                console.error(`Proxy upgrade error for ${route.path}:`, error);
+                res.writeHead(500);
+                res.end('Proxy Upgrade Error');
+            });
+            req.pipe(proxyReq);
+            return;
+        }
         const proxyReq = http_1.default.request(options, (proxyRes) => {
             res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
             proxyRes.pipe(res);

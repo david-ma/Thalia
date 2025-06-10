@@ -31,11 +31,17 @@ interface Views {
   [key: string]: string;
 }
 
+interface Controller {
+  (res: ServerResponse, req: IncomingMessage, website: Website): void
+}
+
 export class Website implements IWebsite {
   public readonly name: string
-  public readonly config: WebsiteConfig
   public readonly rootPath: string
+  public config: WebsiteConfig
   private handlebars = Handlebars.create()
+  public domains: string[] = []
+  public controllers: { [key: string]: Controller } = {}
 
   /**
    * Creates a new Website instance
@@ -46,6 +52,32 @@ export class Website implements IWebsite {
     this.config = config
     this.rootPath = config.rootPath
     this.loadPartials()
+    this.loadConfig()
+  }
+
+  private loadConfig() {
+    // check if we have a config.js in the project folder, and import it if it exists
+    if (fs.existsSync(path.join(this.rootPath, 'config', 'config.js'))) {
+      const config = require(path.join(this.rootPath, 'config', 'config.js')).config
+      this.config = {
+        ...this.config,
+        ...config,
+      }
+    }
+
+    this.domains = this.config.domains || []
+    if (this.domains.length === 0) {
+      this.domains.push('localhost')
+    }
+    // Add the project name to the domains
+    this.domains.push(`${this.name}.com`)
+    this.domains.push(`www.${this.name}.com`)
+    this.domains.push(`${this.name}.david-ma.net`)
+
+    // Load controllers
+    const controllers = this.config.controllers || []
+    console.log("Loaded controllers: ", controllers)
+    // Test the controllers?
   }
 
   /**

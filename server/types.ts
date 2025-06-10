@@ -14,6 +14,8 @@ export interface ServerOptions {
 export interface WebsiteConfig {
   name: string
   rootPath: string
+  domains?: string[]
+  controllers?: { [key: string]: any }
 }
 
 export interface Website {

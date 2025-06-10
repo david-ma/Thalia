@@ -36,10 +36,35 @@ class Website {
      */
     constructor(config) {
         this.handlebars = handlebars_1.default.create();
+        this.domains = [];
+        this.controllers = {};
         this.name = config.name;
         this.config = config;
         this.rootPath = config.rootPath;
         this.loadPartials();
+        this.loadConfig();
+    }
+    loadConfig() {
+        // check if we have a config.js in the project folder, and import it if it exists
+        if (fs_1.default.existsSync(path_1.default.join(this.rootPath, 'config', 'config.js'))) {
+            const config = require(path_1.default.join(this.rootPath, 'config', 'config.js')).config;
+            this.config = {
+                ...this.config,
+                ...config,
+            };
+        }
+        this.domains = this.config.domains || [];
+        if (this.domains.length === 0) {
+            this.domains.push('localhost');
+        }
+        // Add the project name to the domains
+        this.domains.push(`${this.name}.com`);
+        this.domains.push(`www.${this.name}.com`);
+        this.domains.push(`${this.name}.david-ma.net`);
+        // Load controllers
+        const controllers = this.config.controllers || [];
+        console.log("Loaded controllers: ", controllers);
+        // Test the controllers?
     }
     /**
      * Load partials from the following paths:

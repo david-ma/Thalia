@@ -21,16 +21,24 @@
 /// <reference types="node" />
 import { Website as IWebsite, WebsiteConfig, ServerOptions } from './types';
 import { IncomingMessage, ServerResponse } from 'http';
+interface Controller {
+    (res: ServerResponse, req: IncomingMessage, website: Website): void;
+}
 export declare class Website implements IWebsite {
     readonly name: string;
-    readonly config: WebsiteConfig;
     readonly rootPath: string;
+    config: WebsiteConfig;
     private handlebars;
+    domains: string[];
+    controllers: {
+        [key: string]: Controller;
+    };
     /**
      * Creates a new Website instance
      * @param config - The website configuration
      */
     constructor(config: WebsiteConfig);
+    private loadConfig;
     /**
      * Load partials from the following paths:
      * - thalia/src/views
@@ -45,4 +53,5 @@ export declare class Website implements IWebsite {
     private getContentType;
     static loadAllWebsites(options: ServerOptions): Website[];
 }
+export {};
 //# sourceMappingURL=website.d.ts.map

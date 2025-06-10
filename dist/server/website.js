@@ -130,7 +130,7 @@ class Website {
     }
     handleRequest(req, res) {
         // Let the route guard handle the request first
-        if (this.routeGuard.handleRequest(req, res)) {
+        if (this.routeGuard.handleRequest(req, res, this)) {
             return; // Request was handled by the guard
         }
         // Continue with normal request handling

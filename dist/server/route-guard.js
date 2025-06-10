@@ -5,10 +5,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RouteGuard = void 0;
 const http_1 = __importDefault(require("http"));
+const formidable_1 = __importDefault(require("formidable"));
 class RouteGuard {
     constructor(website) {
         this.website = website;
         this.routes = {};
+        this.salt = 0;
+        this.salt = Math.floor(Math.random() * 999);
         this.loadRoutes();
     }
     loadRoutes() {
@@ -25,23 +28,61 @@ class RouteGuard {
             });
         });
     }
-    handleRequest(req, res) {
+    saltPassword(password) {
+        const buff = Buffer.from(password + this.salt);
+        return encodeURIComponent(buff.toString('base64'));
+    }
+    handleRequest(req, res, website) {
         const url = new URL(req.url || '/', `http://${req.headers.host}`);
         const pathname = url.pathname === '/' ? '/index.html' : url.pathname;
         const host = req.headers.host || 'localhost';
-        console.log("Pathname: ", pathname);
-        console.log("Routes: ", this.routes);
-        // Check for matching route
-        // const routeKey = host + pathname
         const matchingRoute = Object.entries(this.routes).find(([key]) => pathname.startsWith(key.replace(host, '')))?.[1];
         if (matchingRoute) {
+            // console.log("Found a matching route")
             // Check security if required
-            if (matchingRoute.security?.password) {
+            if (matchingRoute?.password) {
+                const correctPassword = this.saltPassword(matchingRoute.password);
                 const cookies = this.parseCookies(req);
-                const cookieName = `auth_${matchingRoute.path}`;
-                if (cookies[cookieName] !== matchingRoute.security.password) {
+                const cookieName = `auth_${website.name}${matchingRoute.path}`;
+                // Check if they're posting
+                if (req.method === 'POST') {
+                    console.log("We're posting");
+                    const form = (0, formidable_1.default)({ multiples: false });
+                    form.parse(req, (err, fields, files) => {
+                        if (err) {
+                            console.error('Error parsing form data:', err);
+                            res.writeHead(400, { 'Content-Type': 'text/html' });
+                            res.end('Invalid form data');
+                            return true;
+                        }
+                        const password = this.saltPassword(fields?.['password']?.[0] ?? '');
+                        if (password === correctPassword) {
+                            res.setHeader('Set-Cookie', `${cookieName}=${password}; Path=/`);
+                            res.writeHead(302, { 'Location': pathname });
+                            res.end();
+                        }
+                        else {
+                            const login_html = website.handlebars.compile(website.handlebars.partials['login'])({
+                                route: matchingRoute.path,
+                                message: 'Invalid password'
+                            });
+                            res.writeHead(401, { 'Content-Type': 'text/html' });
+                            res.end(login_html);
+                        }
+                    });
+                    return true;
+                }
+                else if (cookies[cookieName] === correctPassword) {
+                    // console.log("We have the right password in our cookies")
+                    // Let them through
+                }
+                else {
+                    // If the user doesn't have the login cookie, get the login page
+                    const login_html = website.handlebars.compile(website.handlebars.partials['login'])({
+                        route: matchingRoute.path
+                    });
                     res.writeHead(401, { 'Content-Type': 'text/html' });
-                    res.end(matchingRoute.security.message || 'Unauthorized');
+                    res.end(login_html);
                     return true; // Request handled
                 }
             }

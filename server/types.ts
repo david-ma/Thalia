@@ -33,13 +33,10 @@ export interface PathSecurity {
 export interface RouteRule {
   domains: string[]        // Which domains this rule applies to
   path: string            // The subpath to match (e.g., '/api' or '/admin')
+  password?: string       // If set, requires this password
   target?: {              // Optional proxy target
     host: string
     port: number
-  }
-  security?: {            // Optional security rules
-    password?: string     // If set, requires this password
-    message?: string      // Custom message to show on auth failure
   }
 }
 

@@ -91,7 +91,7 @@ class Website {
         return views;
     }
     handleRequest(req, res) {
-        if (this.routeGuard.handleRequest(req, res)) {
+        if (this.routeGuard.handleRequest(req, res, this)) {
             return;
         }
         const url = new URL(req.url || '/', `http://${req.headers.host}`);

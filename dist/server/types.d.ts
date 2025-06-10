@@ -26,13 +26,10 @@ export interface PathSecurity {
 export interface RouteRule {
     domains: string[];
     path: string;
+    password?: string;
     target?: {
         host: string;
         port: number;
-    };
-    security?: {
-        password?: string;
-        message?: string;
     };
 }
 export interface WebsiteConfig {

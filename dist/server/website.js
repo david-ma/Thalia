@@ -253,6 +253,11 @@ export const controllerFactories = {
 export const latestlogs = async (res, _req, website) => {
     try {
         const logDirectory = path.join(website.rootPath, 'public', 'log');
+        if (!fs.existsSync(logDirectory)) {
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end('No logs found');
+            return;
+        }
         // Get list of log files
         const logs = fs.readdirSync(logDirectory)
             .filter(filename => !filename.startsWith('.'))

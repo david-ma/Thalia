@@ -3,12 +3,6 @@
     {
       "path": "."
     },
-    {
-      "path": "websites/spaceforyourmind"
-    },
-    {
-      "path": "websites/david-ma"
-    }
   ],
   "settings": {
     "[handlebars]": {
@@ -23,27 +17,10 @@
       "editor.maxTokenizationLineLength": 2500
     },
     "javascript.validate.enable": false,
-    "standard.validate": ["typescript"],
-    "standard.engine": "standard",
-    "standard.options": {
-      "globals": ["$", "d3", "jQuery"],
-      "ignore": ["node_modules/**"],
-      "plugins": ["html"],
-      "parser": "babel-eslint",
-      "envs": ["jest"]
-    },
     "git.scanRepositories": ["."],
-    "auto-close-tag.activationOnLanguage": ["mustache", "handlebars", "hbs"],
-    "extensions_that_I_use": {
-      "aeschli.vscode-css-formatter": true,
-      "christian-kohler.path-intellisense": true,
-      "dawhite.mustache": true,
-      "dbaeumer.vscode-eslint": true,
-      "formulahendry.auto-close-tag": true,
-      "ionutvmi.path-autocomplete": true,
-      "mrmlnc.vscode-scss": true
-    },
     "editor.tabSize": 2,
-    "prettier.configPath": "/usr/local/dev/cursor/.prettierrc"
+    "prettier.configPath": ".prettierrc",
+    "prettier.printWidth": 120,
+    "prettier.prettierPath": "node_modules/.bin/prettier",
   }
 }

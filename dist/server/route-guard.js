@@ -1,12 +1,6 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.RouteGuard = void 0;
-const http_1 = __importDefault(require("http"));
-const formidable_1 = __importDefault(require("formidable"));
-class RouteGuard {
+import http from 'http';
+import formidable from 'formidable';
+export class RouteGuard {
     constructor(website) {
         this.website = website;
         this.routes = {};
@@ -53,7 +47,7 @@ class RouteGuard {
                 else if (req.method === 'POST') {
                     // Check if they're posting
                     try {
-                        const form = (0, formidable_1.default)({ multiples: false });
+                        const form = formidable({ multiples: false });
                         form.parse(req, (err, fields) => {
                             if (err) {
                                 console.error('Error parsing form data:', err);
@@ -124,7 +118,7 @@ class RouteGuard {
         };
         // Handle WebSocket and other upgrades
         if (req.headers.upgrade) {
-            const proxyReq = http_1.default.request(options);
+            const proxyReq = http.request(options);
             proxyReq.on('upgrade', (proxyRes, proxySocket, _proxyHead) => {
                 res.writeHead(proxyRes.statusCode || 101, proxyRes.headers);
                 const clientSocket = res.socket;
@@ -142,7 +136,7 @@ class RouteGuard {
             return;
         }
         // Handle regular HTTP requests
-        const proxyReq = http_1.default.request(options, (proxyRes) => {
+        const proxyReq = http.request(options, (proxyRes) => {
             res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
             proxyRes.pipe(res);
         });
@@ -167,5 +161,4 @@ class RouteGuard {
         return cookies;
     }
 }
-exports.RouteGuard = RouteGuard;
 //# sourceMappingURL=route-guard.js.map

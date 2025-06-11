@@ -7,28 +7,35 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": {
+        "default": "./dist/server/index.js",
+        "types": "./dist/server/index.d.ts"
+      },
+      "require": {
+        "default": "./dist/server/index.js",
+        "types": "./dist/server/index.d.ts"
+      }
     },
     "./models": {
-      "import": "./dist/models/index.js",
-      "require": "./dist/models/index.js",
-      "types": "./dist/models/index.d.ts"
+      "import": {
+        "default": "./dist/models/index.js",
+        "types": "./dist/models/index.d.ts"
+      },
+      "require": {
+        "default": "./dist/models/index.js",
+        "types": "./dist/models/index.d.ts"
+      }
     },
-    "./core": {
-      "import": "./dist/server/core/index.js",
-      "require": "./dist/server/core/index.js",
-      "types": "./dist/server/core/index.d.ts"
-    },
-    "./bin/*": {
-      "import": "./dist/bin/*.js",
-      "require": "./dist/bin/*.js"
+    "./security": {
+      "import": {
+        "default": "./dist/server/security.js",
+        "types": "./dist/server/security.d.ts"
+      },
+      "require": {
+        "default": "./dist/server/security.js",
+        "types": "./dist/server/security.d.ts"
+      }
     }
-  },
-  "bin": {
-    "thalia": "./dist/bin/thalia.js",
-    "thalia-init": "./dist/bin/create-project.js"
   },
   "files": [
     "dist",

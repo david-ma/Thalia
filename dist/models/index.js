@@ -1,24 +1,7 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.smugmugFactory = exports.securityFactory = void 0;
-const core_1 = require("@sequelize/core");
-const security_1 = require("./security");
-const smugmug_1 = require("./smugmug");
-function securityFactory(config) {
+import { Sequelize } from '@sequelize/core';
+import { UserFactory, SessionFactory, AuditFactory } from './security';
+import { AlbumFactory, ImageFactory } from './smugmug';
+export function securityFactory(config) {
     const options = {
         dialect: 'mariadb',
         host: config.host,
@@ -38,10 +21,10 @@ function securityFactory(config) {
             timestamps: true
         }
     };
-    const sequelize = new core_1.Sequelize(options);
-    const User = (0, security_1.UserFactory)(sequelize);
-    const Session = (0, security_1.SessionFactory)(sequelize);
-    const Audit = (0, security_1.AuditFactory)(sequelize);
+    const sequelize = new Sequelize(options);
+    const User = UserFactory(sequelize);
+    const Session = SessionFactory(sequelize);
+    const Audit = AuditFactory(sequelize);
     Session.belongsTo(User, { foreignKey: 'userId', targetKey: 'id' });
     User.hasMany(Session, { foreignKey: 'userId', sourceKey: 'id' });
     Audit.belongsTo(User, { foreignKey: 'userId', targetKey: 'id' });
@@ -57,10 +40,7 @@ function securityFactory(config) {
         }
     };
 }
-exports.securityFactory = securityFactory;
-// Export all models
-__exportStar(require("./security"), exports);
-function smugmugFactory(config) {
+export function smugmugFactory(config) {
     const options = {
         dialect: 'mariadb',
         host: config.host,
@@ -80,9 +60,9 @@ function smugmugFactory(config) {
             timestamps: true
         }
     };
-    const sequelize = new core_1.Sequelize(options);
-    const Album = (0, smugmug_1.AlbumFactory)(sequelize);
-    const Image = (0, smugmug_1.ImageFactory)(sequelize);
+    const sequelize = new Sequelize(options);
+    const Album = AlbumFactory(sequelize);
+    const Image = ImageFactory(sequelize);
     Album.hasMany(Image, { foreignKey: 'albumId', sourceKey: 'id' });
     Image.belongsTo(Album, { foreignKey: 'albumId', targetKey: 'id' });
     return {
@@ -93,5 +73,9 @@ function smugmugFactory(config) {
         }
     };
 }
-exports.smugmugFactory = smugmugFactory;
+// Export model factories
+export { UserFactory, SessionFactory, AuditFactory };
+export { AlbumFactory, ImageFactory };
+// Export all from security
+export * from './security';
 //# sourceMappingURL=index.js.map

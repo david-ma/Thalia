@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const helpers_1 = require("../../../server/helpers");
+const index_js_1 = require("thalia/dist/server/index.js");
 const cred_1 = require("./cred");
 const securityOptions = {
     websiteName: 'default',
@@ -12,6 +12,6 @@ exports.config = {
     data: false,
     dist: false,
     controllers: {
-        ...(0, helpers_1.users)(securityOptions),
+        ...(0, index_js_1.users)(securityOptions),
     },
 };

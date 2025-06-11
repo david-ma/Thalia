@@ -11,8 +11,12 @@
 import { Server } from './server';
 import { ServerOptions } from './types';
 import { Website } from './website';
+import { Database } from './database';
+import { RouteGuard } from './route-guard';
 export * from './types';
-export { Server, Website };
+export { Server, Website, Database, RouteGuard };
+export * from './security';
+export * from '../models';
 export declare class Thalia {
     private server;
     private websites;

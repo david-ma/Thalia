@@ -1,34 +1,21 @@
-import { Options } from 'sequelize'
-import { securityFactory } from '../models'
-import { User } from '../models/security'
+import { SeqObject } from 'thalia'
+import { securityFactory } from 'thalia'
+import { DatabaseConfig } from 'thalia'
+import { UserFactory } from 'thalia'
 const cred = require('./cred.js').cred
 
-let seqOptions: Options = {
-  dialect: 'sqlite',
-  storage: `${__dirname}/database.sqlite`,
+let seqOptions: DatabaseConfig = {
+  dialect: 'mariadb',
+  host: 'localhost',
+  port: 3306,
+  database: 'thalia',
+  user: 'thalia',
+  password: 'thalia',
   logging: false,
-  dialectOptions: {
-    decimalNumbers: true,
-  },
-  define: {
-    underscored: true,
-  },
 }
-
-if (process.env.NODE_ENV === 'docker') {
-  delete seqOptions.storage
-
-  seqOptions.database = 'postgres'
-  seqOptions.username = 'postgres'
-  seqOptions.password = 'postgres_password'
-  seqOptions.dialect = 'postgres'
-  seqOptions.host = 'db'
-  seqOptions.port = 5432
-}
-
-import { SeqObject } from '../../../server/core/database'
 
 const seq: SeqObject = securityFactory(seqOptions)
+const User = UserFactory(seq.sequelize)
 
 seq.sequelize
   .sync({

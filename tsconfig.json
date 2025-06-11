@@ -3,8 +3,8 @@
     // Language and Environment
     "target": "ES2020",
     "lib": ["ES2020"],
-    "module": "CommonJS",
-    "moduleResolution": "node",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "composite": true,
@@ -47,14 +47,15 @@
     // Path Aliases
     "baseUrl": ".",
     "paths": {
-      "@thalia/*": ["server/*"],
-      "@thalia/core/*": ["server/core/*"],
-      "@thalia/models/*": ["models/*"]
+      "thalia": ["server/index"],
+      "thalia/*": ["server/*"],
+      "thalia/models/*": ["models/*"]
     }
   },
   "include": [
     "server/**/*",
-    "models/**/*"
+    "models/**/*",
+    "websites/**/*"
   ],
   "exclude": [
     "node_modules",

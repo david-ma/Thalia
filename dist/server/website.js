@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Website - Website configuration and management
  *
@@ -19,24 +18,19 @@
  * - Request routing (handled by Router)
  * - Request processing (handled by Handler)
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.latestlogs = exports.controllerFactories = exports.Website = void 0;
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
-const handlebars_1 = __importDefault(require("handlebars"));
-const sass_1 = __importDefault(require("sass"));
-const process_1 = require("process");
-const route_guard_1 = require("./route-guard");
-class Website {
+import fs from 'fs';
+import path from 'path';
+import Handlebars from 'handlebars';
+import sass from 'sass';
+import { cwd } from 'process';
+import { RouteGuard } from './route-guard';
+export class Website {
     /**
      * Creates a new Website instance
      * @param config - The website configuration
      */
     constructor(config) {
-        this.handlebars = handlebars_1.default.create();
+        this.handlebars = Handlebars.create();
         this.domains = [];
         this.controllers = {};
         this.routes = {};
@@ -45,12 +39,12 @@ class Website {
         this.rootPath = config.rootPath;
         this.loadPartials();
         this.loadConfig();
-        this.routeGuard = new route_guard_1.RouteGuard(this);
+        this.routeGuard = new RouteGuard(this);
     }
     loadConfig() {
         // check if we have a config.js in the project folder, and import it if it exists
-        if (fs_1.default.existsSync(path_1.default.join(this.rootPath, 'config', 'config.js'))) {
-            const config = require(path_1.default.join(this.rootPath, 'config', 'config.js')).config;
+        if (fs.existsSync(path.join(this.rootPath, 'config', 'config.js'))) {
+            const config = require(path.join(this.rootPath, 'config', 'config.js')).config;
             this.config = {
                 ...this.config,
                 ...config,
@@ -91,12 +85,12 @@ class Website {
      */
     loadPartials() {
         const paths = [
-            path_1.default.join((0, process_1.cwd)(), 'src', 'views'),
-            path_1.default.join((0, process_1.cwd)(), 'websites', 'example', 'src', 'partials'),
-            path_1.default.join(this.rootPath, 'src', 'partials')
+            path.join(cwd(), 'src', 'views'),
+            path.join(cwd(), 'websites', 'example', 'src', 'partials'),
+            path.join(this.rootPath, 'src', 'partials')
         ];
         for (const path of paths) {
-            if (fs_1.default.existsSync(path)) {
+            if (fs.existsSync(path)) {
                 this.readAllViewsInFolder(path);
             }
         }
@@ -104,9 +98,9 @@ class Website {
     readAllViewsInFolder(folder) {
         const views = {};
         try {
-            const entries = fs_1.default.readdirSync(folder, { withFileTypes: true });
+            const entries = fs.readdirSync(folder, { withFileTypes: true });
             for (const entry of entries) {
-                const fullPath = path_1.default.join(folder, entry.name);
+                const fullPath = path.join(folder, entry.name);
                 if (entry.isDirectory()) {
                     // Recursively read subdirectories
                     const subViews = this.readAllViewsInFolder(fullPath);
@@ -114,7 +108,7 @@ class Website {
                 }
                 else if (entry.name.match(/\.(hbs|mustache)$/)) {
                     // Read template files
-                    const content = fs_1.default.readFileSync(fullPath, 'utf8');
+                    const content = fs.readFileSync(fullPath, 'utf8');
                     const name = entry.name.replace(/\.(hbs|mustache)$/, '');
                     views[name] = content;
                 }
@@ -142,7 +136,7 @@ class Website {
             res.end('Bad Request');
             return;
         }
-        const filePath = path_1.default.join(this.rootPath, 'public', pathname);
+        const filePath = path.join(this.rootPath, 'public', pathname);
         const sourcePath = filePath.replace('public', 'src');
         const controllerPath = parts[1];
         if (controllerPath) {
@@ -153,17 +147,17 @@ class Website {
             }
         }
         // If we're looking for a css file, check if the scss exists
-        if (filePath.endsWith('.css') && fs_1.default.existsSync(sourcePath.replace('.css', '.scss'))) {
-            const scss = fs_1.default.readFileSync(sourcePath.replace('.css', '.scss'), 'utf8');
-            const css = sass_1.default.renderSync({ data: scss }).css.toString();
+        if (filePath.endsWith('.css') && fs.existsSync(sourcePath.replace('.css', '.scss'))) {
+            const scss = fs.readFileSync(sourcePath.replace('.css', '.scss'), 'utf8');
+            const css = sass.renderSync({ data: scss }).css.toString();
             res.writeHead(200, { 'Content-Type': 'text/css' });
             res.end(css);
             return;
         }
         const handlebarsTemplate = filePath.replace('.html', '.hbs').replace('public', 'src');
         // Check if the file is a handlebars template
-        if (filePath.endsWith('.html') && fs_1.default.existsSync(handlebarsTemplate)) {
-            const template = fs_1.default.readFileSync(handlebarsTemplate, 'utf8');
+        if (filePath.endsWith('.html') && fs.existsSync(handlebarsTemplate)) {
+            const template = fs.readFileSync(handlebarsTemplate, 'utf8');
             const compiledTemplate = this.handlebars.compile(template);
             const html = compiledTemplate({});
             res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -171,14 +165,14 @@ class Website {
             return;
         }
         // Check if file exists
-        if (!fs_1.default.existsSync(filePath)) {
+        if (!fs.existsSync(filePath)) {
             res.writeHead(404);
             res.end('Not Found');
             return;
         }
-        else if (fs_1.default.statSync(filePath).isDirectory()) {
+        else if (fs.statSync(filePath).isDirectory()) {
             try {
-                const indexPath = path_1.default.join(url.pathname, 'index.html');
+                const indexPath = path.join(url.pathname, 'index.html');
                 this.handleRequest(req, res, indexPath);
             }
             catch (error) {
@@ -189,7 +183,7 @@ class Website {
             return;
         }
         // Stream the file
-        const stream = fs_1.default.createReadStream(filePath);
+        const stream = fs.createReadStream(filePath);
         stream.on('error', (error) => {
             console.error('Error streaming file:', error);
             res.writeHead(500);
@@ -222,10 +216,10 @@ class Website {
         if (options.mode == 'multiplex') {
             // Check if the root path exists
             // Load all websites from the root path
-            const websites = fs_1.default.readdirSync(options.rootPath);
+            const websites = fs.readdirSync(options.rootPath);
             return websites.map(website => new Website({
                 name: website,
-                rootPath: path_1.default.join(options.rootPath, website)
+                rootPath: path.join(options.rootPath, website)
             }));
         }
         return [new Website({
@@ -234,8 +228,7 @@ class Website {
             })];
     }
 }
-exports.Website = Website;
-exports.controllerFactories = {
+export const controllerFactories = {
     redirectTo: (url) => {
         return (res, _req, _website) => {
             res.writeHead(302, { Location: url });
@@ -244,8 +237,8 @@ exports.controllerFactories = {
     },
     serveFile: (url) => {
         return (res, _req, website) => {
-            const filePath = path_1.default.join(website.rootPath, 'public', url);
-            const stream = fs_1.default.createReadStream(filePath);
+            const filePath = path.join(website.rootPath, 'public', url);
+            const stream = fs.createReadStream(filePath);
             stream.pipe(res);
         };
     },
@@ -253,11 +246,11 @@ exports.controllerFactories = {
 /**
  * Read the latest 10 logs from the log directory
  */
-const latestlogs = async (res, _req, website) => {
+export const latestlogs = async (res, _req, website) => {
     try {
-        const logDirectory = path_1.default.join(website.rootPath, 'public', 'log');
+        const logDirectory = path.join(website.rootPath, 'public', 'log');
         // Get list of log files
-        const logs = fs_1.default.readdirSync(logDirectory)
+        const logs = fs.readdirSync(logDirectory)
             .filter(filename => !filename.startsWith('.'))
             .slice(-10);
         if (logs.length === 0) {
@@ -266,7 +259,7 @@ const latestlogs = async (res, _req, website) => {
             return;
         }
         // Get stats for all logs
-        const stats = await Promise.all(logs.map(log => fs_1.default.promises.stat(path_1.default.join(logDirectory, log))));
+        const stats = await Promise.all(logs.map(log => fs.promises.stat(path.join(logDirectory, log))));
         // Prepare data for template
         const data = {
             stats: logs.map((log, i) => ({
@@ -291,5 +284,4 @@ const latestlogs = async (res, _req, website) => {
         res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 };
-exports.latestlogs = latestlogs;
 //# sourceMappingURL=website.js.map

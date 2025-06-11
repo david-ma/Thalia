@@ -1,11 +1,8 @@
-"use strict";
 /**
  * Router - Request routing implementation
  *
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Router = void 0;
-class Router {
+export class Router {
     constructor(websites) {
         // assert that websites is not empty
         if (websites.length === 0) {
@@ -36,5 +33,4 @@ class Router {
         return this.websites[domain] || this.default;
     }
 }
-exports.Router = Router;
 //# sourceMappingURL=router.js.map

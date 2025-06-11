@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../../dist/websites/example",
+    "rootDir": ".",
+    "composite": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "paths": {
+      "thalia": ["../../../dist/server/index"],
+      "thalia/*": ["../../../dist/*"]
+    }
+  },
+  "include": [
+    "**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+} 

@@ -1,22 +1,19 @@
-"use strict";
 /**
  * Thalia server.
  *
  * Class which allows initialisation of a server.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Server = void 0;
-const http_1 = require("http");
-const events_1 = require("events");
-const router_1 = require("./router");
-class Server extends events_1.EventEmitter {
+import { createServer } from 'http';
+import { EventEmitter } from 'events';
+import { Router } from './router';
+export class Server extends EventEmitter {
     constructor(options, websites) {
         super();
         this.httpServer = null;
         this.port = options.port || 3000;
         this.mode = options.mode || 'development';
         this.project = options.project || 'default';
-        this.router = new router_1.Router(websites);
+        this.router = new Router(websites);
     }
     handleRequest(req, res) {
         const domain = req.headers.host?.split(':')[0];
@@ -31,7 +28,7 @@ class Server extends events_1.EventEmitter {
     }
     async start() {
         return new Promise((resolve) => {
-            this.httpServer = (0, http_1.createServer)(this.handleRequest.bind(this));
+            this.httpServer = createServer(this.handleRequest.bind(this));
             this.httpServer.listen(this.port, () => {
                 console.log(`Server running at http://localhost:${this.port}`);
                 this.emit('started');
@@ -63,5 +60,4 @@ class Server extends events_1.EventEmitter {
         return this.port;
     }
 }
-exports.Server = Server;
 //# sourceMappingURL=server.js.map

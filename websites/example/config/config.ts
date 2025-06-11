@@ -1,11 +1,14 @@
-import { users, SecurityOptions } from '@thalia/core/security'
+import { users, SecurityOptions } from 'thalia'
 
-import { cred } from './cred'
+// import { cred } from './cred'
 
 const securityOptions: SecurityOptions = {
   websiteName: 'default',
   mailFrom: 'Thalia <thalia@david-ma.net>',
-  mailAuth: cred.mailAuth,
+  mailAuth: {
+    user: 'user@david-ma.net',
+    pass: 'password',
+  },
 }
 
 exports.config = {

@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Database = void 0;
-const core_1 = require("@sequelize/core");
-class Database {
+import { Sequelize } from '@sequelize/core';
+export class Database {
     constructor(config) {
         this.models = {};
         const options = {
@@ -24,7 +21,7 @@ class Database {
                 timestamps: true
             }
         };
-        this.sequelize = new core_1.Sequelize(options);
+        this.sequelize = new Sequelize(options);
     }
     static getInstance(config) {
         if (!Database.instance) {
@@ -68,5 +65,4 @@ class Database {
         await this.sequelize.close();
     }
 }
-exports.Database = Database;
 //# sourceMappingURL=database.js.map

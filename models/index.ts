@@ -1,9 +1,14 @@
 import { Sequelize, Options } from '@sequelize/core'
 import { MariaDbDialect } from '@sequelize/mariadb'
-import { UserFactory, SessionFactory, AuditFactory } from './security'
+import { UserFactory, SessionFactory, AuditFactory, User, Session, Audit } from './security'
 import { AlbumFactory, ImageFactory } from './smugmug'
-import { SeqObject } from './types'
+import { SeqObject, SecurityObject } from './types'
 
+// Export types
+export type { SeqObject, SecurityObject }
+export type { User, Session, Audit }
+
+// Export interfaces
 export interface DatabaseConfig {
   dialect: 'mariadb'
   host: string
@@ -65,26 +70,6 @@ export function securityFactory(config: DatabaseConfig): SeqObject {
   }
 }
 
-// Export all models
-export * from './security'
-
-export interface SmugmugConfig {
-  dialect: 'sqlite3'
-  storage: string
-  logging?: false | ((sql: string, timing?: number) => void)
-  pool?: {
-    max?: number
-    min?: number
-    acquire?: number
-    idle?: number
-  }
-}
-
-export interface SmugmugObject extends SeqObject {
-  Album: typeof AlbumFactory
-  Image: typeof ImageFactory
-}
-
 export function smugmugFactory(config: DatabaseConfig): SeqObject {
   const options: Options<MariaDbDialect> = {
     dialect: 'mariadb',
@@ -121,3 +106,10 @@ export function smugmugFactory(config: DatabaseConfig): SeqObject {
     }
   }
 }
+
+// Export model factories
+export { UserFactory, SessionFactory, AuditFactory }
+export { AlbumFactory, ImageFactory }
+
+// Export all from security
+export * from './security'

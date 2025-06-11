@@ -14,14 +14,25 @@ import { Server } from './server'
 import { ServerOptions } from './types'
 import { Website } from './website'
 import path from 'path'
+import { Database } from './database'
+import { RouteGuard } from './route-guard'
 
 // Re-export types
 export * from './types'
+
 // Export main components
 export {
   Server,
-  Website
+  Website,
+  Database,
+  RouteGuard
 }
+
+// Export security
+export * from './security'
+
+// Export models
+export * from '../models'
 
 // Main Thalia class for easy initialization
 export class Thalia {

@@ -1,4 +1,3 @@
-"use strict";
 /**
  * index.ts - Main entry point for Thalia
  *
@@ -9,38 +8,25 @@
  * Find the port
  *
  */
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Thalia = exports.Website = exports.Server = void 0;
-const process_1 = require("process");
-const server_1 = require("./server");
-Object.defineProperty(exports, "Server", { enumerable: true, get: function () { return server_1.Server; } });
-const website_1 = require("./website");
-Object.defineProperty(exports, "Website", { enumerable: true, get: function () { return website_1.Website; } });
-const path_1 = __importDefault(require("path"));
+import { cwd } from 'process';
+import { Server } from './server';
+import { Website } from './website';
+import path from 'path';
+import { Database } from './database';
+import { RouteGuard } from './route-guard';
 // Re-export types
-__exportStar(require("./types"), exports);
+export * from './types';
+// Export main components
+export { Server, Website, Database, RouteGuard };
+// Export security
+export * from './security';
+// Export models
+export * from '../models';
 // Main Thalia class for easy initialization
-class Thalia {
+export class Thalia {
     constructor(options) {
-        this.websites = website_1.Website.loadAllWebsites(options);
-        this.server = new server_1.Server(options, this.websites);
+        this.websites = Website.loadAllWebsites(options);
+        this.server = new Server(options, this.websites);
     }
     async start() {
         await this.server.start();
@@ -52,24 +38,23 @@ class Thalia {
         return this.server;
     }
 }
-exports.Thalia = Thalia;
 const project = process.argv.find(arg => arg.startsWith('--project'))?.split('=')[1] || process.env['PROJECT'] || 'default';
 const port = parseInt(process.argv.find(arg => arg.startsWith('--port'))?.split('=')[1] || process.env['PORT'] || '3000');
 let options = {
     mode: 'standalone',
     project: project,
-    rootPath: (0, process_1.cwd)(),
+    rootPath: cwd(),
     port: port
 };
 if (project == 'default') {
     console.log(`Running in multiplex mode. Loading all projects.`);
     options.mode = 'multiplex';
-    options.rootPath = path_1.default.join(options.rootPath, 'websites');
+    options.rootPath = path.join(options.rootPath, 'websites');
 }
 else {
     console.log(`Running in standalone mode for project: ${project}`);
     options.mode = 'standalone';
-    options.rootPath = path_1.default.join(options.rootPath, 'websites', project);
+    options.rootPath = path.join(options.rootPath, 'websites', project);
 }
 const thalia = new Thalia(options);
 thalia.start();

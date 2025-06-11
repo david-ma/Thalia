@@ -11,4 +11,4 @@
     "@sequelize/mariadb": "7.0.0-alpha.46",
     "thalia": "file:../../"
   }
-} 
+}

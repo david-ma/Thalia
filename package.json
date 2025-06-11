@@ -39,11 +39,8 @@
   "scripts": {
     "start": "node dist/server/index.js",
     "build": "tsc",
-    "dev": "tsc -w",
-    "serve": "node dist/server/index.js --serve",
-    "init": "node dist/bin/create-project.js",
-    "clean": "rimraf dist public",
-    "prepublishOnly": "npm run build"
+    "dev": "node bin/develop.js",
+    "init": "node dist/bin/create-project.js"
   },
   "dependencies": {
     "@sequelize/core": "7.0.0-alpha.46",
@@ -58,6 +55,7 @@
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "autoprefixer": "10.2.6",
+    "browser-sync": "^3.0.4",
     "copy-webpack-plugin": "^12.0.2",
     "css-loader": "^6.11.0",
     "css-minimizer-webpack-plugin": "^6.0.0",

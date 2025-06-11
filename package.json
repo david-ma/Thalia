@@ -85,19 +85,18 @@
     "node": ">=20"
   },
   "nodemonConfig": {
-    "exec": "node bin/thalia.js",
+    "exec": "node dist/server/index.js",
     "verbose": true,
     "watch": [
-      "./server/core/*.js",
-      "./server/core/**/*.js",
+      "./dist/server/**/*.js",
       "./websites/**/config.js",
       "./websites/**/config/*.js",
       "./websites/**/db_bootstrap.js",
+      "./websites/**/models/**/*.js",
       "./websites/**/src/**/*.hbs"
     ],
     "ignore": [
       "node_modules/*",
-      "dist/*",
       "public/*",
       "*.ts",
       "tsconfig.json"

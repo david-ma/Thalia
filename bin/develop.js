@@ -50,50 +50,48 @@ function startServer(projectName) {
   // Get the project root directory
   const projectRoot = path.resolve(thaliaDirectory, 'websites', projectName);
 
-  // If there is a webpack.config.js in the projectRoot, start webpack in watch mode.
-  let webpack;
-  if (fs.existsSync(path.resolve(projectRoot, 'webpack.config.js'))) {
-    // Start webpack in watch mode
-    webpack = spawn('webpack', ['--config', 'webpack.config.js', '--watch'], {
-      env,
-      stdio: 'inherit',
-      cwd: projectRoot
-    });
-  } else {
-    webpack = spawn('echo', ['No webpack.config.js found in project root. Skipping webpack.'], {
-      env,
-      stdio: 'inherit',
-      cwd: projectRoot
-    });
-  }
-
-
-  // Start nodemon for the server
-  const nodemon = spawn('nodemon', ['--watch', 'server', '--watch', `websites/${projectName}`, 'dist/server/index.js', '--project', projectName], {
+  // Start tsc for the server
+  const tsc = spawn('tsc', ['--watch'], {
     env,
     stdio: 'inherit',
-    cwd: projectRoot
+    cwd: thaliaDirectory
   });
 
-  // Handle process termination
-  process.on('SIGINT', () => {
-    webpack.kill();
-    nodemon.kill();
-    process.exit();
+  // Start nodemon for the server
+  const nodemon = spawn('nodemon', [
+    '--watch', `websites/${projectName}`,
+    'dist/server/index.js'], {
+    env: {
+      ...env,
+      PROJECT: projectName,
+      PORT: 3000,
+      WEBSITE: projectName
+    },
+    stdio: 'inherit',
+    cwd: thaliaDirectory
   });
 
-  // Handle errors
-  webpack.on('error', (err) => {
-    console.error('Webpack error:', err);
-    nodemon.kill();
-    process.exit(1);
+  // start tsc in project config
+  const projectTsc = spawn('tsc', ['--watch'], {
+    env,
+    stdio: 'inherit',
+    cwd: `${projectRoot}/config`
   });
 
-  nodemon.on('error', (err) => {
-    console.error('Nodemon error:', err);
-    webpack.kill();
-    process.exit(1);
-  });
+  const processes = [tsc, nodemon, projectTsc];
+
+  // set timeout for 500ms
+  setTimeout(() => {
+  browserSync.create().init({
+    proxy: `http://localhost:3000`,
+    port: 3001,
+    open: true,
+    notify: true,
+    files: [
+        `${projectRoot}/**/*`,
+      ]
+    });
+  }, 500);
 }
 
 function prompt(query) {

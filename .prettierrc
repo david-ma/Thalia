@@ -9,7 +9,7 @@
   "semi": false,
   "overrides": [
     {
-      "files": "*.mustache",
+      "files": "*.hbs",
       "options": {
         "singleQuote": true
       }

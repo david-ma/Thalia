@@ -12,7 +12,7 @@ dependencies:
     specifier: 7.0.0-alpha.46
     version: 7.0.0-alpha.46
   thalia:
-    specifier: file:/usr/local/dev/cursor
+    specifier: file:../../
     version: file:../..
 
 packages:
@@ -492,7 +492,8 @@ packages:
   file:../..:
     resolution: {directory: ../.., type: directory}
     name: thalia
-    engines: {node: '>=10'}
+    engines: {node: '>=20'}
+    hasBin: true
     dependencies:
       '@sequelize/core': 7.0.0-alpha.46
       '@sequelize/mariadb': 7.0.0-alpha.46

@@ -15,6 +15,10 @@
       "*.mustache": "handlebars",
       "*.hbs": "handlebars"
     },
+    "[javascript][typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.maxTokenizationLineLength": 2500
+    },
     "javascript.validate.enable": false,
     "standard.validate": ["typescript"],
     "standard.engine": "standard",
@@ -36,6 +40,7 @@
       "ionutvmi.path-autocomplete": true,
       "mrmlnc.vscode-scss": true
     },
-    "editor.tabSize": 2
+    "editor.tabSize": 2,
+    "prettier.configPath": "/usr/local/dev/cursor/.prettierrc"
   }
 }

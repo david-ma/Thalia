@@ -1,28 +1,23 @@
 /**
  * index.ts - Main entry point for Thalia
  *
- * This file serves as the main entry point for the Thalia framework.
+ * There are a few ways of running Thalia:
+ * standalone, in a project directory:
+ *  `npx thalia` this will launch the server in standalone mode, in the current directory
+ *  In this case, thalia is an npm package that has been installed there.
  *
- * Find the default project
- * Find out if we're running in standalone mode or multiplex mode
- * Find the port
+ * multiplex.
+ * Also `npx thalia`
+ * In this case, you have a thalia deployment, with multiple projects in the /websites directory.
  *
- */
-import { Server } from './server.js';
-import { ServerOptions } from './types.js';
-import { Website } from './website.js';
-import { Database } from './database.js';
-import { RouteGuard } from './route-guard.js';
-export * from './types.js';
-export { Server, Website, Database, RouteGuard };
-export * from './security.js';
+ * dev mode.
+ * npx thalia --project=PROJECT
+ * In this case, you have a thalia deployment, with multiple projects in the /websites directory, and you want to run a specific project.
+ *
+ * --port=PORT will override the default port of 1337, in any mode
+* PORT and PROJECT can also be set in the environment variables PORT and PROJECT
+*/
+export * from './thalia.js';
 export * from '../models/index.js';
-export declare class Thalia {
-    private server;
-    private websites;
-    constructor(options: ServerOptions);
-    start(): Promise<void>;
-    stop(): Promise<void>;
-    getServer(): Server;
-}
+export * from './security.js';
 //# sourceMappingURL=index.d.ts.map

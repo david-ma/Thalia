@@ -44,8 +44,8 @@ export class Website {
         this.routeGuard = new RouteGuard(this);
     }
     async loadConfig() {
-        // check if we have a config.js in the project folder, and import it if it exists
-        const configPath = path.join(this.rootPath, 'config', 'config.js');
+        // check if we have a config.mjs in the project folder, and import it if it exists
+        const configPath = path.join(this.rootPath, 'config', 'config.mjs');
         if (fs.existsSync(configPath)) {
             const configModule = await import('file://' + configPath);
             const config = configModule.config;

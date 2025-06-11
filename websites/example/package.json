@@ -2,9 +2,13 @@
   "name": "example-website",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "echo 'Hello, World!'"
+  },
   "dependencies": {
     "@sequelize/core": "7.0.0-alpha.46",
     "@sequelize/mariadb": "7.0.0-alpha.46",
-    "thalia": "file:/usr/local/dev/cursor"
+    "thalia": "file:../../"
   }
 } 

@@ -1,52 +1,41 @@
 /**
  * index.ts - Main entry point for Thalia
  *
- * This file serves as the main entry point for the Thalia framework.
+ * There are a few ways of running Thalia:
+ * standalone, in a project directory:
+ *  `npx thalia` this will launch the server in standalone mode, in the current directory
+ *  In this case, thalia is an npm package that has been installed there.
  *
- * Find the default project
- * Find out if we're running in standalone mode or multiplex mode
- * Find the port
+ * multiplex.
+ * Also `npx thalia`
+ * In this case, you have a thalia deployment, with multiple projects in the /websites directory.
  *
- */
+ * dev mode.
+ * npx thalia --project=PROJECT
+ * In this case, you have a thalia deployment, with multiple projects in the /websites directory, and you want to run a specific project.
+ *
+ * --port=PORT will override the default port of 1337, in any mode
+* PORT and PROJECT can also be set in the environment variables PORT and PROJECT
+*/
 import { cwd } from 'process';
-import { Server } from './server.js';
-import { Website } from './website.js';
 import path from 'path';
-import { Database } from './database.js';
-import { RouteGuard } from './route-guard.js';
-// Re-export types
-export * from './types.js';
-// Export main components
-export { Server, Website, Database, RouteGuard };
-// Export security
-export * from './security.js';
-// Export models
-export * from '../models/index.js';
-// Main Thalia class for easy initialization
-export class Thalia {
-    constructor(options) {
-        this.websites = Website.loadAllWebsites(options);
-        this.server = new Server(options, this.websites);
-    }
-    async start() {
-        await this.server.start();
-    }
-    async stop() {
-        await this.server.stop();
-    }
-    getServer() {
-        return this.server;
-    }
-}
+import { Thalia } from './thalia.js';
+import fs from 'fs';
 const project = process.argv.find(arg => arg.startsWith('--project'))?.split('=')[1] || process.env['PROJECT'] || 'default';
-const port = parseInt(process.argv.find(arg => arg.startsWith('--port'))?.split('=')[1] || process.env['PORT'] || '3000');
+const port = parseInt(process.argv.find(arg => arg.startsWith('--port'))?.split('=')[1] || process.env['PORT'] || '1337');
 let options = {
     mode: 'standalone',
     project: project,
     rootPath: cwd(),
     port: port
 };
-if (project == 'default') {
+console.log("Checking if websites directory exists at", path.join(options.rootPath, 'websites'));
+if (!fs.existsSync(path.join(options.rootPath, 'websites'))) {
+    // If there's no websites directory, we're in standalone mode
+    options.mode = 'standalone';
+    options.project = path.basename(options.rootPath);
+}
+else if (project == 'default') {
     console.log(`Running in multiplex mode. Loading all projects.`);
     options.mode = 'multiplex';
     options.rootPath = path.join(options.rootPath, 'websites');
@@ -57,5 +46,12 @@ else {
     options.rootPath = path.join(options.rootPath, 'websites', project);
 }
 const thalia = new Thalia(options);
+console.log("Starting Thalia", options);
 thalia.start();
+// Export everything from thalia.js
+export * from './thalia.js';
+// Export models
+export * from '../models/index.js';
+// Export security
+export * from './security.js';
 //# sourceMappingURL=index.js.map

@@ -8,4 +8,9 @@ export interface Thalia {
 export interface ThaliaConstructor {
     new (options: ServerOptions): Thalia;
 }
+export declare class Thalia {
+    private server;
+    private websites;
+    constructor(options: ServerOptions);
+}
 //# sourceMappingURL=thalia.d.ts.map

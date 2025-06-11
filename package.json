@@ -8,8 +8,16 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./server": {
       "import": "./dist/server/index.js",
       "types": "./dist/server/index.d.ts"
+    },
+    "./website": {
+      "import": "./dist/server/website.js",
+      "types": "./dist/server/website.d.ts"
     },
     "./models": {
       "import": "./dist/models/index.js",
@@ -19,6 +27,9 @@
       "import": "./dist/server/security.js",
       "types": "./dist/server/security.d.ts"
     }
+  },
+  "bin": {
+    "thalia": "./dist/server/index.js"
   },
   "files": [
     "dist",

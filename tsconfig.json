@@ -17,18 +17,23 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "thalia": ["./server/index"],
-      "thalia/*": ["./server/*"],
+      "thalia": ["./index"],
+      "thalia/*": ["./*"],
       "thalia/models/*": ["./models/*"]
     }
   },
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  },
   "include": [
     "server/**/*",
-    "models/**/*"
+    "models/**/*",
+    "index.ts",
+    "websites/example/**/*"
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "websites/**/*"
+    "dist"
   ]
 } 

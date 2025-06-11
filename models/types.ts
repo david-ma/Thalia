@@ -1,9 +1,9 @@
 import { Sequelize, Model, ModelStatic } from '@sequelize/core'
-import { User } from './security'
-import { Session } from './security'
-import { Audit } from './security'
-import { Album } from './smugmug'
-import { Image } from './smugmug'
+import { User } from './security.js'
+import { Session } from './security.js'
+import { Audit } from './security.js'
+import { Album } from './smugmug.js'
+import { Image } from './smugmug.js'
 
 export interface SeqObject {
   sequelize: Sequelize

@@ -1,6 +1,6 @@
-import { UserFactory, SessionFactory, AuditFactory, User, Session, Audit } from './security';
-import { AlbumFactory, ImageFactory } from './smugmug';
-import { SeqObject, SecurityObject } from './types';
+import { UserFactory, SessionFactory, AuditFactory, User, Session, Audit } from './security.js';
+import { AlbumFactory, ImageFactory } from './smugmug.js';
+import { SeqObject, SecurityObject } from './types.js';
 export type { SeqObject, SecurityObject };
 export type { User, Session, Audit };
 export interface DatabaseConfig {
@@ -22,4 +22,5 @@ export declare function securityFactory(config: DatabaseConfig): SeqObject;
 export declare function smugmugFactory(config: DatabaseConfig): SeqObject;
 export { UserFactory, SessionFactory, AuditFactory };
 export { AlbumFactory, ImageFactory };
-export * from './security';
+export * from './security.js';
+//# sourceMappingURL=index.d.ts.map

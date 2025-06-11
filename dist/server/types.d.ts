@@ -1,4 +1,4 @@
-/// <reference types="node" />
+/// <reference types="node" resolution-mode="require"/>
 import { IncomingMessage, ServerResponse } from 'http';
 export type ServerMode = 'standalone' | 'multiplex' | 'dev';
 export interface ServerOptions {
@@ -47,3 +47,4 @@ export interface Website {
     readonly rootPath: string;
     handleRequest(req: IncomingMessage, res: ServerResponse): void;
 }
+//# sourceMappingURL=types.d.ts.map

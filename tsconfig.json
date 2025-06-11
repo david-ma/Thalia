@@ -3,66 +3,32 @@
     // Language and Environment
     "target": "ES2020",
     "lib": ["ES2020"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "composite": true,
-
-    // Emit
-    "declaration": true,
-    "sourceMap": true,
-    "outDir": "./dist",
-    "rootDir": ".",
-    "noEmit": false,
-    "removeComments": false,
-    "preserveConstEnums": true,
-
-    // Type Checking
     "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "alwaysStrict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-
-    // Interop Constraints
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "isolatedModules": true,
-
-    // Additional Checks
-    "noUncheckedIndexedAccess": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "exactOptionalPropertyTypes": true,
-    "noErrorTruncation": true,
-
-    // Path Aliases
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "declaration": true,
+    "composite": true,
+    "declarationMap": true,
+    "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "thalia": ["server/index"],
-      "thalia/*": ["server/*"],
-      "thalia/models/*": ["models/*"]
+      "thalia": ["./server/index"],
+      "thalia/*": ["./server/*"],
+      "thalia/models/*": ["./models/*"]
     }
   },
   "include": [
     "server/**/*",
-    "models/**/*",
-    "websites/**/*"
+    "models/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "websites",
-    "public",
-    "examples",
-    "tests"
+    "websites/**/*"
   ]
 } 

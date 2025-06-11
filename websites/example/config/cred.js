@@ -1,13 +1,13 @@
-exports.cred = {
+export const cred = {
   mailAuth: {
     user: '',
     pass: '',
   },
   users: [
     {
-      email: 'admin@example.com',
+      email: 'david@david-ma.net',
       password: 'password',
-      name: 'Admin',
+      name: 'David Ma',
       role: 'admin',
       locked: false,
       verified: false,

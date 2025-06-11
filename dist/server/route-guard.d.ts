@@ -1,6 +1,6 @@
-/// <reference types="node" />
+/// <reference types="node" resolution-mode="require"/>
 import { IncomingMessage, ServerResponse } from 'http';
-import { Website } from './website';
+import { Website } from './website.js';
 export declare class RouteGuard {
     private website;
     private routes;
@@ -12,3 +12,4 @@ export declare class RouteGuard {
     private handleProxy;
     private parseCookies;
 }
+//# sourceMappingURL=route-guard.d.ts.map

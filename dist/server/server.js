@@ -5,7 +5,7 @@
  */
 import { createServer } from 'http';
 import { EventEmitter } from 'events';
-import { Router } from './router';
+import { Router } from './router.js';
 export class Server extends EventEmitter {
     constructor(options, websites) {
         super();

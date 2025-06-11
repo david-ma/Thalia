@@ -23,7 +23,7 @@ import path from 'path';
 import Handlebars from 'handlebars';
 import sass from 'sass';
 import { cwd } from 'process';
-import { RouteGuard } from './route-guard';
+import { RouteGuard } from './route-guard.js';
 export class Website {
     /**
      * Creates a new Website instance
@@ -38,13 +38,17 @@ export class Website {
         this.config = config;
         this.rootPath = config.rootPath;
         this.loadPartials();
-        this.loadConfig();
+        this.loadConfig().catch(error => {
+            console.error('Error loading config:', error);
+        });
         this.routeGuard = new RouteGuard(this);
     }
-    loadConfig() {
+    async loadConfig() {
         // check if we have a config.js in the project folder, and import it if it exists
-        if (fs.existsSync(path.join(this.rootPath, 'config', 'config.js'))) {
-            const config = require(path.join(this.rootPath, 'config', 'config.js')).config;
+        const configPath = path.join(this.rootPath, 'config', 'config.js');
+        if (fs.existsSync(configPath)) {
+            const configModule = await import('file://' + configPath);
+            const config = configModule.config;
             this.config = {
                 ...this.config,
                 ...config,

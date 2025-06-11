@@ -3,7 +3,7 @@
  * 
  */
 
-import { Website } from './types'
+import { Website } from './types.js'
 
 export class Router {
   private websites: { [key: string]: Website }

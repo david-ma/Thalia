@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http'
 import http from 'http'
-import { RouteRule } from './types'
-import { Website } from './website'
+import { RouteRule } from './types.js'
+import { Website } from './website.js'
 import formidable from 'formidable'
 
 export class RouteGuard {

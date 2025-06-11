@@ -1,5 +1,5 @@
-import { Server } from './server'
-import { ServerOptions } from './types'
+import { Server } from './server.js'
+import { ServerOptions } from './types.js'
 
 export interface Thalia {
   start(): Promise<void>

@@ -1,24 +1,36 @@
 #!/usr/bin/env node
 
-const { startServer } = require('../dist/server')
+import { cwd } from 'process'
+import { Server } from '../dist/server/server.js'
+import { ServerOptions } from '../dist/server/types.js'
+import { Website } from '../dist/server/website.js'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
-const args = process.argv.slice(2)
-const options = {
-  port: process.env.PORT ? parseInt(process.env.PORT, 10) : undefined,
-  project: process.env.PROJECT
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+const project = process.argv.find(arg => arg.startsWith('--project'))?.split('=')[1] || process.env['PROJECT'] || 'default'
+const port = parseInt(process.argv.find(arg => arg.startsWith('--port'))?.split('=')[1] || process.env['PORT'] || '3000')
+
+let options: ServerOptions = {
+  mode: 'standalone',
+  project: project,
+  rootPath: cwd(),
+  port: port
 }
 
-for (let i = 0; i < args.length; i++) {
-  if (args[i] === '--port' && i + 1 < args.length) {
-    options.port = parseInt(args[i + 1], 10)
-    i++
-  } else if (args[i] === '--project' && i + 1 < args.length) {
-    options.project = args[i + 1]
-    i++
-  }
+if (project == 'default') {
+  console.log(`Running in multiplex mode. Loading all projects.`)
+  options.mode = 'multiplex'
+  options.rootPath = path.join(options.rootPath, 'websites')
+} else {
+  console.log(`Running in standalone mode for project: ${project}`)
+  options.mode = 'standalone'
+  options.rootPath = path.join(options.rootPath, 'websites', project)
 }
 
-startServer(options).catch(err => {
-  console.error('Failed to start server:', err)
-  process.exit(1)
-})
+const websites = Website.loadAllWebsites(options)
+const server = new Server(options, websites)
+
+server.start()

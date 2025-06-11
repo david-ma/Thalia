@@ -38,3 +38,4 @@ export declare class Audit extends Model<InferAttributes<Audit>, InferCreationAt
     updatedAt: CreationOptional<Date>;
 }
 export declare function AuditFactory(sequelize: Sequelize): typeof Audit;
+//# sourceMappingURL=security.d.ts.map

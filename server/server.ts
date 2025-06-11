@@ -6,9 +6,9 @@
 
 import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http'
 import { EventEmitter } from 'events'
-import { ServerMode, ServerOptions } from './types'
-import { Router } from './router'
-import { Website } from './types'
+import { ServerMode, ServerOptions } from './types.js'
+import { Router } from './router.js'
+import { Website } from './website.js'
 
 export class Server extends EventEmitter {
   private httpServer: HttpServer | null = null

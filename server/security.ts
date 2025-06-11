@@ -1,5 +1,5 @@
 import { ServerResponse, IncomingMessage } from 'http'
-import { Website } from './website'
+import { Website } from './website.js'
 
 export interface SecurityOptions {
   websiteName: string

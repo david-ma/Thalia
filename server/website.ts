@@ -19,14 +19,14 @@
  * - Request processing (handled by Handler)
  */
 
-import { Website as IWebsite, WebsiteConfig, ServerOptions, RouteRule } from './types'
+import { Website as IWebsite, WebsiteConfig, ServerOptions, RouteRule } from './types.js'
 import fs from 'fs'
 import path from 'path'
 import { IncomingMessage, ServerResponse } from 'http'
 import Handlebars from 'handlebars'
 import sass from 'sass'
 import { cwd } from 'process'
-import { RouteGuard } from './route-guard'
+import { RouteGuard } from './route-guard.js'
 
 interface Views {
   [key: string]: string;
@@ -59,14 +59,18 @@ export class Website implements IWebsite {
     this.config = config
     this.rootPath = config.rootPath
     this.loadPartials()
-    this.loadConfig()
+    this.loadConfig().catch(error => {
+      console.error('Error loading config:', error)
+    })
     this.routeGuard = new RouteGuard(this)
   }
 
-  private loadConfig() {
+  private async loadConfig() {
     // check if we have a config.js in the project folder, and import it if it exists
-    if (fs.existsSync(path.join(this.rootPath, 'config', 'config.js'))) {
-      const config = require(path.join(this.rootPath, 'config', 'config.js')).config
+    const configPath = path.join(this.rootPath, 'config', 'config.js')
+    if (fs.existsSync(configPath)) {
+      const configModule = await import('file://' + configPath)
+      const config = configModule.config
       this.config = {
         ...this.config,
         ...config,

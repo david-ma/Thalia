@@ -1,8 +1,8 @@
 import { Sequelize, Options } from '@sequelize/core'
 import { MariaDbDialect } from '@sequelize/mariadb'
-import { UserFactory, SessionFactory, AuditFactory, User, Session, Audit } from './security'
-import { AlbumFactory, ImageFactory } from './smugmug'
-import { SeqObject, SecurityObject } from './types'
+import { UserFactory, SessionFactory, AuditFactory, User, Session, Audit } from './security.js'
+import { AlbumFactory, ImageFactory } from './smugmug.js'
+import { SeqObject, SecurityObject } from './types.js'
 
 // Export types
 export type { SeqObject, SecurityObject }
@@ -112,4 +112,4 @@ export { UserFactory, SessionFactory, AuditFactory }
 export { AlbumFactory, ImageFactory }
 
 // Export all from security
-export * from './security'
+export * from './security.js'

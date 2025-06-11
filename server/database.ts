@@ -1,6 +1,6 @@
 import { Sequelize, Options, Model, ModelStatic } from '@sequelize/core'
 import { MariaDbDialect } from '@sequelize/mariadb'
-import { SeqObject } from '../models/types'
+import { SeqObject } from '../models/types.js'
 
 
 export interface DatabaseConfig {

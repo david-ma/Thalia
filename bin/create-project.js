@@ -1,62 +1,91 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { execSync } from 'child_process'
 
-// Get project name from command line arguments
-const projectName = process.argv[2];
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
+const projectName = process.argv[2]
 if (!projectName) {
-  console.error('Please provide a project name');
-  process.exit(1);
+  console.error('Please provide a project name')
+  process.exit(1)
 }
 
-const projectDir = path.join(process.cwd(), projectName);
-if (fs.existsSync(projectDir)) {
-  console.error(`Directory ${projectName} already exists`);
-  process.exit(1);
+const projectPath = path.join(__dirname, '..', 'websites', projectName)
+if (fs.existsSync(projectPath)) {
+  console.error(`Project ${projectName} already exists`)
+  process.exit(1)
 }
-
-// Create project directory
-fs.mkdirSync(projectDir);
-
-// Copy template files
-const templateDir = path.join(__dirname, '..', 'templates');
-fs.readdirSync(templateDir).forEach(file => {
-  const sourcePath = path.join(templateDir, file);
-  const targetPath = path.join(projectDir, file);
-  fs.copyFileSync(sourcePath, targetPath);
-});
 
 // Create project structure
-const dirs = [
-  'src',
-  'views',
-  'public',
-  'config'
-];
+fs.mkdirSync(projectPath)
+fs.mkdirSync(path.join(projectPath, 'config'))
+fs.mkdirSync(path.join(projectPath, 'public'))
+fs.mkdirSync(path.join(projectPath, 'src'))
+fs.mkdirSync(path.join(projectPath, 'src', 'partials'))
 
-dirs.forEach(dir => {
-  fs.mkdirSync(path.join(projectDir, dir));
-});
+// Create package.json
+const packageJson = {
+  name: projectName,
+  version: '0.1.0',
+  private: true,
+  dependencies: {
+    thalia: 'file:../../'
+  }
+}
 
-// Initialize git repository
-execSync('git init', { cwd: projectDir });
+fs.writeFileSync(
+  path.join(projectPath, 'package.json'),
+  JSON.stringify(packageJson, null, 2)
+)
+
+// Create tsconfig.json
+const tsconfigJson = {
+  extends: '../../../tsconfig.json',
+  compilerOptions: {
+    outDir: '../../../dist/websites/' + projectName,
+    rootDir: '.',
+    composite: true
+  },
+  include: ['**/*'],
+  exclude: ['node_modules', 'dist']
+}
+
+fs.writeFileSync(
+  path.join(projectPath, 'tsconfig.json'),
+  JSON.stringify(tsconfigJson, null, 2)
+)
+
+// Create config.ts
+const configTs = `import { users, SecurityOptions } from 'thalia'
+
+const securityOptions: SecurityOptions = {
+  websiteName: '${projectName}',
+  mailFrom: 'Thalia <thalia@david-ma.net>',
+  mailAuth: {
+    user: 'user@example.com',
+    pass: 'password',
+  },
+}
+
+export const config = {
+  domains: [],
+  data: false,
+  dist: false,
+  controllers: {
+    ...users(securityOptions),
+  },
+}
+`
+
+fs.writeFileSync(path.join(projectPath, 'config', 'config.ts'), configTs)
 
 // Install dependencies
-execSync('npm install', { cwd: projectDir });
+console.log('Installing dependencies...')
+execSync('npm install', { cwd: projectPath, stdio: 'inherit' })
 
-console.log(`
-Thalia project created successfully!
-
-To get started:
-  cd ${projectName}
-  npm run dev
-
-Available commands:
-  npm start    - Start the server
-  npm run dev  - Start development mode
-  npm run build - Build the project
-  npm run serve - Serve the built project
-`); 
+console.log(`Project ${projectName} created successfully!`)
+console.log(`cd websites/${projectName} to get started`) 

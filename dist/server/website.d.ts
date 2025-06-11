@@ -18,8 +18,8 @@
  * - Request routing (handled by Router)
  * - Request processing (handled by Handler)
  */
-/// <reference types="node" />
-import { Website as IWebsite, WebsiteConfig, ServerOptions, RouteRule } from './types';
+/// <reference types="node" resolution-mode="require"/>
+import { Website as IWebsite, WebsiteConfig, ServerOptions, RouteRule } from './types.js';
 import { IncomingMessage, ServerResponse } from 'http';
 import Handlebars from 'handlebars';
 interface Controller {
@@ -68,3 +68,4 @@ export declare const controllerFactories: {
  */
 export declare const latestlogs: (res: ServerResponse, _req: IncomingMessage, website: Website) => Promise<void>;
 export {};
+//# sourceMappingURL=website.d.ts.map

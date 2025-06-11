@@ -1,5 +1,5 @@
 import { Sequelize, Model, ModelStatic } from '@sequelize/core';
-import { SeqObject } from '../models/types';
+import { SeqObject } from '../models/types.js';
 export interface DatabaseConfig {
     dialect: 'mariadb';
     host: string;
@@ -32,3 +32,4 @@ export declare class Database implements SeqObject {
     getSequelize(): Sequelize;
     close(): Promise<void>;
 }
+//# sourceMappingURL=database.d.ts.map

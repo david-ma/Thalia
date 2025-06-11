@@ -8,15 +8,15 @@
  * Find the port
  *
  */
-import { Server } from './server';
-import { ServerOptions } from './types';
-import { Website } from './website';
-import { Database } from './database';
-import { RouteGuard } from './route-guard';
-export * from './types';
+import { Server } from './server.js';
+import { ServerOptions } from './types.js';
+import { Website } from './website.js';
+import { Database } from './database.js';
+import { RouteGuard } from './route-guard.js';
+export * from './types.js';
 export { Server, Website, Database, RouteGuard };
-export * from './security';
-export * from '../models';
+export * from './security.js';
+export * from '../models/index.js';
 export declare class Thalia {
     private server;
     private websites;
@@ -25,3 +25,4 @@ export declare class Thalia {
     stop(): Promise<void>;
     getServer(): Server;
 }
+//# sourceMappingURL=index.d.ts.map

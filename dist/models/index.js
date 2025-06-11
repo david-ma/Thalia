@@ -1,6 +1,6 @@
 import { Sequelize } from '@sequelize/core';
-import { UserFactory, SessionFactory, AuditFactory } from './security';
-import { AlbumFactory, ImageFactory } from './smugmug';
+import { UserFactory, SessionFactory, AuditFactory } from './security.js';
+import { AlbumFactory, ImageFactory } from './smugmug.js';
 export function securityFactory(config) {
     const options = {
         dialect: 'mariadb',
@@ -77,5 +77,5 @@ export function smugmugFactory(config) {
 export { UserFactory, SessionFactory, AuditFactory };
 export { AlbumFactory, ImageFactory };
 // Export all from security
-export * from './security';
+export * from './security.js';
 //# sourceMappingURL=index.js.map

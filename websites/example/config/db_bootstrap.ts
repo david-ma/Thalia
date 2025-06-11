@@ -1,8 +1,13 @@
-import { SeqObject } from 'thalia'
-import { securityFactory } from 'thalia'
-import { DatabaseConfig } from 'thalia'
-import { UserFactory } from 'thalia'
-const cred = require('./cred.js').cred
+import { SeqObject, securityFactory, DatabaseConfig, UserFactory } from 'thalia'
+// import { cred } from './cred.js'
+const cred = {
+  users: [
+    {
+      email: 'admin@example.com',
+      password: 'password',
+    },
+  ],
+}
 
 let seqOptions: DatabaseConfig = {
   dialect: 'mariadb',
@@ -33,4 +38,4 @@ seq.sequelize
     })
   })
 
-exports.seq = seq
+export { seq }

@@ -9,19 +9,19 @@
  *
  */
 import { cwd } from 'process';
-import { Server } from './server';
-import { Website } from './website';
+import { Server } from './server.js';
+import { Website } from './website.js';
 import path from 'path';
-import { Database } from './database';
-import { RouteGuard } from './route-guard';
+import { Database } from './database.js';
+import { RouteGuard } from './route-guard.js';
 // Re-export types
-export * from './types';
+export * from './types.js';
 // Export main components
 export { Server, Website, Database, RouteGuard };
 // Export security
-export * from './security';
+export * from './security.js';
 // Export models
-export * from '../models';
+export * from '../models/index.js';
 // Main Thalia class for easy initialization
 export class Thalia {
     constructor(options) {

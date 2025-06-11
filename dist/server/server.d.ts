@@ -3,11 +3,11 @@
  *
  * Class which allows initialisation of a server.
  */
-/// <reference types="node" />
+/// <reference types="node" resolution-mode="require"/>
 import { EventEmitter } from 'events';
-import { ServerMode, ServerOptions } from './types';
-import { Router } from './router';
-import { Website } from './types';
+import { ServerMode, ServerOptions } from './types.js';
+import { Router } from './router.js';
+import { Website } from './website.js';
 export declare class Server extends EventEmitter {
     private httpServer;
     private port;
@@ -21,3 +21,4 @@ export declare class Server extends EventEmitter {
     getMode(): ServerMode;
     getPort(): number;
 }
+//# sourceMappingURL=server.d.ts.map

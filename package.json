@@ -2,39 +2,22 @@
   "name": "thalia",
   "private": true,
   "version": "2.0.0",
+  "type": "module",
   "description": "Yet another server framework for serving websites",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "default": "./dist/server/index.js",
-        "types": "./dist/server/index.d.ts"
-      },
-      "require": {
-        "default": "./dist/server/index.js",
-        "types": "./dist/server/index.d.ts"
-      }
+      "import": "./dist/server/index.js",
+      "types": "./dist/server/index.d.ts"
     },
     "./models": {
-      "import": {
-        "default": "./dist/models/index.js",
-        "types": "./dist/models/index.d.ts"
-      },
-      "require": {
-        "default": "./dist/models/index.js",
-        "types": "./dist/models/index.d.ts"
-      }
+      "import": "./dist/models/index.js",
+      "types": "./dist/models/index.d.ts"
     },
     "./security": {
-      "import": {
-        "default": "./dist/server/security.js",
-        "types": "./dist/server/security.d.ts"
-      },
-      "require": {
-        "default": "./dist/server/security.js",
-        "types": "./dist/server/security.d.ts"
-      }
+      "import": "./dist/server/security.js",
+      "types": "./dist/server/security.d.ts"
     }
   },
   "files": [
@@ -43,17 +26,13 @@
     "LICENSE"
   ],
   "scripts": {
-    "start": "node bin/thalia.js",
-    "build": "node bin/build.js",
-    "dev": "node bin/develop.js",
-    "serve": "node bin/thalia.js --serve",
-    "init": "node bin/create-project.js",
-    "build:ts": "tsc",
-    "watch:ts": "tsc -w",
-    "watch:scss": "sass --watch src/scss:public/css",
+    "start": "node dist/server/index.js",
+    "build": "tsc",
+    "dev": "tsc -w",
+    "serve": "node dist/server/index.js --serve",
+    "init": "node dist/bin/create-project.js",
     "clean": "rimraf dist public",
-    "buildServer": "cd server; tsc",
-    "prepublishOnly": "npm run build:ts"
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@sequelize/core": "7.0.0-alpha.46",
@@ -94,7 +73,7 @@
     "webpack-merge": "^5.10.0"
   },
   "engines": {
-    "node": ">=10"
+    "node": ">=20"
   },
   "nodemonConfig": {
     "exec": "node bin/thalia.js",

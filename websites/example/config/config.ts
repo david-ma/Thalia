@@ -11,7 +11,7 @@ const securityOptions: SecurityOptions = {
   },
 }
 
-exports.config = {
+export const config = {
   domains: [],
   data: false,
   dist: false,

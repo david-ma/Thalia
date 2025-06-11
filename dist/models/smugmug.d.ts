@@ -30,3 +30,4 @@ export declare class Image extends Model<InferAttributes<Image>, InferCreationAt
     updatedAt: CreationOptional<Date>;
 }
 export declare function ImageFactory(sequelize: Sequelize): typeof Image;
+//# sourceMappingURL=smugmug.d.ts.map

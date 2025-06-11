@@ -1,6 +1,6 @@
-/// <reference types="node" />
+/// <reference types="node" resolution-mode="require"/>
 import { ServerResponse, IncomingMessage } from 'http';
-import { Website } from './website';
+import { Website } from './website.js';
 export interface SecurityOptions {
     websiteName: string;
     mailFrom: string;
@@ -14,3 +14,4 @@ export declare function users(_options: SecurityOptions): {
     logout: (_res: ServerResponse, _req: IncomingMessage, _website: Website) => void;
     register: (_res: ServerResponse, _req: IncomingMessage, _website: Website) => void;
 };
+//# sourceMappingURL=security.d.ts.map

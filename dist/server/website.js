@@ -45,7 +45,7 @@ export class Website {
     }
     async loadConfig() {
         // check if we have a config.mjs in the project folder, and import it if it exists
-        const configPath = path.join(this.rootPath, 'config', 'config.mjs');
+        const configPath = path.join(this.rootPath, 'config', 'config.js');
         if (fs.existsSync(configPath)) {
             const configModule = await import('file://' + configPath);
             const config = configModule.config;

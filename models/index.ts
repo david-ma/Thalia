@@ -1,10 +1,8 @@
 import { Sequelize, Options } from '@sequelize/core'
 import { MariaDbDialect } from '@sequelize/mariadb'
-import { User, UserFactory } from './security'
-import { Session, SessionFactory } from './security'
-import { Audit, AuditFactory } from './security'
-import { SeqObject } from './types'
+import { UserFactory, SessionFactory, AuditFactory } from './security'
 import { AlbumFactory, ImageFactory } from './smugmug'
+import { SeqObject } from './types'
 
 export interface DatabaseConfig {
   dialect: 'mariadb'
@@ -59,9 +57,11 @@ export function securityFactory(config: DatabaseConfig): SeqObject {
 
   return {
     sequelize,
-    User,
-    Session,
-    Audit,
+    models: {
+      User,
+      Session,
+      Audit,
+    }
   }
 }
 
@@ -115,7 +115,9 @@ export function smugmugFactory(config: DatabaseConfig): SeqObject {
 
   return {
     sequelize,
-    Album,
-    Image,
+    models: {
+      Album,
+      Image,
+    }
   }
 }

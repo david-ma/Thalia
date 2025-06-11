@@ -1,7 +1,7 @@
-import { Sequelize, Options } from '@sequelize/core'
+import { Sequelize, Options, Model, ModelStatic } from '@sequelize/core'
 import { MariaDbDialect } from '@sequelize/mariadb'
-import { securityFactory } from '../models'
 import { SeqObject } from '../models/types'
+
 
 export interface DatabaseConfig {
   dialect: 'mariadb'
@@ -19,10 +19,12 @@ export interface DatabaseConfig {
   }
 }
 
-export class Database {
+export class Database implements SeqObject {
   private static instance: Database
-  private sequelize: Sequelize
-  private models: SeqObject
+  public sequelize: Sequelize
+  public models: {
+    [key: string]: ModelStatic<Model>
+  } = {}
 
   private constructor(config: DatabaseConfig) {
     const options: Options<MariaDbDialect> = {
@@ -46,7 +48,6 @@ export class Database {
     }
 
     this.sequelize = new Sequelize(options)
-    this.models = securityFactory(options)
   }
 
   public static getInstance(config?: DatabaseConfig): Database {
@@ -80,7 +81,10 @@ export class Database {
   }
 
   public getModels(): SeqObject {
-    return this.models
+    return {
+      sequelize: this.sequelize,
+      models: this.models
+    }
   }
 
   public getSequelize(): Sequelize {

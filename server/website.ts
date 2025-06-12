@@ -24,7 +24,7 @@ import fs from 'fs'
 import path from 'path'
 import { IncomingMessage, ServerResponse } from 'http'
 import Handlebars from 'handlebars'
-import sass from 'sass'
+import * as sass from 'sass'
 import { cwd } from 'process'
 import { RouteGuard } from './route-guard.js'
 

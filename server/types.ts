@@ -41,12 +41,17 @@ export interface RouteRule {
 }
 
 // Website Types
-export interface WebsiteConfig {
-  name: string
-  rootPath: string
+export type RawWebsiteConfig = {
+  name?: string
+  rootPath?: string
   domains?: string[]
   controllers?: { [key: string]: any }
-  routes?: RouteRule[]    // List of route rules
+  routes?: RouteRule[]
+}
+
+export interface WebsiteConfig extends RawWebsiteConfig {
+  name: string
+  rootPath: string
 }
 
 export interface Website {

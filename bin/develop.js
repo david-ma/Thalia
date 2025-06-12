@@ -10,11 +10,17 @@ const thaliaDirectory = process.cwd();
 
 // Get project name from command line arguments
 let projectName = process.argv[2];
+const listOfProjects = fs.readdirSync(path.resolve(thaliaDirectory, 'websites'));
+
+
 if (projectName) {
+  if (!listOfProjects.includes(projectName)) {
+    console.error(`Project ${projectName} not found`);
+    process.exit(1);
+  }
   startServer(projectName);
 } else {
   // No project name provided? Ask for it
-  const listOfProjects = fs.readdirSync(path.resolve(thaliaDirectory, 'websites'));
 
   // list them in a numbered list
   console.log('Available projects:');
@@ -79,19 +85,30 @@ function startServer(projectName) {
   });
 
   const processes = [tsc, nodemon, projectTsc];
+  const bs = browserSync.create();
 
   // set timeout for 500ms
   setTimeout(() => {
-  browserSync.create().init({
-    proxy: `http://localhost:3000`,
-    port: 3001,
-    open: true,
-    notify: true,
-    files: [
+    bs.init({
+      proxy: `http://localhost:3000`,
+      port: 3001,
+      open: false,
+      notify: false,
+      files: [
         `${projectRoot}/**/*`,
       ]
     });
   }, 500);
+
+  // If the user presses Ctrl+C, kill all processes
+  process.on('SIGINT', () => {
+    console.log('SIGINT received, exiting');
+
+    bs.cleanup();
+    bs.exit();
+    processes.forEach(process => process.kill('SIGINT'));
+    process.exit(0);
+  });
 }
 
 function prompt(query) {

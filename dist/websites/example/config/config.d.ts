@@ -1,3 +1,4 @@
+/// <reference types="node" resolution-mode="require"/>
 export declare const config: {
     domains: string[];
     controllers: {

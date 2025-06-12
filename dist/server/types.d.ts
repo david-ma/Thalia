@@ -32,14 +32,18 @@ export interface RouteRule {
         port: number;
     };
 }
-export interface WebsiteConfig {
-    name: string;
-    rootPath: string;
+export type RawWebsiteConfig = {
+    name?: string;
+    rootPath?: string;
     domains?: string[];
     controllers?: {
         [key: string]: any;
     };
     routes?: RouteRule[];
+};
+export interface WebsiteConfig extends RawWebsiteConfig {
+    name: string;
+    rootPath: string;
 }
 export interface Website {
     readonly name: string;

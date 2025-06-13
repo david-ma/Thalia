@@ -22,7 +22,7 @@
 import { Website as IWebsite, WebsiteConfig, ServerOptions, RouteRule } from './types.js';
 import { IncomingMessage, ServerResponse } from 'http';
 import Handlebars from 'handlebars';
-interface Controller {
+export interface Controller {
     (res: ServerResponse, req: IncomingMessage, website: Website): void;
 }
 export declare class Website implements IWebsite {
@@ -55,9 +55,25 @@ export declare class Website implements IWebsite {
      * The order is important, because later paths will override earlier paths.
      */
     private loadPartials;
+    /**
+     * "Templates" are higher level than the partials, so we don't register them as partials
+     * Not sure if this is necessary. There probably isn't any danger in registering them as partials.
+     * But this could be safer.
+     */
+    private templates;
     private readAllViewsInFolder;
     renderError(res: ServerResponse, error: Error): void;
-    serveHandlebarsTemplate(res: ServerResponse, templatePath: string, data?: object): void;
+    serveHandlebarsTemplate({ res, template, templatePath, data }: {
+        res: ServerResponse;
+        template: string;
+        templatePath?: undefined;
+        data?: object;
+    } | {
+        res: ServerResponse;
+        template?: undefined;
+        templatePath: string;
+        data?: object;
+    }): void;
     handleRequest(req: IncomingMessage, res: ServerResponse, pathname?: string): void;
     private getContentType;
     static loadAllWebsites(options: ServerOptions): Website[];
@@ -70,5 +86,4 @@ export declare const controllerFactories: {
  * Read the latest 10 logs from the log directory
  */
 export declare const latestlogs: (res: ServerResponse, _req: IncomingMessage, website: Website) => Promise<void>;
-export {};
 //# sourceMappingURL=website.d.ts.map

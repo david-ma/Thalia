@@ -1,4 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http'
+import { Controller } from './website.js'
 
 // Server Types
 export type ServerMode = 'standalone' | 'multiplex' | 'dev'
@@ -45,7 +46,7 @@ export type RawWebsiteConfig = {
   name?: string
   rootPath?: string
   domains?: string[]
-  controllers?: { [key: string]: any }
+  controllers?: { [key: string]: Controller }
   routes?: RouteRule[]
 }
 

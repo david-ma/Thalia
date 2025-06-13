@@ -100,6 +100,32 @@ export class Website {
             }
         }
     }
+    /**
+     * "Templates" are higher level than the partials, so we don't register them as partials
+     * Not sure if this is necessary. There probably isn't any danger in registering them as partials.
+     * But this could be safer.
+     */
+    templates() {
+        const templates = {};
+        const paths = [
+            path.join(cwd(), 'src', 'views'),
+            path.join(cwd(), 'websites', 'example', 'src'),
+            path.join(this.rootPath, 'src')
+        ];
+        for (const filepath of paths) {
+            if (fs.existsSync(filepath)) {
+                // Read directory, get all .hbs, .handlebars, .mustache files
+                const files = fs.readdirSync(filepath);
+                for (const file of files) {
+                    if (file.endsWith('.hbs') || file.endsWith('.handlebars') || file.endsWith('.mustache')) {
+                        const templateName = file.replace(/\.(hbs|handlebars|mustache)$/, '');
+                        templates[templateName] = fs.readFileSync(path.join(filepath, file), 'utf8');
+                    }
+                }
+            }
+        }
+        return templates;
+    }
     readAllViewsInFolder(folder) {
         const views = {};
         try {
@@ -111,10 +137,10 @@ export class Website {
                     const subViews = this.readAllViewsInFolder(fullPath);
                     Object.assign(views, subViews);
                 }
-                else if (entry.name.match(/\.(hbs|mustache)$/)) {
+                else if (entry.name.match(/\.(hbs|handlebars|mustache)$/)) {
                     // Read template files
                     const content = fs.readFileSync(fullPath, 'utf8');
-                    const name = entry.name.replace(/\.(hbs|mustache)$/, '');
+                    const name = entry.name.replace(/\.(hbs|handlebars|mustache)$/, '');
                     views[name] = content;
                 }
             }
@@ -149,13 +175,26 @@ export class Website {
             res.end(`500 Error`);
         }
     }
-    serveHandlebarsTemplate(res, templatePath, data = {}) {
+    serveHandlebarsTemplate({ res, template, templatePath, data }) {
         try {
             if (this.env == 'development') {
                 this.loadPartials();
             }
-            const template = fs.readFileSync(templatePath, 'utf8');
-            const compiledTemplate = this.handlebars.compile(template);
+            let templateFile = '';
+            if (templatePath) {
+                templateFile = fs.readFileSync(templatePath, 'utf8');
+            }
+            else if (template) {
+                templateFile = this.templates()[template] ?? this.handlebars.partials[template];
+            }
+            if (!templateFile) {
+                throw new Error(`Template ${template} not found`);
+            }
+            if (this.env == 'development') {
+                // insert a {{> browsersync }} before </body>
+                templateFile = templateFile.replace('</body>', '{{> browsersync }}\n</body>');
+            }
+            const compiledTemplate = this.handlebars.compile(templateFile);
             const html = compiledTemplate(data);
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end(html);
@@ -166,6 +205,8 @@ export class Website {
             this.renderError(res, error);
         }
     }
+    // The main Request handler for the website
+    // RequestHandler logic goes here
     handleRequest(req, res, pathname) {
         // Let the route guard handle the request first
         if (this.routeGuard.handleRequest(req, res, this, pathname)) {
@@ -183,7 +224,8 @@ export class Website {
         const filePath = path.join(this.rootPath, 'public', pathname);
         const sourcePath = filePath.replace('public', 'src');
         const controllerPath = parts[1];
-        if (controllerPath) {
+        // console.debug(`Controller path: "${controllerPath}"`)
+        if (controllerPath !== null) {
             const controller = this.controllers[controllerPath];
             if (controller) {
                 controller(res, req, this);
@@ -201,7 +243,7 @@ export class Website {
         const handlebarsTemplate = filePath.replace('.html', '.hbs').replace('public', 'src');
         // Check if the file is a handlebars template
         if (filePath.endsWith('.html') && fs.existsSync(handlebarsTemplate)) {
-            this.serveHandlebarsTemplate(res, handlebarsTemplate);
+            this.serveHandlebarsTemplate({ res, templatePath: handlebarsTemplate });
             return;
         }
         // Check if file exists

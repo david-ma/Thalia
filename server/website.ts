@@ -32,7 +32,7 @@ interface Views {
   [key: string]: string;
 }
 
-interface Controller {
+export interface Controller {
   (
     res: ServerResponse,
     req: IncomingMessage,
@@ -128,6 +128,34 @@ export class Website implements IWebsite {
     }
   }
 
+  /**
+   * "Templates" are higher level than the partials, so we don't register them as partials
+   * Not sure if this is necessary. There probably isn't any danger in registering them as partials.
+   * But this could be safer.
+   */
+  private templates() {
+    const templates: { [key: string]: string } = {}
+    const paths = [
+      path.join(cwd(), 'src', 'views'),
+      path.join(cwd(), 'websites', 'example', 'src'),
+      path.join(this.rootPath, 'src')
+    ]
+
+    for (const filepath of paths) {
+      if (fs.existsSync(filepath)) {
+        // Read directory, get all .hbs, .handlebars, .mustache files
+        const files = fs.readdirSync(filepath)
+        for (const file of files) {
+          if (file.endsWith('.hbs') || file.endsWith('.handlebars') || file.endsWith('.mustache')) {
+            const templateName = file.replace(/\.(hbs|handlebars|mustache)$/, '')
+            templates[templateName] = fs.readFileSync(path.join(filepath, file), 'utf8')
+          }
+        }
+      }
+    }
+    return templates
+  }
+
   private readAllViewsInFolder(folder: string): Views {
     const views: Views = {}
 
@@ -141,10 +169,10 @@ export class Website implements IWebsite {
           // Recursively read subdirectories
           const subViews = this.readAllViewsInFolder(fullPath)
           Object.assign(views, subViews)
-        } else if (entry.name.match(/\.(hbs|mustache)$/)) {
+        } else if (entry.name.match(/\.(hbs|handlebars|mustache)$/)) {
           // Read template files
           const content = fs.readFileSync(fullPath, 'utf8')
-          const name = entry.name.replace(/\.(hbs|mustache)$/, '')
+          const name = entry.name.replace(/\.(hbs|handlebars|mustache)$/, '')
           views[name] = content
         }
       }
@@ -184,14 +212,44 @@ export class Website implements IWebsite {
     }
   }
 
-  public serveHandlebarsTemplate(res: ServerResponse, templatePath: string, data: object = {}): void {
+  public serveHandlebarsTemplate({
+    res,
+    template,
+    templatePath,
+    data
+  }: {
+    res: ServerResponse,
+    template: string,
+    templatePath?: undefined,
+    data?: object
+  } | {
+    res: ServerResponse,
+    template?: undefined,
+    templatePath: string,
+    data?: object
+  }
+  ): void {
     try {
       if (this.env == 'development') {
         this.loadPartials()
       }
-      const template = fs.readFileSync(templatePath, 'utf8')
+      let templateFile = ''
+      if (templatePath) {
+        templateFile = fs.readFileSync(templatePath, 'utf8')
+      } else if (template) {
+        templateFile = this.templates()[template] ?? this.handlebars.partials[template]
+      }
 
-      const compiledTemplate = this.handlebars.compile(template)
+      if (!templateFile) {
+        throw new Error(`Template ${template} not found`)
+      }
+
+      if (this.env == 'development') {
+        // insert a {{> browsersync }} before </body>
+        templateFile = templateFile.replace('</body>', '{{> browsersync }}\n</body>')
+      }
+
+      const compiledTemplate = this.handlebars.compile(templateFile)
       const html = compiledTemplate(data)
       res.writeHead(200, { 'Content-Type': 'text/html' })
       res.end(html)
@@ -202,6 +260,8 @@ export class Website implements IWebsite {
     }
   }
 
+  // The main Request handler for the website
+  // RequestHandler logic goes here
   public handleRequest(req: IncomingMessage, res: ServerResponse, pathname?: string): void {
 
     // Let the route guard handle the request first
@@ -224,7 +284,8 @@ export class Website implements IWebsite {
     const sourcePath = filePath.replace('public', 'src')
 
     const controllerPath = parts[1]
-    if (controllerPath) {
+    // console.debug(`Controller path: "${controllerPath}"`)
+    if (controllerPath !== null) {
       const controller = this.controllers[controllerPath]
       if (controller) {
         controller(res, req, this)
@@ -244,7 +305,7 @@ export class Website implements IWebsite {
     const handlebarsTemplate = filePath.replace('.html', '.hbs').replace('public', 'src')
     // Check if the file is a handlebars template
     if (filePath.endsWith('.html') && fs.existsSync(handlebarsTemplate)) {
-      this.serveHandlebarsTemplate(res, handlebarsTemplate)
+      this.serveHandlebarsTemplate({ res, templatePath: handlebarsTemplate })
       return
     }
 

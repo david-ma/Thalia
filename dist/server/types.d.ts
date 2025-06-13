@@ -1,5 +1,6 @@
 /// <reference types="node" resolution-mode="require"/>
 import { IncomingMessage, ServerResponse } from 'http';
+import { Controller } from './website.js';
 export type ServerMode = 'standalone' | 'multiplex' | 'dev';
 export interface ServerOptions {
     project: string;
@@ -37,7 +38,7 @@ export type RawWebsiteConfig = {
     rootPath?: string;
     domains?: string[];
     controllers?: {
-        [key: string]: any;
+        [key: string]: Controller;
     };
     routes?: RouteRule[];
 };

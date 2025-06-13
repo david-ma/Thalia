@@ -208,74 +208,89 @@ export class Website {
     // The main Request handler for the website
     // RequestHandler logic goes here
     handleRequest(req, res, pathname) {
-        // Let the route guard handle the request first
-        if (this.routeGuard.handleRequest(req, res, this, pathname)) {
-            return; // Request was handled by the guard
-        }
-        // Continue with normal request handling
-        const url = new URL(req.url || '/', `http://${req.headers.host}`);
-        pathname = pathname || url.pathname;
-        const parts = pathname.split('/');
-        if (parts.some(part => part === '..')) {
-            res.writeHead(400);
-            res.end('Bad Request');
-            return;
-        }
-        const filePath = path.join(this.rootPath, 'public', pathname);
-        const sourcePath = filePath.replace('public', 'src');
-        const controllerPath = parts[1];
-        // console.debug(`Controller path: "${controllerPath}"`)
-        if (controllerPath !== null) {
-            const controller = this.controllers[controllerPath];
-            if (controller) {
-                controller(res, req, this);
+        try {
+            // Let the route guard handle the request first
+            if (this.routeGuard.handleRequest(req, res, this, pathname)) {
+                return; // Request was handled by the guard
+            }
+            // Continue with normal request handling
+            const url = new URL(req.url || '/', `http://${req.headers.host}`);
+            pathname = pathname || url.pathname;
+            const parts = pathname.split('/');
+            if (parts.some(part => part === '..')) {
+                res.writeHead(400);
+                res.end('Bad Request');
                 return;
             }
-        }
-        // If we're looking for a css file, check if the scss exists
-        if (filePath.endsWith('.css') && fs.existsSync(sourcePath.replace('.css', '.scss'))) {
-            const scss = fs.readFileSync(sourcePath.replace('.css', '.scss'), 'utf8');
-            const css = sass.renderSync({ data: scss }).css.toString();
-            res.writeHead(200, { 'Content-Type': 'text/css' });
-            res.end(css);
-            return;
-        }
-        const handlebarsTemplate = filePath.replace('.html', '.hbs').replace('public', 'src');
-        // Check if the file is a handlebars template
-        if (filePath.endsWith('.html') && fs.existsSync(handlebarsTemplate)) {
-            this.serveHandlebarsTemplate({ res, templatePath: handlebarsTemplate });
-            return;
-        }
-        // Check if file exists
-        if (!fs.existsSync(filePath)) {
-            res.writeHead(404);
-            res.end('Not Found');
-            return;
-        }
-        else if (fs.statSync(filePath).isDirectory()) {
-            try {
-                const indexPath = path.join(url.pathname, 'index.html');
-                this.handleRequest(req, res, indexPath);
+            const filePath = path.join(this.rootPath, 'public', pathname);
+            const sourcePath = filePath.replace('public', 'src');
+            const controllerPath = parts[1];
+            // console.debug(`Controller path: "${controllerPath}"`)
+            if (controllerPath !== null) {
+                const controller = this.controllers[controllerPath];
+                if (controller) {
+                    controller(res, req, this);
+                    return;
+                }
             }
-            catch (error) {
-                console.error("Error serving index.html for ", url.pathname, error);
+            // If we're looking for a css file, check if the scss exists
+            if (filePath.endsWith('.css') && fs.existsSync(sourcePath.replace('.css', '.scss'))) {
+                const scss = fs.readFileSync(sourcePath.replace('.css', '.scss'), 'utf8');
+                try {
+                    const css = sass.renderSync({ data: scss }).css.toString();
+                    res.writeHead(200, { 'Content-Type': 'text/css' });
+                    res.end(css);
+                }
+                catch (error) {
+                    console.error("Error compiling scss: ", error);
+                    res.writeHead(500);
+                    res.end('Internal Server Error');
+                    return;
+                }
+                return;
+            }
+            const handlebarsTemplate = filePath.replace('.html', '.hbs').replace('public', 'src');
+            // Check if the file is a handlebars template
+            if (filePath.endsWith('.html') && fs.existsSync(handlebarsTemplate)) {
+                this.serveHandlebarsTemplate({ res, templatePath: handlebarsTemplate });
+                return;
+            }
+            // Check if file exists
+            if (!fs.existsSync(filePath)) {
                 res.writeHead(404);
                 res.end('Not Found');
+                return;
             }
-            return;
+            else if (fs.statSync(filePath).isDirectory()) {
+                try {
+                    const indexPath = path.join(url.pathname, 'index.html');
+                    this.handleRequest(req, res, indexPath);
+                }
+                catch (error) {
+                    console.error("Error serving index.html for ", url.pathname, error);
+                    res.writeHead(404);
+                    res.end('Not Found');
+                }
+                return;
+            }
+            // Stream the file
+            const stream = fs.createReadStream(filePath);
+            stream.on('error', (error) => {
+                console.error('Error streaming file:', error);
+                res.writeHead(500);
+                res.end('Internal Server Error');
+            });
+            // Set content type based on file extension
+            const contentType = this.getContentType(filePath);
+            res.setHeader('Content-Type', contentType);
+            // Pipe the file to the response
+            stream.pipe(res);
         }
-        // Stream the file
-        const stream = fs.createReadStream(filePath);
-        stream.on('error', (error) => {
-            console.error('Error streaming file:', error);
+        catch (error) {
+            console.error("Error serving file: ", error);
             res.writeHead(500);
             res.end('Internal Server Error');
-        });
-        // Set content type based on file extension
-        const contentType = this.getContentType(filePath);
-        res.setHeader('Content-Type', contentType);
-        // Pipe the file to the response
-        stream.pipe(res);
+        }
     }
     getContentType(filePath) {
         const ext = filePath.split('.').pop()?.toLowerCase();

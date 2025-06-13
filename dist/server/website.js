@@ -30,6 +30,7 @@ export class Website {
      * @param config - The website configuration
      */
     constructor(config) {
+        this.env = 'development';
         this.handlebars = Handlebars.create();
         this.domains = [];
         this.controllers = {};
@@ -126,6 +127,45 @@ export class Website {
         });
         return views;
     }
+    renderError(res, error) {
+        res.writeHead(500);
+        try {
+            const template = this.handlebars.partials['error'];
+            const compiledTemplate = this.handlebars.compile(template);
+            let data = {};
+            if (this.env == 'development') {
+                data = {
+                    website: this.name,
+                    error: error.message,
+                    stack: error.stack,
+                };
+            }
+            const html = compiledTemplate(data);
+            res.end(html);
+        }
+        catch (newError) {
+            console.error("Error rendering error: ", newError);
+            console.error("Original Error: ", error);
+            res.end(`500 Error`);
+        }
+    }
+    serveHandlebarsTemplate(res, templatePath, data = {}) {
+        try {
+            if (this.env == 'development') {
+                this.loadPartials();
+            }
+            const template = fs.readFileSync(templatePath, 'utf8');
+            const compiledTemplate = this.handlebars.compile(template);
+            const html = compiledTemplate(data);
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(html);
+            return;
+        }
+        catch (error) {
+            // console.error("Error serving handlebars template: ", error)
+            this.renderError(res, error);
+        }
+    }
     handleRequest(req, res, pathname) {
         // Let the route guard handle the request first
         if (this.routeGuard.handleRequest(req, res, this, pathname)) {
@@ -161,11 +201,7 @@ export class Website {
         const handlebarsTemplate = filePath.replace('.html', '.hbs').replace('public', 'src');
         // Check if the file is a handlebars template
         if (filePath.endsWith('.html') && fs.existsSync(handlebarsTemplate)) {
-            const template = fs.readFileSync(handlebarsTemplate, 'utf8');
-            const compiledTemplate = this.handlebars.compile(template);
-            const html = compiledTemplate({});
-            res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end(html);
+            this.serveHandlebarsTemplate(res, handlebarsTemplate);
             return;
         }
         // Check if file exists

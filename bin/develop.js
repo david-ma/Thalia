@@ -65,6 +65,7 @@ function startServer(projectName) {
 
   // Start nodemon for the server
   const nodemon = spawn('nodemon', [
+    '--watch', 'dist',
     '--watch', `websites/${projectName}`,
     'dist/server/index.js'], {
     env: {
@@ -94,7 +95,9 @@ function startServer(projectName) {
       port: 3001,
       open: false,
       notify: false,
+      reloadDelay: 1000,
       files: [
+        `${thaliaDirectory}/dist/**/*`,
         `${projectRoot}/**/*`,
       ]
     });

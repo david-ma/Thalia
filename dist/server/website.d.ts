@@ -28,6 +28,7 @@ interface Controller {
 export declare class Website implements IWebsite {
     readonly name: string;
     readonly rootPath: string;
+    private readonly env;
     config: WebsiteConfig;
     handlebars: typeof Handlebars;
     domains: string[];
@@ -55,6 +56,8 @@ export declare class Website implements IWebsite {
      */
     private loadPartials;
     private readAllViewsInFolder;
+    renderError(res: ServerResponse, error: Error): void;
+    serveHandlebarsTemplate(res: ServerResponse, templatePath: string, data?: object): void;
     handleRequest(req: IncomingMessage, res: ServerResponse, pathname?: string): void;
     private getContentType;
     static loadAllWebsites(options: ServerOptions): Website[];

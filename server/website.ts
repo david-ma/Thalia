@@ -43,6 +43,7 @@ interface Controller {
 export class Website implements IWebsite {
   public readonly name: string
   public readonly rootPath: string
+  private readonly env: string = 'development'
   public config: WebsiteConfig
   public handlebars = Handlebars.create()
   public domains: string[] = []
@@ -158,6 +159,49 @@ export class Website implements IWebsite {
     return views
   }
 
+  public renderError(res: ServerResponse, error: Error): void {
+    res.writeHead(500)
+    try {
+      const template = this.handlebars.partials['error']
+      const compiledTemplate = this.handlebars.compile(template)
+
+      let data = {}
+
+      if (this.env == 'development') {
+        data = {
+          website: this.name,
+          error: error.message,
+          stack: error.stack,
+        }
+      }
+
+      const html = compiledTemplate(data)
+      res.end(html)
+    } catch (newError) {
+      console.error("Error rendering error: ", newError)
+      console.error("Original Error: ", error)
+      res.end(`500 Error`)
+    }
+  }
+
+  public serveHandlebarsTemplate(res: ServerResponse, templatePath: string, data: object = {}): void {
+    try {
+      if (this.env == 'development') {
+        this.loadPartials()
+      }
+      const template = fs.readFileSync(templatePath, 'utf8')
+
+      const compiledTemplate = this.handlebars.compile(template)
+      const html = compiledTemplate(data)
+      res.writeHead(200, { 'Content-Type': 'text/html' })
+      res.end(html)
+      return
+    } catch (error) {
+      // console.error("Error serving handlebars template: ", error)
+      this.renderError(res, error as Error)
+    }
+  }
+
   public handleRequest(req: IncomingMessage, res: ServerResponse, pathname?: string): void {
 
     // Let the route guard handle the request first
@@ -200,11 +244,7 @@ export class Website implements IWebsite {
     const handlebarsTemplate = filePath.replace('.html', '.hbs').replace('public', 'src')
     // Check if the file is a handlebars template
     if (filePath.endsWith('.html') && fs.existsSync(handlebarsTemplate)) {
-      const template = fs.readFileSync(handlebarsTemplate, 'utf8')
-      const compiledTemplate = this.handlebars.compile(template)
-      const html = compiledTemplate({})
-      res.writeHead(200, { 'Content-Type': 'text/html' })
-      res.end(html)
+      this.serveHandlebarsTemplate(res, handlebarsTemplate)
       return
     }
 

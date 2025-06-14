@@ -82,7 +82,7 @@
     "webpack-merge": "^5.10.0"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "nodemonConfig": {
     "exec": "node dist/server/index.js",

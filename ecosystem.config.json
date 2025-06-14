@@ -1,0 +1,12 @@
+{
+  "apps": [
+    {
+      "name": "thalia",
+      "script": "dist/server/index.js",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": 1337
+      }
+    }
+  ]
+}

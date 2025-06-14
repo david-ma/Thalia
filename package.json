@@ -38,6 +38,7 @@
   ],
   "scripts": {
     "start": "node dist/server/index.js",
+    "pm2-start": "pm2 startOrReload ecosystem.config.json",
     "build": "tsc",
     "dev": "node bin/develop.js",
     "init": "node dist/bin/create-project.js"

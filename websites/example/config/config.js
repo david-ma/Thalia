@@ -16,10 +16,10 @@
 //     ...users(securityOptions),
 //   },
 // }
-import { latestlogs } from 'thalia/website';
+// import { latestlogs } from 'thalia/website'
 export const config = {
     domains: ['example.com'],
-    controllers: {
-        latestlogs
-    }
+    // controllers: {
+    //   latestlogs
+    // }
 };

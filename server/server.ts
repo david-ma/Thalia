@@ -9,6 +9,7 @@ import { EventEmitter } from 'events'
 import { ServerMode, ServerOptions } from './types.js'
 import { Router } from './router.js'
 import { Website } from './website.js'
+import url from 'url'
 
 export class Server extends EventEmitter {
   private httpServer: HttpServer | null = null
@@ -26,9 +27,25 @@ export class Server extends EventEmitter {
     this.router = new Router(websites)
   }
 
+  private getDateTime(): string {
+    return new Date().toISOString()
+  }
+
+  private logRequest(req: IncomingMessage): void {
+    const host: string = (req.headers['x-host'] as string) ?? req.headers.host
+    const urlObject: url.UrlWithParsedQuery = url.parse(req.url ?? '', true)
+    const ip: string = req.headers['x-forwarded-for'] as string ?? req.socket.remoteAddress ?? 'unknown'
+    const method: string = req.method ?? 'unknown'
+
+    console.log(`${this.getDateTime()} ${ip} ${method} ${host}${urlObject.href}`)
+  }
+
   private handleRequest(req: IncomingMessage, res: ServerResponse): void {
     const domain = req.headers.host?.split(':')[0]
     const website = this.router.getWebsite(domain || this.project)
+
+    this.logRequest(req)
+
     if (website) {
       website.handleRequest(req, res)
     } else {

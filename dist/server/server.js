@@ -6,6 +6,7 @@
 import { createServer } from 'http';
 import { EventEmitter } from 'events';
 import { Router } from './router.js';
+import url from 'url';
 export class Server extends EventEmitter {
     constructor(options, websites) {
         super();
@@ -15,9 +16,20 @@ export class Server extends EventEmitter {
         this.project = options.project || 'default';
         this.router = new Router(websites);
     }
+    getDateTime() {
+        return new Date().toISOString();
+    }
+    logRequest(req) {
+        const host = req.headers['x-host'] ?? req.headers.host;
+        const urlObject = url.parse(req.url ?? '', true);
+        const ip = req.headers['x-forwarded-for'] ?? req.socket.remoteAddress ?? 'unknown';
+        const method = req.method ?? 'unknown';
+        console.log(`${this.getDateTime()} ${ip} ${method} ${host}${urlObject.href}`);
+    }
     handleRequest(req, res) {
         const domain = req.headers.host?.split(':')[0];
         const website = this.router.getWebsite(domain || this.project);
+        this.logRequest(req);
         if (website) {
             website.handleRequest(req, res);
         }

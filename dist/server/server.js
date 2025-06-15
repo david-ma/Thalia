@@ -16,15 +16,12 @@ export class Server extends EventEmitter {
         this.project = options.project || 'default';
         this.router = new Router(websites);
     }
-    getDateTime() {
-        return new Date().toISOString();
-    }
     logRequest(req) {
         const host = req.headers['x-host'] ?? req.headers.host;
         const urlObject = url.parse(req.url ?? '', true);
         const ip = req.headers['x-real-ip'] ?? req.headers['x-forwarded-for'] ?? req.socket.remoteAddress ?? 'unknown';
         const method = req.method ?? 'unknown';
-        console.log(`${this.getDateTime()} ${ip} ${method} ${host}${urlObject.href}`);
+        console.log(`${new Date().toISOString()} ${ip} ${method} ${host}${urlObject.href}`);
     }
     handleRequest(req, res) {
         this.logRequest(req);

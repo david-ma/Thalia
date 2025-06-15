@@ -27,17 +27,13 @@ export class Server extends EventEmitter {
     this.router = new Router(websites)
   }
 
-  private getDateTime(): string {
-    return new Date().toISOString()
-  }
-
   private logRequest(req: IncomingMessage): void {
     const host: string = (req.headers['x-host'] as string) ?? req.headers.host
     const urlObject: url.UrlWithParsedQuery = url.parse(req.url ?? '', true)
     const ip: string =  req.headers['x-real-ip'] as string ?? req.headers['x-forwarded-for'] as string ?? req.socket.remoteAddress ?? 'unknown'
     const method: string = req.method ?? 'unknown'
 
-    console.log(`${this.getDateTime()} ${ip} ${method} ${host}${urlObject.href}`)
+    console.log(`${new Date().toISOString()} ${ip} ${method} ${host}${urlObject.href}`)
   }
 
   private handleRequest(req: IncomingMessage, res: ServerResponse): void {

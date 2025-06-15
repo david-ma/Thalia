@@ -39,7 +39,6 @@ export class Website {
         this.name = config.name;
         this.config = config;
         this.rootPath = config.rootPath;
-        this.routeGuard = new RouteGuard(this);
     }
     static async create(config) {
         const website = new Website(config);
@@ -47,6 +46,7 @@ export class Website {
             website.loadPartials(),
             website.loadConfig()
         ]).then(() => {
+            website.routeGuard = new RouteGuard(website);
             return website;
         });
     }

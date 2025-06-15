@@ -14,7 +14,6 @@ export declare class Server extends EventEmitter {
     router: Router;
     private project;
     constructor(options: ServerOptions, websites: Website[]);
-    private getDateTime;
     private logRequest;
     private handleRequest;
     start(): Promise<void>;

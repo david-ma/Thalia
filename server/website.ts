@@ -49,7 +49,7 @@ export class Website implements IWebsite {
   public domains: string[] = []
   public controllers: { [key: string]: Controller } = {}
   public routes: { [key: string]: RouteRule } = {}
-  private routeGuard: RouteGuard
+  private routeGuard!: RouteGuard
 
   /**
    * Creates a new Website instance
@@ -60,7 +60,6 @@ export class Website implements IWebsite {
     this.name = config.name
     this.config = config
     this.rootPath = config.rootPath
-    this.routeGuard = new RouteGuard(this)
   }
 
   public static async create(config: WebsiteConfig) {
@@ -70,6 +69,7 @@ export class Website implements IWebsite {
       website.loadPartials(),
       website.loadConfig()
     ]).then(() => {
+      website.routeGuard = new RouteGuard(website)
       return website
     })
   }

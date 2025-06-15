@@ -56,6 +56,7 @@ export class Website implements IWebsite {
    * @param config - The website configuration
    */
   constructor(config: WebsiteConfig) {
+    console.log(`Loading website ${config.name} from ${config.rootPath}`)
     this.name = config.name
     this.config = config
     this.rootPath = config.rootPath

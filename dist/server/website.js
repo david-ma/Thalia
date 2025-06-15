@@ -35,6 +35,7 @@ export class Website {
         this.domains = [];
         this.controllers = {};
         this.routes = {};
+        console.log(`Loading website ${config.name} from ${config.rootPath}`);
         this.name = config.name;
         this.config = config;
         this.rootPath = config.rootPath;

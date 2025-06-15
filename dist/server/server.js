@@ -22,14 +22,14 @@ export class Server extends EventEmitter {
     logRequest(req) {
         const host = req.headers['x-host'] ?? req.headers.host;
         const urlObject = url.parse(req.url ?? '', true);
-        const ip = req.headers['x-forwarded-for'] ?? req.socket.remoteAddress ?? 'unknown';
+        const ip = req.headers['x-real-ip'] ?? req.headers['x-forwarded-for'] ?? req.socket.remoteAddress ?? 'unknown';
         const method = req.method ?? 'unknown';
         console.log(`${this.getDateTime()} ${ip} ${method} ${host}${urlObject.href}`);
     }
     handleRequest(req, res) {
-        const domain = req.headers.host?.split(':')[0];
-        const website = this.router.getWebsite(domain || this.project);
         this.logRequest(req);
+        const domain = req.headers.host?.split(':')[0];
+        const website = this.router.getWebsite(domain ?? this.project);
         if (website) {
             website.handleRequest(req, res);
         }

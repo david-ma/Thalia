@@ -49,11 +49,13 @@ if (!fs.existsSync(path.join(options.rootPath, 'websites'))) {
   options.rootPath = path.join(options.rootPath, 'websites', project)
 }
 
-const thalia = new Thalia(options)
-
-console.log("Starting Thalia", options)
-thalia.start()
-
+console.log("Creating Thalia with options:", options)
+Thalia.create(options).then(thalia => {
+  thalia.start()
+}).catch(error => {
+  console.error('Error starting Thalia:', error)
+  process.exit(1)
+})
 
 
 // Export everything from thalia.js

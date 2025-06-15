@@ -6,7 +6,7 @@
 import { Website } from './types.js'
 
 export class Router {
-  private websites: { [key: string]: Website }
+  private domains: { [key: string]: Website }
   private default: Website
 
   constructor(websites: Website[]) {
@@ -17,32 +17,23 @@ export class Router {
     this.default = websites[0]!
 
     // Create a map of websites
-    this.websites = websites.reduce((acc, website) => {
+    this.domains = websites.reduce((acc, website) => {
       if (website.name == 'default') {
         this.default = website
       }
-      acc[website.name] = website
+
+      // Add all domains to the map
+      const domains = website.config.domains ?? []
+      domains.forEach((domain: string) => {
+        acc[domain] = website
+      })
+
       return acc
     }, {} as { [key: string]: Website })
 
   }
 
   public getWebsite(domain: string): Website {
-
-
-    // // Get the website name from the path
-    // const websiteName = path.split('/')[1]
-    // if (!websiteName) {
-    //   throw new Error('No website name provided')
-    // }
-
-    // // Get the website from the map
-    // const website = this.websites[websiteName]
-    // if (!website) {
-    //   throw new Error(`Website ${websiteName} not found`)
-    // }
-
-    // return website
-    return this.websites[domain] || this.default
+    return this.domains[domain] || this.default
   }
 }

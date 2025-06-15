@@ -18,7 +18,6 @@
  * - Request routing (handled by Router)
  * - Request processing (handled by Handler)
  */
-/// <reference types="node" resolution-mode="require"/>
 import { Website as IWebsite, WebsiteConfig, ServerOptions, RouteRule } from './types.js';
 import { IncomingMessage, ServerResponse } from 'http';
 import Handlebars from 'handlebars';
@@ -43,7 +42,12 @@ export declare class Website implements IWebsite {
      * Creates a new Website instance
      * @param config - The website configuration
      */
-    constructor(config: WebsiteConfig);
+    private constructor();
+    static create(config: WebsiteConfig): Promise<Website>;
+    /**
+     * Load config/config.js for the website, if it exists
+     * If it doesn't exist, we'll use the default config
+     */
     private loadConfig;
     private validateController;
     /**
@@ -76,7 +80,7 @@ export declare class Website implements IWebsite {
     }): void;
     handleRequest(req: IncomingMessage, res: ServerResponse, pathname?: string): void;
     private getContentType;
-    static loadAllWebsites(options: ServerOptions): Website[];
+    static loadAllWebsites(options: ServerOptions): Promise<Website[]>;
 }
 export declare const controllerFactories: {
     redirectTo: (url: string) => (res: ServerResponse, _req: IncomingMessage, _website: Website) => void;

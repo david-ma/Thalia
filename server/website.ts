@@ -55,45 +55,72 @@ export class Website implements IWebsite {
    * Creates a new Website instance
    * @param config - The website configuration
    */
-  constructor(config: WebsiteConfig) {
-    console.log(`Loading website ${config.name} from ${config.rootPath}`)
+  private constructor(config: WebsiteConfig) {
+    console.log(`Loading website "${config.name}"`)
     this.name = config.name
     this.config = config
     this.rootPath = config.rootPath
-    this.loadPartials()
-    this.loadConfig().catch(error => {
-      console.error('Error loading config:', error)
-    })
     this.routeGuard = new RouteGuard(this)
   }
 
-  private async loadConfig() {
-    // check if we have a config.mjs in the project folder, and import it if it exists
-    const configPath = path.join(this.rootPath, 'config', 'config.js')
-    if (fs.existsSync(configPath)) {
-      const configModule = await import('file://' + configPath)
-      const config = configModule.config
-      this.config = {
-        ...this.config,
-        ...config,
-      }
-    }
+  public static async create(config: WebsiteConfig) {
+    const website = new Website(config)
 
-    this.domains = this.config.domains || []
-    if (this.domains.length === 0) {
-      this.domains.push('localhost')
-    }
-    // Add the project name to the domains
-    this.domains.push(`${this.name}.com`)
-    this.domains.push(`www.${this.name}.com`)
-    this.domains.push(`${this.name}.david-ma.net`)
+    return Promise.all([
+      website.loadPartials(),
+      website.loadConfig()
+    ]).then(() => {
+      return website
+    })
+  }
 
-    // Load and validate controllers
-    const rawControllers = this.config.controllers || {}
-    for (const [name, controller] of Object.entries(rawControllers)) {
-      this.controllers[name] = this.validateController(controller)
-    }
-    // console.debug("Loaded controllers: ", Object.keys(this.controllers))
+  /**
+   * Load config/config.js for the website, if it exists
+   * If it doesn't exist, we'll use the default config
+   */
+  private async loadConfig(): Promise<Website> {
+    return new Promise((resolve, reject) => {
+      const configPath = path.join(this.rootPath, 'config', 'config.js')
+      import('file://' + configPath).then((configFile) => {
+        // TODO: Validate the config?
+
+        const config = {
+          ...this.config,
+          ...configFile.config,
+        }
+
+        this.config = config
+      }, (err) => {
+        if (fs.existsSync(configPath)) {
+          console.error('config.js failed to load for', this.name)
+          console.error(err)
+        } else {
+          console.error(`Website "${this.name}" does not have a config.js file`)
+        }
+      }).then(() => {
+
+        this.domains = this.config.domains || []
+        if (this.domains.length === 0) {
+          this.domains.push('localhost')
+        }
+
+        // Add the project name to the domains
+        this.domains.push(`${this.name}.com`)
+        this.domains.push(`www.${this.name}.com`)
+        this.domains.push(`${this.name}.david-ma.net`)
+        this.domains.push(`${this.name}.net`)
+        this.domains.push(`${this.name}.org`)
+        this.domains.push(`${this.name}.com.au`)
+
+        // Load and validate controllers
+        const rawControllers = this.config.controllers || {}
+        for (const [name, controller] of Object.entries(rawControllers)) {
+          this.controllers[name] = this.validateController(controller)
+        }
+
+        resolve(this)
+      }, reject)
+    })
   }
 
   private validateController(controller: Controller) {
@@ -375,21 +402,26 @@ export class Website implements IWebsite {
   }
 
 
-  public static loadAllWebsites(options: ServerOptions): Website[] {
+  public static async loadAllWebsites(options: ServerOptions): Promise<Website[]> {
     if (options.mode == 'multiplex') {
       // Check if the root path exists
-      // Load all websites from the root path
+      // Load all websites from the root path (should be the websites folder)
       const websites = fs.readdirSync(options.rootPath)
-      return websites.map(website => new Website({
-        name: website,
-        rootPath: path.join(options.rootPath, website)
+
+      return Promise.all(websites.map(async website => {
+        return Website.create({
+          name: website,
+          rootPath: path.join(options.rootPath, website)
+        })
       }))
     }
 
-    return [new Website({
-      name: options.project,
-      rootPath: options.rootPath
-    })]
+    return Promise.all([
+      Website.create({
+        name: options.project,
+        rootPath: options.rootPath
+      })
+    ])
   }
 }
 

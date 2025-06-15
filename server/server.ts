@@ -34,17 +34,17 @@ export class Server extends EventEmitter {
   private logRequest(req: IncomingMessage): void {
     const host: string = (req.headers['x-host'] as string) ?? req.headers.host
     const urlObject: url.UrlWithParsedQuery = url.parse(req.url ?? '', true)
-    const ip: string = req.headers['x-forwarded-for'] as string ?? req.socket.remoteAddress ?? 'unknown'
+    const ip: string =  req.headers['x-real-ip'] as string ?? req.headers['x-forwarded-for'] as string ?? req.socket.remoteAddress ?? 'unknown'
     const method: string = req.method ?? 'unknown'
 
     console.log(`${this.getDateTime()} ${ip} ${method} ${host}${urlObject.href}`)
   }
 
   private handleRequest(req: IncomingMessage, res: ServerResponse): void {
-    const domain = req.headers.host?.split(':')[0]
-    const website = this.router.getWebsite(domain || this.project)
-
     this.logRequest(req)
+
+    const domain = req.headers.host?.split(':')[0]
+    const website = this.router.getWebsite(domain ?? this.project)
 
     if (website) {
       website.handleRequest(req, res)

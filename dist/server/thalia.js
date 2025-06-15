@@ -4,9 +4,19 @@ import { Website } from './website.js';
 // import { RouteGuard } from './route-guard.js'
 // Main Thalia class for easy initialization
 export class Thalia {
-    constructor(options) {
-        this.websites = Website.loadAllWebsites(options);
+    constructor(options, websites) {
+        this.websites = websites;
         this.server = new Server(options, this.websites);
+    }
+    static async create(options) {
+        try {
+            const websites = await Website.loadAllWebsites(options);
+            return new Thalia(options, websites);
+        }
+        catch (error) {
+            console.error('Error loading websites:', error);
+            process.exit(1);
+        }
     }
     async start() {
         await this.server.start();

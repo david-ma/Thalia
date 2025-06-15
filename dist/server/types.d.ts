@@ -1,4 +1,3 @@
-/// <reference types="node" resolution-mode="require"/>
 import { IncomingMessage, ServerResponse } from 'http';
 import { Controller } from './website.js';
 export type ServerMode = 'standalone' | 'multiplex' | 'dev';

@@ -3,6 +3,7 @@
  *
  * Class which allows initialisation of a server.
  */
+/// <reference types="node" resolution-mode="require"/>
 import { EventEmitter } from 'events';
 import { ServerMode, ServerOptions } from './types.js';
 import { Router } from './router.js';

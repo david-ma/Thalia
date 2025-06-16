@@ -22,6 +22,7 @@
 import { Website as IWebsite, BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule } from './types.js';
 import { IncomingMessage, ServerResponse } from 'http';
 import Handlebars from 'handlebars';
+import { Socket } from 'socket.io';
 export interface Controller {
     (res: ServerResponse, req: IncomingMessage, website: Website): void;
 }
@@ -86,6 +87,7 @@ export declare class Website implements IWebsite {
     handleRequest(req: IncomingMessage, res: ServerResponse, pathname?: string): void;
     private getContentType;
     static loadAllWebsites(options: ServerOptions): Promise<Website[]>;
+    handleSocketConnection(socket: Socket): void;
 }
 export declare const controllerFactories: {
     redirectTo: (url: string) => (res: ServerResponse, _req: IncomingMessage, _website: Website) => void;

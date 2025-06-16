@@ -438,6 +438,16 @@ export class Website implements IWebsite {
       })
     ])
   }
+
+
+  public handleSocketConnection(socket: Socket): void {
+    socket.on('hello', (data: any) => {
+      console.log('Hello received:', data)
+      socket.emit('handshake', 'We received your hello')
+    })
+  }
+
+
 }
 
 

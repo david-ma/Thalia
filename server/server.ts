@@ -58,27 +58,26 @@ export class Server extends EventEmitter {
 
   /**
    * Handle socket connections.
-   * listener: (socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>) => void): SocketServer<...>
-
-
-  Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>
+   * Find the website for the socket and call its handleSocketConnection method.
+   * Insert security here?
    */
   private handleSocketConnection(socket: Socket): void {
-    console.log("sever.ts has seen a socket connection?")
-    console.log('Socket connected')
-    socket.on('hello', (data: any) => {
-      console.log('Hello received:', data)
-      socket.emit('handshake', 'We received your hello')
-    })
+    const domain = socket.handshake.headers.host?.split(':')[0]
+    const website = this.router.getWebsite(domain ?? this.project)
 
+    if (website) {
+      website.handleSocketConnection(socket)
+    } else {
+      console.log('No website found for socket')
+    }
   }
 
   private static createSocketServer(httpServer: HttpServer, handleSocketConnection: (socket: Socket) => void): SocketServer {
     return new SocketServer(httpServer, {
-      // cors: {
-      //   origin: "*",
-      //   methods: ["GET", "POST"]
-      // }
+      cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+      }
     })
       .on('connection', handleSocketConnection)
       .on('error', (error: any) => {
@@ -89,8 +88,7 @@ export class Server extends EventEmitter {
   public async start(): Promise<void> {
     return new Promise((resolve) => {
       this.httpServer = createServer(this.handleRequest.bind(this))
-
-      this.socketServer = Server.createSocketServer(this.httpServer, this.handleSocketConnection)
+      this.socketServer = Server.createSocketServer(this.httpServer, this.handleSocketConnection.bind(this))
 
       this.httpServer.listen(this.port, () => {
         console.log(`Server running at http://localhost:${this.port}`)

@@ -364,6 +364,12 @@ export class Website {
             })
         ]);
     }
+    handleSocketConnection(socket) {
+        socket.on('hello', (data) => {
+            console.log('Hello received:', data);
+            socket.emit('handshake', 'We received your hello');
+        });
+    }
 }
 export const controllerFactories = {
     redirectTo: (url) => {

@@ -80,4 +80,5 @@ export interface Website {
   readonly config: WebsiteConfig
   readonly rootPath: string
   handleRequest(req: IncomingMessage, res: ServerResponse): void
-} 
+  handleSocketConnection(socket: Socket): void
+}

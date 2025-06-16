@@ -40,25 +40,25 @@ export class Server extends EventEmitter {
     }
     /**
      * Handle socket connections.
-     * listener: (socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>) => void): SocketServer<...>
-  
-  
-    Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>
+     * Find the website for the socket and call its handleSocketConnection method.
+     * Insert security here?
      */
     handleSocketConnection(socket) {
-        console.log("sever.ts has seen a socket connection?");
-        console.log('Socket connected');
-        socket.on('hello', (data) => {
-            console.log('Hello received:', data);
-            socket.emit('handshake', 'We received your hello');
-        });
+        const domain = socket.handshake.headers.host?.split(':')[0];
+        const website = this.router.getWebsite(domain ?? this.project);
+        if (website) {
+            website.handleSocketConnection(socket);
+        }
+        else {
+            console.log('No website found for socket');
+        }
     }
     static createSocketServer(httpServer, handleSocketConnection) {
         return new SocketServer(httpServer, {
-        // cors: {
-        //   origin: "*",
-        //   methods: ["GET", "POST"]
-        // }
+            cors: {
+                origin: "*",
+                methods: ["GET", "POST"]
+            }
         })
             .on('connection', handleSocketConnection)
             .on('error', (error) => {
@@ -68,7 +68,7 @@ export class Server extends EventEmitter {
     async start() {
         return new Promise((resolve) => {
             this.httpServer = createServer(this.handleRequest.bind(this));
-            this.socketServer = Server.createSocketServer(this.httpServer, this.handleSocketConnection);
+            this.socketServer = Server.createSocketServer(this.httpServer, this.handleSocketConnection.bind(this));
             this.httpServer.listen(this.port, () => {
                 console.log(`Server running at http://localhost:${this.port}`);
                 this.emit('started');

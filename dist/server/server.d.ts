@@ -23,10 +23,8 @@ export declare class Server extends EventEmitter {
     private handleRequest;
     /**
      * Handle socket connections.
-     * listener: (socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>) => void): SocketServer<...>
-  
-  
-    Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>
+     * Find the website for the socket and call its handleSocketConnection method.
+     * Insert security here?
      */
     private handleSocketConnection;
     private static createSocketServer;

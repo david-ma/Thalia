@@ -48,6 +48,14 @@ else {
 console.log("Creating Thalia with options:", options);
 Thalia.create(options).then(thalia => {
     thalia.start();
+    process.on('SIGINT', () => {
+        thalia.stop();
+        process.exit(0);
+    });
+    process.on('SIGTERM', () => {
+        thalia.stop();
+        process.exit(0);
+    });
 }).catch(error => {
     console.error('Error starting Thalia:', error);
     process.exit(1);

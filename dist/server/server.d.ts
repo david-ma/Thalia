@@ -10,13 +10,26 @@ import { Router } from './router.js';
 import { Website } from './website.js';
 export declare class Server extends EventEmitter {
     private httpServer;
+    private socketServer;
     private port;
     private mode;
     router: Router;
     private project;
     constructor(options: ServerOptions, websites: Website[]);
     private logRequest;
+    /**
+     * Handle HTTP requests.
+     */
     private handleRequest;
+    /**
+     * Handle socket connections.
+     * listener: (socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>) => void): SocketServer<...>
+  
+  
+    Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>
+     */
+    private handleSocketConnection;
+    private static createSocketServer;
     start(): Promise<void>;
     stop(): Promise<void>;
     getMode(): ServerMode;

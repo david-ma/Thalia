@@ -10,9 +10,12 @@ import { ServerMode, ServerOptions } from './types.js'
 import { Router } from './router.js'
 import { Website } from './website.js'
 import url from 'url'
+import { Server as SocketServer } from 'socket.io'
+import { Socket } from 'socket.io'
 
 export class Server extends EventEmitter {
-  private httpServer: HttpServer | null = null
+  private httpServer!: HttpServer
+  private socketServer!: SocketServer
   private port: number
   private mode: ServerMode
   public router: Router
@@ -30,12 +33,15 @@ export class Server extends EventEmitter {
   private logRequest(req: IncomingMessage): void {
     const host: string = (req.headers['x-host'] as string) ?? req.headers.host
     const urlObject: url.UrlWithParsedQuery = url.parse(req.url ?? '', true)
-    const ip: string =  req.headers['x-real-ip'] as string ?? req.headers['x-forwarded-for'] as string ?? req.socket.remoteAddress ?? 'unknown'
+    const ip: string = req.headers['x-real-ip'] as string ?? req.headers['x-forwarded-for'] as string ?? req.socket.remoteAddress ?? 'unknown'
     const method: string = req.method ?? 'unknown'
 
     console.log(`${new Date().toISOString()} ${ip} ${method} ${host}${urlObject.href}`)
   }
 
+  /**
+   * Handle HTTP requests.
+   */
   private handleRequest(req: IncomingMessage, res: ServerResponse): void {
     this.logRequest(req)
 
@@ -50,9 +56,42 @@ export class Server extends EventEmitter {
     }
   }
 
+  /**
+   * Handle socket connections.
+   * listener: (socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>) => void): SocketServer<...>
+
+
+  Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>
+   */
+  private handleSocketConnection(socket: Socket): void {
+    console.log("sever.ts has seen a socket connection?")
+    console.log('Socket connected')
+    socket.on('hello', (data: any) => {
+      console.log('Hello received:', data)
+      socket.emit('handshake', 'We received your hello')
+    })
+
+  }
+
+  private static createSocketServer(httpServer: HttpServer, handleSocketConnection: (socket: Socket) => void): SocketServer {
+    return new SocketServer(httpServer, {
+      // cors: {
+      //   origin: "*",
+      //   methods: ["GET", "POST"]
+      // }
+    })
+      .on('connection', handleSocketConnection)
+      .on('error', (error: any) => {
+        console.error('Socket server error:', error)
+      })
+  }
+
   public async start(): Promise<void> {
     return new Promise((resolve) => {
       this.httpServer = createServer(this.handleRequest.bind(this))
+
+      this.socketServer = Server.createSocketServer(this.httpServer, this.handleSocketConnection)
+
       this.httpServer.listen(this.port, () => {
         console.log(`Server running at http://localhost:${this.port}`)
         this.emit('started')
@@ -68,12 +107,14 @@ export class Server extends EventEmitter {
         return
       }
 
+      this.socketServer.close()
+      this.socketServer = {} as SocketServer
+      this.httpServer = {} as HttpServer
       this.httpServer.close((err) => {
         if (err) {
           reject(err)
           return
         }
-        this.httpServer = null
         this.emit('stopped')
         resolve()
       })
@@ -87,5 +128,4 @@ export class Server extends EventEmitter {
   public getPort(): number {
     return this.port
   }
-
 }

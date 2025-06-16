@@ -27,7 +27,7 @@ import { RouteGuard } from './route-guard.js';
 export class Website {
     /**
      * Creates a new Website instance
-     * @param config - The website configuration
+     * Should only be called by the static "create" method
      */
     constructor(config) {
         this.env = 'development';
@@ -37,14 +37,16 @@ export class Website {
         this.routes = {};
         console.log(`Loading website "${config.name}"`);
         this.name = config.name;
-        this.config = config;
         this.rootPath = config.rootPath;
     }
+    /**
+     * Given a basic website config (name & rootPath), load the website.
+     */
     static async create(config) {
         const website = new Website(config);
         return Promise.all([
             website.loadPartials(),
-            website.loadConfig()
+            website.loadConfig(config)
         ]).then(() => {
             website.routeGuard = new RouteGuard(website);
             return website;
@@ -54,16 +56,27 @@ export class Website {
      * Load config/config.js for the website, if it exists
      * If it doesn't exist, we'll use the default config
      */
-    async loadConfig() {
+    async loadConfig(basicConfig) {
+        this.config = {
+            ...basicConfig,
+            domains: [],
+            controllers: {},
+            routes: [],
+            websocket: {
+                onSocketConnection: () => { },
+                onSocketDisconnect: () => { },
+            }
+        };
         return new Promise((resolve, reject) => {
             const configPath = path.join(this.rootPath, 'config', 'config.js');
             import('file://' + configPath).then((configFile) => {
-                // TODO: Validate the config?
-                const config = {
-                    ...this.config,
-                    ...configFile.config,
-                };
-                this.config = config;
+                // TODO: Validate the incoming config?
+                if (configFile.config) {
+                    this.config = {
+                        ...this.config,
+                        ...configFile.config,
+                    };
+                }
             }, (err) => {
                 if (fs.existsSync(configPath)) {
                     console.error('config.js failed to load for', this.name);

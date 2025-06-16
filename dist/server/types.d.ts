@@ -1,6 +1,7 @@
 /// <reference types="node" resolution-mode="require"/>
 import { IncomingMessage, ServerResponse } from 'http';
 import { Controller } from './website.js';
+import { Socket } from 'socket.io';
 export type ServerMode = 'standalone' | 'multiplex' | 'dev';
 export interface ServerOptions {
     project: string;
@@ -33,18 +34,36 @@ export interface RouteRule {
         port: number;
     };
 }
-export type RawWebsiteConfig = {
-    name?: string;
-    rootPath?: string;
+export interface ClientInfo {
+    ip: string;
+    userAgent: string;
+    cookies: string;
+}
+export interface WebsocketConfig {
+    onSocketConnection?: (socket: Socket, clientInfo: ClientInfo) => void;
+    onSocketDisconnect?: (socket: Socket, clientInfo: ClientInfo) => void;
+}
+export interface BasicWebsiteConfig {
+    name: string;
+    rootPath: string;
+}
+export interface RawWebsiteConfig {
     domains?: string[];
     controllers?: {
         [key: string]: Controller;
     };
     routes?: RouteRule[];
-};
-export interface WebsiteConfig extends RawWebsiteConfig {
+    websocket?: WebsocketConfig;
+}
+export interface WebsiteConfig extends BasicWebsiteConfig, RawWebsiteConfig {
     name: string;
     rootPath: string;
+    domains: string[];
+    controllers: {
+        [key: string]: Controller;
+    };
+    routes: RouteRule[];
+    websocket: WebsocketConfig;
 }
 export interface Website {
     readonly name: string;

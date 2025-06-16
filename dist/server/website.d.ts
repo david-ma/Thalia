@@ -19,7 +19,7 @@
  * - Request processing (handled by Handler)
  */
 /// <reference types="node" resolution-mode="require"/>
-import { Website as IWebsite, WebsiteConfig, ServerOptions, RouteRule } from './types.js';
+import { Website as IWebsite, BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule } from './types.js';
 import { IncomingMessage, ServerResponse } from 'http';
 import Handlebars from 'handlebars';
 export interface Controller {
@@ -39,12 +39,16 @@ export declare class Website implements IWebsite {
         [key: string]: RouteRule;
     };
     private routeGuard;
+    private socketServer;
     /**
      * Creates a new Website instance
-     * @param config - The website configuration
+     * Should only be called by the static "create" method
      */
     private constructor();
-    static create(config: WebsiteConfig): Promise<Website>;
+    /**
+     * Given a basic website config (name & rootPath), load the website.
+     */
+    static create(config: BasicWebsiteConfig): Promise<Website>;
     /**
      * Load config/config.js for the website, if it exists
      * If it doesn't exist, we'll use the default config

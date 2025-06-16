@@ -42,29 +42,39 @@ class Website {
         this.routes = {};
         console.log(`Loading website "${config.name}"`);
         this.name = config.name;
-        this.config = config;
         this.rootPath = config.rootPath;
     }
     static async create(config) {
         const website = new Website(config);
         return Promise.all([
             website.loadPartials(),
-            website.loadConfig()
+            website.loadConfig(config)
         ]).then(() => {
             website.routeGuard = new route_guard_js_1.RouteGuard(website);
             return website;
         });
     }
-    async loadConfig() {
+    async loadConfig(basicConfig) {
+        this.config = {
+            ...basicConfig,
+            domains: [],
+            controllers: {},
+            routes: [],
+            websocket: {
+                onSocketConnection: () => { },
+                onSocketDisconnect: () => { },
+            }
+        };
         return new Promise((resolve, reject) => {
             var _a;
             const configPath = path_1.default.join(this.rootPath, 'config', 'config.js');
             (_a = 'file://' + configPath, Promise.resolve().then(() => __importStar(require(_a)))).then((configFile) => {
-                const config = {
-                    ...this.config,
-                    ...configFile.config,
-                };
-                this.config = config;
+                if (configFile.config) {
+                    this.config = {
+                        ...this.config,
+                        ...configFile.config,
+                    };
+                }
             }, (err) => {
                 if (fs_1.default.existsSync(configPath)) {
                     console.error('config.js failed to load for', this.name);

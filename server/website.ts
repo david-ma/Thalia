@@ -19,7 +19,7 @@
  * - Request processing (handled by Handler)
  */
 
-import { Website as IWebsite, WebsiteConfig, ServerOptions, RouteRule } from './types.js'
+import { Website as IWebsite, RawWebsiteConfig, BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule } from './types.js'
 import fs from 'fs'
 import path from 'path'
 import { IncomingMessage, ServerResponse } from 'http'
@@ -27,6 +27,7 @@ import Handlebars from 'handlebars'
 import * as sass from 'sass'
 import { cwd } from 'process'
 import { RouteGuard } from './route-guard.js'
+import { Server as SocketServer, Socket } from 'socket.io'
 
 interface Views {
   [key: string]: string;
@@ -44,30 +45,33 @@ export class Website implements IWebsite {
   public readonly name: string
   public readonly rootPath: string
   private readonly env: string = 'development'
-  public config: WebsiteConfig
+  public config!: WebsiteConfig
   public handlebars = Handlebars.create()
   public domains: string[] = []
   public controllers: { [key: string]: Controller } = {}
   public routes: { [key: string]: RouteRule } = {}
   private routeGuard!: RouteGuard
+  private socketServer!: SocketServer
 
   /**
    * Creates a new Website instance
-   * @param config - The website configuration
+   * Should only be called by the static "create" method
    */
-  private constructor(config: WebsiteConfig) {
+  private constructor(config: BasicWebsiteConfig) {
     console.log(`Loading website "${config.name}"`)
     this.name = config.name
-    this.config = config
     this.rootPath = config.rootPath
   }
 
-  public static async create(config: WebsiteConfig) {
+  /**
+   * Given a basic website config (name & rootPath), load the website.
+   */
+  public static async create(config: BasicWebsiteConfig): Promise<Website> {
     const website = new Website(config)
 
     return Promise.all([
       website.loadPartials(),
-      website.loadConfig()
+      website.loadConfig(config)
     ]).then(() => {
       website.routeGuard = new RouteGuard(website)
       return website
@@ -78,18 +82,29 @@ export class Website implements IWebsite {
    * Load config/config.js for the website, if it exists
    * If it doesn't exist, we'll use the default config
    */
-  private async loadConfig(): Promise<Website> {
+  private async loadConfig(basicConfig: BasicWebsiteConfig): Promise<Website> {
+    this.config = {
+      ...basicConfig,
+      domains: [],
+      controllers: {},
+      routes: [],
+      websocket: {
+        onSocketConnection: () => {},
+        onSocketDisconnect: () => {},
+      }
+    }
+
     return new Promise((resolve, reject) => {
       const configPath = path.join(this.rootPath, 'config', 'config.js')
       import('file://' + configPath).then((configFile) => {
-        // TODO: Validate the config?
+        // TODO: Validate the incoming config?
 
-        const config = {
-          ...this.config,
-          ...configFile.config,
+        if (configFile.config) {
+          this.config = {
+            ...this.config,
+            ...configFile.config,
+          }
         }
-
-        this.config = config
       }, (err) => {
         if (fs.existsSync(configPath)) {
           console.error('config.js failed to load for', this.name)

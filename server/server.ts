@@ -6,7 +6,7 @@
 
 import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http'
 import { EventEmitter } from 'events'
-import { ServerMode, ServerOptions } from './types.js'
+import { ServerMode, ServerOptions, ClientInfo } from './types.js'
 import { Router } from './router.js'
 import { Website } from './website.js'
 import url from 'url'
@@ -64,11 +64,19 @@ export class Server extends EventEmitter {
   private handleSocketConnection(socket: Socket): void {
     const domain = socket.handshake.headers.host?.split(':')[0]
     const website = this.router.getWebsite(domain ?? this.project)
+    const clientInfo: ClientInfo = {
+      socketId: socket.id,
+      ip: socket.handshake.headers['x-real-ip'] as string ?? socket.handshake.headers['x-forwarded-for'] as string ?? socket.handshake.address,
+      userAgent: socket.handshake.headers['user-agent'] as string ?? 'unknown',
+      cookies: socket.handshake.headers['cookie'] as string ?? 'unknown',
+      domain: domain ?? this.project,
+      timestamp: new Date().toISOString()
+    }
 
     if (website) {
-      website.handleSocketConnection(socket)
+      website.handleSocketConnection(socket, clientInfo)
     } else {
-      console.log('No website found for socket')
+      console.log('No website found for socket connection', clientInfo)
     }
   }
 

@@ -19,7 +19,7 @@
  * - Request processing (handled by Handler)
  */
 
-import { Website as IWebsite, RawWebsiteConfig, BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule, ClientInfo } from './types.js'
+import { Website as IWebsite, WebsocketConfig, RawWebsiteConfig, BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule, ClientInfo } from './types.js'
 import fs from 'fs'
 import path from 'path'
 import { IncomingMessage, ServerResponse } from 'http'
@@ -49,6 +49,7 @@ export class Website implements IWebsite {
   public handlebars = Handlebars.create()
   public domains: string[] = []
   public controllers: { [key: string]: Controller } = {}
+  private websockets!: WebsocketConfig
   public routes: { [key: string]: RouteRule } = {}
   private routeGuard!: RouteGuard
 
@@ -90,30 +91,30 @@ export class Website implements IWebsite {
       websockets: {
         listeners: {},
         onSocketConnection: (socket: Socket, clientInfo: ClientInfo) => {
-          console.log('Client connected:', {
-            socketId: socket.id,
-            ...clientInfo,
-            timestamp: new Date().toISOString()
-          })
+          // console.log('Default Client connected:', {
+          //   ...clientInfo,
+          //   timestamp: new Date().toISOString()
+          // })
         },
         onSocketDisconnect: (socket: Socket, clientInfo: ClientInfo) => {
-          console.log('Client disconnected:', {
-            socketId: socket.id,
-            ...clientInfo,
-            timestamp: new Date().toISOString()
-          })
+          // console.log('Default Client disconnected:', {
+          //   ...clientInfo,
+          //   timestamp: new Date().toISOString()
+          // })
         },
       }
     }
 
     return new Promise((resolve, reject) => {
       const configPath = path.join(this.rootPath, 'config', 'config.js')
-      import('file://' + configPath).then((configFile) => {
+      import('file://' + configPath).then((configFile : {
+        config: RawWebsiteConfig
+      }) => {
         if (!configFile.config) {
           throw new Error(`configFile for ${this.name} has no exported config.`)
         }
 
-        this.config = recursiveObjectMerge(this.config, configFile.config)
+        this.config = recursiveObjectMerge(this.config, configFile.config) as WebsiteConfig
       }, (err) => {
         if (fs.existsSync(configPath)) {
           console.error('config.js failed to load for', this.name)
@@ -123,10 +124,7 @@ export class Website implements IWebsite {
         }
       }).then(() => {
 
-        this.domains = this.config.domains || []
-        if (this.domains.length === 0) {
-          this.domains.push('localhost')
-        }
+        this.domains = this.config.domains
 
         // Add the project name to the domains
         this.domains.push(`${this.name}.com`)
@@ -141,6 +139,8 @@ export class Website implements IWebsite {
         for (const [name, controller] of Object.entries(rawControllers)) {
           this.controllers[name] = this.validateController(controller)
         }
+
+        this.websockets = this.config.websockets
 
         resolve(this)
       }, reject)
@@ -448,11 +448,22 @@ export class Website implements IWebsite {
     ])
   }
 
+  /**
+   * Handle a socket connection for the website
+   * Run the default listeners, and then run the website's listeners
+   */
+  public handleSocketConnection(socket: Socket, clientInfo: ClientInfo): void {
+    this.websockets.onSocketConnection(socket, clientInfo)
 
-  public handleSocketConnection(socket: Socket): void {
-    socket.on('hello', (data: any) => {
-      console.log('Hello received:', data)
-      socket.emit('handshake', 'We received your hello')
+    const listeners = this.config.websockets?.listeners || {}
+    for (const [eventName, listener] of Object.entries(listeners)) {
+      socket.on(eventName, (data: any) => {
+        listener(socket, data, clientInfo)
+      })
+    }
+
+    socket.on('disconnect', (reason: string, description: any) => {
+      this.websockets.onSocketDisconnect(socket, clientInfo)
     })
   }
 

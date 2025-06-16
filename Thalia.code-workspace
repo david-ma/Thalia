@@ -3,15 +3,6 @@
     {
       "path": "."
     },
-    {
-      "path": "websites/david-ma"
-    },
-    {
-      "path": "websites/spaceforyourmind"
-    },
-    {
-      "path": "/usr/local/dev/scripts"
-    }
   ],
   "settings": {
     "[handlebars]": {
@@ -32,7 +23,7 @@
     "prettier.printWidth": 120,
     "prettier.prettierPath": "node_modules/.bin/prettier",
     "[typescript]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.defaultFormatter": "vscode.typescript-language-features",
     },
     "[javascript]": {
       "editor.defaultFormatter": "vscode.typescript-language-features"

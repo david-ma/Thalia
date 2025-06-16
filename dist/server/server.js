@@ -46,11 +46,19 @@ export class Server extends EventEmitter {
     handleSocketConnection(socket) {
         const domain = socket.handshake.headers.host?.split(':')[0];
         const website = this.router.getWebsite(domain ?? this.project);
+        const clientInfo = {
+            socketId: socket.id,
+            ip: socket.handshake.headers['x-real-ip'] ?? socket.handshake.headers['x-forwarded-for'] ?? socket.handshake.address,
+            userAgent: socket.handshake.headers['user-agent'] ?? 'unknown',
+            cookies: socket.handshake.headers['cookie'] ?? 'unknown',
+            domain: domain ?? this.project,
+            timestamp: new Date().toISOString()
+        };
         if (website) {
-            website.handleSocketConnection(socket);
+            website.handleSocketConnection(socket, clientInfo);
         }
         else {
-            console.log('No website found for socket');
+            console.log('No website found for socket connection', clientInfo);
         }
     }
     static createSocketServer(httpServer, handleSocketConnection) {

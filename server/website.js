@@ -63,18 +63,8 @@ class Website {
             websockets: {
                 listeners: {},
                 onSocketConnection: (socket, clientInfo) => {
-                    console.log('Client connected:', {
-                        socketId: socket.id,
-                        ...clientInfo,
-                        timestamp: new Date().toISOString()
-                    });
                 },
                 onSocketDisconnect: (socket, clientInfo) => {
-                    console.log('Client disconnected:', {
-                        socketId: socket.id,
-                        ...clientInfo,
-                        timestamp: new Date().toISOString()
-                    });
                 },
             }
         };
@@ -95,10 +85,7 @@ class Website {
                     console.error(`Website "${this.name}" does not have a config.js file`);
                 }
             }).then(() => {
-                this.domains = this.config.domains || [];
-                if (this.domains.length === 0) {
-                    this.domains.push('localhost');
-                }
+                this.domains = this.config.domains;
                 this.domains.push(`${this.name}.com`);
                 this.domains.push(`www.${this.name}.com`);
                 this.domains.push(`${this.name}.david-ma.net`);
@@ -109,6 +96,7 @@ class Website {
                 for (const [name, controller] of Object.entries(rawControllers)) {
                     this.controllers[name] = this.validateController(controller);
                 }
+                this.websockets = this.config.websockets;
                 resolve(this);
             }, reject);
         });
@@ -340,10 +328,16 @@ class Website {
             })
         ]);
     }
-    handleSocketConnection(socket) {
-        socket.on('hello', (data) => {
-            console.log('Hello received:', data);
-            socket.emit('handshake', 'We received your hello');
+    handleSocketConnection(socket, clientInfo) {
+        this.websockets.onSocketConnection(socket, clientInfo);
+        const listeners = this.config.websockets?.listeners || {};
+        for (const [eventName, listener] of Object.entries(listeners)) {
+            socket.on(eventName, (data) => {
+                listener(socket, data, clientInfo);
+            });
+        }
+        socket.on('disconnect', (reason, description) => {
+            this.websockets.onSocketDisconnect(socket, clientInfo);
         });
     }
 }

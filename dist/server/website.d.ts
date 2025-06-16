@@ -19,7 +19,7 @@
  * - Request processing (handled by Handler)
  */
 /// <reference types="node" resolution-mode="require"/>
-import { Website as IWebsite, BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule } from './types.js';
+import { Website as IWebsite, BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule, ClientInfo } from './types.js';
 import { IncomingMessage, ServerResponse } from 'http';
 import Handlebars from 'handlebars';
 import { Socket } from 'socket.io';
@@ -36,6 +36,7 @@ export declare class Website implements IWebsite {
     controllers: {
         [key: string]: Controller;
     };
+    private websockets;
     routes: {
         [key: string]: RouteRule;
     };
@@ -86,7 +87,11 @@ export declare class Website implements IWebsite {
     handleRequest(req: IncomingMessage, res: ServerResponse, pathname?: string): void;
     private getContentType;
     static loadAllWebsites(options: ServerOptions): Promise<Website[]>;
-    handleSocketConnection(socket: Socket): void;
+    /**
+     * Handle a socket connection for the website
+     * Run the default listeners, and then run the website's listeners
+     */
+    handleSocketConnection(socket: Socket, clientInfo: ClientInfo): void;
 }
 export declare const controllerFactories: {
     redirectTo: (url: string) => (res: ServerResponse, _req: IncomingMessage, _website: Website) => void;

@@ -65,16 +65,10 @@ export class Website {
             websockets: {
                 listeners: {},
                 onSocketConnection: (socket, clientInfo) => {
-                    // console.log('Default Client connected:', {
-                    //   ...clientInfo,
-                    //   timestamp: new Date().toISOString()
-                    // })
+                    console.log(`${clientInfo.timestamp} ${clientInfo.ip} SOCKET ${clientInfo.socketId} CONNECTED`);
                 },
                 onSocketDisconnect: (socket, clientInfo) => {
-                    // console.log('Default Client disconnected:', {
-                    //   ...clientInfo,
-                    //   timestamp: new Date().toISOString()
-                    // })
+                    console.log(`${clientInfo.timestamp} ${clientInfo.ip} SOCKET ${clientInfo.socketId} DISCONNECTED`);
                 },
             }
         };

@@ -93,16 +93,10 @@ export class Website implements WebsiteInterface {
       websockets: {
         listeners: {},
         onSocketConnection: (socket: Socket, clientInfo: ClientInfo) => {
-          // console.log('Default Client connected:', {
-          //   ...clientInfo,
-          //   timestamp: new Date().toISOString()
-          // })
+          console.log(`${clientInfo.timestamp} ${clientInfo.ip} SOCKET ${clientInfo.socketId} CONNECTED`)
         },
         onSocketDisconnect: (socket: Socket, clientInfo: ClientInfo) => {
-          // console.log('Default Client disconnected:', {
-          //   ...clientInfo,
-          //   timestamp: new Date().toISOString()
-          // })
+          console.log(`${clientInfo.timestamp} ${clientInfo.ip} SOCKET ${clientInfo.socketId} DISCONNECTED`)
         },
       }
     }

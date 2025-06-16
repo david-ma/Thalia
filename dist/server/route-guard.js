@@ -44,6 +44,10 @@ export class RouteGuard {
                     res.end();
                     return true;
                 }
+                else if (cookies[cookieName] === correctPassword) {
+                    // console.log("We have the right password in our cookies")
+                    // Let them through
+                }
                 else if (req.method === 'POST') {
                     // Check if they're posting
                     try {
@@ -80,10 +84,6 @@ export class RouteGuard {
                         res.end('Invalid form data');
                         return true;
                     }
-                }
-                else if (cookies[cookieName] === correctPassword) {
-                    // console.log("We have the right password in our cookies")
-                    // Let them through
                 }
                 else {
                     // If the user doesn't have the login cookie, get the login page

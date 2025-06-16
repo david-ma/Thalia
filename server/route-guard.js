@@ -45,6 +45,8 @@ class RouteGuard {
                     res.end();
                     return true;
                 }
+                else if (cookies[cookieName] === correctPassword) {
+                }
                 else if (req.method === 'POST') {
                     try {
                         const form = (0, formidable_1.default)({ multiples: false });
@@ -80,8 +82,6 @@ class RouteGuard {
                         res.end('Invalid form data');
                         return true;
                     }
-                }
-                else if (cookies[cookieName] === correctPassword) {
                 }
                 else {
                     const login_html = website.handlebars.compile(website.handlebars.partials['login'])({

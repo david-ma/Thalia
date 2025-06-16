@@ -2,7 +2,8 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { Controller } from './website.js';
 import { Socket } from 'socket.io';
-export type ServerMode = 'standalone' | 'multiplex' | 'dev';
+import { RequestInfo } from './server.js';
+export type ServerMode = 'standalone' | 'multiplex' | 'development';
 export interface ServerOptions {
     project: string;
     port: number;
@@ -78,11 +79,11 @@ export interface WebsiteConfig extends BasicWebsiteConfig, RawWebsiteConfig {
     routes: RouteRule[];
     websockets: WebsocketConfig;
 }
-export interface Website {
+export interface WebsiteInterface {
     readonly name: string;
     readonly config: WebsiteConfig;
     readonly rootPath: string;
-    handleRequest(req: IncomingMessage, res: ServerResponse): void;
+    handleRequest(req: IncomingMessage, res: ServerResponse, requestInfo: RequestInfo, pathname?: string): void;
     handleSocketConnection(socket: Socket, clientInfo: ClientInfo): void;
 }
 //# sourceMappingURL=types.d.ts.map

@@ -27,7 +27,7 @@ export class RouteGuard {
         const buff = Buffer.from(password + this.salt);
         return encodeURIComponent(buff.toString('base64'));
     }
-    handleRequest(req, res, website, optionalPathname) {
+    handleRequest(req, res, website, requestInfo, optionalPathname) {
         const url = new URL(req.url || '/', `http://${req.headers.host}`);
         const pathname = optionalPathname ?? url.pathname ?? '/';
         const host = req.headers.host || 'localhost';

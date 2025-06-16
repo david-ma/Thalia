@@ -19,14 +19,15 @@
  * - Request processing (handled by Handler)
  */
 /// <reference types="node" resolution-mode="require"/>
-import { Website as IWebsite, BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule, ClientInfo } from './types.js';
+import { WebsiteInterface, BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule, ClientInfo } from './types.js';
 import { IncomingMessage, ServerResponse } from 'http';
 import Handlebars from 'handlebars';
 import { Socket } from 'socket.io';
+import { RequestInfo } from './server.js';
 export interface Controller {
-    (res: ServerResponse, req: IncomingMessage, website: Website): void;
+    (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
 }
-export declare class Website implements IWebsite {
+export declare class Website implements WebsiteInterface {
     readonly name: string;
     readonly rootPath: string;
     private readonly env;
@@ -73,6 +74,12 @@ export declare class Website implements IWebsite {
     private templates;
     private readAllViewsInFolder;
     renderError(res: ServerResponse, error: Error): void;
+    asyncServeHandlebarsTemplate({ res, template, templatePath, data }: {
+        res: ServerResponse;
+        template: string;
+        templatePath?: undefined;
+        data?: object;
+    }): Promise<void>;
     serveHandlebarsTemplate({ res, template, templatePath, data }: {
         res: ServerResponse;
         template: string;
@@ -84,7 +91,7 @@ export declare class Website implements IWebsite {
         templatePath: string;
         data?: object;
     }): void;
-    handleRequest(req: IncomingMessage, res: ServerResponse, pathname?: string): void;
+    handleRequest(req: IncomingMessage, res: ServerResponse, requestInfo: RequestInfo, pathname?: string): void;
     private getContentType;
     static loadAllWebsites(options: ServerOptions): Promise<Website[]>;
     /**

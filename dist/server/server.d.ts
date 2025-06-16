@@ -8,6 +8,12 @@ import { EventEmitter } from 'events';
 import { ServerMode, ServerOptions } from './types.js';
 import { Router } from './router.js';
 import { Website } from './website.js';
+export type RequestInfo = {
+    host: string;
+    url: string;
+    ip: string;
+    method: string;
+};
 export declare class Server extends EventEmitter {
     private httpServer;
     private socketServer;

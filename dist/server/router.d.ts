@@ -2,7 +2,7 @@
  * Router - Request routing implementation
  *
  */
-import { Website } from './types.js';
+import { Website } from './website.js';
 export declare class Router {
     private domains;
     private default;

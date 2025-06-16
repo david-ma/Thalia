@@ -19,7 +19,7 @@
  * - Request processing (handled by Handler)
  */
 
-import { Website as IWebsite, WebsocketConfig, RawWebsiteConfig, BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule, ClientInfo } from './types.js'
+import { WebsiteInterface, WebsocketConfig, RawWebsiteConfig, BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule, ClientInfo } from './types.js'
 import fs from 'fs'
 import path from 'path'
 import { IncomingMessage, ServerResponse } from 'http'
@@ -28,6 +28,7 @@ import * as sass from 'sass'
 import { cwd } from 'process'
 import { RouteGuard } from './route-guard.js'
 import { Socket } from 'socket.io'
+import { RequestInfo } from './server.js'
 
 interface Views {
   [key: string]: string;
@@ -37,11 +38,12 @@ export interface Controller {
   (
     res: ServerResponse,
     req: IncomingMessage,
-    website: Website
+    website: Website,
+    requestInfo: RequestInfo
   ): void
 }
 
-export class Website implements IWebsite {
+export class Website implements WebsiteInterface {
   public readonly name: string
   public readonly rootPath: string
   private readonly env: string = 'development'
@@ -107,7 +109,7 @@ export class Website implements IWebsite {
 
     return new Promise((resolve, reject) => {
       const configPath = path.join(this.rootPath, 'config', 'config.js')
-      import('file://' + configPath).then((configFile : {
+      import('file://' + configPath).then((configFile: {
         config: RawWebsiteConfig
       }) => {
         if (!configFile.config) {
@@ -148,13 +150,13 @@ export class Website implements IWebsite {
   }
 
   private validateController(controller: Controller) {
-    const controllerStr = controller.toString()
-    const params = controllerStr.slice(controllerStr.indexOf('(') + 1, controllerStr.indexOf(')')).split(',')
-    if (params.length !== 3) {
-      console.log(Object.entries(controller))
-      console.error(`Controller: ${controllerStr} must accept exactly 3 parameters (res, req, website)`)
-      throw new Error(`Controller must accept exactly 3 parameters (res, req, website)`)
+    // Check that controller is a function
+    if (typeof controller !== 'function') {
+      console.error(`Controller: ${controller} is not a function`)
+      throw new Error(`Controller must be a function`)
     }
+
+    // Check that controller accepts up to 4 parameters (res, req, website, requestInfo)
     return controller
   }
 
@@ -264,6 +266,29 @@ export class Website implements IWebsite {
     }
   }
 
+  public async asyncServeHandlebarsTemplate({
+    res, template, templatePath, data
+  }: {
+    res: ServerResponse,
+    template: string,
+    templatePath?: undefined,
+    data?: object
+  }): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        this.serveHandlebarsTemplate({
+          res,
+          template,
+          templatePath,
+          data
+        })
+        resolve()
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
+
   public serveHandlebarsTemplate({
     res,
     template,
@@ -314,11 +339,11 @@ export class Website implements IWebsite {
 
   // The main Request handler for the website
   // RequestHandler logic goes here
-  public handleRequest(req: IncomingMessage, res: ServerResponse, pathname?: string): void {
+  public handleRequest(req: IncomingMessage, res: ServerResponse, requestInfo: RequestInfo, pathname?: string): void {
     try {
 
       // Let the route guard handle the request first
-      if (this.routeGuard.handleRequest(req, res, this, pathname)) {
+      if (this.routeGuard.handleRequest(req, res, this, requestInfo, pathname)) {
         return // Request was handled by the guard
       }
 
@@ -341,7 +366,7 @@ export class Website implements IWebsite {
       if (controllerPath !== null) {
         const controller = this.controllers[controllerPath]
         if (controller) {
-          controller(res, req, this)
+          controller(res, req, this, requestInfo)
           return
         }
       }
@@ -377,7 +402,7 @@ export class Website implements IWebsite {
       } else if (fs.statSync(filePath).isDirectory()) {
         try {
           const indexPath = path.join(url.pathname, 'index.html')
-          this.handleRequest(req, res, indexPath)
+          this.handleRequest(req, res, requestInfo, indexPath)
         } catch (error) {
           console.error("Error serving index.html for ", url.pathname, error)
           res.writeHead(404)

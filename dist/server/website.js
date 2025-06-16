@@ -113,13 +113,12 @@ export class Website {
         });
     }
     validateController(controller) {
-        const controllerStr = controller.toString();
-        const params = controllerStr.slice(controllerStr.indexOf('(') + 1, controllerStr.indexOf(')')).split(',');
-        if (params.length !== 3) {
-            console.log(Object.entries(controller));
-            console.error(`Controller: ${controllerStr} must accept exactly 3 parameters (res, req, website)`);
-            throw new Error(`Controller must accept exactly 3 parameters (res, req, website)`);
+        // Check that controller is a function
+        if (typeof controller !== 'function') {
+            console.error(`Controller: ${controller} is not a function`);
+            throw new Error(`Controller must be a function`);
         }
+        // Check that controller accepts up to 4 parameters (res, req, website, requestInfo)
         return controller;
     }
     /**
@@ -217,6 +216,22 @@ export class Website {
             res.end(`500 Error`);
         }
     }
+    async asyncServeHandlebarsTemplate({ res, template, templatePath, data }) {
+        return new Promise((resolve, reject) => {
+            try {
+                this.serveHandlebarsTemplate({
+                    res,
+                    template,
+                    templatePath,
+                    data
+                });
+                resolve();
+            }
+            catch (error) {
+                reject(error);
+            }
+        });
+    }
     serveHandlebarsTemplate({ res, template, templatePath, data }) {
         try {
             if (this.env == 'development') {
@@ -249,10 +264,10 @@ export class Website {
     }
     // The main Request handler for the website
     // RequestHandler logic goes here
-    handleRequest(req, res, pathname) {
+    handleRequest(req, res, requestInfo, pathname) {
         try {
             // Let the route guard handle the request first
-            if (this.routeGuard.handleRequest(req, res, this, pathname)) {
+            if (this.routeGuard.handleRequest(req, res, this, requestInfo, pathname)) {
                 return; // Request was handled by the guard
             }
             // Continue with normal request handling
@@ -271,7 +286,7 @@ export class Website {
             if (controllerPath !== null) {
                 const controller = this.controllers[controllerPath];
                 if (controller) {
-                    controller(res, req, this);
+                    controller(res, req, this, requestInfo);
                     return;
                 }
             }
@@ -306,7 +321,7 @@ export class Website {
             else if (fs.statSync(filePath).isDirectory()) {
                 try {
                     const indexPath = path.join(url.pathname, 'index.html');
-                    this.handleRequest(req, res, indexPath);
+                    this.handleRequest(req, res, requestInfo, indexPath);
                 }
                 catch (error) {
                     console.error("Error serving index.html for ", url.pathname, error);

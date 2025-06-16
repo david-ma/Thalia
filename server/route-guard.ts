@@ -3,6 +3,7 @@ import http from 'http'
 import { RouteRule } from './types.js'
 import { Website } from './website.js'
 import formidable from 'formidable'
+import { RequestInfo } from './server.js'
 
 export class RouteGuard {
   private routes: { [key: string]: RouteRule } = {}
@@ -35,7 +36,7 @@ export class RouteGuard {
     return encodeURIComponent(buff.toString('base64'))
   }
 
-  public handleRequest(req: IncomingMessage, res: ServerResponse, website: Website, optionalPathname?: string): boolean {
+  public handleRequest(req: IncomingMessage, res: ServerResponse, website: Website, requestInfo: RequestInfo, optionalPathname?: string): boolean {
     const url = new URL(req.url || '/', `http://${req.headers.host}`)
     const pathname = optionalPathname ?? url.pathname ?? '/'
     const host = req.headers.host || 'localhost'

@@ -102,12 +102,9 @@ class Website {
         });
     }
     validateController(controller) {
-        const controllerStr = controller.toString();
-        const params = controllerStr.slice(controllerStr.indexOf('(') + 1, controllerStr.indexOf(')')).split(',');
-        if (params.length !== 3) {
-            console.log(Object.entries(controller));
-            console.error(`Controller: ${controllerStr} must accept exactly 3 parameters (res, req, website)`);
-            throw new Error(`Controller must accept exactly 3 parameters (res, req, website)`);
+        if (typeof controller !== 'function') {
+            console.error(`Controller: ${controller} is not a function`);
+            throw new Error(`Controller must be a function`);
         }
         return controller;
     }
@@ -190,6 +187,22 @@ class Website {
             res.end(`500 Error`);
         }
     }
+    async asyncServeHandlebarsTemplate({ res, template, templatePath, data }) {
+        return new Promise((resolve, reject) => {
+            try {
+                this.serveHandlebarsTemplate({
+                    res,
+                    template,
+                    templatePath,
+                    data
+                });
+                resolve();
+            }
+            catch (error) {
+                reject(error);
+            }
+        });
+    }
     serveHandlebarsTemplate({ res, template, templatePath, data }) {
         try {
             if (this.env == 'development') {
@@ -218,9 +231,9 @@ class Website {
             this.renderError(res, error);
         }
     }
-    handleRequest(req, res, pathname) {
+    handleRequest(req, res, requestInfo, pathname) {
         try {
-            if (this.routeGuard.handleRequest(req, res, this, pathname)) {
+            if (this.routeGuard.handleRequest(req, res, this, requestInfo, pathname)) {
                 return;
             }
             const url = new URL(req.url || '/', `http://${req.headers.host}`);
@@ -237,7 +250,7 @@ class Website {
             if (controllerPath !== null) {
                 const controller = this.controllers[controllerPath];
                 if (controller) {
-                    controller(res, req, this);
+                    controller(res, req, this, requestInfo);
                     return;
                 }
             }
@@ -269,7 +282,7 @@ class Website {
             else if (fs_1.default.statSync(filePath).isDirectory()) {
                 try {
                     const indexPath = path_1.default.join(url.pathname, 'index.html');
-                    this.handleRequest(req, res, indexPath);
+                    this.handleRequest(req, res, requestInfo, indexPath);
                 }
                 catch (error) {
                     console.error("Error serving index.html for ", url.pathname, error);

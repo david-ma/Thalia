@@ -13,6 +13,13 @@ import url from 'url'
 import { Server as SocketServer } from 'socket.io'
 import { Socket } from 'socket.io'
 
+export type RequestInfo = {
+  host: string,
+  url: string,
+  ip: string,
+  method: string
+}
+
 export class Server extends EventEmitter {
   private httpServer!: HttpServer
   private socketServer!: SocketServer
@@ -30,26 +37,32 @@ export class Server extends EventEmitter {
     this.router = new Router(websites)
   }
 
-  private logRequest(req: IncomingMessage): void {
+  private logRequest(req: IncomingMessage): RequestInfo {
     const host: string = (req.headers['x-host'] as string) ?? req.headers.host
     const urlObject: url.UrlWithParsedQuery = url.parse(req.url ?? '', true)
     const ip: string = req.headers['x-real-ip'] as string ?? req.headers['x-forwarded-for'] as string ?? req.socket.remoteAddress ?? 'unknown'
     const method: string = req.method ?? 'unknown'
 
     console.log(`${new Date().toISOString()} ${ip} ${method} ${host}${urlObject.href}`)
+    return {
+      host,
+      url: urlObject.href,
+      ip,
+      method
+    }
   }
 
   /**
    * Handle HTTP requests.
    */
   private handleRequest(req: IncomingMessage, res: ServerResponse): void {
-    this.logRequest(req)
+    const requestInfo = this.logRequest(req)
 
     const domain = req.headers.host?.split(':')[0]
     const website = this.router.getWebsite(domain ?? this.project)
 
     if (website) {
-      website.handleRequest(req, res)
+      website.handleRequest(req, res, requestInfo)
     } else {
       res.writeHead(404)
       res.end('No website Found')

@@ -50,6 +50,7 @@ export interface ClientInfo {
 }
 
 export interface WebsocketConfig {
+  listeners?: { [key: string]: (socket: Socket, clientInfo: ClientInfo) => void }
   onSocketConnection?: (socket: Socket, clientInfo: ClientInfo) => void
   onSocketDisconnect?: (socket: Socket, clientInfo: ClientInfo) => void
 }
@@ -63,7 +64,7 @@ export interface RawWebsiteConfig {
   domains?: string[]
   controllers?: { [key: string]: Controller }
   routes?: RouteRule[]
-  websocket?: WebsocketConfig
+  websockets?: WebsocketConfig
 }
 
 export interface WebsiteConfig extends BasicWebsiteConfig, RawWebsiteConfig {
@@ -72,7 +73,7 @@ export interface WebsiteConfig extends BasicWebsiteConfig, RawWebsiteConfig {
   domains: string[]
   controllers: { [key: string]: Controller }
   routes: RouteRule[]
-  websocket: WebsocketConfig
+  websockets: WebsocketConfig
 }
 
 export interface Website {

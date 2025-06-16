@@ -40,6 +40,9 @@ export interface ClientInfo {
     cookies: string;
 }
 export interface WebsocketConfig {
+    listeners?: {
+        [key: string]: (socket: Socket, clientInfo: ClientInfo) => void;
+    };
     onSocketConnection?: (socket: Socket, clientInfo: ClientInfo) => void;
     onSocketDisconnect?: (socket: Socket, clientInfo: ClientInfo) => void;
 }
@@ -53,7 +56,7 @@ export interface RawWebsiteConfig {
         [key: string]: Controller;
     };
     routes?: RouteRule[];
-    websocket?: WebsocketConfig;
+    websockets?: WebsocketConfig;
 }
 export interface WebsiteConfig extends BasicWebsiteConfig, RawWebsiteConfig {
     name: string;
@@ -63,7 +66,7 @@ export interface WebsiteConfig extends BasicWebsiteConfig, RawWebsiteConfig {
         [key: string]: Controller;
     };
     routes: RouteRule[];
-    websocket: WebsocketConfig;
+    websockets: WebsocketConfig;
 }
 export interface Website {
     readonly name: string;

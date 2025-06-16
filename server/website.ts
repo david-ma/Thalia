@@ -19,7 +19,7 @@
  * - Request processing (handled by Handler)
  */
 
-import { Website as IWebsite, RawWebsiteConfig, BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule } from './types.js'
+import { Website as IWebsite, RawWebsiteConfig, BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule, ClientInfo } from './types.js'
 import fs from 'fs'
 import path from 'path'
 import { IncomingMessage, ServerResponse } from 'http'
@@ -27,7 +27,7 @@ import Handlebars from 'handlebars'
 import * as sass from 'sass'
 import { cwd } from 'process'
 import { RouteGuard } from './route-guard.js'
-import { Server as SocketServer, Socket } from 'socket.io'
+import { Socket } from 'socket.io'
 
 interface Views {
   [key: string]: string;
@@ -51,7 +51,6 @@ export class Website implements IWebsite {
   public controllers: { [key: string]: Controller } = {}
   public routes: { [key: string]: RouteRule } = {}
   private routeGuard!: RouteGuard
-  private socketServer!: SocketServer
 
   /**
    * Creates a new Website instance
@@ -88,23 +87,33 @@ export class Website implements IWebsite {
       domains: [],
       controllers: {},
       routes: [],
-      websocket: {
-        onSocketConnection: () => {},
-        onSocketDisconnect: () => {},
+      websockets: {
+        listeners: {},
+        onSocketConnection: (socket: Socket, clientInfo: ClientInfo) => {
+          console.log('Client connected:', {
+            socketId: socket.id,
+            ...clientInfo,
+            timestamp: new Date().toISOString()
+          })
+        },
+        onSocketDisconnect: (socket: Socket, clientInfo: ClientInfo) => {
+          console.log('Client disconnected:', {
+            socketId: socket.id,
+            ...clientInfo,
+            timestamp: new Date().toISOString()
+          })
+        },
       }
     }
 
     return new Promise((resolve, reject) => {
       const configPath = path.join(this.rootPath, 'config', 'config.js')
       import('file://' + configPath).then((configFile) => {
-        // TODO: Validate the incoming config?
-
-        if (configFile.config) {
-          this.config = {
-            ...this.config,
-            ...configFile.config,
-          }
+        if (!configFile.config) {
+          throw new Error(`configFile for ${this.name} has no exported config.`)
         }
+
+        this.config = recursiveObjectMerge(this.config, configFile.config)
       }, (err) => {
         if (fs.existsSync(configPath)) {
           console.error('config.js failed to load for', this.name)
@@ -520,4 +529,32 @@ export const latestlogs = async (res: ServerResponse, _req: IncomingMessage, web
     res.writeHead(500, { 'Content-Type': 'text/html' })
     res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
+}
+
+function recursiveObjectMerge<T extends {
+  [key: string]: any
+}>(primary: T, secondary: T): T {
+  const result: T = { ...primary }
+  const primaryKeys = Object.keys(primary)
+
+  for (const key in secondary) {
+    if (!primaryKeys.includes(key)) {
+      result[key] = secondary[key]
+    } else if (Array.isArray(secondary[key])) {
+      if (Array.isArray(result[key])) {
+        result[key] = result[key].concat(secondary[key])
+      } else {
+        result[key] = secondary[key]
+      }
+    } else if (typeof secondary[key] === 'object') {
+      if (typeof result[key] === 'object') {
+        result[key] = recursiveObjectMerge(result[key], secondary[key])
+      } else {
+        result[key] = secondary[key]
+      }
+    } else {
+      result[key] = secondary[key]
+    }
+  }
+  return result
 }

@@ -40,7 +40,6 @@ export declare class Website implements IWebsite {
         [key: string]: RouteRule;
     };
     private routeGuard;
-    private socketServer;
     /**
      * Creates a new Website instance
      * Should only be called by the static "create" method

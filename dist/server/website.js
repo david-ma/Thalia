@@ -62,21 +62,31 @@ export class Website {
             domains: [],
             controllers: {},
             routes: [],
-            websocket: {
-                onSocketConnection: () => { },
-                onSocketDisconnect: () => { },
+            websockets: {
+                listeners: {},
+                onSocketConnection: (socket, clientInfo) => {
+                    console.log('Client connected:', {
+                        socketId: socket.id,
+                        ...clientInfo,
+                        timestamp: new Date().toISOString()
+                    });
+                },
+                onSocketDisconnect: (socket, clientInfo) => {
+                    console.log('Client disconnected:', {
+                        socketId: socket.id,
+                        ...clientInfo,
+                        timestamp: new Date().toISOString()
+                    });
+                },
             }
         };
         return new Promise((resolve, reject) => {
             const configPath = path.join(this.rootPath, 'config', 'config.js');
             import('file://' + configPath).then((configFile) => {
-                // TODO: Validate the incoming config?
-                if (configFile.config) {
-                    this.config = {
-                        ...this.config,
-                        ...configFile.config,
-                    };
+                if (!configFile.config) {
+                    throw new Error(`configFile for ${this.name} has no exported config.`);
                 }
+                this.config = recursiveObjectMerge(this.config, configFile.config);
             }, (err) => {
                 if (fs.existsSync(configPath)) {
                     console.error('config.js failed to load for', this.name);
@@ -432,4 +442,33 @@ export const latestlogs = async (res, _req, website) => {
         res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 };
+function recursiveObjectMerge(primary, secondary) {
+    const result = { ...primary };
+    const primaryKeys = Object.keys(primary);
+    for (const key in secondary) {
+        if (!primaryKeys.includes(key)) {
+            result[key] = secondary[key];
+        }
+        else if (Array.isArray(secondary[key])) {
+            if (Array.isArray(result[key])) {
+                result[key] = result[key].concat(secondary[key]);
+            }
+            else {
+                result[key] = secondary[key];
+            }
+        }
+        else if (typeof secondary[key] === 'object') {
+            if (typeof result[key] === 'object') {
+                result[key] = recursiveObjectMerge(result[key], secondary[key]);
+            }
+            else {
+                result[key] = secondary[key];
+            }
+        }
+        else {
+            result[key] = secondary[key];
+        }
+    }
+    return result;
+}
 //# sourceMappingURL=website.js.map

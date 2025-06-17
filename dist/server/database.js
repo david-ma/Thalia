@@ -10,47 +10,49 @@
  * The database connection is then provided to the website's controllers.
  * In Thalia/server/controllers.ts, we will provide a CRUD factory, which will provide a lot of easy to use functions for CRUD operations.
  * In Thalia/src/views/scaffold, we will provide some base CRUD templates which can be easily overridden by the website.
- *
- * TODO:
- * Rewrite this file to use drizzle-orm instead of sequelize.
  */
-import { Sequelize } from '@sequelize/core';
-export class Database {
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { sql } from 'drizzle-orm';
+import Database from 'better-sqlite3';
+export class ThaliaDatabase {
     constructor(config) {
-        this.models = {};
-        const options = {
-            dialect: 'mariadb',
-            host: config.host,
-            port: config.port,
-            database: config.database,
-            user: config.user,
-            password: config.password,
-            logging: config.logging ?? false,
-            pool: config.pool || {
-                max: 5,
-                min: 0,
-                acquire: 30000,
-                idle: 10000
-            },
-            define: {
-                underscored: true,
-                timestamps: true
-            }
-        };
-        this.sequelize = new Sequelize(options);
+        this.models = new Map();
+        this.config = config;
+        const { db, sqlite } = this.createConnection();
+        this.db = db;
+        this.sqlite = sqlite;
+    }
+    createConnection() {
+        try {
+            const sqlite = new Database(this.config.url);
+            // Enable foreign keys
+            sqlite.pragma('foreign_keys = ON');
+            // Enable WAL mode for better concurrency
+            sqlite.pragma('journal_mode = WAL');
+            return {
+                db: drizzle(sqlite),
+                sqlite
+            };
+        }
+        catch (error) {
+            console.error('Error creating database connection:', error);
+            throw error;
+        }
     }
     static getInstance(config) {
-        if (!Database.instance) {
+        if (!ThaliaDatabase.instance) {
             if (!config) {
                 throw new Error('Database configuration is required for initialization');
             }
-            Database.instance = new Database(config);
+            ThaliaDatabase.instance = new ThaliaDatabase(config);
         }
-        return Database.instance;
+        return ThaliaDatabase.instance;
     }
     async connect() {
         try {
-            await this.sequelize.authenticate();
+            // SQLite connections are established immediately when creating the database
+            // We can verify the connection by running a simple query
+            await this.db.run(sql `SELECT 1`);
             console.log('Database connection established successfully');
         }
         catch (error) {
@@ -58,27 +60,28 @@ export class Database {
             throw error;
         }
     }
-    async sync(options) {
+    async close() {
         try {
-            await this.sequelize.sync(options);
-            console.log('Database synchronized successfully');
+            // Close the SQLite connection
+            this.sqlite.close();
+            console.log('Database connection closed');
         }
         catch (error) {
-            console.error('Error synchronizing database:', error);
+            console.error('Error closing database connection:', error);
             throw error;
         }
     }
-    getModels() {
-        return {
-            sequelize: this.sequelize,
-            models: this.models
-        };
+    getDb() {
+        return this.db;
     }
-    getSequelize() {
-        return this.sequelize;
+    registerModel(name, model) {
+        this.models.set(name, model);
     }
-    async close() {
-        await this.sequelize.close();
+    getModel(name) {
+        return this.models.get(name);
+    }
+    getAllModels() {
+        return this.models;
     }
 }
 //# sourceMappingURL=database.js.map

@@ -10,77 +10,67 @@
  * The database connection is then provided to the website's controllers.
  * In Thalia/server/controllers.ts, we will provide a CRUD factory, which will provide a lot of easy to use functions for CRUD operations.
  * In Thalia/src/views/scaffold, we will provide some base CRUD templates which can be easily overridden by the website.
- * 
- * TODO:
- * Rewrite this file to use drizzle-orm instead of sequelize.
  */
 
-
-import { Sequelize, Options, Model, ModelStatic } from '@sequelize/core'
-import { MariaDbDialect } from '@sequelize/mariadb'
-import { SeqObject } from '../models/types.js'
-
+import { drizzle } from 'drizzle-orm/better-sqlite3'
+import { type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
+import { sql } from 'drizzle-orm'
+import Database from 'better-sqlite3'
 
 export interface DatabaseConfig {
-  dialect: 'mariadb'
-  host: string
-  port: number
-  database: string
-  user: string
-  password: string
-  logging?: false | ((sql: string, timing?: number) => void)
-  pool?: {
-    max?: number
-    min?: number
-    acquire?: number
-    idle?: number
-  }
+  url: string // Path to SQLite database file
+  logging?: boolean
 }
 
-export class Database implements SeqObject {
-  private static instance: Database
-  public sequelize: Sequelize
-  public models: {
-    [key: string]: ModelStatic<Model>
-  } = {}
+export class ThaliaDatabase {
+  private static instance: ThaliaDatabase
+  private db: BetterSQLite3Database
+  private sqlite: InstanceType<typeof Database>
+  private config: DatabaseConfig
+  private models: Map<string, any> = new Map()
 
   private constructor(config: DatabaseConfig) {
-    const options: Options<MariaDbDialect> = {
-      dialect: 'mariadb',
-      host: config.host,
-      port: config.port,
-      database: config.database,
-      user: config.user,
-      password: config.password,
-      logging: config.logging ?? false,
-      pool: config.pool || {
-        max: 5,
-        min: 0,
-        acquire: 30000,
-        idle: 10000
-      },
-      define: {
-        underscored: true,
-        timestamps: true
-      }
-    }
-
-    this.sequelize = new Sequelize(options)
+    this.config = config
+    const { db, sqlite } = this.createConnection()
+    this.db = db
+    this.sqlite = sqlite
   }
 
-  public static getInstance(config?: DatabaseConfig): Database {
-    if (!Database.instance) {
+  private createConnection(): { db: BetterSQLite3Database; sqlite: InstanceType<typeof Database> } {
+    try {
+      const sqlite = new Database(this.config.url)
+      
+      // Enable foreign keys
+      sqlite.pragma('foreign_keys = ON')
+      
+      // Enable WAL mode for better concurrency
+      sqlite.pragma('journal_mode = WAL')
+      
+      return {
+        db: drizzle(sqlite),
+        sqlite
+      }
+    } catch (error) {
+      console.error('Error creating database connection:', error)
+      throw error
+    }
+  }
+
+  public static getInstance(config?: DatabaseConfig): ThaliaDatabase {
+    if (!ThaliaDatabase.instance) {
       if (!config) {
         throw new Error('Database configuration is required for initialization')
       }
-      Database.instance = new Database(config)
+      ThaliaDatabase.instance = new ThaliaDatabase(config)
     }
-    return Database.instance
+    return ThaliaDatabase.instance
   }
 
   public async connect(): Promise<void> {
     try {
-      await this.sequelize.authenticate()
+      // SQLite connections are established immediately when creating the database
+      // We can verify the connection by running a simple query
+      await this.db.run(sql`SELECT 1`)
       console.log('Database connection established successfully')
     } catch (error) {
       console.error('Unable to connect to the database:', error)
@@ -88,28 +78,30 @@ export class Database implements SeqObject {
     }
   }
 
-  public async sync(options?: { force?: boolean; alter?: boolean }): Promise<void> {
+  public async close(): Promise<void> {
     try {
-      await this.sequelize.sync(options)
-      console.log('Database synchronized successfully')
+      // Close the SQLite connection
+      this.sqlite.close()
+      console.log('Database connection closed')
     } catch (error) {
-      console.error('Error synchronizing database:', error)
+      console.error('Error closing database connection:', error)
       throw error
     }
   }
 
-  public getModels(): SeqObject {
-    return {
-      sequelize: this.sequelize,
-      models: this.models
-    }
+  public getDb(): BetterSQLite3Database {
+    return this.db
   }
 
-  public getSequelize(): Sequelize {
-    return this.sequelize
+  public registerModel(name: string, model: any): void {
+    this.models.set(name, model)
   }
 
-  public async close(): Promise<void> {
-    await this.sequelize.close()
+  public getModel(name: string): any {
+    return this.models.get(name)
+  }
+
+  public getAllModels(): Map<string, any> {
+    return this.models
   }
 }

@@ -10,42 +10,26 @@
  * The database connection is then provided to the website's controllers.
  * In Thalia/server/controllers.ts, we will provide a CRUD factory, which will provide a lot of easy to use functions for CRUD operations.
  * In Thalia/src/views/scaffold, we will provide some base CRUD templates which can be easily overridden by the website.
- *
- * TODO:
- * Rewrite this file to use drizzle-orm instead of sequelize.
  */
-import { Sequelize, Model, ModelStatic } from '@sequelize/core';
-import { SeqObject } from '../models/types.js';
+import { type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 export interface DatabaseConfig {
-    dialect: 'mariadb';
-    host: string;
-    port: number;
-    database: string;
-    user: string;
-    password: string;
-    logging?: false | ((sql: string, timing?: number) => void);
-    pool?: {
-        max?: number;
-        min?: number;
-        acquire?: number;
-        idle?: number;
-    };
+    url: string;
+    logging?: boolean;
 }
-export declare class Database implements SeqObject {
+export declare class ThaliaDatabase {
     private static instance;
-    sequelize: Sequelize;
-    models: {
-        [key: string]: ModelStatic<Model>;
-    };
+    private db;
+    private sqlite;
+    private config;
+    private models;
     private constructor();
-    static getInstance(config?: DatabaseConfig): Database;
+    private createConnection;
+    static getInstance(config?: DatabaseConfig): ThaliaDatabase;
     connect(): Promise<void>;
-    sync(options?: {
-        force?: boolean;
-        alter?: boolean;
-    }): Promise<void>;
-    getModels(): SeqObject;
-    getSequelize(): Sequelize;
     close(): Promise<void>;
+    getDb(): BetterSQLite3Database;
+    registerModel(name: string, model: any): void;
+    getModel(name: string): any;
+    getAllModels(): Map<string, any>;
 }
 //# sourceMappingURL=database.d.ts.map

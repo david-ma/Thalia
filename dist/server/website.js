@@ -6,6 +6,7 @@
  * 2. Coordinating between Router and Handler
  * 3. Providing website-specific functionality
  * 4. Loading website resources
+ * 5. Managing database connections
  *
  * The Website:
  * - Holds website configuration
@@ -24,6 +25,7 @@ import Handlebars from 'handlebars';
 import * as sass from 'sass';
 import { cwd } from 'process';
 import { RouteGuard } from './route-guard.js';
+import { ThaliaDatabase } from './database.js';
 export class Website {
     /**
      * Creates a new Website instance
@@ -35,6 +37,7 @@ export class Website {
         this.domains = [];
         this.controllers = {};
         this.routes = {};
+        this.models = {};
         console.log(`Loading website "${config.name}"`);
         this.name = config.name;
         this.rootPath = config.rootPath;
@@ -46,7 +49,9 @@ export class Website {
         const website = new Website(config);
         return Promise.all([
             website.loadPartials(),
-            website.loadConfig(config)
+            website.loadConfig(config).then(() => {
+                return website.loadDatabase();
+            })
         ]).then(() => {
             website.routeGuard = new RouteGuard(website);
             return website;
@@ -396,6 +401,51 @@ export class Website {
         socket.on('disconnect', (reason, description) => {
             this.websockets.onSocketDisconnect(socket, clientInfo);
         });
+    }
+    /**
+     * Load database configuration and initialize database connection
+     */
+    async loadDatabase() {
+        try {
+            // Get database configuration from config
+            const dbConfig = this.config.database;
+            if (!dbConfig) {
+                console.warn(`No database configuration found for ${this.name}`);
+                return;
+            }
+            // Initialize database connection
+            const db = await ThaliaDatabase.getInstance();
+            this.db = await db.getWebsiteDatabase(this.name, dbConfig);
+            // Load models if specified
+            if (dbConfig.models) {
+                for (const [name, model] of Object.entries(dbConfig.models)) {
+                    this.models[name] = model;
+                }
+            }
+        }
+        catch (error) {
+            console.error(`Error loading database for ${this.name}:`, error);
+            throw error;
+        }
+    }
+    /**
+     * Get database instance for this website
+     */
+    getDatabase() {
+        if (!this.db) {
+            throw new Error(`Database not initialized for ${this.name}`);
+        }
+        return this.db;
+    }
+    /**
+     * Get a model by name
+     */
+    getModel(name) {
+        const model = this.models[name];
+        if (!model) {
+            throw new Error(`Model ${name} not found in ${this.name}`);
+        }
+        return model;
     }
 }
 export const controllerFactories = {

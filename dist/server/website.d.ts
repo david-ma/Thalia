@@ -6,6 +6,7 @@
  * 2. Coordinating between Router and Handler
  * 3. Providing website-specific functionality
  * 4. Loading website resources
+ * 5. Managing database connections
  *
  * The Website:
  * - Holds website configuration
@@ -24,6 +25,8 @@ import { IncomingMessage, ServerResponse } from 'http';
 import Handlebars from 'handlebars';
 import { Socket } from 'socket.io';
 import { RequestInfo } from './server.js';
+import { type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import { type SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
 export interface Controller {
     (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
 }
@@ -42,6 +45,8 @@ export declare class Website implements WebsiteInterface {
         [key: string]: RouteRule;
     };
     private routeGuard;
+    private db;
+    private models;
     /**
      * Creates a new Website instance
      * Should only be called by the static "create" method
@@ -99,6 +104,18 @@ export declare class Website implements WebsiteInterface {
      * Run the default listeners, and then run the website's listeners
      */
     handleSocketConnection(socket: Socket, clientInfo: ClientInfo): void;
+    /**
+     * Load database configuration and initialize database connection
+     */
+    private loadDatabase;
+    /**
+     * Get database instance for this website
+     */
+    getDatabase(): BetterSQLite3Database;
+    /**
+     * Get a model by name
+     */
+    getModel(name: string): SQLiteTableWithColumns<any>;
 }
 export declare const controllerFactories: {
     redirectTo: (url: string) => (res: ServerResponse, _req: IncomingMessage, _website: Website) => void;

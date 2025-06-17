@@ -1,3 +1,2 @@
-export declare const config: {
-    domains: string[];
-};
+import { RawWebsiteConfig } from 'thalia';
+export declare const config: RawWebsiteConfig;

@@ -3,6 +3,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { Controller } from './website.js';
 import { Socket } from 'socket.io';
 import { RequestInfo } from './server.js';
+import { type SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
 export type ServerMode = 'standalone' | 'multiplex' | 'development';
 export interface ServerOptions {
     project: string;
@@ -61,6 +62,13 @@ export interface BasicWebsiteConfig {
     name: string;
     rootPath: string;
 }
+export interface DatabaseConfig {
+    url: string;
+    logging?: boolean;
+    models?: {
+        [key: string]: SQLiteTableWithColumns<any>;
+    };
+}
 export interface RawWebsiteConfig {
     domains?: string[];
     controllers?: {
@@ -68,6 +76,7 @@ export interface RawWebsiteConfig {
     };
     routes?: RouteRule[];
     websockets?: RawWebsocketConfig;
+    database?: DatabaseConfig;
 }
 export interface WebsiteConfig extends BasicWebsiteConfig, RawWebsiteConfig {
     name: string;

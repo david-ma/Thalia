@@ -16,11 +16,9 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { sql } from 'drizzle-orm'
 import Database from 'better-sqlite3'
-
-export interface DatabaseConfig {
-  url: string // Path to SQLite database file
-  logging?: boolean
-}
+import { type DatabaseConfig } from './types.js'
+import path from 'path'
+import fs from 'fs'
 
 export class ThaliaDatabase {
   private static instance: ThaliaDatabase
@@ -29,8 +27,12 @@ export class ThaliaDatabase {
   private config: DatabaseConfig
   private models: Map<string, any> = new Map()
 
-  private constructor(config: DatabaseConfig) {
-    this.config = config
+  private constructor(config?: DatabaseConfig) {
+    // Use default config if none provided
+    this.config = config || {
+      url: path.join(process.cwd(), 'data', 'thalia.db'),
+      logging: true
+    }
     const { db, sqlite } = this.createConnection()
     this.db = db
     this.sqlite = sqlite
@@ -38,6 +40,12 @@ export class ThaliaDatabase {
 
   private createConnection(): { db: BetterSQLite3Database; sqlite: InstanceType<typeof Database> } {
     try {
+      // Ensure the data directory exists
+      const dataDir = path.dirname(this.config.url)
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true })
+      }
+
       const sqlite = new Database(this.config.url)
       
       // Enable foreign keys
@@ -58,9 +66,6 @@ export class ThaliaDatabase {
 
   public static getInstance(config?: DatabaseConfig): ThaliaDatabase {
     if (!ThaliaDatabase.instance) {
-      if (!config) {
-        throw new Error('Database configuration is required for initialization')
-      }
       ThaliaDatabase.instance = new ThaliaDatabase(config)
     }
     return ThaliaDatabase.instance
@@ -90,6 +95,12 @@ export class ThaliaDatabase {
   }
 
   public getDb(): BetterSQLite3Database {
+    return this.db
+  }
+
+  public async getWebsiteDatabase(name: string, config: DatabaseConfig): Promise<BetterSQLite3Database> {
+    // For now, we'll just return the main database
+    // In the future, this could create a separate database for each website
     return this.db
   }
 

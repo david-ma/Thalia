@@ -1,4 +1,3 @@
 import { RawWebsiteConfig } from 'thalia';
-declare const config: RawWebsiteConfig;
-export default config;
+export declare const config: RawWebsiteConfig;
 //# sourceMappingURL=config.d.ts.map

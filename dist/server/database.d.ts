@@ -12,10 +12,7 @@
  * In Thalia/src/views/scaffold, we will provide some base CRUD templates which can be easily overridden by the website.
  */
 import { type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
-export interface DatabaseConfig {
-    url: string;
-    logging?: boolean;
-}
+import { type DatabaseConfig } from './types.js';
 export declare class ThaliaDatabase {
     private static instance;
     private db;
@@ -28,6 +25,7 @@ export declare class ThaliaDatabase {
     connect(): Promise<void>;
     close(): Promise<void>;
     getDb(): BetterSQLite3Database;
+    getWebsiteDatabase(name: string, config: DatabaseConfig): Promise<BetterSQLite3Database>;
     registerModel(name: string, model: any): void;
     getModel(name: string): any;
     getAllModels(): Map<string, any>;

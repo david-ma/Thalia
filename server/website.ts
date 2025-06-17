@@ -6,6 +6,7 @@
  * 2. Coordinating between Router and Handler
  * 3. Providing website-specific functionality
  * 4. Loading website resources
+ * 5. Managing database connections
  * 
  * The Website:
  * - Holds website configuration
@@ -29,6 +30,9 @@ import { cwd } from 'process'
 import { RouteGuard } from './route-guard.js'
 import { Socket } from 'socket.io'
 import { RequestInfo } from './server.js'
+import { ThaliaDatabase } from './database.js'
+import { type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
+import { type SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 
 interface Views {
   [key: string]: string;
@@ -54,6 +58,8 @@ export class Website implements WebsiteInterface {
   private websockets!: WebsocketConfig
   public routes: { [key: string]: RouteRule } = {}
   private routeGuard!: RouteGuard
+  private db!: BetterSQLite3Database
+  private models: { [key: string]: SQLiteTableWithColumns<any> } = {}
 
   /**
    * Creates a new Website instance
@@ -73,7 +79,9 @@ export class Website implements WebsiteInterface {
 
     return Promise.all([
       website.loadPartials(),
-      website.loadConfig(config)
+      website.loadConfig(config).then(() => {
+        return website.loadDatabase()
+      })
     ]).then(() => {
       website.routeGuard = new RouteGuard(website)
       return website
@@ -488,6 +496,54 @@ export class Website implements WebsiteInterface {
     })
   }
 
+  /**
+   * Load database configuration and initialize database connection
+   */
+  private async loadDatabase(): Promise<void> {
+    try {
+      // Get database configuration from config
+      const dbConfig = this.config.database
+      if (!dbConfig) {
+        console.warn(`No database configuration found for ${this.name}`)
+        return
+      }
+
+      // Initialize database connection
+      const db = await ThaliaDatabase.getInstance()
+      this.db = await db.getWebsiteDatabase(this.name, dbConfig)
+
+      // Load models if specified
+      if (dbConfig.models) {
+        for (const [name, model] of Object.entries(dbConfig.models)) {
+          this.models[name] = model
+        }
+      }
+    } catch (error) {
+      console.error(`Error loading database for ${this.name}:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Get database instance for this website
+   */
+  public getDatabase(): BetterSQLite3Database {
+    if (!this.db) {
+      throw new Error(`Database not initialized for ${this.name}`)
+    }
+    return this.db
+  }
+
+  /**
+   * Get a model by name
+   */
+  public getModel(name: string): SQLiteTableWithColumns<any> {
+    const model = this.models[name]
+    if (!model) {
+      throw new Error(`Model ${name} not found in ${this.name}`)
+    }
+    return model
+  }
 
 }
 

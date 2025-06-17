@@ -14,16 +14,27 @@
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { sql } from 'drizzle-orm';
 import Database from 'better-sqlite3';
+import path from 'path';
+import fs from 'fs';
 export class ThaliaDatabase {
     constructor(config) {
         this.models = new Map();
-        this.config = config;
+        // Use default config if none provided
+        this.config = config || {
+            url: path.join(process.cwd(), 'data', 'thalia.db'),
+            logging: true
+        };
         const { db, sqlite } = this.createConnection();
         this.db = db;
         this.sqlite = sqlite;
     }
     createConnection() {
         try {
+            // Ensure the data directory exists
+            const dataDir = path.dirname(this.config.url);
+            if (!fs.existsSync(dataDir)) {
+                fs.mkdirSync(dataDir, { recursive: true });
+            }
             const sqlite = new Database(this.config.url);
             // Enable foreign keys
             sqlite.pragma('foreign_keys = ON');
@@ -41,9 +52,6 @@ export class ThaliaDatabase {
     }
     static getInstance(config) {
         if (!ThaliaDatabase.instance) {
-            if (!config) {
-                throw new Error('Database configuration is required for initialization');
-            }
             ThaliaDatabase.instance = new ThaliaDatabase(config);
         }
         return ThaliaDatabase.instance;
@@ -72,6 +80,11 @@ export class ThaliaDatabase {
         }
     }
     getDb() {
+        return this.db;
+    }
+    async getWebsiteDatabase(name, config) {
+        // For now, we'll just return the main database
+        // In the future, this could create a separate database for each website
         return this.db;
     }
     registerModel(name, model) {

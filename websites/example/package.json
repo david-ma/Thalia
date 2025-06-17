@@ -1,0 +1,12 @@
+{
+  "name": "example-website",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "thalia": "file:../../"
+  },
+  "devDependencies": {
+    "typescript": "^4.9.5"
+  }
+}

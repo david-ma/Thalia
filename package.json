@@ -36,9 +36,10 @@
     "thalia": "./dist/server/index.js"
   },
   "files": [
-    "dist",
+    "dist/**/*",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "src/views/**/*.hbs"
   ],
   "scripts": {
     "start": "node dist/index.js",

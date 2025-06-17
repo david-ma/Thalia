@@ -1,4 +1,4 @@
-export declare const config: {
-    domains: string[];
-};
+import { RawWebsiteConfig } from 'thalia';
+declare const config: RawWebsiteConfig;
+export default config;
 //# sourceMappingURL=config.d.ts.map

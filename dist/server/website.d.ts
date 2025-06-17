@@ -104,8 +104,4 @@ export declare const controllerFactories: {
     redirectTo: (url: string) => (res: ServerResponse, _req: IncomingMessage, _website: Website) => void;
     serveFile: (url: string) => (res: ServerResponse, _req: IncomingMessage, website: Website) => void;
 };
-/**
- * Read the latest 10 logs from the log directory
- */
-export declare const latestlogs: (res: ServerResponse, _req: IncomingMessage, website: Website) => Promise<void>;
 //# sourceMappingURL=website.d.ts.map

@@ -21,4 +21,5 @@ export * from './thalia.js';
 export * from '../models/index.js';
 export * from './types.js';
 export * from './website.js';
+export * from './controllers.js';
 //# sourceMappingURL=index.d.ts.map

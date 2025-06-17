@@ -163,11 +163,8 @@ export class Website implements WebsiteInterface {
    * The order is important, because later paths will override earlier paths.
    */
   private loadPartials() {
-    console.log('Loading partials for', this.name)
-
     const paths = [
-      // node_modules/thalia/src/views
-      path.join(cwd(), 'node_modules', 'thalia', 'src', 'views'),      
+      path.join(cwd(), 'node_modules', 'thalia', 'src', 'views'),
       path.join(cwd(), 'src', 'views'),
       path.join(cwd(), 'websites', 'example', 'src', 'partials'),
       path.join(this.rootPath, 'src', 'partials')
@@ -178,8 +175,6 @@ export class Website implements WebsiteInterface {
         this.readAllViewsInFolder(path)
       }
     }
-    console.log('Partials loaded for', this.name)
-    console.log(Object.keys(this.handlebars.partials))
   }
 
   /**
@@ -190,6 +185,7 @@ export class Website implements WebsiteInterface {
   private templates() {
     const templates: { [key: string]: string } = {}
     const paths = [
+      path.join(cwd(), 'node_modules', 'thalia', 'src', 'views'),
       path.join(cwd(), 'src', 'views'),
       path.join(cwd(), 'websites', 'example', 'src'),
       path.join(this.rootPath, 'src')

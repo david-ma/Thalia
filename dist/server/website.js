@@ -124,9 +124,7 @@ export class Website {
      * The order is important, because later paths will override earlier paths.
      */
     loadPartials() {
-        console.log('Loading partials for', this.name);
         const paths = [
-            // node_modules/thalia/src/views
             path.join(cwd(), 'node_modules', 'thalia', 'src', 'views'),
             path.join(cwd(), 'src', 'views'),
             path.join(cwd(), 'websites', 'example', 'src', 'partials'),
@@ -137,8 +135,6 @@ export class Website {
                 this.readAllViewsInFolder(path);
             }
         }
-        console.log('Partials loaded for', this.name);
-        console.log(Object.keys(this.handlebars.partials));
     }
     /**
      * "Templates" are higher level than the partials, so we don't register them as partials
@@ -148,6 +144,7 @@ export class Website {
     templates() {
         const templates = {};
         const paths = [
+            path.join(cwd(), 'node_modules', 'thalia', 'src', 'views'),
             path.join(cwd(), 'src', 'views'),
             path.join(cwd(), 'websites', 'example', 'src'),
             path.join(this.rootPath, 'src')

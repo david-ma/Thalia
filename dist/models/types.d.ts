@@ -1,26 +1,24 @@
-import { Sequelize, Model, ModelStatic } from '@sequelize/core';
-import { User } from './security.js';
-import { Session } from './security.js';
-import { Audit } from './security.js';
-import { Album } from './smugmug.js';
-import { Image } from './smugmug.js';
+import { type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import { type SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
+import { users, sessions, audits } from './security.js';
+import { albums, images } from './smugmug.js';
 export interface SeqObject {
-    sequelize: Sequelize;
+    db: BetterSQLite3Database;
     models: {
-        [key: string]: ModelStatic<Model>;
+        [key: string]: SQLiteTableWithColumns<any>;
     };
 }
 export interface SecurityObject extends SeqObject {
     models: {
-        User: ModelStatic<User>;
-        Session: ModelStatic<Session>;
-        Audit: ModelStatic<Audit>;
+        User: typeof users;
+        Session: typeof sessions;
+        Audit: typeof audits;
     };
 }
 export interface SmugmugObject extends SeqObject {
     models: {
-        Album: ModelStatic<Album>;
-        Image: ModelStatic<Image>;
+        Album: typeof albums;
+        Image: typeof images;
     };
 }
 //# sourceMappingURL=types.d.ts.map

@@ -1,47 +1,43 @@
-import { Model, DataTypes, } from '@sequelize/core';
-export class Album extends Model {
+import { sql } from 'drizzle-orm';
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+// Base table configuration
+const baseTableConfig = {
+    id: text('id').primaryKey().notNull(),
+    createdAt: text('created_at').notNull().default(sql `CURRENT_TIMESTAMP`),
+    updatedAt: text('updated_at').notNull().default(sql `CURRENT_TIMESTAMP`)
+};
+// Album Model
+export const albums = sqliteTable('albums', {
+    ...baseTableConfig,
+    description: text('description'),
+    name: text('name').notNull(),
+    privacy: text('privacy').notNull(),
+    url: text('url').notNull(),
+    password: text('password').notNull()
+});
+// Image Model
+export const images = sqliteTable('images', {
+    ...baseTableConfig,
+    caption: text('caption'),
+    albumId: text('album_id').notNull().references(() => albums.id),
+    filename: text('filename').notNull(),
+    url: text('url').notNull(),
+    originalSize: integer('original_size').notNull(),
+    originalWidth: integer('original_width').notNull(),
+    originalHeight: integer('original_height').notNull(),
+    thumbnailUrl: text('thumbnail_url').notNull(),
+    archivedUri: text('archived_uri').notNull(),
+    archivedSize: integer('archived_size').notNull(),
+    archivedMD5: text('archived_md5').notNull(),
+    imageKey: text('image_key').notNull(),
+    preferredDisplayFileExtension: text('preferred_display_file_extension').notNull(),
+    uri: text('uri').notNull()
+});
+// Factory functions
+export function AlbumFactory(config) {
+    return albums;
 }
-export function AlbumFactory(sequelize) {
-    return Album.init({
-        id: {
-            type: DataTypes.STRING,
-            primaryKey: true,
-        },
-        description: DataTypes.STRING,
-        name: DataTypes.STRING,
-        privacy: DataTypes.STRING,
-        url: DataTypes.STRING,
-        password: DataTypes.STRING,
-    }, {
-        sequelize,
-        tableName: 'albums',
-    });
-}
-export class Image extends Model {
-}
-export function ImageFactory(sequelize) {
-    return Image.init({
-        id: {
-            type: DataTypes.STRING,
-            primaryKey: true,
-        },
-        caption: DataTypes.STRING,
-        albumId: DataTypes.STRING,
-        filename: DataTypes.STRING,
-        url: DataTypes.STRING,
-        originalSize: DataTypes.INTEGER,
-        originalWidth: DataTypes.INTEGER,
-        originalHeight: DataTypes.INTEGER,
-        thumbnailUrl: DataTypes.STRING,
-        archivedUri: DataTypes.STRING,
-        archivedSize: DataTypes.INTEGER,
-        archivedMD5: DataTypes.STRING,
-        imageKey: DataTypes.STRING,
-        preferredDisplayFileExtension: DataTypes.STRING,
-        uri: DataTypes.STRING,
-    }, {
-        sequelize,
-        tableName: 'images',
-    });
+export function ImageFactory(config) {
+    return images;
 }
 //# sourceMappingURL=smugmug.js.map

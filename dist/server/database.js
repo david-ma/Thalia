@@ -1,3 +1,19 @@
+/**
+ * This file is the entrypoint for websites to enable a database connection.
+ *
+ * The Thalia framework uses drizzle-orm for database connections.
+ * The Thalia framework provides some generic models in Thalia/models.
+ * Websites built on Thalia will have their own /models directory.
+ * Websites built on Thalia will import the database connection from this file.
+ * This file will read the models specified in the website's config/config.ts file, and then import them from the Thalia framework or the website's own models directory.
+ *
+ * The database connection is then provided to the website's controllers.
+ * In Thalia/server/controllers.ts, we will provide a CRUD factory, which will provide a lot of easy to use functions for CRUD operations.
+ * In Thalia/src/views/scaffold, we will provide some base CRUD templates which can be easily overridden by the website.
+ *
+ * TODO:
+ * Rewrite this file to use drizzle-orm instead of sequelize.
+ */
 import { Sequelize } from '@sequelize/core';
 export class Database {
     constructor(config) {

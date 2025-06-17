@@ -9,6 +9,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { eq } from 'drizzle-orm';
 /**
  * Read the latest 10 logs from the log directory
  */
@@ -55,4 +56,165 @@ export const latestlogs = async (res, _req, website) => {
         res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 };
+/**
+ * Generate a CRUD controller for a given table.
+ * We want:
+ * - list: GET /tableName
+ * - create: POST /tableName
+ * - read: GET /tableName/id
+ * - edit: GET /tableName/id/edit
+ * - update: PUT /tableName/id
+ * - delete: DELETE /tableName/id
+ */
+export function crudFactory(options) {
+    const { website, table, db, relationships = [], hideColumns = [], template = 'crud' } = options;
+    const tableName = table.name;
+    return {
+        // List all records
+        list: async (res, _req, website, _requestInfo) => {
+            try {
+                const records = await db.select().from(table);
+                const data = { records, tableName };
+                const html = website.handlebars.compile(template)(data);
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(html);
+            }
+            catch (error) {
+                console.error(`Error in ${website.name}/${tableName}/list:`, error);
+                res.writeHead(500, { 'Content-Type': 'text/html' });
+                res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        },
+        // Create a new record
+        create: async (res, req, website, _requestInfo) => {
+            try {
+                const body = await parseBody(req);
+                const result = await db.insert(table).values(body).returning();
+                res.writeHead(201, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(result[0]));
+            }
+            catch (error) {
+                console.error(`Error in ${website.name}/${tableName}/create:`, error);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
+            }
+        },
+        // Read a single record
+        read: async (res, _req, website, requestInfo) => {
+            try {
+                const id = requestInfo.url.split('/').pop();
+                if (!id) {
+                    throw new Error('No ID provided');
+                }
+                const record = await db.select().from(table).where(eq(table.id, id));
+                if (!record.length) {
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Record not found' }));
+                    return;
+                }
+                const data = { record: record[0], tableName };
+                const html = website.handlebars.compile(template)(data);
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(html);
+            }
+            catch (error) {
+                console.error(`Error in ${website.name}/${tableName}/read:`, error);
+                res.writeHead(500, { 'Content-Type': 'text/html' });
+                res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        },
+        // Edit form for a record
+        edit: async (res, _req, website, requestInfo) => {
+            try {
+                const id = requestInfo.url.split('/').pop();
+                if (!id) {
+                    throw new Error('No ID provided');
+                }
+                const record = await db.select().from(table).where(eq(table.id, id));
+                if (!record.length) {
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Record not found' }));
+                    return;
+                }
+                const data = { record: record[0], tableName };
+                const html = website.handlebars.compile(`${template}-edit`)(data);
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(html);
+            }
+            catch (error) {
+                console.error(`Error in ${website.name}/${tableName}/edit:`, error);
+                res.writeHead(500, { 'Content-Type': 'text/html' });
+                res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        },
+        // Update a record
+        update: async (res, req, website, requestInfo) => {
+            try {
+                const id = requestInfo.url.split('/').pop();
+                if (!id) {
+                    throw new Error('No ID provided');
+                }
+                const body = await parseBody(req);
+                const result = await db.update(table)
+                    .set(body)
+                    .where(eq(table.id, id))
+                    .returning();
+                if (!result.length) {
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Record not found' }));
+                    return;
+                }
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(result[0]));
+            }
+            catch (error) {
+                console.error(`Error in ${website.name}/${tableName}/update:`, error);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
+            }
+        },
+        // Delete a record
+        delete: async (res, _req, website, requestInfo) => {
+            try {
+                const id = requestInfo.url.split('/').pop();
+                if (!id) {
+                    throw new Error('No ID provided');
+                }
+                const result = await db.delete(table)
+                    .where(eq(table.id, id))
+                    .returning();
+                if (!result.length) {
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Record not found' }));
+                    return;
+                }
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+            }
+            catch (error) {
+                console.error(`Error in ${website.name}/${tableName}/delete:`, error);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
+            }
+        }
+    };
+}
+// Helper function to parse request body
+async function parseBody(req) {
+    return new Promise((resolve, reject) => {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+        req.on('end', () => {
+            try {
+                resolve(JSON.parse(body));
+            }
+            catch (error) {
+                reject(new Error('Invalid JSON'));
+            }
+        });
+        req.on('error', reject);
+    });
+}
 //# sourceMappingURL=controllers.js.map

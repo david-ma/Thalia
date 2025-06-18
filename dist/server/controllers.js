@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { eq } from 'drizzle-orm';
+import url from 'url';
 export const latestlogs = async (res, _req, website) => {
     try {
         const logDirectory = path.join(website.rootPath, 'public', 'log');
@@ -199,13 +200,16 @@ export class CrudMachine {
         });
     }
     entrypoint(res, req, website, requestInfo) {
-        const path = requestInfo.url.split('/');
-        const target = path[2];
+        const pathname = url.parse(requestInfo.url, true).pathname ?? '';
+        const target = pathname.split('/')[2];
         if (target === 'columns') {
             this.columns(res, req, website, requestInfo);
         }
         else if (target === 'list') {
             this.list(res, req, website, requestInfo);
+        }
+        else if (target === 'json') {
+            this.fetchDataTableJson(res, req, website, requestInfo);
         }
         else {
             this.list(res, req, website, requestInfo);
@@ -213,16 +217,107 @@ export class CrudMachine {
     }
     list(res, req, website, requestInfo) {
         website.db.drizzle.select({ id: this.table.id, name: this.table.name }).from(this.table).then((records) => {
-            const data = { records, tableName: this.name };
-            const html = website.show('list')({ data });
+            const data = {
+                controllerName: this.name,
+                records,
+                tableName: this.name,
+                primaryKey: this.table.id,
+                links: []
+            };
+            const html = website.show('list')(data);
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end(html);
         });
     }
+    fetchDataTableJson(res, req, website, requestInfo) {
+        const query = url.parse(requestInfo.url, true).query;
+        parseDTquery(query);
+        const columns = Object.entries(table.getAttributes())
+            .filter(([key, value]) => !hideColumns.includes(key))
+            .map(mapColumns);
+        const findOptions = {
+            include: references.map((table) => {
+                return controller.db[table];
+            }),
+            offset: controller.query.start || 0,
+            limit: controller.query.length || 10,
+            order: order.map((item) => {
+                return [columns[item.column].data, item.dir.toUpperCase()];
+            }),
+        };
+        if (search.value) {
+            findOptions['where'] = {
+                [Op.or]: columns
+                    .filter((column) => column.type === 'string')
+                    .map((column) => {
+                    return {
+                        [column.data]: {
+                            [Op.iLike]: `%${search.value}%`,
+                        },
+                    };
+                }),
+            };
+        }
+        Promise.all([
+            table.findAll(findOptions),
+            table.count(),
+            table.count(findOptions),
+        ]).then(([items, recordsTotal, recordsFiltered]) => {
+            const blob = {
+                draw: controller.query.draw || 1,
+                recordsTotal,
+                recordsFiltered,
+                data: items.map((item) => item.dataValues),
+            };
+            controller.res.end(JSON.stringify(blob));
+        });
+        return;
+    }
     columns(res, req, website, requestInfo) {
-        const columns = Object.keys(this.table);
+        const columns = Object.keys(this.table).map(this.mapColumns);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(columns));
     }
+    mapColumns(key) {
+        const type = 'string';
+        const allowedTypes = ['string', 'num', 'date', 'bool'];
+        const orderable = allowedTypes.includes(type);
+        const searchable = allowedTypes.includes(type);
+        var blob = {
+            name: key,
+            title: key,
+            data: key,
+            orderable,
+            searchable,
+            type,
+        };
+        return blob;
+    }
+}
+function parseDTquery(queryString) {
+    const result = {
+        draw: queryString.draw,
+        start: queryString.start,
+        length: queryString.length,
+        order: {},
+        search: {
+            value: queryString['search[value]'],
+            regex: queryString['search[regex]'],
+        }
+    };
+    Object.entries(queryString).filter(([key, value]) => {
+        return key.startsWith('order');
+    }).forEach(([key, value]) => {
+        const regex = /order\[(\d+)\]\[(.*)\]/;
+        const match = key.match(regex);
+        if (match) {
+            const index = match[1];
+            const column = match[2];
+            const order = result.order[index] || {};
+            order[column] = value;
+            result.order[index] = order;
+        }
+    });
+    return result;
 }
 //# sourceMappingURL=controllers.js.map

@@ -12,8 +12,10 @@
   console.log("hey, we're in list.hbs")
 
   $.ajax('/{{controllerName}}/columns')
-    .then(function (data) {
-      let columns = JSON.parse(data)
+    .then(function (columns) {
+//      console.log("columns", data)
+//      let columns = JSON.parse(data)
+
       columns.forEach(addRenders)
 
       $('#myTable').DataTable({

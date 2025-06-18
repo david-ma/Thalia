@@ -18,6 +18,8 @@ import { type SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 import { type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { RequestInfo } from './server.js'
 import * as libsql from '@libsql/client'
+import url from 'url'
+import { ParsedUrlQuery } from 'querystring'
 
 /**
  * Read the latest 10 logs from the log directory
@@ -302,16 +304,18 @@ export class CrudMachine {
    * - delete: DELETE /tableName/id
    */
   public entrypoint(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    const path = requestInfo.url.split('/')
-    const target = path[2]
+    const pathname = url.parse(requestInfo.url, true).pathname ?? ''
+    const target = pathname.split('/')[2]
 
     if (target === 'columns') {
       this.columns(res, req, website, requestInfo)
     } else if (target === 'list') {
       this.list(res, req, website, requestInfo)
-    } else {
+    } else if (target === 'json') {
+      this.fetchDataTableJson(res, req, website, requestInfo)
+    }
 
-
+    else {
       this.list(res, req, website, requestInfo)
     }
 
@@ -320,26 +324,171 @@ export class CrudMachine {
 
   public list(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     website.db.drizzle.select({ id: this.table.id, name: this.table.name }).from(this.table).then((records) => {
-      const data = { records, tableName: this.name }
-      const html = website.show('list')({data})
+      const data = {
+        controllerName: this.name,
+        records,
+        tableName: this.name,
+        primaryKey: this.table.id,
+        links: []
+      }
+      const html = website.show('list')(data)
 
       res.writeHead(200, { 'Content-Type': 'text/html' })
       res.end(html)
     })
   }
+  /**
+   * Serve the data in DataTables.net json format
+   */
+  public fetchDataTableJson(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    const query = url.parse(requestInfo.url, true).query
+    parseDTquery(query)
+
+
+
+    // query: url.parse(request.url, true).query,
+
+    const columns = Object.entries(table.getAttributes())
+      .filter(([key, value]: any) => !hideColumns.includes(key))
+      .map(mapColumns)
+
+    const findOptions = {
+      include: references.map((table) => {
+        return controller.db[table]
+      }),
+      offset: controller.query.start || 0,
+      limit: controller.query.length || 10,
+      order: order.map((item) => {
+        return [columns[item.column].data, item.dir.toUpperCase()]
+      }),
+    }
+
+    if (search.value) {
+      findOptions['where'] = {
+        [Op.or]: columns
+          // Note that we're only searching on Strings here.
+          // We should implement searching on other types as well.
+          .filter((column) => column.type === 'string')
+          .map((column) => {
+            return {
+              [column.data]: {
+                [Op.iLike]: `%${search.value}%`,
+              },
+            }
+          }),
+      }
+    }
+
+    Promise.all([
+      table.findAll(findOptions),
+      table.count(),
+      table.count(findOptions),
+    ]).then(([items, recordsTotal, recordsFiltered]) => {
+      const blob = {
+        draw: controller.query.draw || 1,
+        recordsTotal,
+        recordsFiltered,
+        data: items.map((item) => item.dataValues),
+      }
+      controller.res.end(JSON.stringify(blob))
+    })
+
+    return
+
+
+
+    // const columns = Object.keys(this.table).map(this.mapColumns)
+
+
+
+    // res.writeHead(200, { 'Content-Type': 'application/json' })
+    // res.end(JSON.stringify(columns))
+  }
+
+
+
+
+
+
+
+
 
 
   public columns(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    const columns = Object.keys(this.table)
+    const columns = Object.keys(this.table).map(this.mapColumns)
+    // TODO: Get the types
+
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(columns))
   }
 
 
+  // TODO: Get the types from the drizzle table?
+  private mapColumns(key: string) {
+    // const type = SequelizeDataTableTypes[value.type.key]
+    const type = 'string'
+    const allowedTypes = ['string', 'num', 'date', 'bool']
+    const orderable = allowedTypes.includes(type)
+    const searchable = allowedTypes.includes(type)
 
+    var blob = {
+      name: key,
+      title: key,
+      data: key,
+      orderable,
+      searchable,
+      type,
+    }
+
+    return blob
+  }
 }
 
+type Search = {
+  value: string
+  regex: boolean
+}
 
+type ParsedDTquery = {
+  draw: string
+  start: string
+  length: string
+  order: Record<string, Record<string, string>>
+  search: Search
+}
+
+function parseDTquery(queryString: ParsedUrlQuery): ParsedDTquery {
+  const result = {
+    draw: queryString.draw,
+    start: queryString.start,
+    length: queryString.length,
+    order: {} as Record<string, Record<string, string>>,
+    search: {
+      value: queryString['search[value]'],
+      regex: queryString['search[regex]'],
+    }
+  }
+
+  Object.entries(queryString).filter(([key, value]) => {
+    return key.startsWith('order')
+  }).forEach(([key, value]) => {
+    const regex = /order\[(\d+)\]\[(.*)\]/
+    const match = key.match(regex)
+    if (match) {
+      const index = match[1]
+      const column = match[2]
+
+      // Get the order for this index, or create it if it doesn't exist
+      const order = result.order[index] || {} as Record<string, string>
+      // Set the value for the column
+      order[column] = value as string
+      // Set the order for this index
+      result.order[index] = order
+    }
+  })
+
+  return result as any
+}
 
 
 

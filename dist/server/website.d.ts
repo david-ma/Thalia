@@ -29,6 +29,7 @@ export declare class Website implements WebsiteInterface {
     private loadConfig;
     private validateController;
     private loadPartials;
+    show(content: string, template?: string): HandlebarsTemplateDelegate<any>;
     private templates;
     private readAllViewsInFolder;
     renderError(res: ServerResponse, error: Error): void;

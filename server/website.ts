@@ -181,6 +181,16 @@ export class Website implements WebsiteInterface {
     }
   }
 
+  public show(content: string, template: string = 'wrapper'): HandlebarsTemplateDelegate<any> {
+    const templateFile = this.handlebars.partials[template] ?? ''
+    const contentFile = this.handlebars.partials[content] ?? ''
+    this.handlebars.registerPartial('styles', '')
+    this.handlebars.registerPartial('scripts', '')
+    this.handlebars.registerPartial('content', contentFile)
+
+    return this.handlebars.compile(templateFile)
+  }
+
   /**
    * "Templates" are higher level than the partials, so we don't register them as partials
    * Not sure if this is necessary. There probably isn't any danger in registering them as partials.
@@ -212,6 +222,9 @@ export class Website implements WebsiteInterface {
 
   private readAllViewsInFolder(folder: string): Views {
     const views: Views = {}
+    this.handlebars.registerPartial('styles', '')
+    this.handlebars.registerPartial('scripts', '')
+    this.handlebars.registerPartial('content', '')
 
     try {
       const entries = fs.readdirSync(folder, { withFileTypes: true })

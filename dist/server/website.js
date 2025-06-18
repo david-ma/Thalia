@@ -95,6 +95,14 @@ export class Website {
             }
         }
     }
+    show(content, template = 'wrapper') {
+        const templateFile = this.handlebars.partials[template] ?? '';
+        const contentFile = this.handlebars.partials[content] ?? '';
+        this.handlebars.registerPartial('styles', '');
+        this.handlebars.registerPartial('scripts', '');
+        this.handlebars.registerPartial('content', contentFile);
+        return this.handlebars.compile(templateFile);
+    }
     templates() {
         const templates = {};
         const paths = [
@@ -118,6 +126,9 @@ export class Website {
     }
     readAllViewsInFolder(folder) {
         const views = {};
+        this.handlebars.registerPartial('styles', '');
+        this.handlebars.registerPartial('scripts', '');
+        this.handlebars.registerPartial('content', '');
         try {
             const entries = fs.readdirSync(folder, { withFileTypes: true });
             for (const entry of entries) {

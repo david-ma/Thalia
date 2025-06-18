@@ -212,10 +212,9 @@ export class CrudMachine {
         }
     }
     list(res, req, website, requestInfo) {
-        website.db.drizzle.select().from(this.table).then((records) => {
+        website.db.drizzle.select({ id: this.table.id, name: this.table.name }).from(this.table).then((records) => {
             const data = { records, tableName: this.name };
-            const templateFile = website.handlebars.partials['list'];
-            const html = website.handlebars.compile(templateFile)(data);
+            const html = website.show('list')({ data });
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end(html);
         });

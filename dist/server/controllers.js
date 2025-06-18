@@ -231,47 +231,19 @@ export class CrudMachine {
     }
     fetchDataTableJson(res, req, website, requestInfo) {
         const query = url.parse(requestInfo.url, true).query;
-        parseDTquery(query);
-        const columns = Object.entries(table.getAttributes())
-            .filter(([key, value]) => !hideColumns.includes(key))
-            .map(mapColumns);
-        const findOptions = {
-            include: references.map((table) => {
-                return controller.db[table];
-            }),
-            offset: controller.query.start || 0,
-            limit: controller.query.length || 10,
-            order: order.map((item) => {
-                return [columns[item.column].data, item.dir.toUpperCase()];
-            }),
-        };
-        if (search.value) {
-            findOptions['where'] = {
-                [Op.or]: columns
-                    .filter((column) => column.type === 'string')
-                    .map((column) => {
-                    return {
-                        [column.data]: {
-                            [Op.iLike]: `%${search.value}%`,
-                        },
-                    };
-                }),
-            };
-        }
-        Promise.all([
-            table.findAll(findOptions),
-            table.count(),
-            table.count(findOptions),
-        ]).then(([items, recordsTotal, recordsFiltered]) => {
+        const parsedQuery = CrudMachine.parseDTquery(query);
+        const columns = Object.keys(this.table).map(this.mapColumns);
+        this.db.select().from(this.table).then((records) => {
+            console.log("Found", records.length, "records in", this.name);
             const blob = {
-                draw: controller.query.draw || 1,
-                recordsTotal,
-                recordsFiltered,
-                data: items.map((item) => item.dataValues),
+                draw: parsedQuery.draw,
+                recordsTotal: records.length,
+                recordsFiltered: records.length,
+                data: records,
             };
-            controller.res.end(JSON.stringify(blob));
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(blob));
         });
-        return;
     }
     columns(res, req, website, requestInfo) {
         const columns = Object.keys(this.table).map(this.mapColumns);
@@ -293,31 +265,31 @@ export class CrudMachine {
         };
         return blob;
     }
-}
-function parseDTquery(queryString) {
-    const result = {
-        draw: queryString.draw,
-        start: queryString.start,
-        length: queryString.length,
-        order: {},
-        search: {
-            value: queryString['search[value]'],
-            regex: queryString['search[regex]'],
-        }
-    };
-    Object.entries(queryString).filter(([key, value]) => {
-        return key.startsWith('order');
-    }).forEach(([key, value]) => {
-        const regex = /order\[(\d+)\]\[(.*)\]/;
-        const match = key.match(regex);
-        if (match) {
-            const index = match[1];
-            const column = match[2];
-            const order = result.order[index] || {};
-            order[column] = value;
-            result.order[index] = order;
-        }
-    });
-    return result;
+    static parseDTquery(queryString) {
+        const result = {
+            draw: queryString.draw,
+            start: queryString.start,
+            length: queryString.length,
+            order: {},
+            search: {
+                value: queryString['search[value]'],
+                regex: queryString['search[regex]'],
+            }
+        };
+        Object.entries(queryString).filter(([key, value]) => {
+            return key.startsWith('order');
+        }).forEach(([key, value]) => {
+            const regex = /order\[(\d+)\]\[(.*)\]/;
+            const match = key.match(regex);
+            if (match) {
+                const index = match[1];
+                const column = match[2];
+                const order = result.order[index] || {};
+                order[column] = value;
+                result.order[index] = order;
+            }
+        });
+        return result;
+    }
 }
 //# sourceMappingURL=controllers.js.map

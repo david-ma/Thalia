@@ -340,69 +340,26 @@ export class CrudMachine {
   /**
    * Serve the data in DataTables.net json format
    */
-  public fetchDataTableJson(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+  private fetchDataTableJson(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const query = url.parse(requestInfo.url, true).query
-    parseDTquery(query)
 
+    const parsedQuery = CrudMachine.parseDTquery(query)
 
+    const columns = Object.keys(this.table).map(this.mapColumns)
 
-    // query: url.parse(request.url, true).query,
+    this.db.select().from(this.table).then((records) => {
+      console.log("Found", records.length, "records in", this.name)
 
-    const columns = Object.entries(table.getAttributes())
-      .filter(([key, value]: any) => !hideColumns.includes(key))
-      .map(mapColumns)
-
-    const findOptions = {
-      include: references.map((table) => {
-        return controller.db[table]
-      }),
-      offset: controller.query.start || 0,
-      limit: controller.query.length || 10,
-      order: order.map((item) => {
-        return [columns[item.column].data, item.dir.toUpperCase()]
-      }),
-    }
-
-    if (search.value) {
-      findOptions['where'] = {
-        [Op.or]: columns
-          // Note that we're only searching on Strings here.
-          // We should implement searching on other types as well.
-          .filter((column) => column.type === 'string')
-          .map((column) => {
-            return {
-              [column.data]: {
-                [Op.iLike]: `%${search.value}%`,
-              },
-            }
-          }),
-      }
-    }
-
-    Promise.all([
-      table.findAll(findOptions),
-      table.count(),
-      table.count(findOptions),
-    ]).then(([items, recordsTotal, recordsFiltered]) => {
       const blob = {
-        draw: controller.query.draw || 1,
-        recordsTotal,
-        recordsFiltered,
-        data: items.map((item) => item.dataValues),
+        draw: parsedQuery.draw,
+        recordsTotal: records.length,
+        recordsFiltered: records.length,
+        data: records,
       }
-      controller.res.end(JSON.stringify(blob))
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(blob))
     })
 
-    return
-
-
-
-    // const columns = Object.keys(this.table).map(this.mapColumns)
-
-
-
-    // res.writeHead(200, { 'Content-Type': 'application/json' })
-    // res.end(JSON.stringify(columns))
   }
 
 
@@ -411,10 +368,7 @@ export class CrudMachine {
 
 
 
-
-
-
-  public columns(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+  private columns(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const columns = Object.keys(this.table).map(this.mapColumns)
     // TODO: Get the types
 
@@ -442,6 +396,39 @@ export class CrudMachine {
 
     return blob
   }
+
+  private static parseDTquery(queryString: ParsedUrlQuery): ParsedDTquery {
+    const result = {
+      draw: queryString.draw,
+      start: queryString.start,
+      length: queryString.length,
+      order: {} as Record<string, Record<string, string>>,
+      search: {
+        value: queryString['search[value]'],
+        regex: queryString['search[regex]'],
+      }
+    }
+
+    Object.entries(queryString).filter(([key, value]) => {
+      return key.startsWith('order')
+    }).forEach(([key, value]) => {
+      const regex = /order\[(\d+)\]\[(.*)\]/
+      const match = key.match(regex)
+      if (match) {
+        const index = match[1]
+        const column = match[2]
+
+        // Get the order for this index, or create it if it doesn't exist
+        const order = result.order[index] || {} as Record<string, string>
+        // Set the value for the column
+        order[column] = value as string
+        // Set the order for this index
+        result.order[index] = order
+      }
+    })
+
+    return result as any
+  }
 }
 
 type Search = {
@@ -457,38 +444,6 @@ type ParsedDTquery = {
   search: Search
 }
 
-function parseDTquery(queryString: ParsedUrlQuery): ParsedDTquery {
-  const result = {
-    draw: queryString.draw,
-    start: queryString.start,
-    length: queryString.length,
-    order: {} as Record<string, Record<string, string>>,
-    search: {
-      value: queryString['search[value]'],
-      regex: queryString['search[regex]'],
-    }
-  }
-
-  Object.entries(queryString).filter(([key, value]) => {
-    return key.startsWith('order')
-  }).forEach(([key, value]) => {
-    const regex = /order\[(\d+)\]\[(.*)\]/
-    const match = key.match(regex)
-    if (match) {
-      const index = match[1]
-      const column = match[2]
-
-      // Get the order for this index, or create it if it doesn't exist
-      const order = result.order[index] || {} as Record<string, string>
-      // Set the value for the column
-      order[column] = value as string
-      // Set the order for this index
-      result.order[index] = order
-    }
-  })
-
-  return result as any
-}
 
 
 

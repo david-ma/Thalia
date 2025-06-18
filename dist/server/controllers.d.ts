@@ -34,9 +34,10 @@ export declare class CrudMachine {
     init(website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string): void;
     entrypoint(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
     list(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
-    fetchDataTableJson(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
-    columns(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
+    private fetchDataTableJson;
+    private columns;
     private mapColumns;
+    private static parseDTquery;
 }
 export {};
 //# sourceMappingURL=controllers.d.ts.map

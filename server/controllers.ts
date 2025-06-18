@@ -347,7 +347,10 @@ export class CrudMachine {
 
     const columns = Object.keys(this.table).map(this.mapColumns)
 
-    this.db.select().from(this.table).then((records) => {
+    const offset = parseInt(parsedQuery.start)
+    const limit = parseInt(parsedQuery.length)
+
+    this.db.select().from(this.table).limit(limit).offset(offset).then((records) => {
       console.log("Found", records.length, "records in", this.name)
 
       const blob = {

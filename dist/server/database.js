@@ -5,12 +5,14 @@ import * as libsql from '@libsql/client';
 export class ThaliaDatabase {
     constructor(website) {
         this.schemas = {};
+        this.machines = {};
         console.log("Creating database connection for", website.rootPath);
         this.website = website;
         this.url = "file:" + path.join(website.rootPath, 'models', 'sqlite.db');
         this.sqlite = libsql.createClient({ url: this.url });
         this.drizzle = drizzle(this.sqlite);
         this.schemas = website.config.database?.schemas || {};
+        this.machines = website.config.database?.machines || {};
     }
     async connect() {
         try {
@@ -30,6 +32,10 @@ export class ThaliaDatabase {
                 console.log(`Counts from the ${this.website.name} Database:`, counts);
                 return this;
             }).then(() => {
+                Object.entries(this.machines).forEach(([name, machine]) => {
+                    machine.init(this.website, this.drizzle, this.sqlite, name);
+                    console.log("Looking at machine", name);
+                });
                 return this;
             });
         }

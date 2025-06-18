@@ -10,6 +10,12 @@ import { users, sessions, audits, albums, images } from '../models/drizzle-schem
 import { fruit } from '../models/fruit.js'
 
 
+import { CrudMachine } from 'thalia/controllers'
+
+const FruitMachine = new CrudMachine(fruit)
+
+
+
 export const config: RawWebsiteConfig = {
   domains: ['example.com'],
   database: {
@@ -20,7 +26,13 @@ export const config: RawWebsiteConfig = {
       albums,
       images,
       fruit
+    },
+    machines: {
+      fruit: FruitMachine
     }
+  },
+  controllers: {
+    fruit: FruitMachine.list.bind(FruitMachine)
   }
 }
 

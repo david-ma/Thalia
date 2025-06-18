@@ -17,6 +17,7 @@ import { eq } from 'drizzle-orm'
 import { type SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 import { type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { RequestInfo } from './server.js'
+import * as libsql from '@libsql/client'
 
 /**
  * Read the latest 10 logs from the log directory
@@ -184,7 +185,7 @@ export function crudFactory(options: CrudOptions): CrudController {
       } catch (error) {
         console.error(`Error in ${website.name}/${tableName}/edit:`, error)
         res.writeHead(500, { 'Content-Type': 'text/html' })
-        res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error' }`)
+        res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     },
 
@@ -263,3 +264,54 @@ async function parseBody(req: IncomingMessage): Promise<any> {
     req.on('error', reject)
   })
 }
+
+
+import { type LibSQLDatabase } from 'drizzle-orm/libsql'
+
+export class CrudMachine {
+  public name!: string
+  private table: SQLiteTableWithColumns<any>
+  private website!: Website
+  private db!: LibSQLDatabase
+  private sqlite!: libsql.Client
+  constructor(table: SQLiteTableWithColumns<any>) {
+    this.table = table
+  }
+
+  public init(website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string) {
+    this.name = name
+    console.log(`We are initialising the CrudMachine ${this.name} on ${website.name}`)
+
+    this.website = website
+    this.db = db
+    this.sqlite = sqlite
+
+    db.select().from(this.table).then((records) => {
+      console.log("Found", records.length, "records in", this.name)
+    })
+  }
+
+
+  public list(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    website.db.drizzle.select().from(this.table).then((records) => {
+      const data = { records, tableName: this.name }
+      const templateFile = website.handlebars.partials['list']
+      const html = website.handlebars.compile(templateFile)(data)
+
+      res.writeHead(200, { 'Content-Type': 'text/html' })
+      res.end(html)
+    })
+  }
+
+  
+
+
+
+}
+
+
+
+
+
+
+

@@ -30,6 +30,10 @@
     "./security": {
       "import": "./dist/server/security.js",
       "types": "./dist/server/security.d.ts"
+    },
+    "./controllers": {
+      "import": "./dist/server/controllers.js",
+      "types": "./dist/server/controllers.d.ts"
     }
   },
   "bin": {

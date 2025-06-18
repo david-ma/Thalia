@@ -56,7 +56,7 @@ export class Website implements WebsiteInterface {
   private websockets!: WebsocketConfig
   public routes: { [key: string]: RouteRule } = {}
   private routeGuard!: RouteGuard
-  private db!: ThaliaDatabase
+  public db!: ThaliaDatabase
 
   /**
    * Creates a new Website instance

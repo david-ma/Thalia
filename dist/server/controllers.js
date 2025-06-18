@@ -184,4 +184,28 @@ async function parseBody(req) {
         req.on('error', reject);
     });
 }
+export class CrudMachine {
+    constructor(table) {
+        this.table = table;
+    }
+    init(website, db, sqlite, name) {
+        this.name = name;
+        console.log(`We are initialising the CrudMachine ${this.name} on ${website.name}`);
+        this.website = website;
+        this.db = db;
+        this.sqlite = sqlite;
+        db.select().from(this.table).then((records) => {
+            console.log("Found", records.length, "records in", this.name);
+        });
+    }
+    list(res, req, website, requestInfo) {
+        website.db.drizzle.select().from(this.table).then((records) => {
+            const data = { records, tableName: this.name };
+            const templateFile = website.handlebars.partials['list'];
+            const html = website.handlebars.compile(templateFile)(data);
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(html);
+        });
+    }
+}
 //# sourceMappingURL=controllers.js.map

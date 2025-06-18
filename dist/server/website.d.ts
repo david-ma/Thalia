@@ -4,6 +4,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import Handlebars from 'handlebars';
 import { Socket } from 'socket.io';
 import { RequestInfo } from './server.js';
+import { ThaliaDatabase } from './database.js';
 export interface Controller {
     (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
 }
@@ -22,7 +23,7 @@ export declare class Website implements WebsiteInterface {
         [key: string]: RouteRule;
     };
     private routeGuard;
-    private db;
+    db: ThaliaDatabase;
     private constructor();
     static create(config: BasicWebsiteConfig): Promise<Website>;
     private loadConfig;

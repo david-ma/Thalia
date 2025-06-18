@@ -22,6 +22,7 @@ import path from 'path'
 import { type LibSQLDatabase } from 'drizzle-orm/libsql';
 import { Website } from './website.js'
 import * as libsql from '@libsql/client'
+import { CrudMachine } from './controllers.js'
 
 export class ThaliaDatabase {
   private website: Website
@@ -29,6 +30,7 @@ export class ThaliaDatabase {
   private sqlite: libsql.Client
   public drizzle: LibSQLDatabase
   public schemas: { [key: string]: SQLiteTableWithColumns<any> } = {}
+  public machines: { [key: string]: CrudMachine } = {}
 
   constructor(website: Website) {
     console.log("Creating database connection for", website.rootPath)
@@ -41,6 +43,7 @@ export class ThaliaDatabase {
     this.drizzle = drizzle(this.sqlite)
 
     this.schemas = website.config.database?.schemas || {}
+    this.machines = website.config.database?.machines || {}
   }
 
   /**
@@ -68,6 +71,13 @@ export class ThaliaDatabase {
         console.log(`Counts from the ${this.website.name} Database:`, counts)
         return this
       }).then(() => {
+        // Check that the machines have the same columns as their schemas
+        Object.entries(this.machines).forEach(([name, machine]) => {
+          machine.init(this.website, this.drizzle, this.sqlite, name)
+          console.log("Looking at machine", name)
+          // console.log(Object.keys(machine.table))
+        })
+
         // TODO: Check that the models have the same columns as their schemas
 
         // Object.entries(this.schemas).forEach(([name, schema]) => {

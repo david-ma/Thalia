@@ -320,6 +320,25 @@ export declare const images: SQLiteTableWithColumns<{
         }, {}, {
             length: number | undefined;
         }>;
+        deletedAt: import("drizzle-orm/sqlite-core").SQLiteColumn<{
+            name: "deleted_at";
+            tableName: "images";
+            dataType: "string";
+            columnType: "SQLiteText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: number | undefined;
+        }>;
     };
     dialect: "sqlite";
 }>;
@@ -636,6 +655,25 @@ export declare function ImageFactory(config: typeof baseTableConfig): SQLiteTabl
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: true;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: number | undefined;
+        }>;
+        deletedAt: import("drizzle-orm/sqlite-core").SQLiteColumn<{
+            name: "deleted_at";
+            tableName: "images";
+            dataType: "string";
+            columnType: "SQLiteText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
             enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;

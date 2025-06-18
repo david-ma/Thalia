@@ -82,6 +82,9 @@ export class CrudFactory {
         else if (target === 'update') {
             this.update(res, req, website, requestInfo);
         }
+        else if (target === 'delete') {
+            this.delete(res, req, website, requestInfo);
+        }
         else {
             this.show(res, req, website, requestInfo);
         }
@@ -121,6 +124,20 @@ export class CrudFactory {
         });
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(data));
+    }
+    delete(res, req, website, requestInfo) {
+        const id = requestInfo.url.split('/').pop();
+        if (!id) {
+            throw new Error('No ID provided');
+        }
+        this.db.update(this.table)
+            .set({ deletedAt: new Date().toISOString() })
+            .where(eq(this.table.id, id))
+            .then((result) => {
+            const html = this.website.show('deleteSuccess')(result);
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(html);
+        });
     }
     update(res, req, website, requestInfo) {
         const id = requestInfo.url.split('/').pop();

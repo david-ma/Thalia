@@ -142,6 +142,8 @@ export class CrudFactory implements Machine {
       this.edit(res, req, website, requestInfo)
     } else if (target === 'update') {
       this.update(res, req, website, requestInfo)
+    } else if (target === 'delete') {
+      this.delete(res, req, website, requestInfo)
     }
 
 
@@ -192,6 +194,31 @@ export class CrudFactory implements Machine {
 
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(data))
+  }
+
+  private delete(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    const id = requestInfo.url.split('/').pop()
+    if (!id) {
+      throw new Error('No ID provided')
+    }
+
+    this.db.update(this.table)
+      // .set({ deletedAt: sql`CURRENT_TIMESTAMP` })
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(this.table.id, id))
+      // this.db.delete(this.table).where(eq(this.table.id, id))
+      .then((result) => {
+        // console.log("Result:", result)
+        // res.writeHead(200, { 'Content-Type': 'application/json' })
+        // res.end(JSON.stringify(result))
+        // show delete success, or just the list page
+        // res.writeHead(200, { 'Content-Type': 'text/html' })
+        // res.end('Record deleted')
+
+        const html = this.website.show('deleteSuccess')(result)
+        res.writeHead(200, { 'Content-Type': 'text/html' })
+        res.end(html)
+      })
   }
 
   private update(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {

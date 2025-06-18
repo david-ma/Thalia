@@ -10,6 +10,7 @@ export const baseTableConfig = {
   // Does SQLite support CURRENT_TIMESTAMP?
 
   createdAt: text('created_at').notNull().$default(() => sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at').notNull().$onUpdate(() => sql`CURRENT_TIMESTAMP`).$default(() => sql`CURRENT_TIMESTAMP`)
+  updatedAt: text('updated_at').notNull().$onUpdate(() => sql`CURRENT_TIMESTAMP`).$default(() => sql`CURRENT_TIMESTAMP`),
+  deletedAt: text('deleted_at')
 }
 

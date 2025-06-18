@@ -20,6 +20,7 @@ export declare class CrudFactory implements Machine {
     init(website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string): void;
     controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
     private testdata;
+    private delete;
     private update;
     private edit;
     private show;

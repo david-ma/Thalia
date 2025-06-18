@@ -15,6 +15,13 @@
       "when": 1750246422386,
       "tag": "0001_clean_sleepwalker",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1750256913560,
+      "tag": "0002_huge_lucky_pierre",
+      "breakpoints": true
     }
   ]
 }

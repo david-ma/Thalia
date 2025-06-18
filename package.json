@@ -42,15 +42,13 @@
     "src/views/**/*.hbs"
   ],
   "scripts": {
-    "start": "node dist/index.js",
+    "start": "node dist/server/index.js",
     "pm2-start": "pm2 startOrReload ecosystem.config.json",
     "build": "tsc",
     "dev": "node bin/develop.js",
     "init": "node dist/bin/create-project.js"
   },
   "dependencies": {
-    "@sequelize/core": "7.0.0-alpha.46",
-    "@sequelize/mariadb": "7.0.0-alpha.46",
     "better-sqlite3": "^11.10.0",
     "drizzle-orm": "^0.44.2",
     "formidable": "^3.5.1",

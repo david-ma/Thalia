@@ -202,7 +202,7 @@ export class CrudMachine {
     }
     entrypoint(res, req, website, requestInfo) {
         const pathname = url.parse(requestInfo.url, true).pathname ?? '';
-        const target = pathname.split('/')[2];
+        const target = pathname.split('/')[2] ?? 'list';
         if (target === 'columns') {
             this.columns(res, req, website, requestInfo);
         }
@@ -222,7 +222,7 @@ export class CrudMachine {
             this.testdata(res, req, website, requestInfo);
         }
         else {
-            this.list(res, req, website, requestInfo);
+            this.show(res, req, website, requestInfo);
         }
     }
     testdata(res, req, website, requestInfo) {
@@ -261,6 +261,31 @@ export class CrudMachine {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(data));
     }
+    show(res, req, website, requestInfo) {
+        const id = requestInfo.url.split('/').pop();
+        if (!id) {
+            throw new Error('No ID provided');
+        }
+        this.db.select(this.table).from(this.table)
+            .where(eq(this.table.id, id))
+            .then((record) => {
+            if (!record.length) {
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Record not found' }));
+                return;
+            }
+            const data = {
+                record: record[0],
+                json: JSON.stringify(record),
+                tableName: this.name,
+                primaryKey: 'id',
+                links: []
+            };
+            const html = website.show('show')(data);
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(html);
+        });
+    }
     create(res, req, website, requestInfo) {
         try {
             const form = formidable({ multiples: false });
@@ -289,7 +314,8 @@ export class CrudMachine {
         }
     }
     filteredAttributes(table) {
-        return Object.keys(table);
+        const columns = Object.keys(table).filter((key) => !['id', 'createdAt', 'updatedAt'].includes(key));
+        return columns;
     }
     new(res, req, website, requestInfo) {
         const data = {
@@ -307,7 +333,7 @@ export class CrudMachine {
                 controllerName: this.name,
                 records,
                 tableName: this.name,
-                primaryKey: this.table.id,
+                primaryKey: 'id',
                 links: []
             };
             const html = website.show('list')(data);

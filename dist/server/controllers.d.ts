@@ -34,6 +34,7 @@ export declare class CrudMachine {
     init(website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string): void;
     entrypoint(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
     private testdata;
+    private show;
     private create;
     private filteredAttributes;
     private new;

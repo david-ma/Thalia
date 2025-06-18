@@ -2,7 +2,7 @@ import { IncomingMessage, ServerResponse } from 'http'
 import { Controller } from './website.js'
 import { Socket } from 'socket.io'
 import { RequestInfo } from './server.js'
-import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
+import { SQLiteTableWithColumns, SQLiteTable } from 'drizzle-orm/sqlite-core'
 
 // import { type TSchema } from 'drizzle-orm'
 // import { PgTableWithColumns } from 'drizzle-orm/pg-core'
@@ -78,7 +78,12 @@ export interface BasicWebsiteConfig {
 // export type DatabaseTable = SQLiteTableWithColumns<any> | PgTableWithColumns<any>
 // export type DatabaseTable = SQLiteTableWithColumns<any>
 export interface DatabaseConfig {
-  schemas: { [key: string]: SQLiteTableWithColumns<any> }
+  // schemas: any
+  schemas: {
+    [key: string]: SQLiteTable<any>
+  //   // [key: string]: SQLiteTableWithColumns<any> | SQLiteTable<any> | any
+    // [key: string]: any
+  }
 }
 
 export interface RawWebsiteConfig {

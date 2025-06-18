@@ -29,6 +29,8 @@ export class ThaliaDatabase {
                 }, {});
                 console.log(`Counts from the ${this.website.name} Database:`, counts);
                 return this;
+            }).then(() => {
+                return this;
             });
         }
         catch (error) {

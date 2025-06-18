@@ -67,6 +67,15 @@ export class ThaliaDatabase {
 
         console.log(`Counts from the ${this.website.name} Database:`, counts)
         return this
+      }).then(() => {
+        // TODO: Check that the models have the same columns as their schemas
+
+        // Object.entries(this.schemas).forEach(([name, schema]) => {
+        //   console.log("Looking at schema", name)
+        //   console.log(Object.keys(schema))          
+        // })
+
+        return this
       })
     } catch (error) {
       console.error(`Unable to connect to the ${this.website.name} database:`, error)

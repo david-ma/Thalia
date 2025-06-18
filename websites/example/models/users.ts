@@ -44,12 +44,37 @@
 // console.log('Getting all users from the database: ', users)
 
 import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { SQLiteTableWithColumns } from "drizzle-orm/sqlite-core";
 
-export const users: SQLiteTableWithColumns<any> = sqliteTable("users_table", {
+// const userConfig: TableConfig = {
+//   name: "users",
+//   schema: "main",
+//   dialect: 'sqlite',
+//   columns: {
+//     // id: 'number', //SQLiteColumn<any, {}, {}>'
+//     id: integer('id').primaryKey() as any,
+//     name: text('name') as any,
+//     age: integer('age') as any,
+//     email: text('email') as any,
+//   }
+// }
+
+// export const users = sqliteTable('users_table', userConfig.columns)
+
+
+// SQLiteColumn<any, {}, {}>'
+
+export const users = sqliteTable("users_table", {
   id: int().primaryKey({ autoIncrement: true }),
   name: text().notNull(),
   age: int().notNull(),
   email: text().notNull().unique(),
 });
 
+// // (alias) new SQLiteTable<TableConfig>(name: string, schema: string | undefined, baseName: string): SQLiteTable<TableConfig>
+// const chairs = new SQLiteTableWithColumns("chairs", "string", "base")
+
+
+// export const hats = new SQLiteTable("hats", "string",
+//   "asdf"
+
+// );

@@ -13,7 +13,11 @@ import { fruit } from '../models/fruit.js'
 import { CrudFactory } from 'thalia/controllers'
 
 const FruitMachine = new CrudFactory(fruit)
-
+const UserMachine = new CrudFactory(users)
+const SessionMachine = new CrudFactory(sessions)
+const AuditMachine = new CrudFactory(audits)
+const AlbumMachine = new CrudFactory(albums)
+const ImageMachine = new CrudFactory(images)
 
 
 export const config: RawWebsiteConfig = {
@@ -28,11 +32,21 @@ export const config: RawWebsiteConfig = {
       fruit
     },
     machines: {
-      fruit: FruitMachine
+      fruit: FruitMachine,
+      users: UserMachine,
+      sessions: SessionMachine,
+      audits: AuditMachine,
+      albums: AlbumMachine,
+      images: ImageMachine
     }
   },
   controllers: {
-    fruit: FruitMachine.entrypoint.bind(FruitMachine),
+    fruit: FruitMachine.controller.bind(FruitMachine),
+    users: UserMachine.controller.bind(UserMachine),
+    sessions: SessionMachine.controller.bind(SessionMachine),
+    audits: AuditMachine.controller.bind(AuditMachine),
+    albums: AlbumMachine.controller.bind(AlbumMachine),
+    images: ImageMachine.controller.bind(ImageMachine)
   }
 }
 

@@ -62,13 +62,13 @@ export interface BasicWebsiteConfig {
     name: string;
     rootPath: string;
 }
-import { CrudFactory } from './controllers.js';
+import { Machine } from './controllers.js';
 export interface DatabaseConfig {
     schemas: {
         [key: string]: SQLiteTableWithColumns<any>;
     };
     machines?: {
-        [key: string]: CrudFactory;
+        [key: string]: Machine;
     };
 }
 export interface RawWebsiteConfig {

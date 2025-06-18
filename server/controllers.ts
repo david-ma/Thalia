@@ -84,7 +84,12 @@ type CrudRelationship = {
 
 import { type LibSQLDatabase } from 'drizzle-orm/libsql'
 
-export class CrudFactory {
+export type Machine = {
+  init: (website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string) => void
+  controller: (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => void
+}
+
+export class CrudFactory implements Machine {
   public name!: string
   private table: SQLiteTableWithColumns<any>
   private website!: Website
@@ -117,7 +122,7 @@ export class CrudFactory {
    * - update: PUT /tableName/id
    * - delete: DELETE /tableName/id
    */
-  public entrypoint(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+  public controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const pathname = url.parse(requestInfo.url, true).pathname ?? ''
     const target = pathname.split('/')[2] || 'list'
 

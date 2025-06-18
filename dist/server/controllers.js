@@ -55,7 +55,7 @@ export class CrudFactory {
             console.log("Found", records.length, "records in", this.name);
         });
     }
-    entrypoint(res, req, website, requestInfo) {
+    controller(res, req, website, requestInfo) {
         const pathname = url.parse(requestInfo.url, true).pathname ?? '';
         const target = pathname.split('/')[2] || 'list';
         if (target === 'columns') {

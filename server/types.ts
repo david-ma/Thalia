@@ -74,7 +74,7 @@ export interface BasicWebsiteConfig {
   rootPath: string
 }
 
-import { CrudFactory } from './controllers.js'
+import { Machine } from './controllers.js'
 
 // Use SQLiteTableWithColumns for now, but we will add PgTableWithColumns later
 // export type DatabaseTable = SQLiteTableWithColumns<any> | PgTableWithColumns<any>
@@ -87,7 +87,7 @@ export interface DatabaseConfig {
     // [key: string]: any
   },
   machines?: {
-    [key: string]: CrudFactory
+    [key: string]: Machine
   }
 }
 

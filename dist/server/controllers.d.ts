@@ -6,7 +6,11 @@ import { RequestInfo } from './server.js';
 import * as libsql from '@libsql/client';
 export declare const latestlogs: (res: ServerResponse, _req: IncomingMessage, website: Website) => Promise<void>;
 import { type LibSQLDatabase } from 'drizzle-orm/libsql';
-export declare class CrudFactory {
+export type Machine = {
+    init: (website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string) => void;
+    controller: (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => void;
+};
+export declare class CrudFactory implements Machine {
     name: string;
     private table;
     private website;
@@ -14,7 +18,7 @@ export declare class CrudFactory {
     private sqlite;
     constructor(table: SQLiteTableWithColumns<any>);
     init(website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string): void;
-    entrypoint(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
+    controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
     private testdata;
     private update;
     private edit;

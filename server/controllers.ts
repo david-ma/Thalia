@@ -189,53 +189,50 @@ export class CrudFactory implements Machine {
     }
 
 
-
-
-
-
     else {
       this.show(res, req, website, requestInfo)
     }
-
   }
 
   private testdata(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    const data = [
-      {
-        name: 'apple',
-        color: 'red',
-        taste: 'sweet'
-      },
-      {
-        name: 'banana',
-        color: 'yellow',
-        taste: 'sweet'
-      },
-      {
-        name: 'orange',
-        color: 'orange',
-        taste: 'sour'
-      },
-      {
-        name: 'pear',
-        color: 'green',
-        taste: 'sweet'
-      },
-      {
-        name: 'pineapple',
-        color: 'yellow',
-        taste: 'sweet'
-      }
-    ]
-
-    data.forEach((item) => {
-      this.db.insert(this.table).values(item).then((result) => {
-        console.log("Result:", result)
-      })
+    this.generateTestData(10).then(() => {
+      res.writeHead(200, { 'Content-Type': 'text/html' })
+      res.end('Test data generated')
+    }, (error) => {
+      console.error('Error generating test data:', error)
+      res.writeHead(500, { 'Content-Type': 'text/html' })
+      res.end('Error generating test data')
     })
+  }
 
-    res.writeHead(200, { 'Content-Type': 'application/json' })
-    res.end(JSON.stringify(data))
+  public async generateTestData(amount: number = 10): Promise<any> {
+    if (process.env.NODE_ENV !== 'development') {
+      throw new Error('Test data can only be generated in development mode')
+    }
+
+    const records = []
+
+    for (let i = 0; i < amount; i++) {
+      const fields = this.filteredAttributes().reduce((acc, attribute) => {
+        var value: any = "Random String"
+        if (attribute.type === 'date') {
+          value = new Date().toISOString()
+        } else if (attribute.type === 'num') {
+          value = Math.random() * 100
+        } else if (attribute.type === 'bool') {
+          value = Math.random() < 0.5
+        }
+
+        acc[attribute.name] = value
+        return acc
+      }, {} as Record<string, string>)
+
+      records.push(fields)
+    }
+
+    return Promise.all(records.map((record) => {
+      return this.db.insert(this.table).values(record)
+    }))
   }
 
   private delete(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
@@ -446,7 +443,7 @@ export class CrudFactory implements Machine {
    * Other attributes:
    * { "keys": ["name", "keyAsName", "primary", "notNull", "default", "defaultFn", "onUpdateFn", "hasDefault", "isUnique", "uniqueName", "uniqueType", "dataType", "columnType", "enumValues", "generated", "generatedIdentity", "config", "table", "length"] }
    */
-  private attributes() : Attribute[] {
+  private attributes(): Attribute[] {
     const typeMapping: Record<string, string> = {
       'createdAt': 'date',
       'updatedAt': 'date',
@@ -454,7 +451,7 @@ export class CrudFactory implements Machine {
     }
 
     return this.cols().map((column) => {
-      var data :Attribute = {
+      var data: Attribute = {
         name: column,
         type: this.table[column].columnType,
         default: this.table[column].default,

@@ -2,7 +2,10 @@ import { IncomingMessage, ServerResponse } from 'http'
 import { Controller } from './website.js'
 import { Socket } from 'socket.io'
 import { RequestInfo } from './server.js'
-import { type SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
+import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
+
+// import { type TSchema } from 'drizzle-orm'
+// import { PgTableWithColumns } from 'drizzle-orm/pg-core'
 
 // Server Types
 export type ServerMode = 'standalone' | 'multiplex' | 'development'
@@ -71,10 +74,11 @@ export interface BasicWebsiteConfig {
   rootPath: string
 }
 
+// Use SQLiteTableWithColumns for now, but we will add PgTableWithColumns later
+// export type DatabaseTable = SQLiteTableWithColumns<any> | PgTableWithColumns<any>
+// export type DatabaseTable = SQLiteTableWithColumns<any>
 export interface DatabaseConfig {
-  url: string
-  logging?: boolean
-  models?: { [key: string]: SQLiteTableWithColumns<any> }
+  schemas: { [key: string]: SQLiteTableWithColumns<any> }
 }
 
 export interface RawWebsiteConfig {

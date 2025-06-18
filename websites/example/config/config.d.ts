@@ -1,2 +1,2 @@
-import { RawWebsiteConfig } from 'thalia';
+import { RawWebsiteConfig } from 'thalia/types';
 export declare const config: RawWebsiteConfig;

@@ -16,7 +16,8 @@
     "experimentalSpecifierResolution": "node"
   },
   "include": [
-    "config/**/*"
+    "config/**/*",
+    "models/**/*"
   ],
   "exclude": [
     "node_modules",

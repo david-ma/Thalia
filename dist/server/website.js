@@ -37,7 +37,6 @@ export class Website {
         this.domains = [];
         this.controllers = {};
         this.routes = {};
-        this.models = {};
         console.log(`Loading website "${config.name}"`);
         this.name = config.name;
         this.rootPath = config.rootPath;
@@ -49,9 +48,8 @@ export class Website {
         const website = new Website(config);
         return Promise.all([
             website.loadPartials(),
-            website.loadConfig(config).then(() => {
-                return website.loadDatabase();
-            })
+            website.loadConfig(config)
+                .then(() => website.loadDatabase())
         ]).then(() => {
             website.routeGuard = new RouteGuard(website);
             return website;
@@ -405,47 +403,17 @@ export class Website {
     /**
      * Load database configuration and initialize database connection
      */
-    async loadDatabase() {
-        try {
-            // Get database configuration from config
-            const dbConfig = this.config.database;
-            if (!dbConfig) {
-                console.warn(`No database configuration found for ${this.name}`);
-                return;
+    loadDatabase() {
+        return new Promise((resolve) => {
+            if (this.config.database) {
+                const db = new ThaliaDatabase(this);
+                this.db = db;
+                resolve(this.db.connect());
             }
-            // Initialize database connection
-            const db = await ThaliaDatabase.getInstance();
-            this.db = await db.getWebsiteDatabase(this.name, dbConfig);
-            // Load models if specified
-            if (dbConfig.models) {
-                for (const [name, model] of Object.entries(dbConfig.models)) {
-                    this.models[name] = model;
-                }
+            else {
+                resolve(null);
             }
-        }
-        catch (error) {
-            console.error(`Error loading database for ${this.name}:`, error);
-            throw error;
-        }
-    }
-    /**
-     * Get database instance for this website
-     */
-    getDatabase() {
-        if (!this.db) {
-            throw new Error(`Database not initialized for ${this.name}`);
-        }
-        return this.db;
-    }
-    /**
-     * Get a model by name
-     */
-    getModel(name) {
-        const model = this.models[name];
-        if (!model) {
-            throw new Error(`Model ${name} not found in ${this.name}`);
-        }
-        return model;
+        });
     }
 }
 export const controllerFactories = {

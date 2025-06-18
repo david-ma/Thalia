@@ -1,13 +1,12 @@
+// import { users, sessions, audits } from 'thalia/models'
+// import { users } from 'thalia/models'
+import { users } from '../models/users.js';
 export const config = {
     domains: ['example.com'],
-    // database: {
-    //   url: 'example.db',
-    //   models: {
-    //     users,
-    //     sessions,
-    //     audits
-    //   }
-    // }
+    database: {
+        schemas: {
+            users
+        }
+    }
 };
-// export default config
 //# sourceMappingURL=config.js.map

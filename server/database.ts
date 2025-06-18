@@ -2,83 +2,74 @@
  * This file is the entrypoint for websites to enable a database connection.
  * 
  * The Thalia framework uses drizzle-orm for database connections.
- * The Thalia framework provides some generic models in Thalia/models.
- * Websites built on Thalia will have their own /models directory.
- * Websites built on Thalia will import the database connection from this file.
- * This file will read the models specified in the website's config/config.ts file, and then import them from the Thalia framework or the website's own models directory.
+ * The Thalia framework provides table schemas in Thalia/models.
+ * These schemas define the structure of tables that websites can use.
+ * Websites can import these schemas to create their own tables in their database.
+ * 
+ * Each website can have its own SQLite database in its models directory.
+ * Websites can provide extra schemas in their models directory.
+ * The database file will be created at websites/example/models/sqlite.db by default.
  * 
  * The database connection is then provided to the website's controllers.
- * In Thalia/server/controllers.ts, we will provide a CRUD factory, which will provide a lot of easy to use functions for CRUD operations.
- * In Thalia/src/views/scaffold, we will provide some base CRUD templates which can be easily overridden by the website.
+ * In Thalia/server/controllers.ts, we will provide a CRUD factory,
+ * which will provide easy to use functions for CRUD operations.
  */
 
-import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
+import { drizzle } from 'drizzle-orm/libsql';
+import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm'
-import Database from 'better-sqlite3'
-import { type DatabaseConfig } from './types.js'
 import path from 'path'
-import fs from 'fs'
+import { type LibSQLDatabase } from 'drizzle-orm/libsql';
+import { Website } from './website.js'
+import * as libsql from '@libsql/client'
 
 export class ThaliaDatabase {
-  private static instance: ThaliaDatabase
-  private db: BetterSQLite3Database
-  private sqlite: InstanceType<typeof Database>
-  private config: DatabaseConfig
-  private models: Map<string, any> = new Map()
+  private website: Website
+  private url: string
+  private sqlite: libsql.Client
+  public drizzle: LibSQLDatabase
+  public schemas: { [key: string]: SQLiteTableWithColumns<any> } = {}
 
-  private constructor(config?: DatabaseConfig) {
-    // Use default config if none provided
-    this.config = config || {
-      url: path.join(process.cwd(), 'data', 'thalia.db'),
-      logging: true
-    }
-    const { db, sqlite } = this.createConnection()
-    this.db = db
-    this.sqlite = sqlite
+  constructor(website: Website) {
+    console.log("Creating database connection for", website.rootPath)
+
+    this.website = website
+
+    // Create database connection
+    this.url = "file:" + path.join(website.rootPath, 'models', 'sqlite.db')
+    this.sqlite = libsql.createClient({ url: this.url })
+    this.drizzle = drizzle(this.sqlite)
+
+    this.schemas = website.config.database?.schemas || {}
   }
 
-  private createConnection(): { db: BetterSQLite3Database; sqlite: InstanceType<typeof Database> } {
+  /**
+   * Connect to the database
+   * Check all schemas exist and are correct
+   */
+  public async connect(): Promise<ThaliaDatabase> {
     try {
-      // Ensure the data directory exists
-      const dataDir = path.dirname(this.config.url)
-      if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir, { recursive: true })
-      }
+      await this.drizzle.run(sql`SELECT 1`)
+      console.log(`Database connection for ${this.website.name} established successfully`)
 
-      const sqlite = new Database(this.config.url)
-      
-      // Enable foreign keys
-      sqlite.pragma('foreign_keys = ON')
-      
-      // Enable WAL mode for better concurrency
-      sqlite.pragma('journal_mode = WAL')
-      
-      return {
-        db: drizzle(sqlite),
-        sqlite
-      }
+      return Promise.all(Object.entries(this.schemas).map(async ([name, schema]) => {
+        return this.drizzle.select({ [name]: sql<number>`count(*)` }).from(schema)
+      })).catch((error) => {
+        console.error(`Error getting data from the ${this.website.name} database:`, error)
+        throw error
+      }).then((results) => {
+
+        const counts: Counts = results.reduce((acc, result) => {
+          const [name, count] = Object.entries(result[0])[0] as [string, number]
+          acc[name] = count
+          return acc
+        }, {} as Counts)
+
+        console.log(`Counts from the ${this.website.name} Database:`, counts)
+        return this
+      })
     } catch (error) {
-      console.error('Error creating database connection:', error)
-      throw error
-    }
-  }
-
-  public static getInstance(config?: DatabaseConfig): ThaliaDatabase {
-    if (!ThaliaDatabase.instance) {
-      ThaliaDatabase.instance = new ThaliaDatabase(config)
-    }
-    return ThaliaDatabase.instance
-  }
-
-  public async connect(): Promise<void> {
-    try {
-      // SQLite connections are established immediately when creating the database
-      // We can verify the connection by running a simple query
-      await this.db.run(sql`SELECT 1`)
-      console.log('Database connection established successfully')
-    } catch (error) {
-      console.error('Unable to connect to the database:', error)
+      console.error(`Unable to connect to the ${this.website.name} database:`, error)
       throw error
     }
   }
@@ -87,32 +78,14 @@ export class ThaliaDatabase {
     try {
       // Close the SQLite connection
       this.sqlite.close()
-      console.log('Database connection closed')
+      console.log(`Database connection for ${this.website.name} closed`)
     } catch (error) {
-      console.error('Error closing database connection:', error)
+      console.error(`Error closing database connection for ${this.website.name}:`, error)
       throw error
     }
   }
+}
 
-  public getDb(): BetterSQLite3Database {
-    return this.db
-  }
-
-  public async getWebsiteDatabase(name: string, config: DatabaseConfig): Promise<BetterSQLite3Database> {
-    // For now, we'll just return the main database
-    // In the future, this could create a separate database for each website
-    return this.db
-  }
-
-  public registerModel(name: string, model: any): void {
-    this.models.set(name, model)
-  }
-
-  public getModel(name: string): any {
-    return this.models.get(name)
-  }
-
-  public getAllModels(): Map<string, any> {
-    return this.models
-  }
+type Counts = {
+  [key: string]: number
 }

@@ -22,7 +22,7 @@ import path from 'path'
 import { type LibSQLDatabase } from 'drizzle-orm/libsql';
 import { Website } from './website.js'
 import * as libsql from '@libsql/client'
-import { CrudMachine } from './controllers.js'
+import { CrudFactory } from './controllers.js'
 
 export class ThaliaDatabase {
   private website: Website
@@ -30,7 +30,7 @@ export class ThaliaDatabase {
   private sqlite: libsql.Client
   public drizzle: LibSQLDatabase
   public schemas: { [key: string]: SQLiteTableWithColumns<any> } = {}
-  public machines: { [key: string]: CrudMachine } = {}
+  public machines: { [key: string]: CrudFactory } = {}
 
   constructor(website: Website) {
     console.log("Creating database connection for", website.rootPath)

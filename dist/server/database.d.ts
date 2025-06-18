@@ -1,7 +1,7 @@
 import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
 import { type LibSQLDatabase } from 'drizzle-orm/libsql';
 import { Website } from './website.js';
-import { CrudMachine } from './controllers.js';
+import { CrudFactory } from './controllers.js';
 export declare class ThaliaDatabase {
     private website;
     private url;
@@ -11,7 +11,7 @@ export declare class ThaliaDatabase {
         [key: string]: SQLiteTableWithColumns<any>;
     };
     machines: {
-        [key: string]: CrudMachine;
+        [key: string]: CrudFactory;
     };
     constructor(website: Website);
     connect(): Promise<ThaliaDatabase>;

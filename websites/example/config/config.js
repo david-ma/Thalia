@@ -1,7 +1,7 @@
 import { users, sessions, audits, albums, images } from '../models/drizzle-schema.js';
 import { fruit } from '../models/fruit.js';
-import { CrudMachine } from 'thalia/controllers';
-const FruitMachine = new CrudMachine(fruit);
+import { CrudFactory } from 'thalia/controllers';
+const FruitMachine = new CrudFactory(fruit);
 export const config = {
     domains: ['example.com'],
     database: {

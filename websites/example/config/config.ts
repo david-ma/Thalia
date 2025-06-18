@@ -10,9 +10,9 @@ import { users, sessions, audits, albums, images } from '../models/drizzle-schem
 import { fruit } from '../models/fruit.js'
 
 
-import { CrudMachine } from 'thalia/controllers'
+import { CrudFactory } from 'thalia/controllers'
 
-const FruitMachine = new CrudMachine(fruit)
+const FruitMachine = new CrudFactory(fruit)
 
 
 

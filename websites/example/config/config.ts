@@ -32,7 +32,7 @@ export const config: RawWebsiteConfig = {
     }
   },
   controllers: {
-    fruit: FruitMachine.list.bind(FruitMachine)
+    fruit: FruitMachine.entrypoint.bind(FruitMachine),
   }
 }
 

@@ -198,6 +198,19 @@ export class CrudMachine {
             console.log("Found", records.length, "records in", this.name);
         });
     }
+    entrypoint(res, req, website, requestInfo) {
+        const path = requestInfo.url.split('/');
+        const target = path[2];
+        if (target === 'columns') {
+            this.columns(res, req, website, requestInfo);
+        }
+        else if (target === 'list') {
+            this.list(res, req, website, requestInfo);
+        }
+        else {
+            this.list(res, req, website, requestInfo);
+        }
+    }
     list(res, req, website, requestInfo) {
         website.db.drizzle.select().from(this.table).then((records) => {
             const data = { records, tableName: this.name };
@@ -206,6 +219,11 @@ export class CrudMachine {
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end(html);
         });
+    }
+    columns(res, req, website, requestInfo) {
+        const columns = Object.keys(this.table);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(columns));
     }
 }
 //# sourceMappingURL=controllers.js.map

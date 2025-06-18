@@ -291,6 +291,32 @@ export class CrudMachine {
     })
   }
 
+  /**
+   * Generate a CRUD controller for a given table.
+   * We want:
+   * - list: GET /tableName
+   * - create: POST /tableName
+   * - read: GET /tableName/id
+   * - edit: GET /tableName/id/edit
+   * - update: PUT /tableName/id
+   * - delete: DELETE /tableName/id
+   */
+  public entrypoint(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    const path = requestInfo.url.split('/')
+    const target = path[2]
+
+    if (target === 'columns') {
+      this.columns(res, req, website, requestInfo)
+    } else if (target === 'list') {
+      this.list(res, req, website, requestInfo)
+    } else {
+
+
+      this.list(res, req, website, requestInfo)
+    }
+
+  }
+
 
   public list(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     website.db.drizzle.select().from(this.table).then((records) => {
@@ -303,7 +329,12 @@ export class CrudMachine {
     })
   }
 
-  
+
+  public columns(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    const columns = Object.keys(this.table)
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(columns))
+  }
 
 
 

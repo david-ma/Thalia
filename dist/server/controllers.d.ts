@@ -32,7 +32,9 @@ export declare class CrudMachine {
     private sqlite;
     constructor(table: SQLiteTableWithColumns<any>);
     init(website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string): void;
+    entrypoint(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
     list(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
+    columns(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
 }
 export {};
 //# sourceMappingURL=controllers.d.ts.map

@@ -18,7 +18,7 @@ export const config = {
         }
     },
     controllers: {
-        fruit: FruitMachine.list.bind(FruitMachine)
+        fruit: FruitMachine.entrypoint.bind(FruitMachine),
     }
 };
 //# sourceMappingURL=config.js.map

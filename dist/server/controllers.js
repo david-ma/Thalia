@@ -185,7 +185,6 @@ async function parseBody(req) {
         req.on('error', reject);
     });
 }
-import formidable from 'formidable';
 export class CrudMachine {
     constructor(table) {
         this.table = table;
@@ -220,6 +219,12 @@ export class CrudMachine {
         }
         else if (target === 'testdata') {
             this.testdata(res, req, website, requestInfo);
+        }
+        else if (target === 'edit') {
+            this.edit(res, req, website, requestInfo);
+        }
+        else if (target === 'update') {
+            this.update(res, req, website, requestInfo);
         }
         else {
             this.show(res, req, website, requestInfo);
@@ -261,6 +266,55 @@ export class CrudMachine {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(data));
     }
+    update(res, req, website, requestInfo) {
+        const id = requestInfo.url.split('/').pop();
+        if (!id) {
+            throw new Error('No ID provided');
+        }
+        try {
+            parseForm(res, req).then(({ fields }) => {
+                const blacklist = ['id', 'createdAt', 'updatedAt'];
+                fields = Object.fromEntries(Object.entries(fields).filter(([key]) => !blacklist.includes(key)));
+                this.db.update(this.table).set(fields).where(eq(this.table.id, id)).then((result) => {
+                    console.log("Result:", result);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(result));
+                });
+            });
+        }
+        catch (error) {
+            console.error('Error in ${website.name}/${tableName}/update:', error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
+        }
+    }
+    edit(res, req, website, requestInfo) {
+        const id = requestInfo.url.split('/').pop();
+        if (!id) {
+            throw new Error('No ID provided');
+        }
+        this.db.select(this.table).from(this.table)
+            .where(eq(this.table.id, id))
+            .then((record) => {
+            if (!record.length) {
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Record not found' }));
+                return;
+            }
+            const data = {
+                controllerName: this.name,
+                id: id,
+                record: record[0],
+                json: JSON.stringify(record),
+                tableName: this.name,
+                primaryKey: 'id',
+                links: []
+            };
+            const html = website.show('edit')(data);
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(html);
+        });
+    }
     show(res, req, website, requestInfo) {
         const id = requestInfo.url.split('/').pop();
         if (!id) {
@@ -275,6 +329,8 @@ export class CrudMachine {
                 return;
             }
             const data = {
+                controllerName: this.name,
+                id: id,
                 record: record[0],
                 json: JSON.stringify(record),
                 tableName: this.name,
@@ -288,14 +344,7 @@ export class CrudMachine {
     }
     create(res, req, website, requestInfo) {
         try {
-            const form = formidable({ multiples: false });
-            form.parse(req, (err, fields) => {
-                if (err) {
-                    console.error('Error parsing form data:', err);
-                    res.writeHead(400, { 'Content-Type': 'text/html' });
-                    res.end('Invalid form data');
-                }
-                console.log("Fields:", fields);
+            parseForm(res, req).then(({ fields }) => {
                 this.db.insert(this.table).values(fields).then((result) => {
                     console.log("Result:", result);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -404,6 +453,33 @@ export class CrudMachine {
             }
         });
         return result;
+    }
+}
+import formidable from 'formidable';
+function parseForm(res, req) {
+    return new Promise((resolve, reject) => {
+        const form = formidable({ multiples: false });
+        form.parse(req, (err, fields, files) => {
+            if (err) {
+                console.error('Error', err);
+                res.writeHead(400, { 'Content-Type': 'text/html' });
+                res.end('Invalid form data');
+                reject(err);
+                return;
+            }
+            resolve({ fields: parseFields(fields), files });
+        });
+    });
+    function parseFields(fields) {
+        return Object.entries(fields).reduce((obj, [key, value]) => {
+            if (Array.isArray(value)) {
+                obj[key] = value[0] ?? '';
+            }
+            else {
+                obj[key] = value ?? '';
+            }
+            return obj;
+        }, {});
     }
 }
 //# sourceMappingURL=controllers.js.map

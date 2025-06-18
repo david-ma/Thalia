@@ -1,8 +1,8 @@
 <h1>This is an Edit page</h1>
 
-<a href="/{{controller}}">Back to table {{title}}</a>
+<a href="/{{controllerName}}">Back to table {{title}}</a>
 
-<form action="/{{controller}}/update/{{id}}" method="post">
+<form action="/{{controllerName}}/update/{{id}}" method="post">
   {{!-- table --}}
   <div>
     <table></table>
@@ -14,8 +14,11 @@
 <button id="deleteButton" onclick="delete_this_item({{id}})">Delete</button>
 
 <script>
-  var data = {{{ json }}}
+  console.log('hey?')
+  var rawJson = {{{ json }}}
+  var data = rawJson[0]
   console.log(data)
+//  console.log(rawJson)
 
   d3.select("table")
     .selectAll("tr")

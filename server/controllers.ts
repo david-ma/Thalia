@@ -269,7 +269,6 @@ async function parseBody(req: IncomingMessage): Promise<any> {
 
 
 import { type LibSQLDatabase } from 'drizzle-orm/libsql'
-import formidable from 'formidable'
 
 export class CrudMachine {
   public name!: string
@@ -320,6 +319,10 @@ export class CrudMachine {
       this.create(res, req, website, requestInfo)
     } else if (target === 'testdata') {
       this.testdata(res, req, website, requestInfo)
+    } else if (target === 'edit') {
+      this.edit(res, req, website, requestInfo)
+    } else if (target === 'update') {
+      this.update(res, req, website, requestInfo)
     }
 
 
@@ -372,6 +375,62 @@ export class CrudMachine {
     res.end(JSON.stringify(data))
   }
 
+  private update(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    const id = requestInfo.url.split('/').pop()
+    if (!id) {
+      throw new Error('No ID provided')
+    }
+
+    try {
+      parseForm(res, req).then(({ fields }) => {
+        const blacklist = ['id', 'createdAt', 'updatedAt']
+        fields = Object.fromEntries(Object.entries(fields).filter(([key]) => !blacklist.includes(key)))
+
+        this.db.update(this.table).set(fields).where(eq(this.table.id, id)).then((result) => {
+          console.log("Result:", result)
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify(result))
+        })
+      })
+    } catch (error) {
+      console.error('Error in ${website.name}/${tableName}/update:', error)
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }))
+    }
+
+  }
+
+
+  private edit(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    const id = requestInfo.url.split('/').pop()
+    if (!id) {
+      throw new Error('No ID provided')
+    }
+    this.db.select(this.table).from(this.table)
+      .where(eq(this.table.id, id))
+      .then((record) => {
+        if (!record.length) {
+          res.writeHead(404, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'Record not found' }))
+          return
+        }
+
+        const data = {
+          controllerName: this.name,
+          id: id,
+          record: record[0],
+          json: JSON.stringify(record),
+          tableName: this.name,
+          primaryKey: 'id',
+          links: []
+        }
+
+        const html = website.show('edit')(data)
+        res.writeHead(200, { 'Content-Type': 'text/html' })
+        res.end(html)
+      })
+
+  }
   private show(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const id = requestInfo.url.split('/').pop()
     if (!id) {
@@ -387,6 +446,8 @@ export class CrudMachine {
         }
 
         const data = {
+          controllerName: this.name,
+          id: id,
           record: record[0],
           json: JSON.stringify(record),
           tableName: this.name,
@@ -403,17 +464,7 @@ export class CrudMachine {
 
   private create(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     try {
-
-      const form = formidable({ multiples: false })
-      form.parse(req, (err, fields) => {
-        if (err) {
-          console.error('Error parsing form data:', err)
-          res.writeHead(400, { 'Content-Type': 'text/html' })
-          res.end('Invalid form data')
-        }
-
-        console.log("Fields:", fields)
-
+      parseForm(res, req).then(({ fields }) => {
         this.db.insert(this.table).values(fields).then((result) => {
           console.log("Result:", result)
           res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -592,6 +643,41 @@ type ParsedDTquery = {
   search: Search
 }
 
+
+import formidable from 'formidable'
+type ParsedForm = {
+  fields: Record<string, string>
+  files: formidable.Files<string>
+}
+
+function parseForm(res: ServerResponse, req: IncomingMessage): Promise<ParsedForm> {
+  return new Promise((resolve, reject) => {
+    const form = formidable({ multiples: false })
+    form.parse(req, (err, fields, files) => {
+      if (err) {
+        console.error('Error', err)
+        res.writeHead(400, { 'Content-Type': 'text/html' })
+        res.end('Invalid form data')
+        reject(err)
+        return
+      }
+
+      resolve({ fields: parseFields(fields), files })
+    })
+  })
+
+  // I don't know why Formidable needs us to parse the fields like this
+  function parseFields(fields: formidable.Fields<string>): Record<string, string> {
+    return Object.entries(fields).reduce((obj, [key, value]) => {
+      if (Array.isArray(value)) {
+        obj[key] = value[0] ?? ''
+      } else {
+        obj[key] = value ?? ''
+      }
+      return obj
+    }, {} as Record<string, string>)
+  }
+}
 
 
 

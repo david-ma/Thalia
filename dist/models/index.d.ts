@@ -272,22 +272,20 @@ export declare const models: {
             id: import("drizzle-orm/sqlite-core").SQLiteColumn<{
                 name: "id";
                 tableName: "images";
-                dataType: "string";
-                columnType: "SQLiteText";
-                data: string;
-                driverParam: string;
+                dataType: "number";
+                columnType: "SQLiteInteger";
+                data: number;
+                driverParam: number;
                 notNull: true;
-                hasDefault: false;
+                hasDefault: true;
                 isPrimaryKey: true;
                 isAutoincrement: false;
                 hasRuntimeDefault: false;
-                enumValues: [string, ...string[]];
+                enumValues: undefined;
                 baseColumn: never;
                 identity: undefined;
                 generated: undefined;
-            }, {}, {
-                length: number | undefined;
-            }>;
+            }, {}, {}>;
             createdAt: import("drizzle-orm/sqlite-core").SQLiteColumn<{
                 name: "created_at";
                 tableName: "images";
@@ -299,7 +297,7 @@ export declare const models: {
                 hasDefault: true;
                 isPrimaryKey: false;
                 isAutoincrement: false;
-                hasRuntimeDefault: false;
+                hasRuntimeDefault: true;
                 enumValues: [string, ...string[]];
                 baseColumn: never;
                 identity: undefined;
@@ -318,7 +316,7 @@ export declare const models: {
                 hasDefault: true;
                 isPrimaryKey: false;
                 isAutoincrement: false;
-                hasRuntimeDefault: false;
+                hasRuntimeDefault: true;
                 enumValues: [string, ...string[]];
                 baseColumn: never;
                 identity: undefined;

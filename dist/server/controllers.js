@@ -185,6 +185,7 @@ async function parseBody(req) {
         req.on('error', reject);
     });
 }
+import formidable from 'formidable';
 export class CrudMachine {
     constructor(table) {
         this.table = table;
@@ -211,9 +212,94 @@ export class CrudMachine {
         else if (target === 'json') {
             this.fetchDataTableJson(res, req, website, requestInfo);
         }
+        else if (target === 'new') {
+            this.new(res, req, website, requestInfo);
+        }
+        else if (target === 'create') {
+            this.create(res, req, website, requestInfo);
+        }
+        else if (target === 'testdata') {
+            this.testdata(res, req, website, requestInfo);
+        }
         else {
             this.list(res, req, website, requestInfo);
         }
+    }
+    testdata(res, req, website, requestInfo) {
+        const data = [
+            {
+                name: 'apple',
+                color: 'red',
+                taste: 'sweet'
+            },
+            {
+                name: 'banana',
+                color: 'yellow',
+                taste: 'sweet'
+            },
+            {
+                name: 'orange',
+                color: 'orange',
+                taste: 'sour'
+            },
+            {
+                name: 'pear',
+                color: 'green',
+                taste: 'sweet'
+            },
+            {
+                name: 'pineapple',
+                color: 'yellow',
+                taste: 'sweet'
+            }
+        ];
+        data.forEach((item) => {
+            this.db.insert(this.table).values(item).then((result) => {
+                console.log("Result:", result);
+            });
+        });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(data));
+    }
+    create(res, req, website, requestInfo) {
+        try {
+            const form = formidable({ multiples: false });
+            form.parse(req, (err, fields) => {
+                if (err) {
+                    console.error('Error parsing form data:', err);
+                    res.writeHead(400, { 'Content-Type': 'text/html' });
+                    res.end('Invalid form data');
+                }
+                console.log("Fields:", fields);
+                this.db.insert(this.table).values(fields).then((result) => {
+                    console.log("Result:", result);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(result));
+                }, (error) => {
+                    console.error('Error inserting record:', error);
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
+                });
+            });
+        }
+        catch (error) {
+            console.error('Error in ${website.name}/${tableName}/create:', error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
+        }
+    }
+    filteredAttributes(table) {
+        return Object.keys(table);
+    }
+    new(res, req, website, requestInfo) {
+        const data = {
+            title: this.name,
+            controllerName: this.name,
+            fields: this.filteredAttributes(this.table)
+        };
+        const html = website.show('create')(data);
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(html);
     }
     list(res, req, website, requestInfo) {
         website.db.drizzle.select({ id: this.table.id, name: this.table.name }).from(this.table).then((records) => {

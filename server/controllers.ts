@@ -269,6 +269,7 @@ async function parseBody(req: IncomingMessage): Promise<any> {
 
 
 import { type LibSQLDatabase } from 'drizzle-orm/libsql'
+import formidable from 'formidable'
 
 export class CrudMachine {
   public name!: string
@@ -313,7 +314,18 @@ export class CrudMachine {
       this.list(res, req, website, requestInfo)
     } else if (target === 'json') {
       this.fetchDataTableJson(res, req, website, requestInfo)
+    } else if (target === 'new') {
+      this.new(res, req, website, requestInfo)
+    } else if (target === 'create') {
+      this.create(res, req, website, requestInfo)
+    } else if (target === 'testdata') {
+      this.testdata(res, req, website, requestInfo)
     }
+
+
+
+
+
 
     else {
       this.list(res, req, website, requestInfo)
@@ -321,6 +333,100 @@ export class CrudMachine {
 
   }
 
+  private testdata(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    const data = [
+      {
+        name: 'apple',
+        color: 'red',
+        taste: 'sweet'
+      },
+      {
+        name: 'banana',
+        color: 'yellow',
+        taste: 'sweet'
+      },
+      {
+        name: 'orange',
+        color: 'orange',
+        taste: 'sour'
+      },
+      {
+        name: 'pear',
+        color: 'green',
+        taste: 'sweet'
+      },
+      {
+        name: 'pineapple',
+        color: 'yellow',
+        taste: 'sweet'
+      }
+    ]
+    
+    data.forEach((item) => {
+      this.db.insert(this.table).values(item).then((result) => {
+        console.log("Result:", result)
+      })
+    })
+
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(data))
+  }
+
+  private create(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    try {
+
+      const form = formidable({ multiples: false })
+      form.parse(req, (err, fields) => {
+        if (err) {
+          console.error('Error parsing form data:', err)
+          res.writeHead(400, { 'Content-Type': 'text/html' })
+          res.end('Invalid form data')
+        }
+        
+        console.log("Fields:", fields)
+        
+        this.db.insert(this.table).values(fields).then((result) => {
+          console.log("Result:", result)
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify(result))
+        }, (error) => {
+          console.error('Error inserting record:', error)
+          res.writeHead(500, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }))
+        })
+      })
+    } catch (error) {
+      console.error('Error in ${website.name}/${tableName}/create:', error)
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }))
+    }
+  }
+
+
+
+
+  private filteredAttributes(table: SQLiteTableWithColumns<any>) {
+    return Object.keys(table)
+    // return Object.keys(table.getAttributes())
+    // .filter(
+    //   (key) => !filteredAttributes.includes(key)
+    // )
+  }
+
+  private new(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+
+    const data = {
+      title: this.name,
+      controllerName: this.name,
+      fields: this.filteredAttributes(this.table)
+    }
+
+
+    const html = website.show('create')(data)
+
+    res.writeHead(200, { 'Content-Type': 'text/html' })
+    res.end(html)
+  }
 
   public list(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     website.db.drizzle.select({ id: this.table.id, name: this.table.name }).from(this.table).then((records) => {

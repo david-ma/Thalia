@@ -33,6 +33,10 @@ export declare class CrudMachine {
     constructor(table: SQLiteTableWithColumns<any>);
     init(website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string): void;
     entrypoint(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
+    private testdata;
+    private create;
+    private filteredAttributes;
+    private new;
     list(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
     private fetchDataTableJson;
     private columns;

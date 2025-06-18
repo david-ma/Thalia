@@ -97,7 +97,7 @@ export class Website {
     }
     show(content, template = 'wrapper') {
         const templateFile = this.handlebars.partials[template] ?? '';
-        const contentFile = this.handlebars.partials[content] ?? '';
+        const contentFile = this.handlebars.partials[content] ?? '404';
         this.handlebars.registerPartial('styles', '');
         this.handlebars.registerPartial('scripts', '');
         this.handlebars.registerPartial('content', contentFile);

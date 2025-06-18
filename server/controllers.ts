@@ -15,7 +15,6 @@ import path from 'path'
 import { type Controller } from './website.js'
 import { eq } from 'drizzle-orm'
 import { type SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
-import { type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { RequestInfo } from './server.js'
 import * as libsql from '@libsql/client'
 import url from 'url'
@@ -76,6 +75,47 @@ export const latestlogs = async (res: ServerResponse, _req: IncomingMessage, web
   }
 }
 
+
+
+// import { blob } from "./blob.js";
+// import { customType } from "./custom.js";
+// import { integer } from "./integer.js";
+// import { numeric } from "./numeric.js";
+// import { real } from "./real.js";
+// import { text } from "./text.js";
+// export declare function getSQLiteColumnBuilders(): {
+//     blob: typeof blob;
+//     customType: typeof customType;
+//     integer: typeof integer;
+//     numeric: typeof numeric;
+//     real: typeof real;
+//     text: typeof text;
+// };
+// export type SQLiteColumnBuilders = ReturnType<typeof getSQLiteColumnBuilders>;
+
+
+// const SQLiteColumnTypes = {
+//   blob: 'blob',
+//   customType: 'customType',
+//   integer: 'integer',
+//   numeric: 'numeric',
+//   real: 'real',
+//   text: 'text',
+// }
+
+// Map Drizzle<SQLiteColumnBuilders> to DataTables.net types
+// const SQLiteColumnTypes = {
+//   blob: 'blob',
+//   customType: 'customType',
+//   integer: 'integer',
+//   numeric: 'numeric',
+//   real: 'real',
+//   text: 'text',
+// }
+
+
+
+
 type CrudRelationship = {
   foreignTable: string
   foreignColumn: string
@@ -86,7 +126,7 @@ import { type LibSQLDatabase } from 'drizzle-orm/libsql'
 
 export type Machine = {
   init: (website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string) => void
-  controller: (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => void
+  controller: Controller
 }
 
 export class CrudFactory implements Machine {
@@ -95,6 +135,8 @@ export class CrudFactory implements Machine {
   private website!: Website
   private db!: LibSQLDatabase
   private sqlite!: libsql.Client
+  private static blacklist = ['id', 'createdAt', 'updatedAt', 'deletedAt']
+
   constructor(table: SQLiteTableWithColumns<any>) {
     this.table = table
   }
@@ -229,8 +271,7 @@ export class CrudFactory implements Machine {
 
     try {
       parseForm(res, req).then(({ fields }) => {
-        const blacklist = ['id', 'createdAt', 'updatedAt']
-        fields = Object.fromEntries(Object.entries(fields).filter(([key]) => !blacklist.includes(key)))
+        fields = Object.fromEntries(Object.entries(fields).filter(([key]) => !CrudFactory.blacklist.includes(key)))
 
         this.db.update(this.table).set(fields).where(eq(this.table.id, id)).then((result) => {
           console.log("Result:", result)
@@ -312,9 +353,16 @@ export class CrudFactory implements Machine {
     try {
       parseForm(res, req).then(({ fields }) => {
         this.db.insert(this.table).values(fields).then((result) => {
-          console.log("Result:", result)
-          res.writeHead(200, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify(result))
+          // console.log("Result:", result)
+          // res.writeHead(200, { 'Content-Type': 'application/json' })
+          // res.end(JSON.stringify(result))
+
+          const html = website.show('list')(result)
+          res.writeHead(302, { 'Location': `/${this.name}` })
+          res.end()
+
+
+
         }, (error) => {
           console.error('Error inserting record:', error)
           res.writeHead(500, { 'Content-Type': 'application/json' })
@@ -328,32 +376,12 @@ export class CrudFactory implements Machine {
     }
   }
 
-
-
-
-  private filteredAttributes(table: SQLiteTableWithColumns<any>) {
-    const columns = Object.keys(table).filter((key) => !['id', 'createdAt', 'updatedAt'].includes(key))
-
-    // // TODO: Get the types from the drizzle table?
-    // const type = 'string'
-    // const allowedTypes = ['string', 'num', 'date', 'bool']
-    // const orderable = allowedTypes.includes(type)
-    // const searchable = allowedTypes.includes(type)
-
-
-    return columns
-    // return Object.keys(table.getAttributes())
-    // .filter(
-    //   (key) => !filteredAttributes.includes(key)
-    // )
-  }
-
   private new(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
 
     const data = {
       title: this.name,
       controllerName: this.name,
-      fields: this.filteredAttributes(this.table)
+      fields: this.filteredAttributes()
     }
 
 
@@ -387,7 +415,7 @@ export class CrudFactory implements Machine {
 
     const parsedQuery = CrudFactory.parseDTquery(query)
 
-    const columns = Object.keys(this.table).map(this.mapColumns)
+    // const columns = this.filteredAttributes().map(this.mapColumns)
 
     const offset = parseInt(parsedQuery.start)
     const limit = parseInt(parsedQuery.length)
@@ -400,6 +428,7 @@ export class CrudFactory implements Machine {
         recordsTotal: records.length,
         recordsFiltered: records.length,
         data: records,
+        // columns: columns,
       }
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify(blob))
@@ -411,11 +440,59 @@ export class CrudFactory implements Machine {
 
 
 
+  /**
+   * Get the list of columns and their attributes, for use with DataTables.net
+   * 
+   * Other attributes:
+   * { "keys": ["name", "keyAsName", "primary", "notNull", "default", "defaultFn", "onUpdateFn", "hasDefault", "isUnique", "uniqueName", "uniqueType", "dataType", "columnType", "enumValues", "generated", "generatedIdentity", "config", "table", "length"] }
+   */
+  private attributes() : Attribute[] {
+    const typeMapping: Record<string, string> = {
+      'createdAt': 'date',
+      'updatedAt': 'date',
+      'deletedAt': 'date',
+    }
 
+    return this.cols().map((column) => {
+      var data :Attribute = {
+        name: column,
+        type: this.table[column].columnType,
+        default: this.table[column].default,
+        required: this.table[column].notNull,
+        unique: this.table[column].unique,
+        primaryKey: this.table[column].primaryKey,
+        foreignKey: this.table[column].foreignKey,
+        references: this.table[column].references,
+      }
 
+      if (typeMapping[column]) {
+        data.type = typeMapping[column]
+      }
+
+      data.all = JSON.stringify(data)
+
+      return data
+    })
+  }
+  private filteredAttributes() {
+    return this.attributes().filter((attribute) => !CrudFactory.blacklist.includes(attribute.name))
+  }
+
+  private cols() {
+    return Object.keys(this.table)
+  }
+
+  private colsFiltered() {
+    return this.cols().filter((key) => !CrudFactory.blacklist.includes(key))
+  }
+
+  /**
+   * For the /columns endpoint
+   * Used with DataTables.net
+   */
   private columns(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    const columns = Object.keys(this.table).map(this.mapColumns)
-    // TODO: Get the types
+    const columns = this.filteredAttributes().map(this.mapColumns)
+    // TODO: Get the types/attributes?
 
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(columns))
@@ -423,17 +500,22 @@ export class CrudFactory implements Machine {
 
 
   // TODO: Get the types from the drizzle table?
-  private mapColumns(key: string) {
+  private mapColumns(attribute: Attribute) {
     // const type = SequelizeDataTableTypes[value.type.key]
-    const type = 'string'
+    const type = attribute.type
+
+    console.log("Type:", attribute.type)
+
+
+
     const allowedTypes = ['string', 'num', 'date', 'bool']
     const orderable = allowedTypes.includes(type)
     const searchable = allowedTypes.includes(type)
 
     var blob = {
-      name: key,
-      title: key,
-      data: key,
+      name: attribute.name,
+      title: attribute.name,
+      data: attribute.name,
       orderable,
       searchable,
       type,
@@ -489,6 +571,17 @@ type ParsedDTquery = {
   search: Search
 }
 
+type Attribute = {
+  name: string
+  type: string
+  default: any
+  required: boolean
+  unique: boolean
+  primaryKey: boolean
+  foreignKey: boolean
+  references: string
+  all?: string
+}
 
 import formidable from 'formidable'
 type ParsedForm = {

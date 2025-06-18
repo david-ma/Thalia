@@ -8,9 +8,15 @@
 
       {{#each fields}}
       <tr>
-        <td style="text-transform: capitalize;">{{this}}</td>
+        <td style="text-transform: capitalize;">{{this.name}}</td>
         <td>
-          <input name="{{this}}" type="text" value="" placeholder='Enter "{{this}}" here' required>
+          <input name="{{this.name}}" type="text" value="" placeholder='Enter "{{this.name}}" here' required>
+        </td>
+        <td>
+          {{this.type}}
+        </td>
+        <td>
+          {{this.all}}
         </td>
       </tr>
       {{/each}}

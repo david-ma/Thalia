@@ -13,4 +13,3 @@ export const baseTableConfig = {
   updatedAt: text('updated_at').notNull().$onUpdate(() => sql`CURRENT_TIMESTAMP`).$default(() => sql`CURRENT_TIMESTAMP`),
   deletedAt: text('deleted_at')
 }
-

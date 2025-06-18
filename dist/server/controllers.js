@@ -146,8 +146,7 @@ export class CrudFactory {
         }
         try {
             parseForm(res, req).then(({ fields }) => {
-                const blacklist = ['id', 'createdAt', 'updatedAt'];
-                fields = Object.fromEntries(Object.entries(fields).filter(([key]) => !blacklist.includes(key)));
+                fields = Object.fromEntries(Object.entries(fields).filter(([key]) => !CrudFactory.blacklist.includes(key)));
                 this.db.update(this.table).set(fields).where(eq(this.table.id, id)).then((result) => {
                     console.log("Result:", result);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -219,9 +218,9 @@ export class CrudFactory {
         try {
             parseForm(res, req).then(({ fields }) => {
                 this.db.insert(this.table).values(fields).then((result) => {
-                    console.log("Result:", result);
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify(result));
+                    const html = website.show('list')(result);
+                    res.writeHead(302, { 'Location': `/${this.name}` });
+                    res.end();
                 }, (error) => {
                     console.error('Error inserting record:', error);
                     res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -235,15 +234,11 @@ export class CrudFactory {
             res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
         }
     }
-    filteredAttributes(table) {
-        const columns = Object.keys(table).filter((key) => !['id', 'createdAt', 'updatedAt'].includes(key));
-        return columns;
-    }
     new(res, req, website, requestInfo) {
         const data = {
             title: this.name,
             controllerName: this.name,
-            fields: this.filteredAttributes(this.table)
+            fields: this.filteredAttributes()
         };
         const html = website.show('create')(data);
         res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -266,7 +261,6 @@ export class CrudFactory {
     fetchDataTableJson(res, req, website, requestInfo) {
         const query = url.parse(requestInfo.url, true).query;
         const parsedQuery = CrudFactory.parseDTquery(query);
-        const columns = Object.keys(this.table).map(this.mapColumns);
         const offset = parseInt(parsedQuery.start);
         const limit = parseInt(parsedQuery.length);
         this.db.select().from(this.table).limit(limit).offset(offset).then((records) => {
@@ -281,20 +275,54 @@ export class CrudFactory {
             res.end(JSON.stringify(blob));
         });
     }
+    attributes() {
+        const typeMapping = {
+            'createdAt': 'date',
+            'updatedAt': 'date',
+            'deletedAt': 'date',
+        };
+        return this.cols().map((column) => {
+            var data = {
+                name: column,
+                type: this.table[column].columnType,
+                default: this.table[column].default,
+                required: this.table[column].notNull,
+                unique: this.table[column].unique,
+                primaryKey: this.table[column].primaryKey,
+                foreignKey: this.table[column].foreignKey,
+                references: this.table[column].references,
+            };
+            if (typeMapping[column]) {
+                data.type = typeMapping[column];
+            }
+            data.all = JSON.stringify(data);
+            return data;
+        });
+    }
+    filteredAttributes() {
+        return this.attributes().filter((attribute) => !CrudFactory.blacklist.includes(attribute.name));
+    }
+    cols() {
+        return Object.keys(this.table);
+    }
+    colsFiltered() {
+        return this.cols().filter((key) => !CrudFactory.blacklist.includes(key));
+    }
     columns(res, req, website, requestInfo) {
-        const columns = Object.keys(this.table).map(this.mapColumns);
+        const columns = this.filteredAttributes().map(this.mapColumns);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(columns));
     }
-    mapColumns(key) {
-        const type = 'string';
+    mapColumns(attribute) {
+        const type = attribute.type;
+        console.log("Type:", attribute.type);
         const allowedTypes = ['string', 'num', 'date', 'bool'];
         const orderable = allowedTypes.includes(type);
         const searchable = allowedTypes.includes(type);
         var blob = {
-            name: key,
-            title: key,
-            data: key,
+            name: attribute.name,
+            title: attribute.name,
+            data: attribute.name,
             orderable,
             searchable,
             type,
@@ -328,6 +356,7 @@ export class CrudFactory {
         return result;
     }
 }
+CrudFactory.blacklist = ['id', 'createdAt', 'updatedAt', 'deletedAt'];
 import formidable from 'formidable';
 function parseForm(res, req) {
     return new Promise((resolve, reject) => {

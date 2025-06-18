@@ -1,12 +1,10 @@
 import { sql } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
-// Base table configuration
 const baseTableConfig = {
     id: text('id').primaryKey().notNull(),
     createdAt: text('created_at').notNull().default(sql `CURRENT_TIMESTAMP`),
     updatedAt: text('updated_at').notNull().default(sql `CURRENT_TIMESTAMP`)
 };
-// User Model
 export const users = sqliteTable('users', {
     ...baseTableConfig,
     name: text('name').notNull(),
@@ -17,7 +15,6 @@ export const users = sqliteTable('users', {
     locked: integer('locked', { mode: 'boolean' }).notNull().default(false),
     verified: integer('verified', { mode: 'boolean' }).notNull().default(false)
 });
-// Session Model
 export const sessions = sqliteTable('sessions', {
     sid: text('sid').primaryKey().notNull(),
     expires: text('expires').notNull(),
@@ -27,7 +24,6 @@ export const sessions = sqliteTable('sessions', {
     createdAt: text('created_at').notNull().default(sql `CURRENT_TIMESTAMP`),
     updatedAt: text('updated_at').notNull().default(sql `CURRENT_TIMESTAMP`)
 });
-// Audit Model
 export const audits = sqliteTable('audits', {
     ...baseTableConfig,
     userId: text('user_id').references(() => users.id),
@@ -37,7 +33,6 @@ export const audits = sqliteTable('audits', {
     blob: text('blob', { mode: 'json' }),
     timestamp: text('timestamp').notNull().default(sql `CURRENT_TIMESTAMP`)
 });
-// Factory functions
 export function UserFactory(config) {
     return users;
 }

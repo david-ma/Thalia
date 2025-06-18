@@ -1,8 +1,3 @@
-/**
- * Thalia server.
- *
- * Class which allows initialisation of a server.
- */
 import { createServer } from 'http';
 import { EventEmitter } from 'events';
 import { Router } from './router.js';
@@ -29,9 +24,6 @@ export class Server extends EventEmitter {
             method
         };
     }
-    /**
-     * Handle HTTP requests.
-     */
     handleRequest(req, res) {
         const requestInfo = this.logRequest(req);
         const domain = req.headers.host?.split(':')[0];
@@ -44,11 +36,6 @@ export class Server extends EventEmitter {
             res.end('No website Found');
         }
     }
-    /**
-     * Handle socket connections.
-     * Find the website for the socket and call its handleSocketConnection method.
-     * Insert security here?
-     */
     handleSocketConnection(socket) {
         const domain = socket.handshake.headers.host?.split(':')[0];
         const website = this.router.getWebsite(domain ?? this.project);

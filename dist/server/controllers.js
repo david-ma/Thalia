@@ -1,18 +1,6 @@
-/**
- * Controllers - Useful shared controller functions for handling requests
- *
- * The controllers are useful functions you can call to do specific tasks on a http request. e.g.
- * 1. Handling requests
- * 2. Rendering templates
- * 3. Handling form submissions
- * 4. Handling file uploads
- */
 import fs from 'fs';
 import path from 'path';
 import { eq } from 'drizzle-orm';
-/**
- * Read the latest 10 logs from the log directory
- */
 export const latestlogs = async (res, _req, website) => {
     try {
         const logDirectory = path.join(website.rootPath, 'public', 'log');
@@ -21,7 +9,6 @@ export const latestlogs = async (res, _req, website) => {
             res.end('No logs found');
             return;
         }
-        // Get list of log files
         const logs = fs.readdirSync(logDirectory)
             .filter(filename => !filename.startsWith('.'))
             .slice(-10);
@@ -30,9 +17,7 @@ export const latestlogs = async (res, _req, website) => {
             res.end('No logs found');
             return;
         }
-        // Get stats for all logs
         const stats = await Promise.all(logs.map(log => fs.promises.stat(path.join(logDirectory, log))));
-        // Prepare data for template
         const data = {
             stats: logs.map((log, i) => ({
                 filename: log,
@@ -41,7 +26,6 @@ export const latestlogs = async (res, _req, website) => {
                 lastModified: stats[i]?.mtime?.toLocaleString() ?? 'Unknown'
             }))
         };
-        // Get and compile template
         const template = website.handlebars.partials['logs'];
         if (!template) {
             throw new Error('logs template not found');
@@ -56,21 +40,10 @@ export const latestlogs = async (res, _req, website) => {
         res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 };
-/**
- * Generate a CRUD controller for a given table.
- * We want:
- * - list: GET /tableName
- * - create: POST /tableName
- * - read: GET /tableName/id
- * - edit: GET /tableName/id/edit
- * - update: PUT /tableName/id
- * - delete: DELETE /tableName/id
- */
 export function crudFactory(options) {
     const { website, table, db, relationships = [], hideColumns = [], template = 'crud' } = options;
     const tableName = table.name;
     return {
-        // List all records
         list: async (res, _req, website, _requestInfo) => {
             try {
                 const records = await db.select().from(table);
@@ -85,7 +58,6 @@ export function crudFactory(options) {
                 res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
             }
         },
-        // Create a new record
         create: async (res, req, website, _requestInfo) => {
             try {
                 const body = await parseBody(req);
@@ -99,7 +71,6 @@ export function crudFactory(options) {
                 res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
             }
         },
-        // Read a single record
         read: async (res, _req, website, requestInfo) => {
             try {
                 const id = requestInfo.url.split('/').pop();
@@ -123,7 +94,6 @@ export function crudFactory(options) {
                 res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
             }
         },
-        // Edit form for a record
         edit: async (res, _req, website, requestInfo) => {
             try {
                 const id = requestInfo.url.split('/').pop();
@@ -147,7 +117,6 @@ export function crudFactory(options) {
                 res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
             }
         },
-        // Update a record
         update: async (res, req, website, requestInfo) => {
             try {
                 const id = requestInfo.url.split('/').pop();
@@ -173,7 +142,6 @@ export function crudFactory(options) {
                 res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
             }
         },
-        // Delete a record
         delete: async (res, _req, website, requestInfo) => {
             try {
                 const id = requestInfo.url.split('/').pop();
@@ -199,7 +167,6 @@ export function crudFactory(options) {
         }
     };
 }
-// Helper function to parse request body
 async function parseBody(req) {
     return new Promise((resolve, reject) => {
         let body = '';

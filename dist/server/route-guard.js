@@ -11,13 +11,9 @@ export class RouteGuard {
     loadRoutes() {
         const routes = this.website.config.routes || [];
         routes.forEach(route => {
-            // Ensure required fields
             if (!route.path) {
                 route.path = '/';
-                // console.warn(`Route missing path in ${this.website.name}`)
-                // return
             }
-            // Add route for each domain
             route.domains.forEach(domain => {
                 this.routes[domain + route.path] = route;
             });
@@ -33,7 +29,6 @@ export class RouteGuard {
         const host = req.headers.host || 'localhost';
         const matchingRoute = Object.entries(this.routes).find(([key]) => pathname.startsWith(key.replace(host, '')))?.[1];
         if (matchingRoute) {
-            // Check security if required
             if (matchingRoute?.password) {
                 const correctPassword = this.saltPassword(matchingRoute.password);
                 const cookies = this.parseCookies(req);
@@ -45,11 +40,8 @@ export class RouteGuard {
                     return true;
                 }
                 else if (cookies[cookieName] === correctPassword) {
-                    // console.log("We have the right password in our cookies")
-                    // Let them through
                 }
                 else if (req.method === 'POST') {
-                    // Check if they're posting
                     try {
                         const form = formidable({ multiples: false });
                         form.parse(req, (err, fields) => {
@@ -86,22 +78,20 @@ export class RouteGuard {
                     }
                 }
                 else {
-                    // If the user doesn't have the login cookie, get the login page
                     const login_html = website.handlebars.compile(website.handlebars.partials['login'])({
                         route: url.pathname
                     });
                     res.writeHead(401, { 'Content-Type': 'text/html' });
                     res.end(login_html);
-                    return true; // Request handled
+                    return true;
                 }
             }
-            // Handle proxy if target is specified
             if (matchingRoute.target) {
                 this.handleProxy(req, res, matchingRoute);
-                return true; // Request handled
+                return true;
             }
         }
-        return false; // Request not handled by guard
+        return false;
     }
     handleProxy(req, res, route) {
         if (!route.target)
@@ -116,7 +106,6 @@ export class RouteGuard {
                 host: route.target.host
             }
         };
-        // Handle WebSocket and other upgrades
         if (req.headers.upgrade) {
             const proxyReq = http.request(options);
             proxyReq.on('upgrade', (proxyRes, proxySocket, _proxyHead) => {
@@ -135,7 +124,6 @@ export class RouteGuard {
             req.pipe(proxyReq);
             return;
         }
-        // Handle regular HTTP requests
         const proxyReq = http.request(options, (proxyRes) => {
             res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
             proxyRes.pipe(res);

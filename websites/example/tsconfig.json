@@ -9,6 +9,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "declaration": true,
+    "removeComments": true,
     "sourceMap": true
   },
   "ts-node": {

@@ -1,19 +1,3 @@
-/**
- * This file is the entrypoint for websites to enable a database connection.
- *
- * The Thalia framework uses drizzle-orm for database connections.
- * The Thalia framework provides table schemas in Thalia/models.
- * These schemas define the structure of tables that websites can use.
- * Websites can import these schemas to create their own tables in their database.
- *
- * Each website can have its own SQLite database in its models directory.
- * Websites can provide extra schemas in their models directory.
- * The database file will be created at websites/example/models/sqlite.db by default.
- *
- * The database connection is then provided to the website's controllers.
- * In Thalia/server/controllers.ts, we will provide a CRUD factory,
- * which will provide easy to use functions for CRUD operations.
- */
 import { drizzle } from 'drizzle-orm/libsql';
 import { sql } from 'drizzle-orm';
 import path from 'path';
@@ -23,16 +7,11 @@ export class ThaliaDatabase {
         this.schemas = {};
         console.log("Creating database connection for", website.rootPath);
         this.website = website;
-        // Create database connection
         this.url = "file:" + path.join(website.rootPath, 'models', 'sqlite.db');
         this.sqlite = libsql.createClient({ url: this.url });
         this.drizzle = drizzle(this.sqlite);
         this.schemas = website.config.database?.schemas || {};
     }
-    /**
-     * Connect to the database
-     * Check all schemas exist and are correct
-     */
     async connect() {
         try {
             await this.drizzle.run(sql `SELECT 1`);
@@ -59,7 +38,6 @@ export class ThaliaDatabase {
     }
     async close() {
         try {
-            // Close the SQLite connection
             this.sqlite.close();
             console.log(`Database connection for ${this.website.name} closed`);
         }

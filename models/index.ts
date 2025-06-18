@@ -5,9 +5,6 @@
  * for accessing database models throughout the application.
  */
 
-import { type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
-import { type SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
-
 // Import models
 import { users, sessions, audits, type User, type NewUser, type Session, type NewSession, type Audit, type NewAudit } from './security.js'
 import { albums, images, type Album, type NewAlbum, type Image, type NewImage } from './smugmug.js'
@@ -15,12 +12,6 @@ import { albums, images, type Album, type NewAlbum, type Image, type NewImage } 
 // Export types
 export type { User, NewUser, Session, NewSession, Audit, NewAudit }
 export type { Album, NewAlbum, Image, NewImage }
-
-// Export interfaces
-export interface DatabaseConfig {
-  url: string
-  logging?: boolean
-}
 
 // Export model tables
 export const models = {
@@ -36,4 +27,10 @@ export { UserFactory, SessionFactory, AuditFactory } from './security.js'
 export { AlbumFactory, ImageFactory } from './smugmug.js'
 
 // Export all from security
-export * from './security.js'
+// export * from './security.js'
+import * as security from './security.js'
+export { security }
+
+// Export all from util
+import * as util from './util.js'
+export { util }

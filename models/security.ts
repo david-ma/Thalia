@@ -1,24 +1,18 @@
 import { sql } from 'drizzle-orm'
-import { 
-  sqliteTable, 
-  text, 
-  integer, 
-  primaryKey,
+import {
+  sqliteTable,
+  text,
+  integer,
   type SQLiteTableWithColumns
 } from 'drizzle-orm/sqlite-core'
-
-// Base table configuration
-const baseTableConfig = {
-  id: text('id').primaryKey().notNull(),
-  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`)
-}
+import { baseTableConfig } from './util.js'
 
 // User Model
-export const users = sqliteTable('users', {
+export const users: SQLiteTableWithColumns<any> = sqliteTable('users', {
   ...baseTableConfig,
   name: text('name').notNull(),
-  email: text('email').notNull().unique(),
+  // email: text('email').notNull().unique(), // Unique causing issues in SQLite3 with DrizzleKit
+  email: text('email').notNull(),
   password: text('password').notNull(),
   photo: text('photo'),
   role: text('role').notNull().default('user'),
@@ -30,7 +24,7 @@ export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 
 // Session Model
-export const sessions = sqliteTable('sessions', {
+export const sessions: SQLiteTableWithColumns<any> = sqliteTable('sessions', {
   sid: text('sid').primaryKey().notNull(),
   expires: text('expires').notNull(),
   data: text('data', { mode: 'json' }),
@@ -44,7 +38,7 @@ export type Session = typeof sessions.$inferSelect
 export type NewSession = typeof sessions.$inferInsert
 
 // Audit Model
-export const audits = sqliteTable('audits', {
+export const audits: SQLiteTableWithColumns<any> = sqliteTable('audits', {
   ...baseTableConfig,
   userId: text('user_id').references(() => users.id),
   ip: text('ip').notNull(),

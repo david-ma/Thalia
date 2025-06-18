@@ -50,6 +50,7 @@
   },
   "dependencies": {
     "@libsql/client": "^0.15.9",
+    "drizzle-kit": "^0.31.1",
     "drizzle-orm": "^0.44.2",
     "formidable": "^3.5.1",
     "handlebars": "^4.7.8",

@@ -1,9 +1,15 @@
-import { users } from '../models/users.js';
+import { users, sessions, audits, albums, images } from '../models/drizzle-schema.js';
+import { fruit } from '../models/fruit.js';
 export const config = {
     domains: ['example.com'],
     database: {
         schemas: {
-            users
+            users,
+            sessions,
+            audits,
+            albums,
+            images,
+            fruit
         }
     }
 };

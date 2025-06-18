@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "dependencies": {
+    "drizzle-kit": "^0.31.1",
     "thalia": "file:../../"
   },
   "devDependencies": {

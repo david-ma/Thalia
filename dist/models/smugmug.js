@@ -1,10 +1,5 @@
-import { sql } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
-const baseTableConfig = {
-    id: text('id').primaryKey().notNull(),
-    createdAt: text('created_at').notNull().default(sql `CURRENT_TIMESTAMP`),
-    updatedAt: text('updated_at').notNull().default(sql `CURRENT_TIMESTAMP`)
-};
+import { baseTableConfig } from './util.js';
 export const albums = sqliteTable('albums', {
     ...baseTableConfig,
     description: text('description'),

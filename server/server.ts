@@ -17,7 +17,10 @@ export type RequestInfo = {
   host: string,
   url: string,
   ip: string,
-  method: string
+  method: string,
+  controller: string,
+  action: string,
+  slug: string
 }
 
 export class Server extends EventEmitter {
@@ -44,11 +47,21 @@ export class Server extends EventEmitter {
     const method: string = req.method ?? 'unknown'
 
     console.log(`${new Date().toISOString()} ${ip} ${method} ${host}${urlObject.href}`)
+
+    const pathname = urlObject.pathname ?? '/'
+    const parts = pathname.split('/')
+    const controller = parts[1] ?? ''
+    const action = parts[2] ?? ''
+    const slug = parts.pop() ?? ''
+
     return {
       host,
       url: urlObject.href,
       ip,
-      method
+      method,
+      controller,
+      action,
+      slug
     }
   }
 

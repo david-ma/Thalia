@@ -97,7 +97,7 @@ export declare class CrudFactory implements Machine {
      * Serve the data in DataTables.net json format
      * The frontend uses /columns to get the columns, and then asks for /json to get the data.
      */
-    private fetchDataTableJson;
+    private json;
     /**
      * Get the list of columns and their attributes, for use with DataTables.net
      *

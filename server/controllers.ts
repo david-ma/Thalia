@@ -186,35 +186,44 @@ export class CrudFactory implements Machine {
    * - testdata: GET /tableName/testdata (generates test data, NODE_ENV=development only)
    */
   public controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    const pathname = url.parse(requestInfo.url, true).pathname ?? ''
-    const target = pathname.split('/')[2] || 'list'
+    const target = requestInfo.action || 'list'
 
-    if (target === 'columns') {
-      this.columns(res, req, website, requestInfo)
-    } else if (target === 'list') {
-      this.list(res, req, website, requestInfo)
-    } else if (target === 'json') {
-      this.fetchDataTableJson(res, req, website, requestInfo)
-    } else if (target === 'new') {
-      this.new(res, req, website, requestInfo)
-    } else if (target === 'create') {
-      this.create(res, req, website, requestInfo)
-    } else if (target === 'testdata') {
-      this.testdata(res, req, website, requestInfo)
-    } else if (target === 'edit') {
-      this.edit(res, req, website, requestInfo)
-    } else if (target === 'update') {
-      this.update(res, req, website, requestInfo)
-    } else if (target === 'delete') {
-      this.delete(res, req, website, requestInfo)
-    } else if (target === 'restore') {
-      this.restore(res, req, website, requestInfo)
-    }
-
-    else {
-      this.show(res, req, website, requestInfo)
+    switch (target) {
+      case 'columns':
+        this.columns(res, req, website, requestInfo)
+        break
+      case 'list':
+        this.list(res, req, website, requestInfo)
+        break
+      case 'json':
+        this.json(res, req, website, requestInfo)
+        break
+      case 'new':
+        this.new(res, req, website, requestInfo)
+        break
+      case 'create':
+        this.create(res, req, website, requestInfo)
+        break
+      case 'testdata':
+        this.testdata(res, req, website, requestInfo)
+        break
+      case 'edit':
+        this.edit(res, req, website, requestInfo)
+        break
+      case 'update':
+        this.update(res, req, website, requestInfo)
+        break
+      case 'delete':
+        this.delete(res, req, website, requestInfo)
+        break
+      case 'restore':
+        this.restore(res, req, website, requestInfo)
+        break
+      default:
+        this.show(res, req, website, requestInfo)
     }
   }
+
 
   private testdata(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     this.generateTestData(10).then(() => {
@@ -261,7 +270,7 @@ export class CrudFactory implements Machine {
    * Adds a deletedAt timestamp to the record, and redirects to the list page.
    */
   private delete(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    const id = requestInfo.url.split('/').pop()
+    const id = requestInfo.slug
     if (!id) {
       this.reportError(res, new Error("No ID provided"))
       return
@@ -280,7 +289,7 @@ export class CrudFactory implements Machine {
   }
 
   private restore(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    const id = requestInfo.url.split('/').pop()
+    const id = requestInfo.slug
     if (!id) {
       this.reportError(res, new Error("No ID provided"))
       return
@@ -300,7 +309,7 @@ export class CrudFactory implements Machine {
    * Needs security checks.
    */
   private update(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    const id = requestInfo.url.split('/').pop()
+    const id = requestInfo.slug
     if (!id) {
       this.reportError(res, new Error("No ID provided"))
       return
@@ -326,7 +335,7 @@ export class CrudFactory implements Machine {
 
 
   private edit(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    const id = requestInfo.url.split('/').pop()
+    const id = requestInfo.slug
     if (!id) {
       this.reportError(res, new Error("No ID provided"))
       return
@@ -368,7 +377,7 @@ export class CrudFactory implements Machine {
 
 
   private show(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    const id = requestInfo.url.split('/').pop()
+    const id = requestInfo.slug
     if (!id) {
       this.reportError(res, new Error("No ID provided"))
       return
@@ -462,7 +471,7 @@ export class CrudFactory implements Machine {
    * Serve the data in DataTables.net json format
    * The frontend uses /columns to get the columns, and then asks for /json to get the data.
    */
-  private fetchDataTableJson(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+  private json(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const query = url.parse(requestInfo.url, true).query
 
     const parsedQuery = CrudFactory.parseDTquery(query)

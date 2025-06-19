@@ -13,6 +13,9 @@ export type RequestInfo = {
     url: string;
     ip: string;
     method: string;
+    controller: string;
+    action: string;
+    slug: string;
 };
 export declare class Server extends EventEmitter {
     private httpServer;

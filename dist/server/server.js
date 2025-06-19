@@ -22,11 +22,19 @@ export class Server extends EventEmitter {
         const ip = req.headers['x-real-ip'] ?? req.headers['x-forwarded-for'] ?? req.socket.remoteAddress ?? 'unknown';
         const method = req.method ?? 'unknown';
         console.log(`${new Date().toISOString()} ${ip} ${method} ${host}${urlObject.href}`);
+        const pathname = urlObject.pathname ?? '/';
+        const parts = pathname.split('/');
+        const controller = parts[1] ?? '';
+        const action = parts[2] ?? '';
+        const slug = parts.pop() ?? '';
         return {
             host,
             url: urlObject.href,
             ip,
-            method
+            method,
+            controller,
+            action,
+            slug
         };
     }
     /**

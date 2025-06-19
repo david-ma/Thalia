@@ -152,7 +152,7 @@ export class CrudFactory implements Machine {
   private sqlite!: libsql.Client
   private static blacklist = ['createdAt', 'updatedAt', 'deletedAt'] // Filter 'id' as well?
 
-  constructor(table: SQLiteTableWithColumns<any>, options?: CrudOptions | any ) {
+  constructor(table: SQLiteTableWithColumns<any>, options?: CrudOptions | any) {
     this.table = table
   }
 
@@ -221,9 +221,7 @@ export class CrudFactory implements Machine {
       res.writeHead(200, { 'Content-Type': 'text/html' })
       res.end('Test data generated')
     }, (error) => {
-      console.error('Error generating test data:', error)
-      res.writeHead(500, { 'Content-Type': 'text/html' })
-      res.end('Error generating test data')
+      this.reportError(res, new Error(`Error generating test data: ${error}`))
     })
   }
 
@@ -265,40 +263,34 @@ export class CrudFactory implements Machine {
   private delete(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const id = requestInfo.url.split('/').pop()
     if (!id) {
-      throw new Error('No ID provided')
+      this.reportError(res, new Error("No ID provided"))
+      return
+    }
+    if (!this.table.deletedAt) {
+      this.reportError(res, new Error("No deleteAt column found, cannot delete record"))
+      return
     }
 
     this.db.update(this.table)
       .set({ deletedAt: new Date().toISOString() })
       .where(eq(this.table.id, id))
       .then((result) => {
-        const html = this.website.getContentHtml('message')({
-          state: 'Success',
-          message: 'Record deleted',
-          redirect: `/${this.name}`
-        })
-        res.writeHead(200, { 'Content-Type': 'text/html' })
-        res.end(html)
+        this.reportSuccess(res, 'Record deleted', `/${this.name}`)
       })
   }
 
   private restore(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const id = requestInfo.url.split('/').pop()
     if (!id) {
-      throw new Error('No ID provided')
+      this.reportError(res, new Error("No ID provided"))
+      return
     }
 
     this.db.update(this.table)
       .set({ deletedAt: null })
       .where(eq(this.table.id, id))
       .then((result) => {
-        const html = this.website.getContentHtml('message')({
-          state: 'Success',
-          message: 'Record restored',
-          redirect: `/${this.name}`
-        })
-        res.writeHead(200, { 'Content-Type': 'text/html' })
-        res.end(html)
+        this.reportSuccess(res, 'Record restored', `/${this.name}`)
       })
   }
 
@@ -310,7 +302,8 @@ export class CrudFactory implements Machine {
   private update(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const id = requestInfo.url.split('/').pop()
     if (!id) {
-      throw new Error('No ID provided')
+      this.reportError(res, new Error("No ID provided"))
+      return
     }
 
     try {
@@ -322,19 +315,11 @@ export class CrudFactory implements Machine {
           .set(fields)
           .where(eq(this.table.id, id))
           .then((result) => {
-            const html = this.website.getContentHtml('message')({
-              state: 'Success',
-              message: 'Record updated',
-              redirect: `/${this.name}/show/${id}`
-            })
-            res.writeHead(200, { 'Content-Type': 'text/html' })
-            res.end(html)
+            this.reportSuccess(res, 'Record updated', `/${this.name}/show/${id}`)
           })
       })
     } catch (error) {
-      console.error('Error in ${website.name}/${tableName}/update:', error)
-      res.writeHead(500, { 'Content-Type': 'application/json' })
-      res.end("Error: " + JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }))
+      this.reportError(res, new Error(`Error in ${website.name}/${this.name}/update: ${error}`))
     }
 
   }
@@ -343,7 +328,8 @@ export class CrudFactory implements Machine {
   private edit(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const id = requestInfo.url.split('/').pop()
     if (!id) {
-      throw new Error('No ID provided')
+      this.reportError(res, new Error("No ID provided"))
+      return
     }
     this.db.select(this.table).from(this.table)
       .where(eq(this.table.id, id))
@@ -384,7 +370,8 @@ export class CrudFactory implements Machine {
   private show(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const id = requestInfo.url.split('/').pop()
     if (!id) {
-      throw new Error('No ID provided')
+      this.reportError(res, new Error("No ID provided"))
+      return
     }
     // select distinct id, name from table?
     this.db.select(this.table).from(this.table)
@@ -428,36 +415,13 @@ export class CrudFactory implements Machine {
     try {
       parseForm(res, req).then(({ fields }) => {
         this.db.insert(this.table).values(fields).then((result) => {
-          // console.log("Result:", result)
-          // res.writeHead(200, { 'Content-Type': 'application/json' })
-          // res.end(JSON.stringify(result))
-
-          const html = website.getContentHtml('list')(result)
-          res.writeHead(302, { 'Location': `/${this.name}` })
-          res.end()
-
-
-
+          this.reportSuccess(res, 'Record created' + JSON.stringify(result), `/${this.name}`)
         }, (error) => {
-          console.error('Error inserting record:', error)
-          const html = this.website.getContentHtml('message')({
-            state: 'Error',
-            message: error instanceof Error ? error.message : 'Unknown error',
-            redirect: `/${this.name}`
-          })
-          res.writeHead(500, { 'Content-Type': 'text/html' })
-          res.end(html)
+          this.reportError(res, new Error(`Error inserting record: ${error}`))
         })
       })
     } catch (error) {
-      console.error('Error in ${website.name}/${this.name}/create:', error)
-      const html = this.website.getContentHtml('message')({
-        state: 'Error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-        redirect: `/${this.name}`
-      })
-      res.writeHead(500, { 'Content-Type': 'text/html' })
-      res.end(html)
+      this.reportError(res, new Error(`Error in ${website.name}/${this.name}/create: ${error}`))
     }
   }
 
@@ -492,14 +456,6 @@ export class CrudFactory implements Machine {
 
     res.writeHead(200, { 'Content-Type': 'text/html' })
     res.end(html)
-
-    // website.db.drizzle.select().from(this.table)
-    // .then((records) => {
-    // }, (error) => {
-    //   console.error(`Error in ${website.name}/${this.name}/list:`, error)
-    //   res.writeHead(500, { 'Content-Type': 'application/json' })
-    //   res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }))
-    // })
   }
 
   /**
@@ -651,6 +607,35 @@ export class CrudFactory implements Machine {
     })
 
     return result as any
+  }
+
+  private reportSuccess(res: ServerResponse, message: string, redirect: string) {
+    const html = this.website.getContentHtml('message')({
+      state: 'Success',
+      message,
+      redirect
+    })
+    res.writeHead(200, { 'Content-Type': 'text/html' })
+    res.end(html)
+  }
+
+  /**
+   * Pass an error back to the user.
+   * Handy place to add logging for the webmaster.
+   * Or add extra debugging information for the developer.
+   */
+  private reportError(res: ServerResponse, error: Error) {
+    // TODO: Add a way to log errors for the webmaster
+
+    console.error(error)
+
+    const html = this.website.getContentHtml('message')({
+      state: 'Error',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      redirect: `/${this.name}`
+    })
+    res.writeHead(500, { 'Content-Type': 'text/html' })
+    res.end(html)
   }
 }
 

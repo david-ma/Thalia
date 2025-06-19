@@ -115,6 +115,13 @@ export declare class CrudFactory implements Machine {
     private columns;
     private mapColumns;
     private static parseDTquery;
+    private reportSuccess;
+    /**
+     * Pass an error back to the user.
+     * Handy place to add logging for the webmaster.
+     * Or add extra debugging information for the developer.
+     */
+    private reportError;
 }
 export {};
 //# sourceMappingURL=controllers.d.ts.map

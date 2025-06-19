@@ -194,6 +194,11 @@ export class CrudFactory {
             res.end(html);
         });
     }
+    /**
+     * Update an existing record
+     *
+     * Needs security checks.
+     */
     update(res, req, website, requestInfo) {
         const id = requestInfo.url.split('/').pop();
         if (!id) {
@@ -201,21 +206,22 @@ export class CrudFactory {
         }
         try {
             parseForm(res, req).then(({ fields }) => {
-                fields = Object.fromEntries(Object.entries(fields).filter(([key]) => !CrudFactory.blacklist.includes(key)));
+                fields = Object.fromEntries(Object.entries(fields)
+                    .filter(([key]) => !CrudFactory.blacklist.concat(['id']).includes(key)));
                 this.db.update(this.table)
                     .set(fields)
                     .where(eq(this.table.id, id))
                     .then((result) => {
                     console.log("Result:", result);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify(result));
+                    res.end("Success: " + JSON.stringify(result));
                 });
             });
         }
         catch (error) {
             console.error('Error in ${website.name}/${tableName}/update:', error);
             res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
+            res.end("Error: " + JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
         }
     }
     edit(res, req, website, requestInfo) {

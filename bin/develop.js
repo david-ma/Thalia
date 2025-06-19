@@ -52,6 +52,7 @@ function startServer(projectName) {
   // Set up environment for child processes
   const env = {
     ...process.env,
+    PORT: 1337,
     PROJECT: projectName,
   }
 
@@ -66,11 +67,13 @@ function startServer(projectName) {
   })
 
   // Start nodemon for the server
-  const nodemon = spawn('nodemon', ['--watch', 'dist', '--watch', `websites/${projectName}`, 'dist/server/index.js'], {
+  const nodemon = spawn('nodemon', ['--watch', 'dist',
+    '--watch', `websites/${projectName}`,
+    'dist/server/index.js'], {
     env: {
       ...env,
       PROJECT: projectName,
-      PORT: 3000,
+      PORT: 1337,
       WEBSITE: projectName,
     },
     stdio: 'inherit',
@@ -85,13 +88,15 @@ function startServer(projectName) {
   })
 
   const processes = [tsc, nodemon, projectTsc]
-  const bs = browserSync.create()
+  const bs = browserSync.create({
+    files: [`${thaliaDirectory}/dist/**/*`, `${projectRoot}/**/*`, `${thaliaDirectory}/src/**/*.hbs`],
+  })
 
   // set timeout for 500ms
   setTimeout(() => {
     bs.init({
-      proxy: `http://localhost:3000`,
-      port: 3001,
+      proxy: `http://localhost:1337`,
+      port: 3000,
       open: false,
       notify: false,
       reloadDelay: 1000,

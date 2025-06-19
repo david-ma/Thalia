@@ -282,6 +282,11 @@ export class CrudFactory implements Machine {
       })
   }
 
+  /**
+   * Update an existing record
+   * 
+   * Needs security checks.
+   */
   private update(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const id = requestInfo.url.split('/').pop()
     if (!id) {
@@ -290,7 +295,8 @@ export class CrudFactory implements Machine {
 
     try {
       parseForm(res, req).then(({ fields }) => {
-        fields = Object.fromEntries(Object.entries(fields).filter(([key]) => !CrudFactory.blacklist.includes(key)))
+        fields = Object.fromEntries(Object.entries(fields)
+          .filter(([key]) => !CrudFactory.blacklist.concat(['id']).includes(key)))
 
         this.db.update(this.table)
           .set(fields)
@@ -298,13 +304,13 @@ export class CrudFactory implements Machine {
           .then((result) => {
             console.log("Result:", result)
             res.writeHead(200, { 'Content-Type': 'application/json' })
-            res.end(JSON.stringify(result))
+            res.end("Success: " + JSON.stringify(result))
           })
       })
     } catch (error) {
       console.error('Error in ${website.name}/${tableName}/update:', error)
       res.writeHead(500, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }))
+      res.end("Error: " + JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }))
     }
 
   }

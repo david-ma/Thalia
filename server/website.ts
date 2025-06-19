@@ -182,6 +182,10 @@ export class Website implements WebsiteInterface {
   }
 
   public getContentHtml(content: string, template: string = 'wrapper'): HandlebarsTemplateDelegate<any> {
+    if (this.env == 'development') {
+      this.loadPartials()
+    }
+
     const templateFile = this.handlebars.partials[template] ?? ''
     const contentFile = this.handlebars.partials[content] ?? '404'
     this.handlebars.registerPartial('styles', '')

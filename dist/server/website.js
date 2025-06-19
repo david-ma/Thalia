@@ -140,6 +140,9 @@ export class Website {
         }
     }
     getContentHtml(content, template = 'wrapper') {
+        if (this.env == 'development') {
+            this.loadPartials();
+        }
         const templateFile = this.handlebars.partials[template] ?? '';
         const contentFile = this.handlebars.partials[content] ?? '404';
         this.handlebars.registerPartial('styles', '');

@@ -114,11 +114,3 @@ export interface WebsiteConfig extends BasicWebsiteConfig, RawWebsiteConfig {
   routes: RouteRule[]
   websockets: WebsocketConfig
 }
-
-export interface WebsiteInterface {
-  readonly name: string
-  readonly config: WebsiteConfig
-  readonly rootPath: string
-  handleRequest(req: IncomingMessage, res: ServerResponse, requestInfo: RequestInfo, pathname?: string): void
-  handleSocketConnection(socket: Socket, clientInfo: ClientInfo): void
-}

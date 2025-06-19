@@ -20,7 +20,7 @@
  * - Request processing (handled by Handler)
  */
 /// <reference types="node" resolution-mode="require"/>
-import { WebsiteInterface, BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule, ClientInfo } from './types.js';
+import { BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule, ClientInfo } from './types.js';
 import { IncomingMessage, ServerResponse } from 'http';
 import Handlebars from 'handlebars';
 import { RouteGuard } from './route-guard.js';
@@ -30,7 +30,7 @@ import { ThaliaDatabase } from './database.js';
 export interface Controller {
     (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
 }
-export declare class Website implements WebsiteInterface {
+export declare class Website {
     readonly name: string;
     readonly rootPath: string;
     readonly env: string;
@@ -39,9 +39,7 @@ export declare class Website implements WebsiteInterface {
     config: WebsiteConfig;
     handlebars: typeof Handlebars;
     domains: string[];
-    controllers: {
-        [key: string]: Controller;
-    };
+    controllers: Record<string, Controller>;
     private websockets;
     routes: {
         [key: string]: RouteRule;
@@ -103,8 +101,6 @@ export declare class Website implements WebsiteInterface {
         templatePath: string;
         data?: object;
     }): void;
-    handleRequest(req: IncomingMessage, res: ServerResponse, requestInfo: RequestInfo, pathnameOverride?: string): void;
-    private getContentType;
     static loadAllWebsites(options: ServerOptions): Promise<Website[]>;
     /**
      * Handle a socket connection for the website

@@ -1,6 +1,6 @@
 /**
  * A class based interpretation of the logic from website.ts
- * 
+ *
  * This class will be more easily testable, and more easily extendable.
  */
 
@@ -22,14 +22,11 @@ export class RequestHandler {
   private requestInfo!: RequestInfo
   private pathname!: string
 
-
   private rootPath!: string
   private projectPublicPath!: string
   private projectSourcePath!: string
   private thaliaSourcePath!: string
   private thaliaRoot!: string
-  
-
 
   public handleRequest(
     req: IncomingMessage,
@@ -62,7 +59,7 @@ export class RequestHandler {
           this.renderError(message)
         }
 
-        console.debug("Successfully finished the request handler chain", message)
+        console.debug('Successfully finished the request handler chain', message)
       })
   }
 
@@ -104,7 +101,6 @@ export class RequestHandler {
   //   })
   // }
 
-
   private static tryPublicFile(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
       if (!fs.existsSync(requestHandler.projectPublicPath)) {
@@ -124,17 +120,16 @@ export class RequestHandler {
           console.error('Error streaming file:', error)
           requestHandler.res.writeHead(500)
           requestHandler.res.end('Internal Server Error')
-          return finish("Error streaming file")
+          return finish('Error streaming file')
         })
         stream.on('end', () => {
           requestHandler.res.end()
           return finish(`Successfully streamed file ${requestHandler.pathname}`)
         })
-        stream.pipe(requestHandler.res)        
+        stream.pipe(requestHandler.res)
       }
     })
   }
-
 
   private static tryHandlebars(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
@@ -191,7 +186,6 @@ export class RequestHandler {
     })
   }
 
-
   private static tryController(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
       const controllerSlug = requestHandler.requestInfo.controller
@@ -211,7 +205,7 @@ export class RequestHandler {
       if (parts.some((part) => part === '..')) {
         requestHandler.res.writeHead(400)
         requestHandler.res.end('Bad Request')
-        return finish("Successfully blocked path exploit")
+        return finish('Successfully blocked path exploit')
       }
       return next(requestHandler)
     })

@@ -22,11 +22,9 @@
 import fs from 'fs';
 import path from 'path';
 import Handlebars from 'handlebars';
-import * as sass from 'sass';
 import { cwd } from 'process';
 import { RoleRouteGaurd, BasicRouteGuard, RouteGuard } from './route-guard.js';
 import { ThaliaDatabase } from './database.js';
-import { dirname } from 'path';
 export class Website {
     /**
      * Creates a new Website instance
@@ -286,136 +284,6 @@ export class Website {
             console.error('Error serving handlebars template: ', error);
             this.renderError(res, error);
         }
-    }
-    // The main Request handler for the website
-    // RequestHandler logic goes here
-    handleRequest(req, res, requestInfo, pathnameOverride) {
-        try {
-            const pathname = pathnameOverride ?? requestInfo.url ?? '/';
-            const parts = pathname.split('/');
-            // Check for any .. in the pathname, for security
-            if (parts.some((part) => part === '..')) {
-                res.writeHead(400);
-                res.end('Bad Request');
-                return;
-            }
-            // Let the route guard handle the request first
-            // if (this.routeGuard.handleRequest(req, res, this, requestInfo, pathnameOverride)) {
-            //   // console.debug('Request was stopped by the guard')
-            //   return // Request was handled by the guard
-            // } else {
-            //   // console.debug('Request was let through by the guard')
-            // }
-            // Continue with normal request handling
-            const projectPublicPath = path.join(this.rootPath, 'public', pathname);
-            const projectSourcePath = projectPublicPath.replace('public', 'src');
-            const thaliaRoot = path.join(dirname(import.meta.url).replace('file://', ''), '..', '..');
-            const thaliaSourcePath = path.join(thaliaRoot, 'src', pathname);
-            const controllerSlug = requestInfo.controller;
-            // console.debug(`Controller path: "${controllerPath}"`)
-            if (controllerSlug) {
-                const controller = this.controllers[controllerSlug];
-                if (controller) {
-                    controller(res, req, this, requestInfo);
-                    return;
-                }
-            }
-            // If we're looking for a css file, check if the scss exists in the website folder
-            // If it doesn't exist there, check the thalia folder
-            // If it doesn't exist there, continue with the file handling flow
-            if (pathname.endsWith('.css')) {
-                let target = null;
-                const projectScssPath = projectSourcePath.replace('.css', '.scss');
-                const thaliaScssPath = thaliaSourcePath.replace('.css', '.scss');
-                if (fs.existsSync(projectScssPath)) {
-                    target = projectScssPath;
-                }
-                else if (fs.existsSync(thaliaScssPath)) {
-                    target = thaliaScssPath;
-                }
-                if (target) {
-                    try {
-                        const css = sass.compile(target).css.toString();
-                        res.writeHead(200, { 'Content-Type': 'text/css' });
-                        res.end(css);
-                    }
-                    catch (error) {
-                        console.error('Error compiling scss: ', error);
-                        res.writeHead(500);
-                        res.end('Internal Server Error');
-                    }
-                    return;
-                }
-            }
-            if (pathname.endsWith('.html')) {
-                const projectHandlebarsTemplate = projectSourcePath.replace('.html', '.hbs');
-                const thaliaHandlebarsTemplate = thaliaSourcePath.replace('.html', '.hbs');
-                if (fs.existsSync(projectHandlebarsTemplate)) {
-                    this.serveHandlebarsTemplate({ res, templatePath: projectHandlebarsTemplate });
-                    return;
-                }
-                else if (fs.existsSync(thaliaHandlebarsTemplate)) {
-                    this.serveHandlebarsTemplate({ res, templatePath: thaliaHandlebarsTemplate });
-                    return;
-                }
-            }
-            // Check if public folder file exists
-            if (!fs.existsSync(projectPublicPath)) {
-                res.writeHead(404);
-                res.end('Not Found');
-                return;
-            }
-            else if (fs.statSync(projectPublicPath).isDirectory() || fs.statSync(projectSourcePath).isDirectory()) {
-                try {
-                    const indexPath = path.join(pathname, 'index.html');
-                    this.handleRequest(req, res, requestInfo, indexPath);
-                }
-                catch (error) {
-                    console.error('Error serving index.html for ', pathname, error);
-                    res.writeHead(404);
-                    res.end('Not Found');
-                }
-                return;
-            }
-            // Stream the file
-            const stream = fs.createReadStream(projectPublicPath);
-            stream.on('error', (error) => {
-                console.error('Error streaming file:', error);
-                res.writeHead(500);
-                res.end('Internal Server Error');
-            });
-            // Set content type based on file extension
-            const contentType = this.getContentType(projectPublicPath);
-            res.setHeader('Content-Type', contentType);
-            // Pipe the file to the response
-            stream.pipe(res).on('end', () => {
-                res.end();
-            });
-            return;
-        }
-        catch (error) {
-            console.error('Error serving file: ', error);
-            res.writeHead(500);
-            res.end('Internal Server Error');
-            return;
-        }
-    }
-    getContentType(filePath) {
-        const ext = filePath.split('.').pop()?.toLowerCase();
-        const contentTypes = {
-            html: 'text/html',
-            css: 'text/css',
-            js: 'text/javascript',
-            json: 'application/json',
-            png: 'image/png',
-            jpg: 'image/jpeg',
-            jpeg: 'image/jpeg',
-            gif: 'image/gif',
-            svg: 'image/svg+xml',
-            ico: 'image/x-icon',
-            txt: 'text/plain',
-        };
-        return contentTypes[ext || ''] || 'application/octet-stream';
     }
     static async loadAllWebsites(options) {
         if (options.mode == 'multiplex') {

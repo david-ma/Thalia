@@ -35,7 +35,7 @@ export class RequestHandler {
             if (typeof message === typeof Error) {
                 this.renderError(message);
             }
-            console.debug("Successfully finished the request handler chain", message);
+            console.debug('Successfully finished the request handler chain', message);
         });
     }
     renderError(error) {
@@ -91,7 +91,7 @@ export class RequestHandler {
                     console.error('Error streaming file:', error);
                     requestHandler.res.writeHead(500);
                     requestHandler.res.end('Internal Server Error');
-                    return finish("Error streaming file");
+                    return finish('Error streaming file');
                 });
                 stream.on('end', () => {
                     requestHandler.res.end();
@@ -171,7 +171,7 @@ export class RequestHandler {
             if (parts.some((part) => part === '..')) {
                 requestHandler.res.writeHead(400);
                 requestHandler.res.end('Bad Request');
-                return finish("Successfully blocked path exploit");
+                return finish('Successfully blocked path exploit');
             }
             return next(requestHandler);
         });

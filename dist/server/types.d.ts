@@ -1,8 +1,5 @@
-/// <reference types="node" resolution-mode="require"/>
-import { IncomingMessage, ServerResponse } from 'http';
 import { Controller } from './website.js';
 import { Socket } from 'socket.io';
-import { RequestInfo } from './server.js';
 import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
 export type ServerMode = 'standalone' | 'multiplex';
 export interface ServerOptions {
@@ -94,12 +91,5 @@ export interface WebsiteConfig extends BasicWebsiteConfig, RawWebsiteConfig {
     };
     routes: RouteRule[];
     websockets: WebsocketConfig;
-}
-export interface WebsiteInterface {
-    readonly name: string;
-    readonly config: WebsiteConfig;
-    readonly rootPath: string;
-    handleRequest(req: IncomingMessage, res: ServerResponse, requestInfo: RequestInfo, pathname?: string): void;
-    handleSocketConnection(socket: Socket, clientInfo: ClientInfo): void;
 }
 //# sourceMappingURL=types.d.ts.map

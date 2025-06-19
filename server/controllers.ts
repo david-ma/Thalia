@@ -226,6 +226,10 @@ export class CrudFactory implements Machine {
 
 
   private testdata(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    if (process.env.NODE_ENV !== 'development') {
+      return this.reportError(res, new Error('Test data can only be generated in development mode'))
+    }
+
     this.generateTestData(10).then(() => {
       res.writeHead(200, { 'Content-Type': 'text/html' })
       res.end('Test data generated')
@@ -272,8 +276,7 @@ export class CrudFactory implements Machine {
   private delete(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const id = requestInfo.slug
     if (!id) {
-      this.reportError(res, new Error("No ID provided"))
-      return
+      return this.reportError(res, new Error("No ID provided"))
     }
     if (!this.table.deletedAt) {
       this.reportError(res, new Error("No deletedAt column found, cannot delete record"))
@@ -311,8 +314,7 @@ export class CrudFactory implements Machine {
   private update(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const id = requestInfo.slug
     if (!id) {
-      this.reportError(res, new Error("No ID provided"))
-      return
+      return this.reportError(res, new Error("No ID provided"))
     }
 
     try {
@@ -337,8 +339,7 @@ export class CrudFactory implements Machine {
   private edit(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const id = requestInfo.slug
     if (!id) {
-      this.reportError(res, new Error("No ID provided"))
-      return
+      return this.reportError(res, new Error("No ID provided"))
     }
     this.db.select(this.table).from(this.table)
       .where(eq(this.table.id, id))
@@ -379,23 +380,16 @@ export class CrudFactory implements Machine {
   private show(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const id = requestInfo.slug
     if (!id) {
-      this.reportError(res, new Error("No ID provided"))
-      return
+      return this.reportError(res, new Error("No ID provided"))
     }
     // select distinct id, name from table?
     this.db.select(this.table).from(this.table)
       .where(eq(this.table.id, id))
       .then((records) => {
         if (records.length === 0) {
-          res.writeHead(404, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ error: 'Record not found' }))
-          return
+          return this.reportError(res, new Error("Record not found"))
         } else if (records.length > 1) {
-          // throw new Error('Multiple records found for ID')
-          console.error('Multiple records found for ID', id)
-          res.writeHead(404, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ error: 'Multiple records found for ID' }))
-          return
+          return this.reportError(res, new Error("Multiple records found for ID"))
         }
 
         const record = records[0]

@@ -180,7 +180,7 @@ export class CrudFactory {
             return;
         }
         if (!this.table.deletedAt) {
-            this.reportError(res, new Error("No deleteAt column found, cannot delete record"));
+            this.reportError(res, new Error("No deletedAt column found, cannot delete record"));
             return;
         }
         this.db.update(this.table)

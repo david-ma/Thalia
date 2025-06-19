@@ -1,0 +1,57 @@
+$background: #f0f0f0;
+
+nav {
+  display: flex;
+  justify-content: space-between;
+  background: $background;
+  padding: 10px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+div.default-crud-styles {
+
+  p.blob {
+    line-break: anywhere;
+  }
+
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    th {
+      text-align: right;
+      padding-right: 10px;
+    }
+
+    td:first-child {
+      font-weight: bold;
+    }
+    td {
+      text-align: left;
+      padding: 0.2em 0.5em;
+      border: 1px solid black;
+      input {
+        width: 100%;
+      }
+    }
+  }
+
+  div.login {
+    width: 50%;
+    margin: auto;
+
+    form {
+      display: flex;
+      flex-flow: column;
+      margin: auto;
+
+      sub {
+        vertical-align: sub;
+        font-size: smaller;
+        bottom: -0.5em;
+      }
+    }
+  }
+}

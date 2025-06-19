@@ -404,24 +404,18 @@ export class Website implements WebsiteInterface {
           target = thaliaScssPath
         }
 
-        if (target) {
-          if (fs.existsSync(target)) {
-            const scss = fs.readFileSync(target, 'utf8')
-            try {
-              const css = sass.renderSync({
-                data: scss,
-                includePaths: [path.dirname(target || '')]
-              }).css.toString()
-              res.writeHead(200, { 'Content-Type': 'text/css' })
-              res.end(css)
-            } catch (error) {
-              console.error("Error compiling scss: ", error)
-              res.writeHead(500)
-              res.end('Internal Server Error')
-              return
-            }
+        if (target && fs.existsSync(target)) {
+          try {
+            const css = sass.compile(target).css.toString()
+            res.writeHead(200, { 'Content-Type': 'text/css' })
+            res.end(css)
+          } catch (error) {
+            console.error("Error compiling scss: ", error)
+            res.writeHead(500)
+            res.end('Internal Server Error')
             return
           }
+          return
         }
       }
 

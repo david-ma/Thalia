@@ -435,7 +435,7 @@ export class Website {
             if (this.config.database) {
                 const db = new ThaliaDatabase(this);
                 this.db = db;
-                resolve(this.db.connect());
+                resolve(this.db.init());
             }
             else {
                 resolve(null);

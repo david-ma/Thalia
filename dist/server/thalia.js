@@ -9,7 +9,7 @@ export class Thalia {
         this.server = new Server(options, this.websites);
     }
     // This should probably be called init
-    static async create(options) {
+    static async init(options) {
         try {
             const websites = await Website.loadAllWebsites(options);
             return new Thalia(options, websites);

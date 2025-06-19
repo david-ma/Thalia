@@ -31,10 +31,9 @@ export declare class ThaliaDatabase {
     };
     constructor(website: Website);
     /**
-     * Connect to the database
+     * Initialise connection to the database
      * Check all schemas exist and are correct
      */
-    connect(): Promise<ThaliaDatabase>;
-    close(): Promise<void>;
+    init(): Promise<ThaliaDatabase>;
 }
 //# sourceMappingURL=database.d.ts.map

@@ -46,7 +46,7 @@ else {
     options.rootPath = path.join(options.rootPath, 'websites', project);
 }
 console.log("Creating Thalia with options:", options);
-Thalia.create(options).then(thalia => {
+Thalia.init(options).then(thalia => {
     thalia.start();
     process.on('SIGINT', () => {
         thalia.stop();

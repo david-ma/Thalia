@@ -32,10 +32,10 @@ export class ThaliaDatabase {
         this.machines = website.config.database?.machines || {};
     }
     /**
-     * Connect to the database
+     * Initialise connection to the database
      * Check all schemas exist and are correct
      */
-    async connect() {
+    async init() {
         try {
             await this.drizzle.run(sql `SELECT 1`);
             console.log(`Database connection for ${this.website.name} established successfully`);
@@ -69,17 +69,6 @@ export class ThaliaDatabase {
         }
         catch (error) {
             console.error(`Unable to connect to the ${this.website.name} database:`, error);
-            throw error;
-        }
-    }
-    async close() {
-        try {
-            // Close the SQLite connection
-            this.sqlite.close();
-            console.log(`Database connection for ${this.website.name} closed`);
-        }
-        catch (error) {
-            console.error(`Error closing database connection for ${this.website.name}:`, error);
             throw error;
         }
     }

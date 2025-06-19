@@ -24,7 +24,7 @@ export class Thalia {
   }
 
   // This should probably be called init
-  public static async create(options: ServerOptions): Promise<Thalia> {
+  public static async init(options: ServerOptions): Promise<Thalia> {
     try {
       const websites = await Website.loadAllWebsites(options)
       return new Thalia(options, websites)

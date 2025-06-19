@@ -10,6 +10,6 @@ export declare class Thalia {
     private server;
     private websites;
     private constructor();
-    static create(options: ServerOptions): Promise<Thalia>;
+    static init(options: ServerOptions): Promise<Thalia>;
 }
 //# sourceMappingURL=thalia.d.ts.map

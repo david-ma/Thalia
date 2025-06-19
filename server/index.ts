@@ -50,7 +50,7 @@ if (!fs.existsSync(path.join(options.rootPath, 'websites'))) {
 }
 
 console.log("Creating Thalia with options:", options)
-Thalia.create(options).then(thalia => {
+Thalia.init(options).then(thalia => {
   thalia.start()
 
   process.on('SIGINT', () => {

@@ -68,7 +68,6 @@ export const config = {
     },
     routes: [
         {
-            path: '/',
             password: 'password',
         },
     ],

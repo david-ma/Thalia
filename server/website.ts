@@ -54,7 +54,7 @@ export interface Controller {
 export class Website implements WebsiteInterface {
   public readonly name: string
   public readonly rootPath: string
-  private readonly env: string = 'development'
+  public readonly env: string = 'development'
   private readonly mode: ServerMode = 'standalone'
   private readonly port: number = 1337
   public config!: WebsiteConfig
@@ -302,17 +302,17 @@ export class Website implements WebsiteInterface {
   public async asyncServeHandlebarsTemplate(
     options:
       | {
-          res: ServerResponse
-          template: string
-          templatePath?: undefined
-          data?: object
-        }
+        res: ServerResponse
+        template: string
+        templatePath?: undefined
+        data?: object
+      }
       | {
-          res: ServerResponse
-          template?: undefined
-          templatePath: string
-          data?: object
-        },
+        res: ServerResponse
+        template?: undefined
+        templatePath: string
+        data?: object
+      },
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
@@ -331,17 +331,17 @@ export class Website implements WebsiteInterface {
     data,
   }:
     | {
-        res: ServerResponse
-        template: string
-        templatePath?: undefined
-        data?: object
-      }
+      res: ServerResponse
+      template: string
+      templatePath?: undefined
+      data?: object
+    }
     | {
-        res: ServerResponse
-        template?: undefined
-        templatePath: string
-        data?: object
-      }): void {
+      res: ServerResponse
+      template?: undefined
+      templatePath: string
+      data?: object
+    }): void {
     try {
       if (this.env == 'development') {
         this.loadPartials()
@@ -385,6 +385,15 @@ export class Website implements WebsiteInterface {
     pathnameOverride?: string,
   ): void {
     try {
+      const pathname = pathnameOverride ?? requestInfo.url ?? '/'
+      const parts = pathname.split('/')
+      // Check for any .. in the pathname, for security
+      if (parts.some((part) => part === '..')) {
+        res.writeHead(400)
+        res.end('Bad Request')
+        return
+      }
+
       // Let the route guard handle the request first
       if (this.routeGuard.handleRequest(req, res, this, requestInfo, pathnameOverride)) {
         // console.debug('Request was stopped by the guard')
@@ -394,19 +403,6 @@ export class Website implements WebsiteInterface {
       }
 
       // Continue with normal request handling
-      const url = new URL(req.url || '/', `http://${req.headers.host}`)
-      const pathname = pathnameOverride ?? requestInfo.url ?? url.pathname
-
-      // console.debug('website handleRequest:', pathname)
-
-      const parts = pathname.split('/')
-      // Check for any .. in the pathname, for security
-      if (parts.some((part) => part === '..')) {
-        res.writeHead(400)
-        res.end('Bad Request')
-        return
-      }
-
       const projectPublicPath = path.join(this.rootPath, 'public', pathname)
       const projectSourcePath = projectPublicPath.replace('public', 'src')
       const thaliaRoot = path.join(dirname(import.meta.url).replace('file://', ''), '..', '..')
@@ -473,7 +469,7 @@ export class Website implements WebsiteInterface {
           const indexPath = path.join(pathname, 'index.html')
           this.handleRequest(req, res, requestInfo, indexPath)
         } catch (error) {
-          console.error('Error serving index.html for ', url.pathname, error)
+          console.error('Error serving index.html for ', pathname, error)
           res.writeHead(404)
           res.end('Not Found')
         }

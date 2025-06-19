@@ -275,7 +275,7 @@ export class Website {
             return;
         }
         catch (error) {
-            console.error("Error serving handlebars template: ", error);
+            console.error('Error serving handlebars template: ', error);
             this.renderError(res, error);
         }
     }
@@ -283,6 +283,14 @@ export class Website {
     // RequestHandler logic goes here
     handleRequest(req, res, requestInfo, pathnameOverride) {
         try {
+            const pathname = pathnameOverride ?? requestInfo.url ?? '/';
+            const parts = pathname.split('/');
+            // Check for any .. in the pathname, for security
+            if (parts.some((part) => part === '..')) {
+                res.writeHead(400);
+                res.end('Bad Request');
+                return;
+            }
             // Let the route guard handle the request first
             if (this.routeGuard.handleRequest(req, res, this, requestInfo, pathnameOverride)) {
                 // console.debug('Request was stopped by the guard')
@@ -292,16 +300,6 @@ export class Website {
                 // console.debug('Request was let through by the guard')
             }
             // Continue with normal request handling
-            const url = new URL(req.url || '/', `http://${req.headers.host}`);
-            const pathname = pathnameOverride ?? requestInfo.url ?? url.pathname;
-            // console.debug('website handleRequest:', pathname)
-            const parts = pathname.split('/');
-            // Check for any .. in the pathname, for security
-            if (parts.some((part) => part === '..')) {
-                res.writeHead(400);
-                res.end('Bad Request');
-                return;
-            }
             const projectPublicPath = path.join(this.rootPath, 'public', pathname);
             const projectSourcePath = projectPublicPath.replace('public', 'src');
             const thaliaRoot = path.join(dirname(import.meta.url).replace('file://', ''), '..', '..');
@@ -366,7 +364,7 @@ export class Website {
                     this.handleRequest(req, res, requestInfo, indexPath);
                 }
                 catch (error) {
-                    console.error('Error serving index.html for ', url.pathname, error);
+                    console.error('Error serving index.html for ', pathname, error);
                     res.writeHead(404);
                     res.end('Not Found');
                 }

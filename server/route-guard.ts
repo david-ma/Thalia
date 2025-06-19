@@ -75,7 +75,11 @@ export class RouteGuard {
         const cookies = this.parseCookies(req)
         const cookieName = `auth_${website.name}${matchingRoute.path}`
 
-        if (pathname === `${matchingRoute.path}/logout`) {
+        // if developer mode, and browser-sync
+        if (website.env === 'development' && pathname.startsWith('/browser-sync/')) {
+          // let them through
+          return false
+        } else if (pathname === `${matchingRoute.path}/logout`) {
           res.setHeader('Set-Cookie', `${cookieName}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`)
           res.writeHead(302, { Location: '/' })
           res.end()

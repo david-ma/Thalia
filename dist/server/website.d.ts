@@ -32,7 +32,7 @@ export interface Controller {
 export declare class Website implements WebsiteInterface {
     readonly name: string;
     readonly rootPath: string;
-    private readonly env;
+    readonly env: string;
     private readonly mode;
     private readonly port;
     config: WebsiteConfig;

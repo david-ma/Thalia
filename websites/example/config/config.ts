@@ -77,7 +77,6 @@ export const config: RawWebsiteConfig = {
   },
   routes: [
     {
-      path: '/',
       password: 'password',
     },
   ],

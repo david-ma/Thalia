@@ -318,7 +318,7 @@ export class Website {
                 else if (fs.existsSync(thaliaScssPath)) {
                     target = thaliaScssPath;
                 }
-                if (target && fs.existsSync(target)) {
+                if (target) {
                     try {
                         const css = sass.compile(target).css.toString();
                         res.writeHead(200, { 'Content-Type': 'text/css' });
@@ -328,7 +328,6 @@ export class Website {
                         console.error("Error compiling scss: ", error);
                         res.writeHead(500);
                         res.end('Internal Server Error');
-                        return;
                     }
                     return;
                 }

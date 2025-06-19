@@ -127,6 +127,9 @@ export class CrudFactory {
         else if (target === 'delete') {
             this.delete(res, req, website, requestInfo);
         }
+        else if (target === 'restore') {
+            this.restore(res, req, website, requestInfo);
+        }
         else {
             this.show(res, req, website, requestInfo);
         }
@@ -189,7 +192,27 @@ export class CrudFactory {
             // show delete success, or just the list page
             // res.writeHead(200, { 'Content-Type': 'text/html' })
             // res.end('Record deleted')
-            const html = this.website.getContentHtml('deleteSuccess')(result);
+            const html = this.website.getContentHtml('success')({
+                message: 'Record deleted',
+                redirect: `/${this.name}`
+            });
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(html);
+        });
+    }
+    restore(res, req, website, requestInfo) {
+        const id = requestInfo.url.split('/').pop();
+        if (!id) {
+            throw new Error('No ID provided');
+        }
+        this.db.update(this.table)
+            .set({ deletedAt: null })
+            .where(eq(this.table.id, id))
+            .then((result) => {
+            const html = this.website.getContentHtml('success')({
+                message: 'Record restored',
+                redirect: `/${this.name}`
+            });
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end(html);
         });
@@ -212,9 +235,12 @@ export class CrudFactory {
                     .set(fields)
                     .where(eq(this.table.id, id))
                     .then((result) => {
-                    console.log("Result:", result);
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end("Success: " + JSON.stringify(result));
+                    const html = this.website.getContentHtml('success')({
+                        message: 'Record updated',
+                        redirect: `/${this.name}/show/${id}`
+                    });
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(html);
                 });
             });
         }
@@ -231,16 +257,26 @@ export class CrudFactory {
         }
         this.db.select(this.table).from(this.table)
             .where(eq(this.table.id, id))
-            .then((record) => {
-            if (!record.length) {
+            .then((records) => {
+            if (records.length === 0) {
                 res.writeHead(404, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Record not found' }));
                 return;
             }
+            else if (records.length > 1) {
+                // throw new Error('Multiple records found for ID')
+                console.error('Multiple records found for ID', id);
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Multiple records found for ID' }));
+                return;
+            }
+            const record = records[0];
+            const isNotDeleted = record.deletedAt === null;
             const data = {
                 controllerName: this.name,
-                id: id,
-                record: record[0],
+                id,
+                record,
+                isNotDeleted,
                 json: JSON.stringify(record),
                 tableName: this.name,
                 primaryKey: 'id',

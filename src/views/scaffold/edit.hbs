@@ -12,14 +12,17 @@
   {{!-- save button --}}
   <button id='saveButton'>Save</button>
 </form>
+
 <button id="deleteButton" onclick="delete_this_item({{id}})">Delete</button>
+<button id="restoreButton" onclick="restore_this_item({{id}})"
+{{#if isNotDeleted }}
+  disabled
+{{/if}}
+>Restore</button>
+
 
 <script>
-  console.log('hey?')
-  var rawJson = {{{ json }}}
-  var data = rawJson[0]
-  console.log(data)
-//  console.log(rawJson)
+  var data = {{{ json }}} || {}
 
   d3.select("table")
     .selectAll("tr")
@@ -40,11 +43,16 @@
       <input name="${key}" type="text" value="${value}" />
       </td>`
     })
-    .append("td")
 
   function delete_this_item(id) {
     if (confirm('Are you sure you want to delete this?')) {
       window.location.href = '/{{controllerName}}/delete/' + id
+    }
+  }
+
+  function restore_this_item(id) {
+    if (confirm('Are you sure you want to restore this?')) {
+      window.location.href = '/{{controllerName}}/restore/' + id
     }
   }
 </script>

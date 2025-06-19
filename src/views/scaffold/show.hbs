@@ -9,8 +9,7 @@
 <button id="editButton" onclick="window.location.href='/{{controllerName}}/edit/{{id}}'">Edit</button>
 
 <script>
-  var data = {{{ json }}}
-  console.log(data)
+  var data = {{{ json }}} || {}
 
   d3.select("table")
     .selectAll("tr")

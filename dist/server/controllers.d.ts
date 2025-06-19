@@ -67,6 +67,7 @@ export declare class CrudFactory implements Machine {
      * Adds a deletedAt timestamp to the record, and redirects to the list page.
      */
     private delete;
+    private restore;
     /**
      * Update an existing record
      *

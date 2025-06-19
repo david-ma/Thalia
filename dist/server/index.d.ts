@@ -15,8 +15,8 @@
  * In this case, you have a thalia deployment, with multiple projects in the /websites directory, and you want to run a specific project.
  *
  * --port=PORT will override the default port of 1337, in any mode
-* PORT and PROJECT can also be set in the environment variables PORT and PROJECT
-*/
+ * PORT and PROJECT can also be set in the environment variables PORT and PROJECT
+ */
 export * from './thalia.js';
 export * from './types.js';
 export * from './website.js';

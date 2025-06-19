@@ -8,7 +8,7 @@ export function users(_options) {
         },
         register: (_res, _req, _website) => {
             // TODO: Implement registration
-        }
+        },
     };
 }
 //# sourceMappingURL=security.js.map

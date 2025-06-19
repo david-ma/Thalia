@@ -219,20 +219,18 @@ export class RouteGuard {
   }
 }
 
-
-
 type Role = 'admin' | 'user'
 type Permission = 'view' | 'edit' | 'delete' | 'create'
 
 type RoleRouteRule = {
   pattern: string
   permissions: {
-    [key in Permission]?: Role[] | '*'  // Which roles can perform this action
+    [key in Permission]?: Role[] | '*' // Which roles can perform this action
   }
   requireAuth?: boolean
   allowAnonymous?: boolean
   // For user-specific permissions
-  ownerOnly?: Permission[]  // Actions only the owner can perform
+  ownerOnly?: Permission[] // Actions only the owner can perform
 }
 
 export type SecurityConfig = {
@@ -240,12 +238,11 @@ export type SecurityConfig = {
   routes: RouteRule[]
 }
 
-
 /**
  * If we have a database, we can use the security package.
  * This will allow webmasters to define roles and permissions for routes.
  * This also requires email, so that people can be invited, authenticated and reset their password.
- * 
+ *
  */
 export class RoleRouteGaurd extends RouteGuard {
   private roleRoutes: Record<string, RoleRouteRule> = {}
@@ -255,7 +252,13 @@ export class RoleRouteGaurd extends RouteGuard {
     super(website)
   }
 
-  public handleRequest(req: IncomingMessage, res: ServerResponse, website: Website, requestInfo: RequestInfo, pathnameOverride?: string): boolean {
+  public handleRequest(
+    req: IncomingMessage,
+    res: ServerResponse,
+    website: Website,
+    requestInfo: RequestInfo,
+    pathnameOverride?: string,
+  ): boolean {
     // Check security first
     const userAuth = this.getUserAuth(req) // Future: will be passed from handleRequest
     const canAccess = this.checkRouteAccess(requestInfo.url, userAuth)
@@ -293,7 +296,12 @@ export class RoleRouteGaurd extends RouteGuard {
     }
   }
 
-  private canPerformAction(userAuth: any, routeRule: RoleRouteRule, action: Permission, resourceOwner?: string): boolean {
+  private canPerformAction(
+    userAuth: any,
+    routeRule: RoleRouteRule,
+    action: Permission,
+    resourceOwner?: string,
+  ): boolean {
     // Check if user is authenticated
     if (routeRule.requireAuth && !this.isAuthenticated(userAuth)) {
       return false
@@ -313,7 +321,6 @@ export class RoleRouteGaurd extends RouteGuard {
     return true
   }
 
-
   private isAuthenticated(req: IncomingMessage): boolean {
     return true
   }
@@ -325,11 +332,7 @@ export class RoleRouteGaurd extends RouteGuard {
   private isLoggedIn(req: IncomingMessage): boolean {
     return true
   }
-
-
 }
-
-
 
 // Future:
 // Enterprise route guard, with 3rd party authentication.

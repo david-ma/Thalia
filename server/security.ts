@@ -20,6 +20,6 @@ export function users(_options: SecurityOptions) {
     },
     register: (_res: ServerResponse, _req: IncomingMessage, _website: Website) => {
       // TODO: Implement registration
-    }
+    },
   }
-} 
+}

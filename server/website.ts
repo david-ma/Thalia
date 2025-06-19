@@ -306,17 +306,17 @@ export class Website implements WebsiteInterface {
   public async asyncServeHandlebarsTemplate(
     options:
       | {
-        res: ServerResponse
-        template: string
-        templatePath?: undefined
-        data?: object
-      }
+          res: ServerResponse
+          template: string
+          templatePath?: undefined
+          data?: object
+        }
       | {
-        res: ServerResponse
-        template?: undefined
-        templatePath: string
-        data?: object
-      },
+          res: ServerResponse
+          template?: undefined
+          templatePath: string
+          data?: object
+        },
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
@@ -335,17 +335,17 @@ export class Website implements WebsiteInterface {
     data,
   }:
     | {
-      res: ServerResponse
-      template: string
-      templatePath?: undefined
-      data?: object
-    }
+        res: ServerResponse
+        template: string
+        templatePath?: undefined
+        data?: object
+      }
     | {
-      res: ServerResponse
-      template?: undefined
-      templatePath: string
-      data?: object
-    }): void {
+        res: ServerResponse
+        template?: undefined
+        templatePath: string
+        data?: object
+      }): void {
     try {
       if (this.env == 'development') {
         this.loadPartials()

@@ -15,21 +15,21 @@
  * In this case, you have a thalia deployment, with multiple projects in the /websites directory, and you want to run a specific project.
  *
  * --port=PORT will override the default port of 1337, in any mode
-* PORT and PROJECT can also be set in the environment variables PORT and PROJECT
-*/
+ * PORT and PROJECT can also be set in the environment variables PORT and PROJECT
+ */
 import { cwd } from 'process';
 import path from 'path';
 import { Thalia } from './thalia.js';
 import fs from 'fs';
-const project = process.argv.find(arg => arg.startsWith('--project'))?.split('=')[1] || process.env['PROJECT'] || 'default';
-const port = parseInt(process.argv.find(arg => arg.startsWith('--port'))?.split('=')[1] || process.env['PORT'] || '1337');
+const project = process.argv.find((arg) => arg.startsWith('--project'))?.split('=')[1] || process.env['PROJECT'] || 'default';
+const port = parseInt(process.argv.find((arg) => arg.startsWith('--port'))?.split('=')[1] || process.env['PORT'] || '1337');
 let options = {
     mode: 'standalone',
     project: project,
     rootPath: cwd(),
-    port: port
+    port: port,
 };
-console.log("Checking if websites directory exists at", path.join(options.rootPath, 'websites'));
+console.log('Checking if websites directory exists at', path.join(options.rootPath, 'websites'));
 if (!fs.existsSync(path.join(options.rootPath, 'websites'))) {
     // If there's no websites directory, we're in standalone mode
     options.mode = 'standalone';
@@ -45,8 +45,9 @@ else {
     options.mode = 'standalone';
     options.rootPath = path.join(options.rootPath, 'websites', project);
 }
-console.log("Creating Thalia with options:", options);
-Thalia.init(options).then(thalia => {
+console.log('Creating Thalia with options:', options);
+Thalia.init(options)
+    .then((thalia) => {
     thalia.start();
     process.on('SIGINT', () => {
         thalia.stop();
@@ -56,7 +57,8 @@ Thalia.init(options).then(thalia => {
         thalia.stop();
         process.exit(0);
     });
-}).catch(error => {
+})
+    .catch((error) => {
     console.error('Error starting Thalia:', error);
     process.exit(1);
 });

@@ -38,10 +38,11 @@ export interface PathSecurity {
 
 // Route Types
 export interface RouteRule {
-  domains?: string[]        // Which domains this rule applies to
-  path?: string            // The subpath to match (e.g., '/api' or '/admin')
-  password?: string       // If set, requires this password
-  proxyTarget?: {              // Optional proxy target
+  domains?: string[] // Which domains this rule applies to
+  path?: string // The subpath to match (e.g., '/api' or '/admin')
+  password?: string // If set, requires this password
+  proxyTarget?: {
+    // Optional proxy target
     host: string
     port: number
   }
@@ -85,9 +86,9 @@ export interface DatabaseConfig {
   // schemas: any
   schemas: {
     [key: string]: SQLiteTableWithColumns<any>
-  //   // [key: string]: SQLiteTableWithColumns<any> | SQLiteTable<any> | any
+    //   // [key: string]: SQLiteTableWithColumns<any> | SQLiteTable<any> | any
     // [key: string]: any
-  },
+  }
   machines?: {
     [key: string]: Machine
   }

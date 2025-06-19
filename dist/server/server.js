@@ -20,7 +20,10 @@ export class Server extends EventEmitter {
         const host = req.headers['x-host'] ?? req.headers.host;
         const domain = host.split(':')[0];
         const urlObject = url.parse(req.url ?? '', true);
-        const ip = req.headers['x-real-ip'] ?? req.headers['x-forwarded-for'] ?? req.socket.remoteAddress ?? 'unknown';
+        const ip = req.headers['x-real-ip'] ??
+            req.headers['x-forwarded-for'] ??
+            req.socket.remoteAddress ??
+            'unknown';
         const method = req.method ?? 'unknown';
         console.log(`${new Date().toISOString()} ${ip} ${method} ${host}${urlObject.href}`);
         const pathname = urlObject.pathname ?? '/';
@@ -37,7 +40,7 @@ export class Server extends EventEmitter {
             pathname,
             controller,
             action,
-            slug
+            slug,
         };
     }
     /**
@@ -65,11 +68,13 @@ export class Server extends EventEmitter {
         const website = this.router.getWebsite(domain ?? this.project);
         const clientInfo = {
             socketId: socket.id,
-            ip: socket.handshake.headers['x-real-ip'] ?? socket.handshake.headers['x-forwarded-for'] ?? socket.handshake.address,
+            ip: socket.handshake.headers['x-real-ip'] ??
+                socket.handshake.headers['x-forwarded-for'] ??
+                socket.handshake.address,
             userAgent: socket.handshake.headers['user-agent'] ?? 'unknown',
             cookies: socket.handshake.headers['cookie'] ?? 'unknown',
             domain: domain ?? this.project,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
         };
         if (website) {
             website.handleSocketConnection(socket, clientInfo);
@@ -81,9 +86,9 @@ export class Server extends EventEmitter {
     static createSocketServer(httpServer, handleSocketConnection) {
         return new SocketServer(httpServer, {
             cors: {
-                origin: "*",
-                methods: ["GET", "POST"]
-            }
+                origin: '*',
+                methods: ['GET', 'POST'],
+            },
         })
             .on('connection', handleSocketConnection)
             .on('error', (error) => {

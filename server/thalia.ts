@@ -12,7 +12,6 @@ import { Website } from './website.js'
 // import { Database } from './database.js'
 // import { RouteGuard } from './route-guard.js'
 
-
 // Main Thalia class for easy initialization
 export class Thalia {
   private server: Server

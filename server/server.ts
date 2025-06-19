@@ -1,6 +1,6 @@
 /**
  * Thalia server.
- * 
+ *
  * Class which allows initialisation of a server.
  */
 
@@ -14,14 +14,14 @@ import { Server as SocketServer } from 'socket.io'
 import { Socket } from 'socket.io'
 
 export type RequestInfo = {
-  host: string,
-  domain: string,
-  url: string,
-  ip: string,
-  method: string,
-  pathname: string,
-  controller: string,
-  action: string,
+  host: string
+  domain: string
+  url: string
+  ip: string
+  method: string
+  pathname: string
+  controller: string
+  action: string
   slug: string
 }
 
@@ -46,7 +46,11 @@ export class Server extends EventEmitter {
     const host: string = (req.headers['x-host'] as string) ?? req.headers.host
     const domain: string = host.split(':')[0]
     const urlObject: url.UrlWithParsedQuery = url.parse(req.url ?? '', true)
-    const ip: string = req.headers['x-real-ip'] as string ?? req.headers['x-forwarded-for'] as string ?? req.socket.remoteAddress ?? 'unknown'
+    const ip: string =
+      (req.headers['x-real-ip'] as string) ??
+      (req.headers['x-forwarded-for'] as string) ??
+      req.socket.remoteAddress ??
+      'unknown'
     const method: string = req.method ?? 'unknown'
 
     console.log(`${new Date().toISOString()} ${ip} ${method} ${host}${urlObject.href}`)
@@ -66,7 +70,7 @@ export class Server extends EventEmitter {
       pathname,
       controller,
       action,
-      slug
+      slug,
     }
   }
 
@@ -97,11 +101,14 @@ export class Server extends EventEmitter {
     const website = this.router.getWebsite(domain ?? this.project)
     const clientInfo: ClientInfo = {
       socketId: socket.id,
-      ip: socket.handshake.headers['x-real-ip'] as string ?? socket.handshake.headers['x-forwarded-for'] as string ?? socket.handshake.address,
-      userAgent: socket.handshake.headers['user-agent'] as string ?? 'unknown',
-      cookies: socket.handshake.headers['cookie'] as string ?? 'unknown',
+      ip:
+        (socket.handshake.headers['x-real-ip'] as string) ??
+        (socket.handshake.headers['x-forwarded-for'] as string) ??
+        socket.handshake.address,
+      userAgent: (socket.handshake.headers['user-agent'] as string) ?? 'unknown',
+      cookies: (socket.handshake.headers['cookie'] as string) ?? 'unknown',
       domain: domain ?? this.project,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     }
 
     if (website) {
@@ -111,12 +118,15 @@ export class Server extends EventEmitter {
     }
   }
 
-  private static createSocketServer(httpServer: HttpServer, handleSocketConnection: (socket: Socket) => void): SocketServer {
+  private static createSocketServer(
+    httpServer: HttpServer,
+    handleSocketConnection: (socket: Socket) => void,
+  ): SocketServer {
     return new SocketServer(httpServer, {
       cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-      }
+        origin: '*',
+        methods: ['GET', 'POST'],
+      },
     })
       .on('connection', handleSocketConnection)
       .on('error', (error: any) => {

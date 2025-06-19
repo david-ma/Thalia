@@ -23,8 +23,9 @@ export const latestlogs = async (res, _req, website) => {
             return;
         }
         // Get list of log files
-        const logs = fs.readdirSync(logDirectory)
-            .filter(filename => !filename.startsWith('.'))
+        const logs = fs
+            .readdirSync(logDirectory)
+            .filter((filename) => !filename.startsWith('.'))
             .slice(-10);
         if (logs.length === 0) {
             res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -32,15 +33,15 @@ export const latestlogs = async (res, _req, website) => {
             return;
         }
         // Get stats for all logs
-        const stats = await Promise.all(logs.map(log => fs.promises.stat(path.join(logDirectory, log))));
+        const stats = await Promise.all(logs.map((log) => fs.promises.stat(path.join(logDirectory, log))));
         // Prepare data for template
         const data = {
             stats: logs.map((log, i) => ({
                 filename: log,
                 size: stats[i]?.size ?? 0,
                 created: stats[i]?.birthtime?.toLocaleString() ?? 'Unknown',
-                lastModified: stats[i]?.mtime?.toLocaleString() ?? 'Unknown'
-            }))
+                lastModified: stats[i]?.mtime?.toLocaleString() ?? 'Unknown',
+            })),
         };
         // Get and compile template
         const template = website.handlebars.partials['logs'];
@@ -77,8 +78,10 @@ export class CrudFactory {
         this.website = website;
         this.db = db;
         this.sqlite = sqlite;
-        db.select().from(this.table).then((records) => {
-            console.debug("CrudFactory", this.name, "initialised, it has", records.length, "records");
+        db.select()
+            .from(this.table)
+            .then((records) => {
+            console.debug('CrudFactory', this.name, 'initialised, it has', records.length, 'records');
             // console.log("Found", records.length, "records in", this.name)
         });
     }
@@ -152,7 +155,7 @@ export class CrudFactory {
         const records = [];
         for (let i = 0; i < amount; i++) {
             const fields = this.filteredAttributes().reduce((acc, attribute) => {
-                var value = "Random String";
+                var value = 'Random String';
                 if (attribute.type === 'date') {
                     value = new Date().toISOString();
                 }
@@ -179,13 +182,14 @@ export class CrudFactory {
     delete(res, req, website, requestInfo) {
         const id = requestInfo.slug;
         if (!id) {
-            return this.reportError(res, new Error("No ID provided"));
+            return this.reportError(res, new Error('No ID provided'));
         }
         if (!this.table.deletedAt) {
-            this.reportError(res, new Error("No deletedAt column found, cannot delete record"));
+            this.reportError(res, new Error('No deletedAt column found, cannot delete record'));
             return;
         }
-        this.db.update(this.table)
+        this.db
+            .update(this.table)
             .set({ deletedAt: new Date().toISOString() })
             .where(eq(this.table.id, id))
             .then((result) => {
@@ -195,10 +199,11 @@ export class CrudFactory {
     restore(res, req, website, requestInfo) {
         const id = requestInfo.slug;
         if (!id) {
-            this.reportError(res, new Error("No ID provided"));
+            this.reportError(res, new Error('No ID provided'));
             return;
         }
-        this.db.update(this.table)
+        this.db
+            .update(this.table)
             .set({ deletedAt: null })
             .where(eq(this.table.id, id))
             .then((result) => {
@@ -213,13 +218,13 @@ export class CrudFactory {
     update(res, req, website, requestInfo) {
         const id = requestInfo.slug;
         if (!id) {
-            return this.reportError(res, new Error("No ID provided"));
+            return this.reportError(res, new Error('No ID provided'));
         }
         try {
             parseForm(res, req).then(({ fields }) => {
-                fields = Object.fromEntries(Object.entries(fields)
-                    .filter(([key]) => !CrudFactory.blacklist.concat(['id']).includes(key)));
-                this.db.update(this.table)
+                fields = Object.fromEntries(Object.entries(fields).filter(([key]) => !CrudFactory.blacklist.concat(['id']).includes(key)));
+                this.db
+                    .update(this.table)
                     .set(fields)
                     .where(eq(this.table.id, id))
                     .then((result) => {
@@ -234,9 +239,11 @@ export class CrudFactory {
     edit(res, req, website, requestInfo) {
         const id = requestInfo.slug;
         if (!id) {
-            return this.reportError(res, new Error("No ID provided"));
+            return this.reportError(res, new Error('No ID provided'));
         }
-        this.db.select(this.table).from(this.table)
+        this.db
+            .select(this.table)
+            .from(this.table)
             .where(eq(this.table.id, id))
             .then((records) => {
             if (records.length === 0) {
@@ -261,7 +268,7 @@ export class CrudFactory {
                 json: JSON.stringify(record),
                 tableName: this.name,
                 primaryKey: 'id',
-                links: []
+                links: [],
             };
             const html = website.getContentHtml('edit')(data);
             res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -271,17 +278,19 @@ export class CrudFactory {
     show(res, req, website, requestInfo) {
         const id = requestInfo.slug;
         if (!id) {
-            return this.reportError(res, new Error("No ID provided"));
+            return this.reportError(res, new Error('No ID provided'));
         }
         // select distinct id, name from table?
-        this.db.select(this.table).from(this.table)
+        this.db
+            .select(this.table)
+            .from(this.table)
             .where(eq(this.table.id, id))
             .then((records) => {
             if (records.length === 0) {
-                return this.reportError(res, new Error("Record not found"));
+                return this.reportError(res, new Error('Record not found'));
             }
             else if (records.length > 1) {
-                return this.reportError(res, new Error("Multiple records found for ID"));
+                return this.reportError(res, new Error('Multiple records found for ID'));
             }
             const record = records[0];
             const data = {
@@ -291,7 +300,7 @@ export class CrudFactory {
                 json: JSON.stringify(record),
                 tableName: this.name,
                 primaryKey: 'id',
-                links: []
+                links: [],
             };
             const html = website.getContentHtml('show')(data);
             res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -304,7 +313,10 @@ export class CrudFactory {
     create(res, req, website, requestInfo) {
         try {
             parseForm(res, req).then(({ fields }) => {
-                this.db.insert(this.table).values(fields).then((result) => {
+                this.db
+                    .insert(this.table)
+                    .values(fields)
+                    .then((result) => {
                     this.reportSuccess(res, 'Record created' + JSON.stringify(result), `/${this.name}`);
                 }, (error) => {
                     this.reportError(res, new Error(`Error inserting record: ${error}`));
@@ -324,7 +336,7 @@ export class CrudFactory {
         const data = {
             title: this.name,
             controllerName: this.name,
-            fields
+            fields,
         };
         const html = website.getContentHtml('new')(data);
         res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -335,7 +347,7 @@ export class CrudFactory {
             controllerName: this.name,
             tableName: this.name,
             primaryKey: 'id',
-            links: []
+            links: [],
         };
         const html = website.getContentHtml('list')(data);
         res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -356,7 +368,9 @@ export class CrudFactory {
             drizzleQuery.where(isNull(this.table.deletedAt));
         }
         drizzleQuery
-            .limit(limit).offset(offset).then((records) => {
+            .limit(limit)
+            .offset(offset)
+            .then((records) => {
             // console.log("Found", records.length, "records in", this.name)
             const blob = {
                 draw: parsedQuery.draw,
@@ -377,9 +391,9 @@ export class CrudFactory {
      */
     attributes() {
         const typeMapping = {
-            'createdAt': 'date',
-            'updatedAt': 'date',
-            'deletedAt': 'date',
+            createdAt: 'date',
+            updatedAt: 'date',
+            deletedAt: 'date',
         };
         return this.cols().map((column) => {
             var data = {
@@ -444,11 +458,13 @@ export class CrudFactory {
             search: {
                 value: queryString['search[value]'],
                 regex: queryString['search[regex]'],
-            }
+            },
         };
-        Object.entries(queryString).filter(([key, value]) => {
+        Object.entries(queryString)
+            .filter(([key, value]) => {
             return key.startsWith('order');
-        }).forEach(([key, value]) => {
+        })
+            .forEach(([key, value]) => {
             const regex = /order\[(\d+)\]\[(.*)\]/;
             const match = key.match(regex);
             if (match) {
@@ -468,7 +484,7 @@ export class CrudFactory {
         const html = this.website.getContentHtml('message')({
             state: 'Success',
             message,
-            redirect
+            redirect,
         });
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(html);
@@ -484,7 +500,7 @@ export class CrudFactory {
         const html = this.website.getContentHtml('message')({
             state: 'Error',
             message: error instanceof Error ? error.message : 'Unknown error',
-            redirect: `/${this.name}`
+            redirect: `/${this.name}`,
         });
         res.writeHead(500, { 'Content-Type': 'text/html' });
         res.end(html);

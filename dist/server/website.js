@@ -294,6 +294,7 @@ export class Website {
             }
             const filePath = path.join(this.rootPath, 'public', pathname);
             const sourcePath = filePath.replace('public', 'src');
+            const thaliaRoot = cwd();
             const controllerPath = parts[1];
             // console.debug(`Controller path: "${controllerPath}"`)
             if (controllerPath !== null) {
@@ -303,21 +304,36 @@ export class Website {
                     return;
                 }
             }
-            // If we're looking for a css file, check if the scss exists
-            if (filePath.endsWith('.css') && fs.existsSync(sourcePath.replace('.css', '.scss'))) {
-                const scss = fs.readFileSync(sourcePath.replace('.css', '.scss'), 'utf8');
-                try {
-                    const css = sass.renderSync({ data: scss }).css.toString();
-                    res.writeHead(200, { 'Content-Type': 'text/css' });
-                    res.end(css);
+            // If we're looking for a css file, check if the scss exists in the website folder
+            // If it doesn't exist there, check the thalia folder
+            // If it doesn't exist there, continue with the file handling flow
+            if (filePath.endsWith('.css')) {
+                let target = null;
+                const projectScssPath = sourcePath.replace('.css', '.scss');
+                const thaliaScssPath = path.join(thaliaRoot, 'src', pathname.replace('.css', '.scss'));
+                if (fs.existsSync(projectScssPath)) {
+                    target = projectScssPath;
                 }
-                catch (error) {
-                    console.error("Error compiling scss: ", error);
-                    res.writeHead(500);
-                    res.end('Internal Server Error');
-                    return;
+                else if (fs.existsSync(thaliaScssPath)) {
+                    target = thaliaScssPath;
                 }
-                return;
+                if (target) {
+                    if (fs.existsSync(target)) {
+                        const scss = fs.readFileSync(target, 'utf8');
+                        try {
+                            const css = sass.renderSync({ data: scss }).css.toString();
+                            res.writeHead(200, { 'Content-Type': 'text/css' });
+                            res.end(css);
+                        }
+                        catch (error) {
+                            console.error("Error compiling scss: ", error);
+                            res.writeHead(500);
+                            res.end('Internal Server Error');
+                            return;
+                        }
+                        return;
+                    }
+                }
             }
             const handlebarsTemplate = filePath.replace('.html', '.hbs').replace('public', 'src');
             // Check if the file is a handlebars template

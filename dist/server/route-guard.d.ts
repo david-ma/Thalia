@@ -8,6 +8,13 @@ import { RequestInfo } from './server.js';
  * If there is no cookie or the cookie is incorrect, the request is redirected to the login page.
  *
  * Routeguard also provides a logout
+ *
+ * RouteGuard currently takes in a very simple password.
+ * We want to enable slightly more complex authentication methods.
+ * User IDs, passwords, and roles. And session tracking.
+ *
+ *
+ *
  */
 export declare class RouteGuard {
     private website;
@@ -16,7 +23,8 @@ export declare class RouteGuard {
     constructor(website: Website);
     private loadRoutes;
     private saltPassword;
-    handleRequest(req: IncomingMessage, res: ServerResponse, website: Website, requestInfo: RequestInfo, optionalPathname?: string): boolean;
+    private getMatchingRoute;
+    handleRequest(req: IncomingMessage, res: ServerResponse, website: Website, requestInfo: RequestInfo, pathnameOverride?: string): boolean;
     private handleProxy;
     private parseCookies;
 }

@@ -18,6 +18,7 @@ export class Server extends EventEmitter {
     }
     logRequest(req) {
         const host = req.headers['x-host'] ?? req.headers.host;
+        const domain = host.split(':')[0];
         const urlObject = url.parse(req.url ?? '', true);
         const ip = req.headers['x-real-ip'] ?? req.headers['x-forwarded-for'] ?? req.socket.remoteAddress ?? 'unknown';
         const method = req.method ?? 'unknown';
@@ -29,9 +30,11 @@ export class Server extends EventEmitter {
         const slug = parts.pop() ?? '';
         return {
             host,
+            domain,
             url: urlObject.href,
             ip,
             method,
+            pathname,
             controller,
             action,
             slug

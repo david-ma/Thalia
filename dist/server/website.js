@@ -34,6 +34,8 @@ export class Website {
      */
     constructor(config) {
         this.env = 'development';
+        this.mode = 'standalone';
+        this.port = 1337;
         this.handlebars = Handlebars.create();
         this.domains = [];
         this.controllers = {};
@@ -41,17 +43,15 @@ export class Website {
         console.log(`Loading website "${config.name}"`);
         this.name = config.name;
         this.rootPath = config.rootPath;
+        this.mode = config.mode;
+        this.port = config.port;
     }
     /**
      * Given a basic website config (name & rootPath), load the website.
      */
     static async create(config) {
         const website = new Website(config);
-        return Promise.all([
-            website.loadPartials(),
-            website.loadConfig(config)
-                .then(() => website.loadDatabase())
-        ]).then(() => {
+        return Promise.all([website.loadPartials(), website.loadConfig(config).then(() => website.loadDatabase())]).then(() => {
             website.routeGuard = new RouteGuard(website);
             return website;
         });
@@ -74,11 +74,12 @@ export class Website {
                 onSocketDisconnect: (socket, clientInfo) => {
                     console.log(`${clientInfo.timestamp} ${clientInfo.ip} SOCKET ${clientInfo.socketId} DISCONNECTED`);
                 },
-            }
+            },
         };
         return new Promise((resolve, reject) => {
             const configPath = path.join(this.rootPath, 'config', 'config.js');
-            import('file://' + configPath).then((configFile) => {
+            import('file://' + configPath)
+                .then((configFile) => {
                 if (!configFile.config) {
                     throw new Error(`configFile for ${this.name} has no exported config.`);
                 }
@@ -91,8 +92,14 @@ export class Website {
                 else {
                     console.error(`Website "${this.name}" does not have a config.js file`);
                 }
-            }).then(() => {
+            })
+                .then(() => {
                 this.domains = this.config.domains;
+                // If in standalone mode, add localhost to the domains
+                if (this.mode === 'standalone') {
+                    this.domains.push('localhost');
+                    this.domains.push(`localhost:${this.port}`);
+                }
                 // Add the project name to the domains
                 this.domains.push(`${this.name}.com`);
                 this.domains.push(`www.${this.name}.com`);
@@ -132,7 +139,7 @@ export class Website {
             path.join(cwd(), 'node_modules', 'thalia', 'src', 'views'),
             path.join(cwd(), 'src', 'views'),
             path.join(cwd(), 'websites', 'example', 'src', 'partials'),
-            path.join(this.rootPath, 'src', 'partials')
+            path.join(this.rootPath, 'src', 'partials'),
         ];
         for (const path of paths) {
             if (fs.existsSync(path)) {
@@ -162,7 +169,7 @@ export class Website {
             path.join(cwd(), 'node_modules', 'thalia', 'src', 'views'),
             path.join(cwd(), 'src', 'views'),
             path.join(cwd(), 'websites', 'example', 'src'),
-            path.join(this.rootPath, 'src')
+            path.join(this.rootPath, 'src'),
         ];
         for (const filepath of paths) {
             if (fs.existsSync(filepath)) {
@@ -225,20 +232,15 @@ export class Website {
             res.end(html);
         }
         catch (newError) {
-            console.error("Error rendering error: ", newError);
-            console.error("Original Error: ", error);
+            console.error('Error rendering error: ', newError);
+            console.error('Original Error: ', error);
             res.end(`500 Error`);
         }
     }
-    async asyncServeHandlebarsTemplate({ res, template, templatePath, data }) {
+    async asyncServeHandlebarsTemplate(options) {
         return new Promise((resolve, reject) => {
             try {
-                this.serveHandlebarsTemplate({
-                    res,
-                    template,
-                    templatePath,
-                    data
-                });
+                this.serveHandlebarsTemplate(options);
                 resolve();
             }
             catch (error) {
@@ -246,7 +248,7 @@ export class Website {
             }
         });
     }
-    serveHandlebarsTemplate({ res, template, templatePath, data }) {
+    serveHandlebarsTemplate({ res, template, templatePath, data, }) {
         try {
             if (this.env == 'development') {
                 this.loadPartials();
@@ -265,6 +267,7 @@ export class Website {
                 // insert a {{> browsersync }} before </body>
                 templateFile = templateFile.replace('</body>', '{{> browsersync }}\n</body>');
             }
+            data = data ?? {};
             const compiledTemplate = this.handlebars.compile(templateFile);
             const html = compiledTemplate(data);
             res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -272,34 +275,41 @@ export class Website {
             return;
         }
         catch (error) {
-            // console.error("Error serving handlebars template: ", error)
+            console.error("Error serving handlebars template: ", error);
             this.renderError(res, error);
         }
     }
     // The main Request handler for the website
     // RequestHandler logic goes here
-    handleRequest(req, res, requestInfo, pathname) {
+    handleRequest(req, res, requestInfo, pathnameOverride) {
         try {
             // Let the route guard handle the request first
-            if (this.routeGuard.handleRequest(req, res, this, requestInfo, pathname)) {
+            if (this.routeGuard.handleRequest(req, res, this, requestInfo, pathnameOverride)) {
+                // console.debug('Request was stopped by the guard')
                 return; // Request was handled by the guard
+            }
+            else {
+                // console.debug('Request was let through by the guard')
             }
             // Continue with normal request handling
             const url = new URL(req.url || '/', `http://${req.headers.host}`);
-            pathname = pathname || url.pathname;
+            const pathname = pathnameOverride ?? requestInfo.url ?? url.pathname;
+            // console.debug('website handleRequest:', pathname)
             const parts = pathname.split('/');
-            if (parts.some(part => part === '..')) {
+            // Check for any .. in the pathname, for security
+            if (parts.some((part) => part === '..')) {
                 res.writeHead(400);
                 res.end('Bad Request');
                 return;
             }
-            const filePath = path.join(this.rootPath, 'public', pathname);
-            const sourcePath = filePath.replace('public', 'src');
-            const thaliaRoot = path.join(dirname(import.meta.url).replace("file://", ""), '..', '..');
-            const controllerPath = parts[1];
+            const projectPublicPath = path.join(this.rootPath, 'public', pathname);
+            const projectSourcePath = projectPublicPath.replace('public', 'src');
+            const thaliaRoot = path.join(dirname(import.meta.url).replace('file://', ''), '..', '..');
+            const thaliaSourcePath = path.join(thaliaRoot, 'src', pathname);
+            const controllerSlug = requestInfo.controller;
             // console.debug(`Controller path: "${controllerPath}"`)
-            if (controllerPath !== null) {
-                const controller = this.controllers[controllerPath];
+            if (controllerSlug) {
+                const controller = this.controllers[controllerSlug];
                 if (controller) {
                     controller(res, req, this, requestInfo);
                     return;
@@ -308,10 +318,10 @@ export class Website {
             // If we're looking for a css file, check if the scss exists in the website folder
             // If it doesn't exist there, check the thalia folder
             // If it doesn't exist there, continue with the file handling flow
-            if (filePath.endsWith('.css')) {
+            if (pathname.endsWith('.css')) {
                 let target = null;
-                const projectScssPath = sourcePath.replace('.css', '.scss');
-                const thaliaScssPath = path.join(thaliaRoot, 'src', pathname.replace('.css', '.scss'));
+                const projectScssPath = projectSourcePath.replace('.css', '.scss');
+                const thaliaScssPath = thaliaSourcePath.replace('.css', '.scss');
                 if (fs.existsSync(projectScssPath)) {
                     target = projectScssPath;
                 }
@@ -325,70 +335,80 @@ export class Website {
                         res.end(css);
                     }
                     catch (error) {
-                        console.error("Error compiling scss: ", error);
+                        console.error('Error compiling scss: ', error);
                         res.writeHead(500);
                         res.end('Internal Server Error');
                     }
                     return;
                 }
             }
-            const handlebarsTemplate = filePath.replace('.html', '.hbs').replace('public', 'src');
-            // Check if the file is a handlebars template
-            if (filePath.endsWith('.html') && fs.existsSync(handlebarsTemplate)) {
-                this.serveHandlebarsTemplate({ res, templatePath: handlebarsTemplate });
-                return;
+            if (pathname.endsWith('.html')) {
+                const projectHandlebarsTemplate = projectSourcePath.replace('.html', '.hbs');
+                const thaliaHandlebarsTemplate = thaliaSourcePath.replace('.html', '.hbs');
+                if (fs.existsSync(projectHandlebarsTemplate)) {
+                    this.serveHandlebarsTemplate({ res, templatePath: projectHandlebarsTemplate });
+                    return;
+                }
+                else if (fs.existsSync(thaliaHandlebarsTemplate)) {
+                    this.serveHandlebarsTemplate({ res, templatePath: thaliaHandlebarsTemplate });
+                    return;
+                }
             }
-            // Check if file exists
-            if (!fs.existsSync(filePath)) {
+            // Check if public folder file exists
+            if (!fs.existsSync(projectPublicPath)) {
                 res.writeHead(404);
                 res.end('Not Found');
                 return;
             }
-            else if (fs.statSync(filePath).isDirectory()) {
+            else if (fs.statSync(projectPublicPath).isDirectory() || fs.statSync(projectSourcePath).isDirectory()) {
                 try {
-                    const indexPath = path.join(url.pathname, 'index.html');
+                    const indexPath = path.join(pathname, 'index.html');
                     this.handleRequest(req, res, requestInfo, indexPath);
                 }
                 catch (error) {
-                    console.error("Error serving index.html for ", url.pathname, error);
+                    console.error('Error serving index.html for ', url.pathname, error);
                     res.writeHead(404);
                     res.end('Not Found');
                 }
                 return;
             }
             // Stream the file
-            const stream = fs.createReadStream(filePath);
+            const stream = fs.createReadStream(projectPublicPath);
             stream.on('error', (error) => {
                 console.error('Error streaming file:', error);
                 res.writeHead(500);
                 res.end('Internal Server Error');
             });
             // Set content type based on file extension
-            const contentType = this.getContentType(filePath);
+            const contentType = this.getContentType(projectPublicPath);
             res.setHeader('Content-Type', contentType);
             // Pipe the file to the response
-            stream.pipe(res);
+            stream.pipe(res).on('end', () => {
+                res.end();
+            });
+            return;
         }
         catch (error) {
-            console.error("Error serving file: ", error);
+            console.error('Error serving file: ', error);
             res.writeHead(500);
             res.end('Internal Server Error');
+            return;
         }
     }
     getContentType(filePath) {
         const ext = filePath.split('.').pop()?.toLowerCase();
         const contentTypes = {
-            'html': 'text/html',
-            'css': 'text/css',
-            'js': 'text/javascript',
-            'json': 'application/json',
-            'png': 'image/png',
-            'jpg': 'image/jpeg',
-            'jpeg': 'image/jpeg',
-            'gif': 'image/gif',
-            'svg': 'image/svg+xml',
-            'ico': 'image/x-icon',
-            'txt': 'text/plain'
+            html: 'text/html',
+            css: 'text/css',
+            js: 'text/javascript',
+            json: 'application/json',
+            png: 'image/png',
+            jpg: 'image/jpeg',
+            jpeg: 'image/jpeg',
+            gif: 'image/gif',
+            svg: 'image/svg+xml',
+            ico: 'image/x-icon',
+            txt: 'text/plain',
         };
         return contentTypes[ext || ''] || 'application/octet-stream';
     }
@@ -400,15 +420,19 @@ export class Website {
             return Promise.all(websites.map(async (website) => {
                 return Website.create({
                     name: website,
-                    rootPath: path.join(options.rootPath, website)
+                    rootPath: path.join(options.rootPath, website),
+                    mode: options.mode,
+                    port: options.port,
                 });
             }));
         }
         return Promise.all([
             Website.create({
                 name: options.project,
-                rootPath: options.rootPath
-            })
+                rootPath: options.rootPath,
+                mode: options.mode,
+                port: options.port,
+            }),
         ]);
     }
     /**

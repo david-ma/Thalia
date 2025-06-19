@@ -33,6 +33,8 @@ export declare class Website implements WebsiteInterface {
     readonly name: string;
     readonly rootPath: string;
     private readonly env;
+    private readonly mode;
+    private readonly port;
     config: WebsiteConfig;
     handlebars: typeof Handlebars;
     domains: string[];
@@ -78,13 +80,18 @@ export declare class Website implements WebsiteInterface {
     private templates;
     private readAllViewsInFolder;
     renderError(res: ServerResponse, error: Error): void;
-    asyncServeHandlebarsTemplate({ res, template, templatePath, data }: {
+    asyncServeHandlebarsTemplate(options: {
         res: ServerResponse;
         template: string;
         templatePath?: undefined;
         data?: object;
+    } | {
+        res: ServerResponse;
+        template?: undefined;
+        templatePath: string;
+        data?: object;
     }): Promise<void>;
-    serveHandlebarsTemplate({ res, template, templatePath, data }: {
+    serveHandlebarsTemplate({ res, template, templatePath, data, }: {
         res: ServerResponse;
         template: string;
         templatePath?: undefined;
@@ -95,7 +102,7 @@ export declare class Website implements WebsiteInterface {
         templatePath: string;
         data?: object;
     }): void;
-    handleRequest(req: IncomingMessage, res: ServerResponse, requestInfo: RequestInfo, pathname?: string): void;
+    handleRequest(req: IncomingMessage, res: ServerResponse, requestInfo: RequestInfo, pathnameOverride?: string): void;
     private getContentType;
     static loadAllWebsites(options: ServerOptions): Promise<Website[]>;
     /**

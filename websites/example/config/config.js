@@ -11,32 +11,32 @@ const UserMachine = new CrudFactory(users, {
         {
             foreignTable: 'sessions',
             foreignColumn: 'userId',
-            localColumn: 'id'
-        }
-    ]
+            localColumn: 'id',
+        },
+    ],
 });
 const SessionMachine = new CrudFactory(sessions, {
     relationships: [
         {
             foreignTable: 'users',
             foreignColumn: 'id',
-            localColumn: 'userId'
-        }
-    ]
+            localColumn: 'userId',
+        },
+    ],
 });
 const AuditMachine = new CrudFactory(audits, {
     relationships: [
         {
             foreignTable: 'users',
             foreignColumn: 'id',
-            localColumn: 'userId'
+            localColumn: 'userId',
         },
         {
             foreignTable: 'sessions',
             foreignColumn: 'sid',
-            localColumn: 'sessionId'
-        }
-    ]
+            localColumn: 'sessionId',
+        },
+    ],
 });
 export const config = {
     domains: ['example.com'],
@@ -47,7 +47,7 @@ export const config = {
             audits,
             albums,
             images,
-            fruit
+            fruit,
         },
         machines: {
             fruit: FruitMachine,
@@ -55,8 +55,8 @@ export const config = {
             sessions: SessionMachine,
             audits: AuditMachine,
             albums: AlbumMachine,
-            images: ImageMachine
-        }
+            images: ImageMachine,
+        },
     },
     controllers: {
         fruit: FruitMachine.controller.bind(FruitMachine),
@@ -64,7 +64,13 @@ export const config = {
         sessions: SessionMachine.controller.bind(SessionMachine),
         audits: AuditMachine.controller.bind(AuditMachine),
         albums: AlbumMachine.controller.bind(AlbumMachine),
-        images: ImageMachine.controller.bind(ImageMachine)
-    }
+        images: ImageMachine.controller.bind(ImageMachine),
+    },
+    routes: [
+        {
+            path: '/',
+            password: 'password',
+        },
+    ],
 };
 //# sourceMappingURL=config.js.map

@@ -1,26 +1,36 @@
 /**
  * Website - Website configuration and management
- * 
+ *
  * The Website class is responsible for:
  * 1. Managing website configuration
  * 2. Coordinating between Router and Handler
  * 3. Providing website-specific functionality
  * 4. Loading website resources
  * 5. Managing database connections
- * 
+ *
  * The Website:
  * - Holds website configuration
  * - Manages website-specific routes
  * - Coordinates request handling
  * - Provides website context
- * 
+ *
  * It does NOT handle:
  * - HTTP server setup (handled by Server)
  * - Request routing (handled by Router)
  * - Request processing (handled by Handler)
  */
 
-import { WebsiteInterface, WebsocketConfig, RawWebsiteConfig, BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule, ClientInfo } from './types.js'
+import {
+  WebsiteInterface,
+  WebsocketConfig,
+  RawWebsiteConfig,
+  BasicWebsiteConfig,
+  WebsiteConfig,
+  ServerOptions,
+  RouteRule,
+  ClientInfo,
+  ServerMode,
+} from './types.js'
 import fs from 'fs'
 import path from 'path'
 import { IncomingMessage, ServerResponse } from 'http'
@@ -34,22 +44,19 @@ import { ThaliaDatabase } from './database.js'
 import { dirname } from 'path'
 
 interface Views {
-  [key: string]: string;
+  [key: string]: string
 }
 
 export interface Controller {
-  (
-    res: ServerResponse,
-    req: IncomingMessage,
-    website: Website,
-    requestInfo: RequestInfo
-  ): void
+  (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void
 }
 
 export class Website implements WebsiteInterface {
   public readonly name: string
   public readonly rootPath: string
   private readonly env: string = 'development'
+  private readonly mode: ServerMode = 'standalone'
+  private readonly port: number = 1337
   public config!: WebsiteConfig
   public handlebars = Handlebars.create()
   public domains: string[] = []
@@ -67,6 +74,8 @@ export class Website implements WebsiteInterface {
     console.log(`Loading website "${config.name}"`)
     this.name = config.name
     this.rootPath = config.rootPath
+    this.mode = config.mode
+    this.port = config.port
   }
 
   /**
@@ -75,14 +84,12 @@ export class Website implements WebsiteInterface {
   public static async create(config: BasicWebsiteConfig): Promise<Website> {
     const website = new Website(config)
 
-    return Promise.all([
-      website.loadPartials(),
-      website.loadConfig(config)
-        .then(() => website.loadDatabase())
-    ]).then(() => {
-      website.routeGuard = new RouteGuard(website)
-      return website
-    })
+    return Promise.all([website.loadPartials(), website.loadConfig(config).then(() => website.loadDatabase())]).then(
+      () => {
+        website.routeGuard = new RouteGuard(website)
+        return website
+      },
+    )
   }
 
   /**
@@ -103,48 +110,56 @@ export class Website implements WebsiteInterface {
         onSocketDisconnect: (socket: Socket, clientInfo: ClientInfo) => {
           console.log(`${clientInfo.timestamp} ${clientInfo.ip} SOCKET ${clientInfo.socketId} DISCONNECTED`)
         },
-      }
+      },
     }
 
     return new Promise((resolve, reject) => {
       const configPath = path.join(this.rootPath, 'config', 'config.js')
-      import('file://' + configPath).then((configFile: {
-        config: RawWebsiteConfig
-      }) => {
-        if (!configFile.config) {
-          throw new Error(`configFile for ${this.name} has no exported config.`)
-        }
+      import('file://' + configPath)
+        .then(
+          (configFile: { config: RawWebsiteConfig }) => {
+            if (!configFile.config) {
+              throw new Error(`configFile for ${this.name} has no exported config.`)
+            }
 
-        this.config = recursiveObjectMerge(this.config, configFile.config) as WebsiteConfig
-      }, (err) => {
-        if (fs.existsSync(configPath)) {
-          console.error('config.js failed to load for', this.name)
-          console.error(err)
-        } else {
-          console.error(`Website "${this.name}" does not have a config.js file`)
-        }
-      }).then(() => {
+            this.config = recursiveObjectMerge(this.config, configFile.config) as WebsiteConfig
+          },
+          (err) => {
+            if (fs.existsSync(configPath)) {
+              console.error('config.js failed to load for', this.name)
+              console.error(err)
+            } else {
+              console.error(`Website "${this.name}" does not have a config.js file`)
+            }
+          },
+        )
+        .then(() => {
+          this.domains = this.config.domains
 
-        this.domains = this.config.domains
+          // If in standalone mode, add localhost to the domains
+          if (this.mode === 'standalone') {
+            this.domains.push('localhost')
+            this.domains.push(`localhost:${this.port}`)
+          }
 
-        // Add the project name to the domains
-        this.domains.push(`${this.name}.com`)
-        this.domains.push(`www.${this.name}.com`)
-        this.domains.push(`${this.name}.david-ma.net`)
-        this.domains.push(`${this.name}.net`)
-        this.domains.push(`${this.name}.org`)
-        this.domains.push(`${this.name}.com.au`)
+          // Add the project name to the domains
+          this.domains.push(`${this.name}.com`)
+          this.domains.push(`www.${this.name}.com`)
+          this.domains.push(`${this.name}.david-ma.net`)
+          this.domains.push(`${this.name}.net`)
+          this.domains.push(`${this.name}.org`)
+          this.domains.push(`${this.name}.com.au`)
 
-        // Load and validate controllers
-        const rawControllers = this.config.controllers || {}
-        for (const [name, controller] of Object.entries(rawControllers)) {
-          this.controllers[name] = this.validateController(controller)
-        }
+          // Load and validate controllers
+          const rawControllers = this.config.controllers || {}
+          for (const [name, controller] of Object.entries(rawControllers)) {
+            this.controllers[name] = this.validateController(controller)
+          }
 
-        this.websockets = this.config.websockets
+          this.websockets = this.config.websockets
 
-        resolve(this)
-      }, reject)
+          resolve(this)
+        }, reject)
     })
   }
 
@@ -164,7 +179,7 @@ export class Website implements WebsiteInterface {
    * - thalia/src/views
    * - thalia/websites/example/src/partials
    * - thalia/websites/$PROJECT/src/partials
-   * 
+   *
    * The order is important, because later paths will override earlier paths.
    */
   private loadPartials() {
@@ -172,7 +187,7 @@ export class Website implements WebsiteInterface {
       path.join(cwd(), 'node_modules', 'thalia', 'src', 'views'),
       path.join(cwd(), 'src', 'views'),
       path.join(cwd(), 'websites', 'example', 'src', 'partials'),
-      path.join(this.rootPath, 'src', 'partials')
+      path.join(this.rootPath, 'src', 'partials'),
     ]
 
     for (const path of paths) {
@@ -207,7 +222,7 @@ export class Website implements WebsiteInterface {
       path.join(cwd(), 'node_modules', 'thalia', 'src', 'views'),
       path.join(cwd(), 'src', 'views'),
       path.join(cwd(), 'websites', 'example', 'src'),
-      path.join(this.rootPath, 'src')
+      path.join(this.rootPath, 'src'),
     ]
 
     for (const filepath of paths) {
@@ -278,28 +293,30 @@ export class Website implements WebsiteInterface {
       const html = compiledTemplate(data)
       res.end(html)
     } catch (newError) {
-      console.error("Error rendering error: ", newError)
-      console.error("Original Error: ", error)
+      console.error('Error rendering error: ', newError)
+      console.error('Original Error: ', error)
       res.end(`500 Error`)
     }
   }
 
-  public async asyncServeHandlebarsTemplate({
-    res, template, templatePath, data
-  }: {
-    res: ServerResponse,
-    template: string,
-    templatePath?: undefined,
-    data?: object
-  }): Promise<void> {
+  public async asyncServeHandlebarsTemplate(
+    options:
+      | {
+          res: ServerResponse
+          template: string
+          templatePath?: undefined
+          data?: object
+        }
+      | {
+          res: ServerResponse
+          template?: undefined
+          templatePath: string
+          data?: object
+        },
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        this.serveHandlebarsTemplate({
-          res,
-          template,
-          templatePath,
-          data
-        })
+        this.serveHandlebarsTemplate(options)
         resolve()
       } catch (error) {
         reject(error)
@@ -311,19 +328,20 @@ export class Website implements WebsiteInterface {
     res,
     template,
     templatePath,
-    data
-  }: {
-    res: ServerResponse,
-    template: string,
-    templatePath?: undefined,
-    data?: object
-  } | {
-    res: ServerResponse,
-    template?: undefined,
-    templatePath: string,
-    data?: object
-  }
-  ): void {
+    data,
+  }:
+    | {
+        res: ServerResponse
+        template: string
+        templatePath?: undefined
+        data?: object
+      }
+    | {
+        res: ServerResponse
+        template?: undefined
+        templatePath: string
+        data?: object
+      }): void {
     try {
       if (this.env == 'development') {
         this.loadPartials()
@@ -344,46 +362,60 @@ export class Website implements WebsiteInterface {
         templateFile = templateFile.replace('</body>', '{{> browsersync }}\n</body>')
       }
 
+      data = data ?? {}
+
       const compiledTemplate = this.handlebars.compile(templateFile)
       const html = compiledTemplate(data)
+
       res.writeHead(200, { 'Content-Type': 'text/html' })
       res.end(html)
       return
     } catch (error) {
-      // console.error("Error serving handlebars template: ", error)
+      console.error('Error serving handlebars template: ', error)
       this.renderError(res, error as Error)
     }
   }
 
   // The main Request handler for the website
   // RequestHandler logic goes here
-  public handleRequest(req: IncomingMessage, res: ServerResponse, requestInfo: RequestInfo, pathname?: string): void {
+  public handleRequest(
+    req: IncomingMessage,
+    res: ServerResponse,
+    requestInfo: RequestInfo,
+    pathnameOverride?: string,
+  ): void {
     try {
-
       // Let the route guard handle the request first
-      if (this.routeGuard.handleRequest(req, res, this, requestInfo, pathname)) {
+      if (this.routeGuard.handleRequest(req, res, this, requestInfo, pathnameOverride)) {
+        // console.debug('Request was stopped by the guard')
         return // Request was handled by the guard
+      } else {
+        // console.debug('Request was let through by the guard')
       }
 
       // Continue with normal request handling
       const url = new URL(req.url || '/', `http://${req.headers.host}`)
-      pathname = pathname || url.pathname
+      const pathname = pathnameOverride ?? requestInfo.url ?? url.pathname
+
+      // console.debug('website handleRequest:', pathname)
 
       const parts = pathname.split('/')
-      if (parts.some(part => part === '..')) {
+      // Check for any .. in the pathname, for security
+      if (parts.some((part) => part === '..')) {
         res.writeHead(400)
         res.end('Bad Request')
         return
       }
 
-      const filePath = path.join(this.rootPath, 'public', pathname)
-      const sourcePath = filePath.replace('public', 'src')
-      const thaliaRoot = path.join(dirname(import.meta.url).replace("file://", ""), '..', '..')
+      const projectPublicPath = path.join(this.rootPath, 'public', pathname)
+      const projectSourcePath = projectPublicPath.replace('public', 'src')
+      const thaliaRoot = path.join(dirname(import.meta.url).replace('file://', ''), '..', '..')
+      const thaliaSourcePath = path.join(thaliaRoot, 'src', pathname)
 
-      const controllerPath = parts[1]
+      const controllerSlug = requestInfo.controller
       // console.debug(`Controller path: "${controllerPath}"`)
-      if (controllerPath !== null) {
-        const controller = this.controllers[controllerPath]
+      if (controllerSlug) {
+        const controller = this.controllers[controllerSlug]
         if (controller) {
           controller(res, req, this, requestInfo)
           return
@@ -393,10 +425,10 @@ export class Website implements WebsiteInterface {
       // If we're looking for a css file, check if the scss exists in the website folder
       // If it doesn't exist there, check the thalia folder
       // If it doesn't exist there, continue with the file handling flow
-      if (filePath.endsWith('.css')) {
+      if (pathname.endsWith('.css')) {
         let target = null
-        const projectScssPath = sourcePath.replace('.css', '.scss')
-        const thaliaScssPath = path.join(thaliaRoot, 'src', pathname.replace('.css', '.scss'))
+        const projectScssPath = projectSourcePath.replace('.css', '.scss')
+        const thaliaScssPath = thaliaSourcePath.replace('.css', '.scss')
 
         if (fs.existsSync(projectScssPath)) {
           target = projectScssPath
@@ -410,7 +442,7 @@ export class Website implements WebsiteInterface {
             res.writeHead(200, { 'Content-Type': 'text/css' })
             res.end(css)
           } catch (error) {
-            console.error("Error compiling scss: ", error)
+            console.error('Error compiling scss: ', error)
             res.writeHead(500)
             res.end('Internal Server Error')
           }
@@ -418,24 +450,30 @@ export class Website implements WebsiteInterface {
         }
       }
 
-      const handlebarsTemplate = filePath.replace('.html', '.hbs').replace('public', 'src')
-      // Check if the file is a handlebars template
-      if (filePath.endsWith('.html') && fs.existsSync(handlebarsTemplate)) {
-        this.serveHandlebarsTemplate({ res, templatePath: handlebarsTemplate })
-        return
+      if (pathname.endsWith('.html')) {
+        const projectHandlebarsTemplate = projectSourcePath.replace('.html', '.hbs')
+        const thaliaHandlebarsTemplate = thaliaSourcePath.replace('.html', '.hbs')
+
+        if (fs.existsSync(projectHandlebarsTemplate)) {
+          this.serveHandlebarsTemplate({ res, templatePath: projectHandlebarsTemplate })
+          return
+        } else if (fs.existsSync(thaliaHandlebarsTemplate)) {
+          this.serveHandlebarsTemplate({ res, templatePath: thaliaHandlebarsTemplate })
+          return
+        }
       }
 
-      // Check if file exists
-      if (!fs.existsSync(filePath)) {
+      // Check if public folder file exists
+      if (!fs.existsSync(projectPublicPath)) {
         res.writeHead(404)
         res.end('Not Found')
         return
-      } else if (fs.statSync(filePath).isDirectory()) {
+      } else if (fs.statSync(projectPublicPath).isDirectory() || fs.statSync(projectSourcePath).isDirectory()) {
         try {
-          const indexPath = path.join(url.pathname, 'index.html')
+          const indexPath = path.join(pathname, 'index.html')
           this.handleRequest(req, res, requestInfo, indexPath)
         } catch (error) {
-          console.error("Error serving index.html for ", url.pathname, error)
+          console.error('Error serving index.html for ', url.pathname, error)
           res.writeHead(404)
           res.end('Not Found')
         }
@@ -443,7 +481,7 @@ export class Website implements WebsiteInterface {
       }
 
       // Stream the file
-      const stream = fs.createReadStream(filePath)
+      const stream = fs.createReadStream(projectPublicPath)
       stream.on('error', (error) => {
         console.error('Error streaming file:', error)
         res.writeHead(500)
@@ -451,36 +489,39 @@ export class Website implements WebsiteInterface {
       })
 
       // Set content type based on file extension
-      const contentType = this.getContentType(filePath)
+      const contentType = this.getContentType(projectPublicPath)
       res.setHeader('Content-Type', contentType)
 
       // Pipe the file to the response
-      stream.pipe(res)
+      stream.pipe(res).on('end', () => {
+        res.end()
+      })
+      return
     } catch (error) {
-      console.error("Error serving file: ", error)
+      console.error('Error serving file: ', error)
       res.writeHead(500)
       res.end('Internal Server Error')
+      return
     }
   }
 
   private getContentType(filePath: string): string {
     const ext = filePath.split('.').pop()?.toLowerCase()
     const contentTypes: { [key: string]: string } = {
-      'html': 'text/html',
-      'css': 'text/css',
-      'js': 'text/javascript',
-      'json': 'application/json',
-      'png': 'image/png',
-      'jpg': 'image/jpeg',
-      'jpeg': 'image/jpeg',
-      'gif': 'image/gif',
-      'svg': 'image/svg+xml',
-      'ico': 'image/x-icon',
-      'txt': 'text/plain'
+      html: 'text/html',
+      css: 'text/css',
+      js: 'text/javascript',
+      json: 'application/json',
+      png: 'image/png',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      gif: 'image/gif',
+      svg: 'image/svg+xml',
+      ico: 'image/x-icon',
+      txt: 'text/plain',
     }
     return contentTypes[ext || ''] || 'application/octet-stream'
   }
-
 
   public static async loadAllWebsites(options: ServerOptions): Promise<Website[]> {
     if (options.mode == 'multiplex') {
@@ -488,19 +529,25 @@ export class Website implements WebsiteInterface {
       // Load all websites from the root path (should be the websites folder)
       const websites = fs.readdirSync(options.rootPath)
 
-      return Promise.all(websites.map(async website => {
-        return Website.create({
-          name: website,
-          rootPath: path.join(options.rootPath, website)
-        })
-      }))
+      return Promise.all(
+        websites.map(async (website) => {
+          return Website.create({
+            name: website,
+            rootPath: path.join(options.rootPath, website),
+            mode: options.mode,
+            port: options.port,
+          })
+        }),
+      )
     }
 
     return Promise.all([
       Website.create({
         name: options.project,
-        rootPath: options.rootPath
-      })
+        rootPath: options.rootPath,
+        mode: options.mode,
+        port: options.port,
+      }),
     ])
   }
 
@@ -537,9 +584,7 @@ export class Website implements WebsiteInterface {
       }
     })
   }
-
 }
-
 
 export const controllerFactories = {
   redirectTo: (url: string) => {
@@ -557,10 +602,11 @@ export const controllerFactories = {
   },
 }
 
-
-function recursiveObjectMerge<T extends {
-  [key: string]: any
-}>(primary: T, secondary: T): T {
+function recursiveObjectMerge<
+  T extends {
+    [key: string]: any
+  },
+>(primary: T, secondary: T): T {
   const result: T = { ...primary }
   const primaryKeys = Object.keys(primary)
 

@@ -8,7 +8,7 @@ import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 // import { PgTableWithColumns } from 'drizzle-orm/pg-core'
 
 // Server Types
-export type ServerMode = 'standalone' | 'multiplex' | 'development'
+export type ServerMode = 'standalone' | 'multiplex' // | 'development'
 
 export interface ServerOptions {
   project: string
@@ -38,10 +38,10 @@ export interface PathSecurity {
 
 // Route Types
 export interface RouteRule {
-  domains: string[]        // Which domains this rule applies to
+  domains?: string[]        // Which domains this rule applies to
   path?: string            // The subpath to match (e.g., '/api' or '/admin')
   password?: string       // If set, requires this password
-  target?: {              // Optional proxy target
+  proxyTarget?: {              // Optional proxy target
     host: string
     port: number
   }
@@ -72,6 +72,8 @@ export interface WebsocketConfig extends RawWebsocketConfig {
 export interface BasicWebsiteConfig {
   name: string
   rootPath: string
+  mode: ServerMode
+  port: number
 }
 
 import { Machine } from './controllers.js'

@@ -15,9 +15,11 @@ import { Socket } from 'socket.io'
 
 export type RequestInfo = {
   host: string,
+  domain: string,
   url: string,
   ip: string,
   method: string,
+  pathname: string,
   controller: string,
   action: string,
   slug: string
@@ -42,6 +44,7 @@ export class Server extends EventEmitter {
 
   private logRequest(req: IncomingMessage): RequestInfo {
     const host: string = (req.headers['x-host'] as string) ?? req.headers.host
+    const domain: string = host.split(':')[0]
     const urlObject: url.UrlWithParsedQuery = url.parse(req.url ?? '', true)
     const ip: string = req.headers['x-real-ip'] as string ?? req.headers['x-forwarded-for'] as string ?? req.socket.remoteAddress ?? 'unknown'
     const method: string = req.method ?? 'unknown'
@@ -56,9 +59,11 @@ export class Server extends EventEmitter {
 
     return {
       host,
+      domain,
       url: urlObject.href,
       ip,
       method,
+      pathname,
       controller,
       action,
       slug

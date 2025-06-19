@@ -4,7 +4,7 @@ import { Controller } from './website.js';
 import { Socket } from 'socket.io';
 import { RequestInfo } from './server.js';
 import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
-export type ServerMode = 'standalone' | 'multiplex' | 'development';
+export type ServerMode = 'standalone' | 'multiplex';
 export interface ServerOptions {
     project: string;
     port: number;
@@ -28,10 +28,10 @@ export interface PathSecurity {
     allowedPaths?: string[];
 }
 export interface RouteRule {
-    domains: string[];
+    domains?: string[];
     path?: string;
     password?: string;
-    target?: {
+    proxyTarget?: {
         host: string;
         port: number;
     };
@@ -61,6 +61,8 @@ export interface WebsocketConfig extends RawWebsocketConfig {
 export interface BasicWebsiteConfig {
     name: string;
     rootPath: string;
+    mode: ServerMode;
+    port: number;
 }
 import { Machine } from './controllers.js';
 export interface DatabaseConfig {

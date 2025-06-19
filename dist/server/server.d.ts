@@ -10,9 +10,11 @@ import { Router } from './router.js';
 import { Website } from './website.js';
 export type RequestInfo = {
     host: string;
+    domain: string;
     url: string;
     ip: string;
     method: string;
+    pathname: string;
     controller: string;
     action: string;
     slug: string;

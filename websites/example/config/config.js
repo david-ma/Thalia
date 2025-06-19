@@ -38,6 +38,7 @@ const AuditMachine = new CrudFactory(audits, {
         },
     ],
 });
+const security = {};
 export const config = {
     domains: ['example.com'],
     database: {
@@ -66,10 +67,11 @@ export const config = {
         albums: AlbumMachine.controller.bind(AlbumMachine),
         images: ImageMachine.controller.bind(ImageMachine),
     },
-    routes: [
-        {
-            password: 'password',
-        },
-    ],
+    // routes: [
+    //   {
+    //     password: 'password',
+    //   },
+    // ],
+    security
 };
 //# sourceMappingURL=config.js.map

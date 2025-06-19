@@ -24,7 +24,7 @@ import path from 'path';
 import Handlebars from 'handlebars';
 import * as sass from 'sass';
 import { cwd } from 'process';
-import { RouteGuard } from './route-guard.js';
+import { RoleRouteGaurd, RouteGuard } from './route-guard.js';
 import { ThaliaDatabase } from './database.js';
 import { dirname } from 'path';
 export class Website {
@@ -52,7 +52,12 @@ export class Website {
     static async create(config) {
         const website = new Website(config);
         return Promise.all([website.loadPartials(), website.loadConfig(config).then(() => website.loadDatabase())]).then(() => {
-            website.routeGuard = new RouteGuard(website);
+            if (website.config.security) {
+                website.routeGuard = new RoleRouteGaurd(website);
+            }
+            else {
+                website.routeGuard = new RouteGuard(website);
+            }
             return website;
         });
     }

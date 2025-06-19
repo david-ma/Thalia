@@ -93,12 +93,16 @@ export interface DatabaseConfig {
   }
 }
 
+import { SecurityConfig } from './route-guard.js'
+export type { SecurityConfig }
+
 export interface RawWebsiteConfig {
   domains?: string[]
   controllers?: { [key: string]: Controller }
   routes?: RouteRule[]
   websockets?: RawWebsocketConfig
   database?: DatabaseConfig
+  security?: SecurityConfig
 }
 
 export interface WebsiteConfig extends BasicWebsiteConfig, RawWebsiteConfig {

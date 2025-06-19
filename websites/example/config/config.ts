@@ -47,6 +47,9 @@ const AuditMachine = new CrudFactory(audits, {
   ],
 })
 
+import { SecurityConfig } from 'thalia/types'
+const security: SecurityConfig = {} as any
+
 export const config: RawWebsiteConfig = {
   domains: ['example.com'],
   database: {
@@ -75,9 +78,10 @@ export const config: RawWebsiteConfig = {
     albums: AlbumMachine.controller.bind(AlbumMachine),
     images: ImageMachine.controller.bind(ImageMachine),
   },
-  routes: [
-    {
-      password: 'password',
-    },
-  ],
+  // routes: [
+  //   {
+  //     password: 'password',
+  //   },
+  // ],
+  security
 }

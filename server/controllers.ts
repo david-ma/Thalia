@@ -40,8 +40,8 @@ export const latestlogs = async (res: ServerResponse, _req: IncomingMessage, web
     if (logs.length === 0) {
       res.writeHead(200, { 'Content-Type': 'text/html' })
       res.end('No logs found')
-      return
-    }
+                      return
+                    }
 
     // Get stats for all logs
     const stats = await Promise.all(
@@ -49,7 +49,7 @@ export const latestlogs = async (res: ServerResponse, _req: IncomingMessage, web
     )
 
     // Prepare data for template
-    const data = {
+                    const data = {
       stats: logs.map((log, i) => ({
         filename: log,
         size: stats[i]?.size ?? 0,
@@ -212,8 +212,8 @@ export class CrudFactory implements Machine {
         break
       case 'update':
         this.update(res, req, website, requestInfo)
-        break
-      case 'delete':
+            break
+          case 'delete':
         this.delete(res, req, website, requestInfo)
         break
       case 'restore':
@@ -295,8 +295,8 @@ export class CrudFactory implements Machine {
     const id = requestInfo.slug
     if (!id) {
       this.reportError(res, new Error("No ID provided"))
-      return
-    }
+                return
+              }
 
     this.db.update(this.table)
       .set({ deletedAt: null })
@@ -359,7 +359,7 @@ export class CrudFactory implements Machine {
         const record = records[0]
         const isNotDeleted = record.deletedAt === null
 
-        const data = {
+              const data = {
           controllerName: this.name,
           id,
           record,
@@ -394,7 +394,7 @@ export class CrudFactory implements Machine {
 
         const record = records[0]
 
-        const data = {
+                  const data = {
           controllerName: this.name,
           id,
           record,
@@ -449,7 +449,7 @@ export class CrudFactory implements Machine {
 
   private list(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
 
-    const data = {
+                    const data = {
       controllerName: this.name,
       tableName: this.name,
       primaryKey: 'id',

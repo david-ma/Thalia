@@ -17,13 +17,13 @@ import { RequestInfo } from './server.js'
  * User IDs, passwords, and roles. And session tracking.
  *
  *
- *
+ * This is the basic route guard.
  */
 export class RouteGuard {
   private routes: Record<string, RouteRule> = {}
-  private salt: number = 0
+  protected salt: number = 0
 
-  constructor(private website: Website) {
+  constructor(protected website: Website) {
     this.salt = Math.floor(Math.random() * 999)
     this.loadRoutes()
   }
@@ -198,7 +198,11 @@ export class RouteGuard {
     req.pipe(proxyReq)
   }
 
-  private parseCookies(req: IncomingMessage): Record<string, string> {
+  // protected setCookie(res: ServerResponse, name: string, value: string, path: string = '/') {
+  //   res.setHeader('Set-Cookie', `${name}=${value}; Path=${path}`)
+  // }
+
+  protected parseCookies(req: IncomingMessage): Record<string, string> {
     const cookies: Record<string, string> = {}
     const cookieHeader = req.headers.cookie
 
@@ -214,3 +218,118 @@ export class RouteGuard {
     return cookies
   }
 }
+
+
+
+type Role = 'admin' | 'user'
+type Permission = 'view' | 'edit' | 'delete' | 'create'
+
+type RoleRouteRule = {
+  pattern: string
+  permissions: {
+    [key in Permission]?: Role[] | '*'  // Which roles can perform this action
+  }
+  requireAuth?: boolean
+  allowAnonymous?: boolean
+  // For user-specific permissions
+  ownerOnly?: Permission[]  // Actions only the owner can perform
+}
+
+export type SecurityConfig = {
+  roles: Role[]
+  routes: RouteRule[]
+}
+
+
+/**
+ * If we have a database, we can use the security package.
+ * This will allow webmasters to define roles and permissions for routes.
+ * This also requires email, so that people can be invited, authenticated and reset their password.
+ * 
+ */
+export class RoleRouteGaurd extends RouteGuard {
+  private roleRoutes: Record<string, RoleRouteRule> = {}
+
+  constructor(website: Website) {
+    console.log('RouteGaurdWithUsers', website.config.security)
+    super(website)
+  }
+
+  public handleRequest(req: IncomingMessage, res: ServerResponse, website: Website, requestInfo: RequestInfo, pathnameOverride?: string): boolean {
+    // Check security first
+    const userAuth = this.getUserAuth(req) // Future: will be passed from handleRequest
+    const canAccess = this.checkRouteAccess(requestInfo.url, userAuth)
+    const pathname = pathnameOverride ?? requestInfo.pathname
+
+    if (!canAccess) {
+      res.writeHead(403, { 'Content-Type': 'text/html' })
+      res.end('Access denied')
+      return true
+    }
+
+    // If access granted, pass to controller
+    // const controller = this.website.controllers[requestInfo.controller]
+    // controller(res, req, website, requestInfo)
+    this.website.handleRequest(req, res, requestInfo, pathname)
+    return true
+  }
+
+  private checkRouteAccess(url: string, userAuth: any): boolean {
+    // Match URL against security patterns
+    const routeRule = this.findMatchingRoute(url)
+    if (!routeRule) return true // No rule = allow access
+
+    return this.canPerformAction(userAuth, routeRule, 'view')
+  }
+
+  private findMatchingRoute(url: string): RoleRouteRule {
+    return this.roleRoutes[url]
+  }
+
+  private getUserAuth(req: IncomingMessage): any {
+    return {
+      isAuthenticated: true,
+      role: 'admin',
+    }
+  }
+
+  private canPerformAction(userAuth: any, routeRule: RoleRouteRule, action: Permission, resourceOwner?: string): boolean {
+    // Check if user is authenticated
+    if (routeRule.requireAuth && !this.isAuthenticated(userAuth)) {
+      return false
+    }
+
+    // Check if action is allowed for user's role
+    const allowedRoles = routeRule.permissions[action]
+    if (allowedRoles && allowedRoles !== '*' && !allowedRoles.includes(userAuth.role)) {
+      return false
+    }
+
+    // Check owner-only permissions
+    if (routeRule.ownerOnly?.includes(action)) {
+      return userAuth.username === resourceOwner || userAuth.role === 'admin'
+    }
+
+    return true
+  }
+
+
+  private isAuthenticated(req: IncomingMessage): boolean {
+    return true
+  }
+
+  private hasRole(userAuth: any, role: string): boolean {
+    return true
+  }
+
+  private isLoggedIn(req: IncomingMessage): boolean {
+    return true
+  }
+
+
+}
+
+
+
+// Future:
+// Enterprise route guard, with 3rd party authentication.

@@ -37,7 +37,7 @@ import { IncomingMessage, ServerResponse } from 'http'
 import Handlebars from 'handlebars'
 import * as sass from 'sass'
 import { cwd } from 'process'
-import { RouteGuard } from './route-guard.js'
+import { RoleRouteGaurd, RouteGuard } from './route-guard.js'
 import { Socket } from 'socket.io'
 import { RequestInfo } from './server.js'
 import { ThaliaDatabase } from './database.js'
@@ -86,7 +86,11 @@ export class Website implements WebsiteInterface {
 
     return Promise.all([website.loadPartials(), website.loadConfig(config).then(() => website.loadDatabase())]).then(
       () => {
-        website.routeGuard = new RouteGuard(website)
+        if (website.config.security) {
+          website.routeGuard = new RoleRouteGaurd(website)
+        } else {
+          website.routeGuard = new RouteGuard(website)
+        }
         return website
       },
     )

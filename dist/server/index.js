@@ -70,4 +70,5 @@ export * from './types.js';
 export * from './website.js';
 export * from './controllers.js';
 export * from './database.js';
+export * from './route-guard.js';
 //# sourceMappingURL=index.js.map

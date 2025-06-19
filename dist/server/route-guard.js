@@ -12,7 +12,7 @@ import formidable from 'formidable';
  * User IDs, passwords, and roles. And session tracking.
  *
  *
- *
+ * This is the basic route guard.
  */
 export class RouteGuard {
     constructor(website) {
@@ -171,6 +171,9 @@ export class RouteGuard {
         });
         req.pipe(proxyReq);
     }
+    // protected setCookie(res: ServerResponse, name: string, value: string, path: string = '/') {
+    //   res.setHeader('Set-Cookie', `${name}=${value}; Path=${path}`)
+    // }
     parseCookies(req) {
         const cookies = {};
         const cookieHeader = req.headers.cookie;
@@ -185,4 +188,76 @@ export class RouteGuard {
         return cookies;
     }
 }
+/**
+ * If we have a database, we can use the security package.
+ * This will allow webmasters to define roles and permissions for routes.
+ * This also requires email, so that people can be invited, authenticated and reset their password.
+ *
+ */
+export class RoleRouteGaurd extends RouteGuard {
+    constructor(website) {
+        console.log('RouteGaurdWithUsers', website.config.security);
+        super(website);
+        this.roleRoutes = {};
+    }
+    handleRequest(req, res, website, requestInfo, pathnameOverride) {
+        // Check security first
+        const userAuth = this.getUserAuth(req); // Future: will be passed from handleRequest
+        const canAccess = this.checkRouteAccess(requestInfo.url, userAuth);
+        const pathname = pathnameOverride ?? requestInfo.pathname;
+        if (!canAccess) {
+            res.writeHead(403, { 'Content-Type': 'text/html' });
+            res.end('Access denied');
+            return true;
+        }
+        // If access granted, pass to controller
+        // const controller = this.website.controllers[requestInfo.controller]
+        // controller(res, req, website, requestInfo)
+        this.website.handleRequest(req, res, requestInfo, pathname);
+        return true;
+    }
+    checkRouteAccess(url, userAuth) {
+        // Match URL against security patterns
+        const routeRule = this.findMatchingRoute(url);
+        if (!routeRule)
+            return true; // No rule = allow access
+        return this.canPerformAction(userAuth, routeRule, 'view');
+    }
+    findMatchingRoute(url) {
+        return this.roleRoutes[url];
+    }
+    getUserAuth(req) {
+        return {
+            isAuthenticated: true,
+            role: 'admin',
+        };
+    }
+    canPerformAction(userAuth, routeRule, action, resourceOwner) {
+        // Check if user is authenticated
+        if (routeRule.requireAuth && !this.isAuthenticated(userAuth)) {
+            return false;
+        }
+        // Check if action is allowed for user's role
+        const allowedRoles = routeRule.permissions[action];
+        if (allowedRoles && allowedRoles !== '*' && !allowedRoles.includes(userAuth.role)) {
+            return false;
+        }
+        // Check owner-only permissions
+        if (routeRule.ownerOnly?.includes(action)) {
+            return userAuth.username === resourceOwner || userAuth.role === 'admin';
+        }
+        return true;
+    }
+    isAuthenticated(req) {
+        return true;
+    }
+    hasRole(userAuth, role) {
+        return true;
+    }
+    isLoggedIn(req) {
+        return true;
+    }
+}
+// Future:
+// Enterprise route guard, with 3rd party authentication.
 //# sourceMappingURL=route-guard.js.map

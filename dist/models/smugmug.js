@@ -1,5 +1,6 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { baseTableConfig } from './util.js';
+// Album Model
 export const albums = sqliteTable('albums', {
     ...baseTableConfig,
     description: text('description'),
@@ -8,6 +9,7 @@ export const albums = sqliteTable('albums', {
     url: text('url').notNull(),
     password: text('password').notNull()
 });
+// Image Model
 export const images = sqliteTable('images', {
     ...baseTableConfig,
     caption: text('caption'),
@@ -25,6 +27,7 @@ export const images = sqliteTable('images', {
     preferredDisplayFileExtension: text('preferred_display_file_extension').notNull(),
     uri: text('uri').notNull()
 });
+// Factory functions
 export function AlbumFactory(config) {
     return albums;
 }

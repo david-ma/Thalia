@@ -1,3 +1,5 @@
+// import { RawWebsiteConfig } from 'thalia/types'
+// import { users, sessions, audits } from 'thalia/models'
 import { users, sessions, audits, albums, images } from '../models/drizzle-schema.js';
 import { fruit } from '../models/fruit.js';
 import { CrudFactory } from 'thalia/controllers';

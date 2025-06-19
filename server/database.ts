@@ -74,7 +74,7 @@ export class ThaliaDatabase {
         // Check that the machines have the same columns as their schemas
         Object.entries(this.machines).forEach(([name, machine]) => {
           machine.init(this.website, this.drizzle, this.sqlite, name)
-          console.log("Looking at machine", name)
+          // console.log("Looking at machine", name)
           // console.log(Object.keys(machine.table))
         })
 

@@ -143,14 +143,15 @@ export class CrudFactory implements Machine {
 
   public init(website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string) {
     this.name = name
-    console.log(`We are initialising the CrudFactory ${this.name} on ${website.name}`)
-
     this.website = website
     this.db = db
     this.sqlite = sqlite
 
     db.select().from(this.table).then((records) => {
-      console.log("Found", records.length, "records in", this.name)
+      console.debug("CrudFactory", this.name, "initialised, it has", records.length, "records")
+
+
+      // console.log("Found", records.length, "records in", this.name)
     })
   }
 
@@ -254,7 +255,7 @@ export class CrudFactory implements Machine {
         // res.writeHead(200, { 'Content-Type': 'text/html' })
         // res.end('Record deleted')
 
-        const html = this.website.show('deleteSuccess')(result)
+        const html = this.website.getContentHtml('deleteSuccess')(result)
         res.writeHead(200, { 'Content-Type': 'text/html' })
         res.end(html)
       })
@@ -309,7 +310,7 @@ export class CrudFactory implements Machine {
           links: []
         }
 
-        const html = website.show('edit')(data)
+        const html = website.getContentHtml('edit')(data)
         res.writeHead(200, { 'Content-Type': 'text/html' })
         res.end(html)
       })
@@ -339,7 +340,7 @@ export class CrudFactory implements Machine {
           links: []
         }
 
-        const html = website.show('show')(data)
+        const html = website.getContentHtml('show')(data)
         res.writeHead(200, { 'Content-Type': 'text/html' })
         res.end(html)
       })
@@ -354,7 +355,7 @@ export class CrudFactory implements Machine {
           // res.writeHead(200, { 'Content-Type': 'application/json' })
           // res.end(JSON.stringify(result))
 
-          const html = website.show('list')(result)
+          const html = website.getContentHtml('list')(result)
           res.writeHead(302, { 'Location': `/${this.name}` })
           res.end()
 
@@ -382,36 +383,32 @@ export class CrudFactory implements Machine {
     }
 
 
-    const html = website.show('create')(data)
+    const html = website.getContentHtml('create')(data)
 
     res.writeHead(200, { 'Content-Type': 'text/html' })
     res.end(html)
   }
 
   private list(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    // const columns = this.filteredAttributes().map(this.mapColumns)
 
+    const data = {
+      controllerName: this.name,      
+      tableName: this.name,
+      primaryKey: 'id',
+      links: []
+    }
+    const html = website.getContentHtml('list')(data)
 
+    res.writeHead(200, { 'Content-Type': 'text/html' })
+    res.end(html)
 
-    website.db.drizzle.select().from(this.table)
-    .then((records) => {
-      const data = {
-        // primaryKey: 'id',
-        controllerName: this.name,
-        records,
-        tableName: this.name,
-        primaryKey: 'id',
-        links: []
-      }
-      const html = website.show('list')(data)
-
-      res.writeHead(200, { 'Content-Type': 'text/html' })
-      res.end(html)
-    }, (error) => {
-      console.error(`Error in ${website.name}/${this.name}/list:`, error)
-      res.writeHead(500, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }))
-    })
+    // website.db.drizzle.select().from(this.table)
+    // .then((records) => {
+    // }, (error) => {
+    //   console.error(`Error in ${website.name}/${this.name}/list:`, error)
+    //   res.writeHead(500, { 'Content-Type': 'application/json' })
+    //   res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }))
+    // })
   }
   /**
    * Serve the data in DataTables.net json format
@@ -427,7 +424,7 @@ export class CrudFactory implements Machine {
     const limit = parseInt(parsedQuery.length)
 
     this.db.select().from(this.table).limit(limit).offset(offset).then((records) => {
-      console.log("Found", records.length, "records in", this.name)
+      // console.log("Found", records.length, "records in", this.name)
 
       const blob = {
         draw: parsedQuery.draw,
@@ -509,9 +506,6 @@ export class CrudFactory implements Machine {
   private mapColumns(attribute: Attribute) {
     // const type = SequelizeDataTableTypes[value.type.key]
     const type = attribute.type
-
-    console.log("Type:", attribute.type)
-
 
 
     const allowedTypes = ['string', 'num', 'date', 'bool']

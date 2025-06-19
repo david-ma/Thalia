@@ -1,3 +1,7 @@
+/**
+ * Router - Request routing implementation
+ *
+ */
 import { Website } from './website.js';
 export declare class Router {
     private domains;

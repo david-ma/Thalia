@@ -14,7 +14,7 @@
     "declaration": true,
     "composite": true,
     "declarationMap": true,
-    "removeComments": true,
+    "removeComments": false,
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
@@ -34,6 +34,7 @@
     "websites/example/**/*"
   ],
   "exclude": [
+    "old_server",
     "node_modules",
     "dist",
     "websites/**/*"

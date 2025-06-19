@@ -1,3 +1,9 @@
+/**
+ * Models for Thalia framework using Drizzle ORM
+ *
+ * This file exports all models and their types, providing a central point
+ * for accessing database models throughout the application.
+ */
 import { type User, type NewUser, type Session, type NewSession, type Audit, type NewAudit } from './security.js';
 import { type Album, type NewAlbum, type Image, type NewImage } from './smugmug.js';
 export type { User, NewUser, Session, NewSession, Audit, NewAudit };

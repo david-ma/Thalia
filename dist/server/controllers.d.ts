@@ -29,7 +29,7 @@ export declare class CrudFactory implements Machine {
     private show;
     private create;
     private new;
-    list(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
+    private list;
     private fetchDataTableJson;
     private attributes;
     private filteredAttributes;

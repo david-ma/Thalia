@@ -245,7 +245,8 @@ export class CrudFactory {
         res.end(html);
     }
     list(res, req, website, requestInfo) {
-        website.db.drizzle.select({ id: this.table.id, name: this.table.name }).from(this.table).then((records) => {
+        website.db.drizzle.select().from(this.table)
+            .then((records) => {
             const data = {
                 controllerName: this.name,
                 records,
@@ -256,6 +257,10 @@ export class CrudFactory {
             const html = website.show('list')(data);
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end(html);
+        }, (error) => {
+            console.error(`Error in ${website.name}/${this.name}/list:`, error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
         });
     }
     fetchDataTableJson(res, req, website, requestInfo) {

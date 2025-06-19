@@ -388,8 +388,13 @@ export class CrudFactory implements Machine {
     res.end(html)
   }
 
-  public list(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    website.db.drizzle.select({ id: this.table.id, name: this.table.name }).from(this.table).then((records) => {
+  private list(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    // const columns = this.filteredAttributes().map(this.mapColumns)
+
+
+
+    website.db.drizzle.select().from(this.table)
+    .then((records) => {
       const data = {
         // primaryKey: 'id',
         controllerName: this.name,
@@ -402,6 +407,10 @@ export class CrudFactory implements Machine {
 
       res.writeHead(200, { 'Content-Type': 'text/html' })
       res.end(html)
+    }, (error) => {
+      console.error(`Error in ${website.name}/${this.name}/list:`, error)
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }))
     })
   }
   /**

@@ -5,6 +5,13 @@ import { Website } from './website.js'
 import formidable from 'formidable'
 import { RequestInfo } from './server.js'
 
+/**
+ * The RouteGuard class provides an alternative "handleRequest" method, which checks for an authentication cookie.
+ * If the cookie is present, the request is allowed to proceed.
+ * If there is no cookie or the cookie is incorrect, the request is redirected to the login page.
+ * 
+ * Routeguard also provides a logout 
+ */
 export class RouteGuard {
   private routes: { [key: string]: RouteRule } = {}
   private salt: number = 0

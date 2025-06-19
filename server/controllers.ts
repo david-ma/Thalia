@@ -472,9 +472,13 @@ export class CrudFactory implements Machine {
     const offset = parseInt(parsedQuery.start)
     const limit = parseInt(parsedQuery.length)
 
-    this.db.select()
-      .from(this.table)
-      .where(isNull(this.table.deletedAt))
+    const drizzleQuery = this.db.select().from(this.table)
+
+    if (this.table.deletedAt) {
+      drizzleQuery.where(isNull(this.table.deletedAt))
+    }
+
+    drizzleQuery
       .limit(limit).offset(offset).then((records) => {
         // console.log("Found", records.length, "records in", this.name)
 

@@ -71,7 +71,5 @@ export const config = {
     //   {
     //     password: 'password',
     //   },
-    // ],
-    // security
 };
 //# sourceMappingURL=config.js.map

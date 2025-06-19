@@ -82,6 +82,6 @@ export const config: RawWebsiteConfig = {
   //   {
   //     password: 'password',
   //   },
-  // ],
+  ],
   // security
 }

@@ -21,7 +21,10 @@ import { RequestHandler } from './request-handler.js'
  * This is the basic route guard.
  */
 export class RouteGuard {
-  constructor(protected website: Website) {}
+  protected website: Website
+  constructor(website: Website) {
+    this.website = website
+  }
 
   public handleRequestChain(request: RequestHandler): Promise<RequestHandler> {
     return Promise.resolve(request)
@@ -31,11 +34,144 @@ export class RouteGuard {
 export class BasicRouteGuard extends RouteGuard {
   private routes: Record<string, RouteRule> = {}
   protected salt: number = 0
+  protected routeRule!: RouteRule
+  protected website: Website
 
-  constructor(protected website: Website) {
+  constructor(website: Website) {
     super(website)
+    this.website = website
     this.salt = Math.floor(Math.random() * 999)
     this.loadRoutes()
+  }
+
+  private getMatchingRoute(request: RequestHandler): RouteRule {
+    const requestInfo = request.requestInfo
+    const host = requestInfo.host
+    const pathname = requestInfo.pathname
+
+    return Object.entries(this.routes).find(([key]) => pathname.startsWith(key.replace(host, '')))?.[1] ?? {}
+  }
+
+  public handleRequestChain(request: RequestHandler): Promise<RequestHandler> {
+    return new Promise((next, finish) => {
+      if(request.website.env === 'development' && request.pathname.startsWith('/browser-sync/')) {
+        return next(request)
+      }
+
+      const routeRule = this.getMatchingRoute(request)
+      if (Object.keys(routeRule).length === 0) {
+        return next(request)
+      }
+      this.routeRule = routeRule
+
+      if (routeRule.password) {
+        const correctPassword = this.saltPassword(routeRule.password)
+        const cookies = this.parseCookies(request.req)
+        const cookieName = `auth_${this.website.name}${routeRule.path}`
+        
+        if(request.pathname.startsWith(`${routeRule.path}/logout`)) {
+          request.res.setHeader('Set-Cookie', `${cookieName}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`)
+          request.res.writeHead(302, { Location: '/' })
+          request.res.end()
+          return finish("Logged out")
+        }
+
+        if (cookies[cookieName] === correctPassword) {
+          return next(request)
+        }
+
+        if (request.req.method === 'POST') {
+          const form = formidable({ multiples: false })
+          form.parse(request.req, (err, fields) => {
+            if (err) {
+              return finish("Error parsing form data")
+            }
+
+            const password = this.saltPassword(fields?.['password']?.[0] ?? '')
+            if (password === correctPassword) {
+              request.res.setHeader('Set-Cookie', `${cookieName}=${password}; Path=/`)
+              request.res.writeHead(302, { Location: request.pathname })
+              request.res.end()
+              return finish("Logged in")
+            } else {
+              const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
+                route: request.pathname,
+                message: 'Invalid password',
+              })
+              request.res.writeHead(401, { 'Content-Type': 'text/html' })
+              request.res.end(login_html)
+              return finish("Invalid password")
+            }
+          })
+          return finish("Form submitted")
+        } else {
+          const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
+            route: request.pathname,
+          })
+          request.res.writeHead(401, { 'Content-Type': 'text/html' })
+          request.res.end(login_html)
+          return finish("Login page")
+        }
+
+      } else if (routeRule.proxyTarget) {
+        this.handleProxy(request.req, request.res, routeRule)
+        return finish("Proxy request")
+      } else {
+        console.debug("No route rule found?")
+        return next(request)
+      }
+    })
+  }
+
+  private handleProxy(req: IncomingMessage, res: ServerResponse, route: RouteRule): void {
+    if (!route.proxyTarget) return
+
+    const options = {
+      hostname: route.proxyTarget.host,
+      port: route.proxyTarget.port,
+      path: req.url,
+      method: req.method,
+      headers: {
+        ...req.headers,
+        host: route.proxyTarget.host,
+      },
+    }
+
+    // Handle WebSocket and other upgrades
+    if (req.headers.upgrade) {
+      const proxyReq = http.request(options)
+      proxyReq.on('upgrade', (proxyRes, proxySocket, _proxyHead) => {
+        res.writeHead(proxyRes.statusCode || 101, proxyRes.headers)
+        const clientSocket = res.socket
+        if (clientSocket) {
+          proxySocket.pipe(clientSocket)
+          clientSocket.pipe(proxySocket)
+        }
+      })
+
+      proxyReq.on('error', (error) => {
+        console.error(`Proxy upgrade error for ${route.path}:`, error)
+        res.writeHead(500)
+        res.end('Proxy Upgrade Error')
+      })
+
+      req.pipe(proxyReq)
+      return
+    }
+
+    // Handle regular HTTP requests
+    const proxyReq = http.request(options, (proxyRes) => {
+      res.writeHead(proxyRes.statusCode || 500, proxyRes.headers)
+      proxyRes.pipe(res)
+    })
+
+    proxyReq.on('error', (error) => {
+      console.error(`Proxy error for ${route.path}:`, error)
+      res.writeHead(500)
+      res.end('Proxy Error')
+    })
+
+    req.pipe(proxyReq)
   }
 
   private loadRoutes() {
@@ -60,9 +196,9 @@ export class BasicRouteGuard extends RouteGuard {
     return encodeURIComponent(buff.toString('base64'))
   }
 
-  private getMatchingRoute(host: string, pathname: string): RouteRule {
-    return Object.entries(this.routes).find(([key]) => pathname.startsWith(key.replace(host, '')))?.[1] ?? {}
-  }
+  // private getMatchingRoute(host: string, pathname: string): RouteRule {
+  //   return Object.entries(this.routes).find(([key]) => pathname.startsWith(key.replace(host, '')))?.[1] ?? {}
+  // }
 
   public handleRequest(
     req: IncomingMessage,
@@ -76,7 +212,8 @@ export class BasicRouteGuard extends RouteGuard {
     const pathname = pathnameOverride ?? requestInfo.pathname
     // console.debug('route-guard on:', pathname)
 
-    const matchingRoute = this.getMatchingRoute(host, pathname)
+    const matchingRoute = this.getMatchingRoute(requestInfo)
+    // const matchingRoute = this.getMatchingRoute(host, pathname)
 
     if (Object.keys(matchingRoute).length > 0) {
       // Check security if required
@@ -157,56 +294,6 @@ export class BasicRouteGuard extends RouteGuard {
     return false // Request not handled by guard
   }
 
-  private handleProxy(req: IncomingMessage, res: ServerResponse, route: RouteRule): void {
-    if (!route.proxyTarget) return
-
-    const options = {
-      hostname: route.proxyTarget.host,
-      port: route.proxyTarget.port,
-      path: req.url,
-      method: req.method,
-      headers: {
-        ...req.headers,
-        host: route.proxyTarget.host,
-      },
-    }
-
-    // Handle WebSocket and other upgrades
-    if (req.headers.upgrade) {
-      const proxyReq = http.request(options)
-      proxyReq.on('upgrade', (proxyRes, proxySocket, _proxyHead) => {
-        res.writeHead(proxyRes.statusCode || 101, proxyRes.headers)
-        const clientSocket = res.socket
-        if (clientSocket) {
-          proxySocket.pipe(clientSocket)
-          clientSocket.pipe(proxySocket)
-        }
-      })
-
-      proxyReq.on('error', (error) => {
-        console.error(`Proxy upgrade error for ${route.path}:`, error)
-        res.writeHead(500)
-        res.end('Proxy Upgrade Error')
-      })
-
-      req.pipe(proxyReq)
-      return
-    }
-
-    // Handle regular HTTP requests
-    const proxyReq = http.request(options, (proxyRes) => {
-      res.writeHead(proxyRes.statusCode || 500, proxyRes.headers)
-      proxyRes.pipe(res)
-    })
-
-    proxyReq.on('error', (error) => {
-      console.error(`Proxy error for ${route.path}:`, error)
-      res.writeHead(500)
-      res.end('Proxy Error')
-    })
-
-    req.pipe(proxyReq)
-  }
 
   // protected setCookie(res: ServerResponse, name: string, value: string, path: string = '/') {
   //   res.setHeader('Set-Cookie', `${name}=${value}; Path=${path}`)

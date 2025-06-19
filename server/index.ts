@@ -31,6 +31,7 @@ const port = parseInt(
 )
 
 let options: ServerOptions = {
+  node_env: process.env['NODE_ENV'] || 'development',
   mode: 'standalone',
   project: project,
   rootPath: cwd(),

@@ -8,12 +8,12 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { Website } from './website.js';
 import { RequestInfo } from './server.js';
 export declare class RequestHandler {
-    private website;
+    website: Website;
     constructor(website: Website);
-    private req;
-    private res;
-    private requestInfo;
-    private pathname;
+    req: IncomingMessage;
+    res: ServerResponse;
+    requestInfo: RequestInfo;
+    pathname: string;
     private rootPath;
     private projectPublicPath;
     private projectSourcePath;

@@ -11,6 +11,7 @@ import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 export type ServerMode = 'standalone' | 'multiplex' // | 'development'
 
 export interface ServerOptions {
+  node_env: string
   project: string
   port: number
   mode: ServerMode

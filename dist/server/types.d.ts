@@ -3,6 +3,7 @@ import { Socket } from 'socket.io';
 import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
 export type ServerMode = 'standalone' | 'multiplex';
 export interface ServerOptions {
+    node_env: string;
     project: string;
     port: number;
     mode: ServerMode;

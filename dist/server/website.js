@@ -153,6 +153,7 @@ export class Website {
             }
         }
     }
+    // public ser
     getContentHtml(content, template = 'wrapper') {
         if (this.env == 'development') {
             this.loadPartials();
@@ -161,6 +162,7 @@ export class Website {
         const contentFile = this.handlebars.partials[content] ?? '404';
         this.handlebars.registerPartial('styles', '');
         this.handlebars.registerPartial('scripts', '');
+        this.handlebars.registerPartial('content', '');
         this.handlebars.registerPartial('content', contentFile);
         return this.handlebars.compile(templateFile);
     }

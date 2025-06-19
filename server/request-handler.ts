@@ -13,14 +13,14 @@ import fs from 'fs'
 import * as sass from 'sass'
 
 export class RequestHandler {
-  constructor(private website: Website) {
+  constructor(public website: Website) {
     this.rootPath = this.website.rootPath
   }
 
-  private req!: IncomingMessage
-  private res!: ServerResponse
-  private requestInfo!: RequestInfo
-  private pathname!: string
+  public req!: IncomingMessage
+  public res!: ServerResponse
+  public requestInfo!: RequestInfo
+  public pathname!: string
 
   private rootPath!: string
   private projectPublicPath!: string
@@ -47,7 +47,7 @@ export class RequestHandler {
     // Start the request handler chain
     // Check, path exploit, route guard, controller, handlebars, static file, error
     RequestHandler.checkPathExploit(this)
-      .then(this.website.routeGuard.handleRequestChain)
+      .then(this.website.routeGuard.handleRequestChain.bind(this.website.routeGuard, this))
       .then(RequestHandler.tryController)
       .then(RequestHandler.tryScss)
       .then(RequestHandler.tryHandlebars)
@@ -148,11 +148,13 @@ export class RequestHandler {
       }
 
       if (target) {
-        const template = fs.readFileSync(target, 'utf8')
-        const html = requestHandler.website.handlebars.compile(template)(requestHandler.requestInfo)
-        requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
-        requestHandler.res.end(html)
-        return finish(`Successfully rendered handlebars template ${requestHandler.pathname}`)
+        requestHandler.website.asyncServeHandlebarsTemplate({
+          res: requestHandler.res,
+          templatePath: target,
+          data: requestHandler.requestInfo, // Or send an empty object?
+        }).then(() => {
+          finish(`Successfully rendered handlebars template ${requestHandler.pathname}`)
+        })
       } else {
         return next(requestHandler)
       }

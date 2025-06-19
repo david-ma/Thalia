@@ -25,11 +25,128 @@ export class RouteGuard {
 export class BasicRouteGuard extends RouteGuard {
     constructor(website) {
         super(website);
-        this.website = website;
         this.routes = {};
         this.salt = 0;
+        this.website = website;
         this.salt = Math.floor(Math.random() * 999);
         this.loadRoutes();
+    }
+    getMatchingRoute(request) {
+        const requestInfo = request.requestInfo;
+        const host = requestInfo.host;
+        const pathname = requestInfo.pathname;
+        return Object.entries(this.routes).find(([key]) => pathname.startsWith(key.replace(host, '')))?.[1] ?? {};
+    }
+    handleRequestChain(request) {
+        return new Promise((next, finish) => {
+            if (request.website.env === 'development' && request.pathname.startsWith('/browser-sync/')) {
+                return next(request);
+            }
+            const routeRule = this.getMatchingRoute(request);
+            if (Object.keys(routeRule).length === 0) {
+                return next(request);
+            }
+            this.routeRule = routeRule;
+            if (routeRule.password) {
+                const correctPassword = this.saltPassword(routeRule.password);
+                const cookies = this.parseCookies(request.req);
+                const cookieName = `auth_${this.website.name}${routeRule.path}`;
+                if (request.pathname.startsWith(`${routeRule.path}/logout`)) {
+                    request.res.setHeader('Set-Cookie', `${cookieName}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
+                    request.res.writeHead(302, { Location: '/' });
+                    request.res.end();
+                    return finish("Logged out");
+                }
+                if (cookies[cookieName] === correctPassword) {
+                    return next(request);
+                }
+                if (request.req.method === 'POST') {
+                    const form = formidable({ multiples: false });
+                    form.parse(request.req, (err, fields) => {
+                        if (err) {
+                            return finish("Error parsing form data");
+                        }
+                        const password = this.saltPassword(fields?.['password']?.[0] ?? '');
+                        if (password === correctPassword) {
+                            request.res.setHeader('Set-Cookie', `${cookieName}=${password}; Path=/`);
+                            request.res.writeHead(302, { Location: request.pathname });
+                            request.res.end();
+                            return finish("Logged in");
+                        }
+                        else {
+                            const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
+                                route: request.pathname,
+                                message: 'Invalid password',
+                            });
+                            request.res.writeHead(401, { 'Content-Type': 'text/html' });
+                            request.res.end(login_html);
+                            return finish("Invalid password");
+                        }
+                    });
+                    return finish("Form submitted");
+                }
+                else {
+                    const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
+                        route: request.pathname,
+                    });
+                    request.res.writeHead(401, { 'Content-Type': 'text/html' });
+                    request.res.end(login_html);
+                    return finish("Login page");
+                }
+            }
+            else if (routeRule.proxyTarget) {
+                this.handleProxy(request.req, request.res, routeRule);
+                return finish("Proxy request");
+            }
+            else {
+                console.debug("No route rule found?");
+                return next(request);
+            }
+        });
+    }
+    handleProxy(req, res, route) {
+        if (!route.proxyTarget)
+            return;
+        const options = {
+            hostname: route.proxyTarget.host,
+            port: route.proxyTarget.port,
+            path: req.url,
+            method: req.method,
+            headers: {
+                ...req.headers,
+                host: route.proxyTarget.host,
+            },
+        };
+        // Handle WebSocket and other upgrades
+        if (req.headers.upgrade) {
+            const proxyReq = http.request(options);
+            proxyReq.on('upgrade', (proxyRes, proxySocket, _proxyHead) => {
+                res.writeHead(proxyRes.statusCode || 101, proxyRes.headers);
+                const clientSocket = res.socket;
+                if (clientSocket) {
+                    proxySocket.pipe(clientSocket);
+                    clientSocket.pipe(proxySocket);
+                }
+            });
+            proxyReq.on('error', (error) => {
+                console.error(`Proxy upgrade error for ${route.path}:`, error);
+                res.writeHead(500);
+                res.end('Proxy Upgrade Error');
+            });
+            req.pipe(proxyReq);
+            return;
+        }
+        // Handle regular HTTP requests
+        const proxyReq = http.request(options, (proxyRes) => {
+            res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
+            proxyRes.pipe(res);
+        });
+        proxyReq.on('error', (error) => {
+            console.error(`Proxy error for ${route.path}:`, error);
+            res.writeHead(500);
+            res.end('Proxy Error');
+        });
+        req.pipe(proxyReq);
     }
     loadRoutes() {
         const routes = this.website.config.routes || [];
@@ -49,15 +166,16 @@ export class BasicRouteGuard extends RouteGuard {
         const buff = Buffer.from(password + this.salt);
         return encodeURIComponent(buff.toString('base64'));
     }
-    getMatchingRoute(host, pathname) {
-        return Object.entries(this.routes).find(([key]) => pathname.startsWith(key.replace(host, '')))?.[1] ?? {};
-    }
+    // private getMatchingRoute(host: string, pathname: string): RouteRule {
+    //   return Object.entries(this.routes).find(([key]) => pathname.startsWith(key.replace(host, '')))?.[1] ?? {}
+    // }
     handleRequest(req, res, website, requestInfo, pathnameOverride) {
         // const domain = requestInfo.domain
         const host = requestInfo.host;
         const pathname = pathnameOverride ?? requestInfo.pathname;
         // console.debug('route-guard on:', pathname)
-        const matchingRoute = this.getMatchingRoute(host, pathname);
+        const matchingRoute = this.getMatchingRoute(requestInfo);
+        // const matchingRoute = this.getMatchingRoute(host, pathname)
         if (Object.keys(matchingRoute).length > 0) {
             // Check security if required
             if (matchingRoute?.password) {
@@ -135,50 +253,6 @@ export class BasicRouteGuard extends RouteGuard {
             return false;
         }
         return false; // Request not handled by guard
-    }
-    handleProxy(req, res, route) {
-        if (!route.proxyTarget)
-            return;
-        const options = {
-            hostname: route.proxyTarget.host,
-            port: route.proxyTarget.port,
-            path: req.url,
-            method: req.method,
-            headers: {
-                ...req.headers,
-                host: route.proxyTarget.host,
-            },
-        };
-        // Handle WebSocket and other upgrades
-        if (req.headers.upgrade) {
-            const proxyReq = http.request(options);
-            proxyReq.on('upgrade', (proxyRes, proxySocket, _proxyHead) => {
-                res.writeHead(proxyRes.statusCode || 101, proxyRes.headers);
-                const clientSocket = res.socket;
-                if (clientSocket) {
-                    proxySocket.pipe(clientSocket);
-                    clientSocket.pipe(proxySocket);
-                }
-            });
-            proxyReq.on('error', (error) => {
-                console.error(`Proxy upgrade error for ${route.path}:`, error);
-                res.writeHead(500);
-                res.end('Proxy Upgrade Error');
-            });
-            req.pipe(proxyReq);
-            return;
-        }
-        // Handle regular HTTP requests
-        const proxyReq = http.request(options, (proxyRes) => {
-            res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
-            proxyRes.pipe(res);
-        });
-        proxyReq.on('error', (error) => {
-            console.error(`Proxy error for ${route.path}:`, error);
-            res.writeHead(500);
-            res.end('Proxy Error');
-        });
-        req.pipe(proxyReq);
     }
     // protected setCookie(res: ServerResponse, name: string, value: string, path: string = '/') {
     //   res.setHeader('Set-Cookie', `${name}=${value}; Path=${path}`)

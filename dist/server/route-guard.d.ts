@@ -24,15 +24,17 @@ export declare class RouteGuard {
     handleRequestChain(request: RequestHandler): Promise<RequestHandler>;
 }
 export declare class BasicRouteGuard extends RouteGuard {
-    protected website: Website;
     private routes;
     protected salt: number;
+    protected routeRule: RouteRule;
+    protected website: Website;
     constructor(website: Website);
+    private getMatchingRoute;
+    handleRequestChain(request: RequestHandler): Promise<RequestHandler>;
+    private handleProxy;
     private loadRoutes;
     private saltPassword;
-    private getMatchingRoute;
     handleRequest(req: IncomingMessage, res: ServerResponse, website: Website, requestInfo: RequestInfo, pathnameOverride?: string): boolean;
-    private handleProxy;
     protected parseCookies(req: IncomingMessage): Record<string, string>;
 }
 type Role = 'admin' | 'user';

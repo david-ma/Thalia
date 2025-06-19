@@ -18,6 +18,14 @@ import * as libsql from '@libsql/client';
  * Read the latest 10 logs from the log directory
  */
 export declare const latestlogs: (res: ServerResponse, _req: IncomingMessage, website: Website) => Promise<void>;
+type CrudRelationship = {
+    foreignTable: string;
+    foreignColumn: string;
+    localColumn: string;
+};
+type CrudOptions = {
+    relationships?: CrudRelationship[];
+};
 import { type LibSQLDatabase } from 'drizzle-orm/libsql';
 export type Machine = {
     init: (website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string) => void;
@@ -41,7 +49,7 @@ export declare class CrudFactory implements Machine {
     private db;
     private sqlite;
     private static blacklist;
-    constructor(table: SQLiteTableWithColumns<any>);
+    constructor(table: SQLiteTableWithColumns<any>, options?: CrudOptions | any);
     init(website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string): void;
     /**
      * Generate a CRUD controller for a given table.
@@ -108,4 +116,5 @@ export declare class CrudFactory implements Machine {
     private mapColumns;
     private static parseDTquery;
 }
+export {};
 //# sourceMappingURL=controllers.d.ts.map

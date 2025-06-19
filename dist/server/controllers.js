@@ -69,7 +69,7 @@ export const latestlogs = async (res, _req, website) => {
  * Uses DataTables.net for the list view.
  */
 export class CrudFactory {
-    constructor(table) {
+    constructor(table, options) {
         this.table = table;
     }
     init(website, db, sqlite, name) {

@@ -122,6 +122,10 @@ type CrudRelationship = {
   localColumn: string
 }
 
+type CrudOptions = {
+  relationships?: CrudRelationship[]
+}
+
 import { type LibSQLDatabase } from 'drizzle-orm/libsql'
 
 export type Machine = {
@@ -148,7 +152,7 @@ export class CrudFactory implements Machine {
   private sqlite!: libsql.Client
   private static blacklist = ['createdAt', 'updatedAt', 'deletedAt'] // Filter 'id' as well?
 
-  constructor(table: SQLiteTableWithColumns<any>) {
+  constructor(table: SQLiteTableWithColumns<any>, options?: CrudOptions | any ) {
     this.table = table
   }
 

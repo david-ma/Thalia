@@ -23,6 +23,17 @@ export type Machine = {
     init: (website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string) => void;
     controller: Controller;
 };
+/**
+ * The CrudFactory is a class that generates a CRUD controller for a given table.
+ * CrudFactory is a Machine, which means it has an init method, and provides a controller method.
+ *
+ * The views are mainly in src/views/scaffold, and can be overwritten by the website's views.
+ * Custom views can also be passed in to the CrudFactory constructor. (TODO)
+ *
+ * Currently very tightly coupled with SQLite, but should be extended to work with MariaDB. (TODO)
+ *
+ * Uses DataTables.net for the list view.
+ */
 export declare class CrudFactory implements Machine {
     name: string;
     private table;
@@ -35,25 +46,42 @@ export declare class CrudFactory implements Machine {
     /**
      * Generate a CRUD controller for a given table.
      * We want:
-     * - list: GET /tableName
-     * - create: POST /tableName
-     * - read: GET /tableName/id
-     * - edit: GET /tableName/id/edit
-     * - update: PUT /tableName/id
-     * - delete: DELETE /tableName/id
+     * - default: GET /tableName (shows the list of records by default, but can be overridden)
+     * - list: GET /tableName/list (shows the list of records)
+     * - new: GET /tableName/new (shows creation form)
+     * - create: POST /tableName/create (receives form data, and inserts a new record into the database)
+     * - read: GET /tableName/<id> (shows a single record)
+     * - edit: GET /tableName/<id>/edit (shows the edit form)
+     * - update: PUT /tableName/<id> (receives form data, and updates the record)
+     * - delete: DELETE /tableName/<id> (deletes the record)
+     * - columns: GET /tableName/columns (returns the columns for DataTables.net)
+     * - json: GET /tableName/json (returns the data for DataTables.net)
+     * - testdata: GET /tableName/testdata (generates test data, NODE_ENV=development only)
      */
     controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
     private testdata;
     generateTestData(amount?: number): Promise<any>;
+    /**
+     * Takes DELETE requests to the /delete endpoint.
+     * Does not actually delete the record, but adds a deletedAt timestamp.
+     * Adds a deletedAt timestamp to the record, and redirects to the list page.
+     */
     private delete;
     private update;
     private edit;
     private show;
+    /**
+     * Takes POST requests with form data from /new, and inserts a new record into the database
+     */
     private create;
+    /**
+     * Takes GET requests to the /new endpoint, and renders the new form
+     */
     private new;
     private list;
     /**
      * Serve the data in DataTables.net json format
+     * The frontend uses /columns to get the columns, and then asks for /json to get the data.
      */
     private fetchDataTableJson;
     /**

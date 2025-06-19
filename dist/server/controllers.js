@@ -9,7 +9,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { eq } from 'drizzle-orm';
+import { eq, isNull } from 'drizzle-orm';
 import url from 'url';
 /**
  * Read the latest 10 logs from the log directory
@@ -57,6 +57,17 @@ export const latestlogs = async (res, _req, website) => {
         res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 };
+/**
+ * The CrudFactory is a class that generates a CRUD controller for a given table.
+ * CrudFactory is a Machine, which means it has an init method, and provides a controller method.
+ *
+ * The views are mainly in src/views/scaffold, and can be overwritten by the website's views.
+ * Custom views can also be passed in to the CrudFactory constructor. (TODO)
+ *
+ * Currently very tightly coupled with SQLite, but should be extended to work with MariaDB. (TODO)
+ *
+ * Uses DataTables.net for the list view.
+ */
 export class CrudFactory {
     constructor(table) {
         this.table = table;
@@ -74,12 +85,17 @@ export class CrudFactory {
     /**
      * Generate a CRUD controller for a given table.
      * We want:
-     * - list: GET /tableName
-     * - create: POST /tableName
-     * - read: GET /tableName/id
-     * - edit: GET /tableName/id/edit
-     * - update: PUT /tableName/id
-     * - delete: DELETE /tableName/id
+     * - default: GET /tableName (shows the list of records by default, but can be overridden)
+     * - list: GET /tableName/list (shows the list of records)
+     * - new: GET /tableName/new (shows creation form)
+     * - create: POST /tableName/create (receives form data, and inserts a new record into the database)
+     * - read: GET /tableName/<id> (shows a single record)
+     * - edit: GET /tableName/<id>/edit (shows the edit form)
+     * - update: PUT /tableName/<id> (receives form data, and updates the record)
+     * - delete: DELETE /tableName/<id> (deletes the record)
+     * - columns: GET /tableName/columns (returns the columns for DataTables.net)
+     * - json: GET /tableName/json (returns the data for DataTables.net)
+     * - testdata: GET /tableName/testdata (generates test data, NODE_ENV=development only)
      */
     controller(res, req, website, requestInfo) {
         const pathname = url.parse(requestInfo.url, true).pathname ?? '';
@@ -151,6 +167,11 @@ export class CrudFactory {
             return this.db.insert(this.table).values(record);
         }));
     }
+    /**
+     * Takes DELETE requests to the /delete endpoint.
+     * Does not actually delete the record, but adds a deletedAt timestamp.
+     * Adds a deletedAt timestamp to the record, and redirects to the list page.
+     */
     delete(res, req, website, requestInfo) {
         const id = requestInfo.url.split('/').pop();
         if (!id) {
@@ -181,7 +202,10 @@ export class CrudFactory {
         try {
             parseForm(res, req).then(({ fields }) => {
                 fields = Object.fromEntries(Object.entries(fields).filter(([key]) => !CrudFactory.blacklist.includes(key)));
-                this.db.update(this.table).set(fields).where(eq(this.table.id, id)).then((result) => {
+                this.db.update(this.table)
+                    .set(fields)
+                    .where(eq(this.table.id, id))
+                    .then((result) => {
                     console.log("Result:", result);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify(result));
@@ -226,18 +250,27 @@ export class CrudFactory {
         if (!id) {
             throw new Error('No ID provided');
         }
+        // select distinct id, name from table?
         this.db.select(this.table).from(this.table)
             .where(eq(this.table.id, id))
-            .then((record) => {
-            if (!record.length) {
+            .then((records) => {
+            if (records.length === 0) {
                 res.writeHead(404, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Record not found' }));
                 return;
             }
+            else if (records.length > 1) {
+                // throw new Error('Multiple records found for ID')
+                console.error('Multiple records found for ID', id);
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Multiple records found for ID' }));
+                return;
+            }
+            const record = records[0];
             const data = {
                 controllerName: this.name,
-                id: id,
-                record: record[0],
+                id,
+                record,
                 json: JSON.stringify(record),
                 tableName: this.name,
                 primaryKey: 'id',
@@ -248,6 +281,9 @@ export class CrudFactory {
             res.end(html);
         });
     }
+    /**
+     * Takes POST requests with form data from /new, and inserts a new record into the database
+     */
     create(res, req, website, requestInfo) {
         try {
             parseForm(res, req).then(({ fields }) => {
@@ -271,6 +307,9 @@ export class CrudFactory {
             res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
         }
     }
+    /**
+     * Takes GET requests to the /new endpoint, and renders the new form
+     */
     new(res, req, website, requestInfo) {
         const data = {
             title: this.name,
@@ -301,6 +340,7 @@ export class CrudFactory {
     }
     /**
      * Serve the data in DataTables.net json format
+     * The frontend uses /columns to get the columns, and then asks for /json to get the data.
      */
     fetchDataTableJson(res, req, website, requestInfo) {
         const query = url.parse(requestInfo.url, true).query;
@@ -308,7 +348,10 @@ export class CrudFactory {
         // const columns = this.filteredAttributes().map(this.mapColumns)
         const offset = parseInt(parsedQuery.start);
         const limit = parseInt(parsedQuery.length);
-        this.db.select().from(this.table).limit(limit).offset(offset).then((records) => {
+        this.db.select()
+            .from(this.table)
+            .where(isNull(this.table.deletedAt))
+            .limit(limit).offset(offset).then((records) => {
             // console.log("Found", records.length, "records in", this.name)
             const blob = {
                 draw: parsedQuery.draw,
@@ -417,10 +460,17 @@ export class CrudFactory {
         return result;
     }
 }
-CrudFactory.blacklist = ['id', 'createdAt', 'updatedAt', 'deletedAt'];
+CrudFactory.blacklist = ['createdAt', 'updatedAt', 'deletedAt']; // Filter 'id' as well?
 import formidable from 'formidable';
 function parseForm(res, req) {
     return new Promise((resolve, reject) => {
+        const methods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+        if (!methods.includes(req.method ?? '')) {
+            res.writeHead(405, { 'Content-Type': 'text/html' });
+            res.end('Method not allowed');
+            reject(new Error('Method not allowed'));
+            return;
+        }
         const form = formidable({ multiples: false });
         form.parse(req, (err, fields, files) => {
             if (err) {

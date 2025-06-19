@@ -26,6 +26,7 @@ import * as sass from 'sass';
 import { cwd } from 'process';
 import { RouteGuard } from './route-guard.js';
 import { ThaliaDatabase } from './database.js';
+import { dirname } from 'path';
 export class Website {
     /**
      * Creates a new Website instance
@@ -294,7 +295,7 @@ export class Website {
             }
             const filePath = path.join(this.rootPath, 'public', pathname);
             const sourcePath = filePath.replace('public', 'src');
-            const thaliaRoot = cwd();
+            const thaliaRoot = path.join(dirname(import.meta.url).replace("file://", ""), '..', '..');
             const controllerPath = parts[1];
             // console.debug(`Controller path: "${controllerPath}"`)
             if (controllerPath !== null) {

@@ -31,6 +31,7 @@ import { RouteGuard } from './route-guard.js'
 import { Socket } from 'socket.io'
 import { RequestInfo } from './server.js'
 import { ThaliaDatabase } from './database.js'
+import { dirname } from 'path'
 
 interface Views {
   [key: string]: string;
@@ -377,7 +378,7 @@ export class Website implements WebsiteInterface {
 
       const filePath = path.join(this.rootPath, 'public', pathname)
       const sourcePath = filePath.replace('public', 'src')
-      const thaliaRoot = cwd()
+      const thaliaRoot = path.join(dirname(import.meta.url).replace("file://", ""), '..', '..')
 
       const controllerPath = parts[1]
       // console.debug(`Controller path: "${controllerPath}"`)

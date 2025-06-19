@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
+  "scripts": {
+    "start": "thalia"
+  },
   "dependencies": {
     "drizzle-kit": "^0.31.1",
     "thalia": "file:../../"

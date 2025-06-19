@@ -353,12 +353,14 @@ export class CrudFactory {
      * Takes GET requests to the /new endpoint, and renders the new form
      */
     new(res, req, website, requestInfo) {
+        const removeList = ['id', 'createdAt', 'updatedAt', 'deletedAt', 'locked', 'verified', 'role'];
+        const fields = this.filteredAttributes().filter((field) => !removeList.includes(field.name));
         const data = {
             title: this.name,
             controllerName: this.name,
-            fields: this.filteredAttributes()
+            fields
         };
-        const html = website.getContentHtml('create')(data);
+        const html = website.getContentHtml('new')(data);
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(html);
     }

@@ -1,4 +1,17 @@
-$background: #f0f0f0;
+$background: #dce0e8;
+
+// dark mode:
+// #1f1d2e
+// #191824
+
+body {
+  background: #191824;
+}
+
+div.page {
+  background: $background;
+  min-height: 100vh;
+}
 
 nav {
   display: flex;
@@ -10,18 +23,19 @@ nav {
 }
 
 div.default-crud-styles {
-
   p.blob {
     line-break: anywhere;
   }
-
+  h1 {
+    text-transform: capitalize;
+  }
 
   table {
     width: 100%;
     border-collapse: collapse;
     margin: 15px 0;
     th {
-      text-align: right;
+      text-align: left;
       padding-right: 10px;
     }
 
@@ -31,7 +45,7 @@ div.default-crud-styles {
     td {
       text-align: left;
       padding: 0.2em 0.5em;
-      border: 1px solid black;
+      border: 1px solid #e0def4;
       input {
         width: 100%;
       }

@@ -408,7 +408,10 @@ export class Website implements WebsiteInterface {
           if (fs.existsSync(target)) {
             const scss = fs.readFileSync(target, 'utf8')
             try {
-              const css = sass.renderSync({ data: scss }).css.toString()
+              const css = sass.renderSync({
+                data: scss,
+                includePaths: [path.dirname(target || '')]
+              }).css.toString()
               res.writeHead(200, { 'Content-Type': 'text/css' })
               res.end(css)
             } catch (error) {

@@ -181,18 +181,11 @@ export class CrudFactory {
             throw new Error('No ID provided');
         }
         this.db.update(this.table)
-            // .set({ deletedAt: sql`CURRENT_TIMESTAMP` })
             .set({ deletedAt: new Date().toISOString() })
             .where(eq(this.table.id, id))
-            // this.db.delete(this.table).where(eq(this.table.id, id))
             .then((result) => {
-            // console.log("Result:", result)
-            // res.writeHead(200, { 'Content-Type': 'application/json' })
-            // res.end(JSON.stringify(result))
-            // show delete success, or just the list page
-            // res.writeHead(200, { 'Content-Type': 'text/html' })
-            // res.end('Record deleted')
-            const html = this.website.getContentHtml('success')({
+            const html = this.website.getContentHtml('message')({
+                state: 'Success',
                 message: 'Record deleted',
                 redirect: `/${this.name}`
             });
@@ -209,7 +202,8 @@ export class CrudFactory {
             .set({ deletedAt: null })
             .where(eq(this.table.id, id))
             .then((result) => {
-            const html = this.website.getContentHtml('success')({
+            const html = this.website.getContentHtml('message')({
+                state: 'Success',
                 message: 'Record restored',
                 redirect: `/${this.name}`
             });
@@ -235,7 +229,8 @@ export class CrudFactory {
                     .set(fields)
                     .where(eq(this.table.id, id))
                     .then((result) => {
-                    const html = this.website.getContentHtml('success')({
+                    const html = this.website.getContentHtml('message')({
+                        state: 'Success',
                         message: 'Record updated',
                         redirect: `/${this.name}/show/${id}`
                     });
@@ -338,15 +333,25 @@ export class CrudFactory {
                     res.end();
                 }, (error) => {
                     console.error('Error inserting record:', error);
-                    res.writeHead(500, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
+                    const html = this.website.getContentHtml('message')({
+                        state: 'Error',
+                        message: error instanceof Error ? error.message : 'Unknown error',
+                        redirect: `/${this.name}`
+                    });
+                    res.writeHead(500, { 'Content-Type': 'text/html' });
+                    res.end(html);
                 });
             });
         }
         catch (error) {
-            console.error('Error in ${website.name}/${tableName}/create:', error);
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
+            console.error('Error in ${website.name}/${this.name}/create:', error);
+            const html = this.website.getContentHtml('message')({
+                state: 'Error',
+                message: error instanceof Error ? error.message : 'Unknown error',
+                redirect: `/${this.name}`
+            });
+            res.writeHead(500, { 'Content-Type': 'text/html' });
+            res.end(html);
         }
     }
     /**

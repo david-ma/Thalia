@@ -4,6 +4,7 @@ import { RouteRule } from './types.js'
 import { Website } from './website.js'
 import formidable from 'formidable'
 import { RequestInfo } from './server.js'
+import { RequestHandler } from './request-handler.js'
 
 /**
  * The RouteGuard class provides an alternative "handleRequest" method, which checks for an authentication cookie.
@@ -20,10 +21,19 @@ import { RequestInfo } from './server.js'
  * This is the basic route guard.
  */
 export class RouteGuard {
+  constructor(protected website: Website) {}
+
+  public handleRequestChain(request: RequestHandler): Promise<RequestHandler> {
+    return Promise.resolve(request)
+  }
+}
+
+export class BasicRouteGuard extends RouteGuard {
   private routes: Record<string, RouteRule> = {}
   protected salt: number = 0
 
   constructor(protected website: Website) {
+    super(website)
     this.salt = Math.floor(Math.random() * 999)
     this.loadRoutes()
   }
@@ -244,7 +254,7 @@ export type SecurityConfig = {
  * This also requires email, so that people can be invited, authenticated and reset their password.
  *
  */
-export class RoleRouteGaurd extends RouteGuard {
+export class RoleRouteGaurd extends BasicRouteGuard {
   private roleRoutes: Record<string, RoleRouteRule> = {}
 
   constructor(website: Website) {

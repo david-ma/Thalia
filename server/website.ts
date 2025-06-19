@@ -37,7 +37,7 @@ import { IncomingMessage, ServerResponse } from 'http'
 import Handlebars from 'handlebars'
 import * as sass from 'sass'
 import { cwd } from 'process'
-import { RoleRouteGaurd, RouteGuard } from './route-guard.js'
+import { RoleRouteGaurd, BasicRouteGuard, RouteGuard } from './route-guard.js'
 import { Socket } from 'socket.io'
 import { RequestInfo } from './server.js'
 import { ThaliaDatabase } from './database.js'
@@ -63,7 +63,7 @@ export class Website implements WebsiteInterface {
   public controllers: { [key: string]: Controller } = {}
   private websockets!: WebsocketConfig
   public routes: { [key: string]: RouteRule } = {}
-  private routeGuard!: RouteGuard
+  public routeGuard!: RouteGuard
   public db!: ThaliaDatabase
 
   /**
@@ -88,6 +88,8 @@ export class Website implements WebsiteInterface {
       () => {
         if (website.config.security) {
           website.routeGuard = new RoleRouteGaurd(website)
+        } else if (website.config.routes.length > 0) {
+          website.routeGuard = new BasicRouteGuard(website)
         } else {
           website.routeGuard = new RouteGuard(website)
         }
@@ -399,12 +401,12 @@ export class Website implements WebsiteInterface {
       }
 
       // Let the route guard handle the request first
-      if (this.routeGuard.handleRequest(req, res, this, requestInfo, pathnameOverride)) {
-        // console.debug('Request was stopped by the guard')
-        return // Request was handled by the guard
-      } else {
-        // console.debug('Request was let through by the guard')
-      }
+      // if (this.routeGuard.handleRequest(req, res, this, requestInfo, pathnameOverride)) {
+      //   // console.debug('Request was stopped by the guard')
+      //   return // Request was handled by the guard
+      // } else {
+      //   // console.debug('Request was let through by the guard')
+      // }
 
       // Continue with normal request handling
       const projectPublicPath = path.join(this.rootPath, 'public', pathname)

@@ -6,7 +6,7 @@
   "semi": false,
   "overrides": [
     {
-      "files": "*.hbs",
+      "files": ["*.hbs", "*.js", "*.ts"],
       "options": {
         "singleQuote": true
       }

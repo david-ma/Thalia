@@ -12,6 +12,7 @@ import { Website } from './website.js'
 import url from 'url'
 import { Server as SocketServer } from 'socket.io'
 import { Socket } from 'socket.io'
+import { RequestHandler } from './request-handler.js'
 
 export type RequestInfo = {
   host: string
@@ -84,7 +85,7 @@ export class Server extends EventEmitter {
     const website = this.router.getWebsite(domain ?? this.project)
 
     if (website) {
-      website.handleRequest(req, res, requestInfo)
+      new RequestHandler(website).handleRequest(req, res, requestInfo)
     } else {
       res.writeHead(404)
       res.end('No website Found')

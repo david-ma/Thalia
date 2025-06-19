@@ -17,6 +17,15 @@ import formidable from 'formidable';
 export class RouteGuard {
     constructor(website) {
         this.website = website;
+    }
+    handleRequestChain(request) {
+        return Promise.resolve(request);
+    }
+}
+export class BasicRouteGuard extends RouteGuard {
+    constructor(website) {
+        super(website);
+        this.website = website;
         this.routes = {};
         this.salt = 0;
         this.salt = Math.floor(Math.random() * 999);
@@ -194,7 +203,7 @@ export class RouteGuard {
  * This also requires email, so that people can be invited, authenticated and reset their password.
  *
  */
-export class RoleRouteGaurd extends RouteGuard {
+export class RoleRouteGaurd extends BasicRouteGuard {
     constructor(website) {
         console.log('RouteGaurdWithUsers', website.config.security);
         super(website);

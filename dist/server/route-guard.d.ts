@@ -3,6 +3,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { RouteRule } from './types.js';
 import { Website } from './website.js';
 import { RequestInfo } from './server.js';
+import { RequestHandler } from './request-handler.js';
 /**
  * The RouteGuard class provides an alternative "handleRequest" method, which checks for an authentication cookie.
  * If the cookie is present, the request is allowed to proceed.
@@ -18,6 +19,11 @@ import { RequestInfo } from './server.js';
  * This is the basic route guard.
  */
 export declare class RouteGuard {
+    protected website: Website;
+    constructor(website: Website);
+    handleRequestChain(request: RequestHandler): Promise<RequestHandler>;
+}
+export declare class BasicRouteGuard extends RouteGuard {
     protected website: Website;
     private routes;
     protected salt: number;
@@ -40,7 +46,7 @@ export type SecurityConfig = {
  * This also requires email, so that people can be invited, authenticated and reset their password.
  *
  */
-export declare class RoleRouteGaurd extends RouteGuard {
+export declare class RoleRouteGaurd extends BasicRouteGuard {
     private roleRoutes;
     constructor(website: Website);
     handleRequest(req: IncomingMessage, res: ServerResponse, website: Website, requestInfo: RequestInfo, pathnameOverride?: string): boolean;

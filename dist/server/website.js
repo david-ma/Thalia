@@ -24,7 +24,7 @@ import path from 'path';
 import Handlebars from 'handlebars';
 import * as sass from 'sass';
 import { cwd } from 'process';
-import { RoleRouteGaurd, RouteGuard } from './route-guard.js';
+import { RoleRouteGaurd, BasicRouteGuard, RouteGuard } from './route-guard.js';
 import { ThaliaDatabase } from './database.js';
 import { dirname } from 'path';
 export class Website {
@@ -54,6 +54,9 @@ export class Website {
         return Promise.all([website.loadPartials(), website.loadConfig(config).then(() => website.loadDatabase())]).then(() => {
             if (website.config.security) {
                 website.routeGuard = new RoleRouteGaurd(website);
+            }
+            else if (website.config.routes.length > 0) {
+                website.routeGuard = new BasicRouteGuard(website);
             }
             else {
                 website.routeGuard = new RouteGuard(website);
@@ -297,13 +300,12 @@ export class Website {
                 return;
             }
             // Let the route guard handle the request first
-            if (this.routeGuard.handleRequest(req, res, this, requestInfo, pathnameOverride)) {
-                // console.debug('Request was stopped by the guard')
-                return; // Request was handled by the guard
-            }
-            else {
-                // console.debug('Request was let through by the guard')
-            }
+            // if (this.routeGuard.handleRequest(req, res, this, requestInfo, pathnameOverride)) {
+            //   // console.debug('Request was stopped by the guard')
+            //   return // Request was handled by the guard
+            // } else {
+            //   // console.debug('Request was let through by the guard')
+            // }
             // Continue with normal request handling
             const projectPublicPath = path.join(this.rootPath, 'public', pathname);
             const projectSourcePath = projectPublicPath.replace('public', 'src');

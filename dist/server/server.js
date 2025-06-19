@@ -8,6 +8,7 @@ import { EventEmitter } from 'events';
 import { Router } from './router.js';
 import url from 'url';
 import { Server as SocketServer } from 'socket.io';
+import { RequestHandler } from './request-handler.js';
 export class Server extends EventEmitter {
     constructor(options, websites) {
         super();
@@ -51,7 +52,7 @@ export class Server extends EventEmitter {
         const domain = req.headers.host?.split(':')[0];
         const website = this.router.getWebsite(domain ?? this.project);
         if (website) {
-            website.handleRequest(req, res, requestInfo);
+            new RequestHandler(website).handleRequest(req, res, requestInfo);
         }
         else {
             res.writeHead(404);

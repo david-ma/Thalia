@@ -23,6 +23,7 @@
 import { WebsiteInterface, BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule, ClientInfo } from './types.js';
 import { IncomingMessage, ServerResponse } from 'http';
 import Handlebars from 'handlebars';
+import { RouteGuard } from './route-guard.js';
 import { Socket } from 'socket.io';
 import { RequestInfo } from './server.js';
 import { ThaliaDatabase } from './database.js';
@@ -45,7 +46,7 @@ export declare class Website implements WebsiteInterface {
     routes: {
         [key: string]: RouteRule;
     };
-    private routeGuard;
+    routeGuard: RouteGuard;
     db: ThaliaDatabase;
     /**
      * Creates a new Website instance

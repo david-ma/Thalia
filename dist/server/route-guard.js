@@ -43,7 +43,9 @@ export class BasicRouteGuard extends RouteGuard {
         const host = requestInfo.host;
         const pathname = requestInfo.pathname;
         const fullpath = host + pathname;
-        return (Object.entries(this.routes).find(([route, rule]) => {
+        return (Object.entries(this.routes)
+            .sort((a, b) => (b[1].path?.length ?? 0) - (a[1].path?.length ?? 0))
+            .find(([route, rule]) => {
             if (fullpath.startsWith(route)) {
                 return [route, rule];
             }
@@ -288,7 +290,7 @@ export class RoleRouteGuard extends BasicRouteGuard {
         return new Promise((next, finish) => {
             const routeRule = this.getMatchingRoute(request);
             console.log('RouteRule', routeRule);
-            this.getUserAuth(request.req, request.requestInfo)
+            return this.getUserAuth(request.req, request.requestInfo)
                 .then((userAuth) => {
                 // Look up permissions for the user
                 const permissions = routeRule.permissions?.[userAuth.role] ?? routeRule.permissions?.guest ?? [];
@@ -305,26 +307,28 @@ export class RoleRouteGuard extends BasicRouteGuard {
                 }
                 else {
                     if (request.requestInfo.userAuth?.role === 'guest') {
-                        // please log in
-                        const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
+                        console.log('Guest user, sending login page');
+                        // // please log in
+                        // const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
+                        //   route: request.pathname,
+                        // })
+                        const login_html = this.website.getContentHtml('userLogin')({
                             route: request.pathname,
                         });
+                        // console.log('Sending Login page', login_html)
                         request.res.writeHead(401, { 'Content-Type': 'text/html' });
                         request.res.end(login_html);
-                        return finish('Access denied');
+                        return finish('User is not logged in, so we sent the login page');
                     }
                     else {
+                        console.log('User has no permissions, sending access denied');
                         // access denied
-                        request.res.writeHead(403, { 'Content-Type': 'text/html' });
+                        // request.res.writeHead(403, { 'Content-Type': 'text/html' })
                         request.res.end('Access denied');
                         return finish('Access denied');
                     }
                 }
             });
-            if (Object.keys(routeRule).length === 0) {
-                return next(request);
-            }
-            return next(request);
         });
     }
     async getUserAuth(req, requestInfo) {

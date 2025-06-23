@@ -86,6 +86,7 @@ export const securityConfig = {
         users: UserMachine.controller.bind(UserMachine),
         sessions: SessionMachine.controller.bind(SessionMachine),
         audits: AuditMachine.controller.bind(AuditMachine),
+        // forgotPassword: ForgotPasswordMachine.controller.bind(ForgotPasswordMachine),
     },
     routes: default_routes,
 };

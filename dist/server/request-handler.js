@@ -39,6 +39,7 @@ export class RequestHandler {
         });
     }
     renderError(error) {
+        console.log('Trying to render error', error);
         this.website.renderError(this.res, error);
     }
     static getContentType(filePath) {
@@ -158,6 +159,7 @@ export class RequestHandler {
     }
     static tryController(requestHandler) {
         return new Promise((next, finish) => {
+            console.log('Trying to execute controller');
             const controllerSlug = requestHandler.requestInfo.controller;
             const controller = requestHandler.website.controllers[controllerSlug];
             if (!controller) {

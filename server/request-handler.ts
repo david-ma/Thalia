@@ -64,6 +64,7 @@ export class RequestHandler {
   }
 
   private renderError(error: Error): void {
+    console.log('Trying to render error', error)
     this.website.renderError(this.res, error)
   }
 
@@ -192,6 +193,8 @@ export class RequestHandler {
 
   private static tryController(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
+      console.log('Trying to execute controller')
+
       const controllerSlug = requestHandler.requestInfo.controller
       const controller = requestHandler.website.controllers[controllerSlug]
       if (!controller) {

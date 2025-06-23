@@ -157,7 +157,6 @@ export class Website {
             }
         }
     }
-    // public ser
     getContentHtml(content, template = 'wrapper') {
         if (this.env == 'development') {
             this.loadPartials();
@@ -202,6 +201,38 @@ export class Website {
         this.handlebars.registerPartial('styles', '');
         this.handlebars.registerPartial('scripts', '');
         this.handlebars.registerPartial('content', '');
+        /**
+         * Helper to get the value of a field from the blob or the root
+         * Prioritises the root
+         */
+        this.handlebars.registerHelper('getValue', function (field, options) {
+            if (!options || !options.data || !options.data.root) {
+                return '';
+            }
+            if (options.data.root[field]) {
+                return options.data.root[field];
+            }
+            if (!options.data.root.blob) {
+                return '';
+            }
+            return options.data.root.blob[field] || '';
+        });
+        /**
+         * For the dropdown partial
+         * Might be useful for radio buttons or checkboxes too
+         */
+        this.handlebars.registerHelper('isSelected', function (field, value, options) {
+            if (!options || !options.data || !options.data.root) {
+                return '';
+            }
+            if (options.data.root[field] === value) {
+                return 'selected';
+            }
+            if (options.data.root.blob && options.data.root.blob[field] === value) {
+                return 'selected';
+            }
+            return '';
+        });
         try {
             const entries = fs.readdirSync(folder, { withFileTypes: true });
             for (const entry of entries) {

@@ -1,0 +1,42 @@
+<div class="login">
+  <h2>Login</h2>
+  <form action="/logon" method="post">
+
+
+    {{> input field="Email" helpText="Your email"}}
+    {{> input field="Password" type="password" helpText="Your password"}}
+
+    <input id="Redirect" name="Redirect" type="hidden" style="display:none;" />
+
+    <input id="loginButton" type="submit" value="Login" />
+  </form>
+  <ul>
+    <li><a href="/newUser">Create
+        New Account</a></li>
+    <li><a href="/forgotPassword">Forgot
+        password</a></li>
+  </ul>
+</div>
+
+<script>
+  //check document is ready
+  document.addEventListener("DOMContentLoaded", function (e) {
+    // Check for a redirect
+    if (window.location.search) {
+      var params = window.location.search.split('?')[1]
+        .split('&')
+        .reduce((acc, p) => {
+          const param = p.split('=');
+          acc[param[0]] = param[1];
+          return acc;
+        }, {});
+
+      // Set the redirect value
+      if (params.redirect) {
+        document.getElementById('Redirect').value = params.redirect;
+      }
+    }
+
+  });
+
+</script>

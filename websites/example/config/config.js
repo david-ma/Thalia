@@ -32,9 +32,9 @@ const roleBasedSecurityConfig = recursiveObjectMerge(recursiveObjectMerge(securi
         {
             path: '/fruit',
             permissions: {
-                admin: ['view', 'edit', 'delete', 'create'],
-                user: ['view'],
-                guest: ['view'],
+                admin: ['read', 'update', 'delete', 'create'],
+                user: ['read'],
+                guest: ['read'],
             },
         },
     ],

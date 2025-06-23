@@ -330,9 +330,10 @@ export class BasicRouteGuard extends RouteGuard {
 }
 
 export type Role = 'admin' | 'user' | 'guest'
-export type Permission = 'view' | 'edit' | 'delete' | 'create' | 'manage'
+export type Permission = 'read' | 'update' | 'delete' | 'create' | 'manage'
 
 import { RoleRouteRule } from './security.js'
+import { CrudFactory } from './controllers.js'
 
 export type SecurityConfig = {
   roles: Role[]
@@ -365,15 +366,37 @@ export class RoleRouteGuard extends BasicRouteGuard {
 
       console.log('RouteRule', routeRule)
 
-      this.getUserAuth(request.req, request.requestInfo).then((userAuth) => {
-        const permissions: Permission[] = routeRule.permissions?.[userAuth.role] ?? routeRule.permissions?.guest ?? []
-
-        request.requestInfo.userAuth = userAuth
-        request.requestInfo.permissions = permissions
-
-        const allowed = this.canPerformAction(userAuth, routeRule, 'view')
-        return allowed
-      })
+      this.getUserAuth(request.req, request.requestInfo)
+        .then((userAuth) => {
+          // Look up permissions for the user
+          const permissions: Permission[] = routeRule.permissions?.[userAuth.role] ?? routeRule.permissions?.guest ?? []
+          request.requestInfo.userAuth = userAuth
+          request.requestInfo.permissions = permissions
+          return request
+        })
+        .then((request) => {
+          // If the user has the right permissions, let them through
+          // Otherwise, send them to the login page
+          const action = CrudFactory.getAction(request.requestInfo)
+          if (request.requestInfo.permissions?.includes(action)) {
+            return next(request)
+          } else {
+            if (request.requestInfo.userAuth?.role === 'guest') {
+              // please log in
+              const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
+                route: request.pathname,
+              })
+              request.res.writeHead(401, { 'Content-Type': 'text/html' })
+              request.res.end(login_html)
+              return finish('Access denied')
+            } else {
+              // access denied
+              request.res.writeHead(403, { 'Content-Type': 'text/html' })
+              request.res.end('Access denied')
+              return finish('Access denied')
+            }
+          }
+        })
 
       if (Object.keys(routeRule).length === 0) {
         return next(request)

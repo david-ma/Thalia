@@ -119,6 +119,7 @@ type CrudOptions = {
 }
 
 import { type LibSQLDatabase } from 'drizzle-orm/libsql'
+import { Permission } from './route-guard.js'
 
 export type Machine = {
   init: (website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string) => void
@@ -162,6 +163,35 @@ export class CrudFactory implements Machine {
 
         // console.log("Found", records.length, "records in", this.name)
       })
+  }
+
+  public static getAction(requestInfo: RequestInfo): Permission {
+    const target = requestInfo.action || 'list'
+
+    switch (target) {
+      case 'columns':
+        return 'read'
+      case 'list':
+        return 'read'
+      case 'json':
+        return 'read'
+      case 'new':
+        return 'create'
+      case 'create':
+        return 'create'
+      case 'testdata':
+        return 'create'
+      case 'edit':
+        return 'update'
+      case 'update':
+        return 'update'
+      case 'delete':
+        return 'delete'
+      case 'restore':
+        return 'update'
+      default:
+        return 'read'
+    }
   }
 
   /**

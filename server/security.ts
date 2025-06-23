@@ -71,7 +71,7 @@ export interface RoleRouteRule extends RouteRule {
   // Hardcode "owner: userId" to objects that can be owned?
 }
 
-const ALL_PERMISSIONS: Permission[] = ['view', 'edit', 'delete', 'create']
+const ALL_PERMISSIONS: Permission[] = ['create', 'read', 'update', 'delete']
 const ALL_ROLES: Role[] = ['admin', 'user', 'guest']
 // special role, "owner" is used for user-specific permissions
 
@@ -93,7 +93,7 @@ const default_routes: RoleRouteRule[] = [
     permissions: {
       admin: ALL_PERMISSIONS,
       // owner: ['view', 'edit', 'delete'],
-      user: ['view'],
+      user: ['read'],
     },
   },
   {

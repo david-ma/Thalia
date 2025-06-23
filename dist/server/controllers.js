@@ -85,6 +85,33 @@ export class CrudFactory {
             // console.log("Found", records.length, "records in", this.name)
         });
     }
+    static getAction(requestInfo) {
+        const target = requestInfo.action || 'list';
+        switch (target) {
+            case 'columns':
+                return 'read';
+            case 'list':
+                return 'read';
+            case 'json':
+                return 'read';
+            case 'new':
+                return 'create';
+            case 'create':
+                return 'create';
+            case 'testdata':
+                return 'create';
+            case 'edit':
+                return 'update';
+            case 'update':
+                return 'update';
+            case 'delete':
+                return 'delete';
+            case 'restore':
+                return 'update';
+            default:
+                return 'read';
+        }
+    }
     /**
      * Generate a CRUD controller for a given table.
      * We want:

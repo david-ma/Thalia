@@ -27,6 +27,7 @@ type CrudOptions = {
     relationships?: CrudRelationship[];
 };
 import { type LibSQLDatabase } from 'drizzle-orm/libsql';
+import { Permission } from './route-guard.js';
 export type Machine = {
     init: (website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string) => void;
     controller: Controller;
@@ -52,6 +53,7 @@ export declare class CrudFactory implements Machine {
     private static blacklist;
     constructor(table: SQLiteTableWithColumns<any>, options?: CrudOptions | any);
     init(website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string): void;
+    static getAction(requestInfo: RequestInfo): Permission;
     /**
      * Generate a CRUD controller for a given table.
      * We want:

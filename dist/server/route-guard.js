@@ -267,6 +267,7 @@ export class BasicRouteGuard extends RouteGuard {
         return false; // Request not handled by guard
     }
 }
+import { CrudFactory } from './controllers.js';
 /**
  * If we have a database, we can use the security package.
  * This will allow webmasters to define roles and permissions for routes.
@@ -287,12 +288,38 @@ export class RoleRouteGuard extends BasicRouteGuard {
         return new Promise((next, finish) => {
             const routeRule = this.getMatchingRoute(request);
             console.log('RouteRule', routeRule);
-            this.getUserAuth(request.req, request.requestInfo).then((userAuth) => {
+            this.getUserAuth(request.req, request.requestInfo)
+                .then((userAuth) => {
+                // Look up permissions for the user
                 const permissions = routeRule.permissions?.[userAuth.role] ?? routeRule.permissions?.guest ?? [];
                 request.requestInfo.userAuth = userAuth;
                 request.requestInfo.permissions = permissions;
-                const allowed = this.canPerformAction(userAuth, routeRule, 'view');
-                return allowed;
+                return request;
+            })
+                .then((request) => {
+                // If the user has the right permissions, let them through
+                // Otherwise, send them to the login page
+                const action = CrudFactory.getAction(request.requestInfo);
+                if (request.requestInfo.permissions?.includes(action)) {
+                    return next(request);
+                }
+                else {
+                    if (request.requestInfo.userAuth?.role === 'guest') {
+                        // please log in
+                        const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
+                            route: request.pathname,
+                        });
+                        request.res.writeHead(401, { 'Content-Type': 'text/html' });
+                        request.res.end(login_html);
+                        return finish('Access denied');
+                    }
+                    else {
+                        // access denied
+                        request.res.writeHead(403, { 'Content-Type': 'text/html' });
+                        request.res.end('Access denied');
+                        return finish('Access denied');
+                    }
+                }
             });
             if (Object.keys(routeRule).length === 0) {
                 return next(request);

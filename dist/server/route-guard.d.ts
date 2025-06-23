@@ -41,7 +41,7 @@ export declare class BasicRouteGuard extends RouteGuard {
     handleRequest(req: IncomingMessage, res: ServerResponse, website: Website, requestInfo: RequestInfo, pathnameOverride?: string): boolean;
 }
 export type Role = 'admin' | 'user' | 'guest';
-export type Permission = 'view' | 'edit' | 'delete' | 'create' | 'manage';
+export type Permission = 'read' | 'update' | 'delete' | 'create' | 'manage';
 import { RoleRouteRule } from './security.js';
 export type SecurityConfig = {
     roles: Role[];

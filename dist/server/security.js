@@ -32,7 +32,7 @@ const AuditMachine = new CrudFactory(audits, {
         },
     ],
 });
-const ALL_PERMISSIONS = ['view', 'edit', 'delete', 'create'];
+const ALL_PERMISSIONS = ['create', 'read', 'update', 'delete'];
 const ALL_ROLES = ['admin', 'user', 'guest'];
 // special role, "owner" is used for user-specific permissions
 const default_routes = [
@@ -53,7 +53,7 @@ const default_routes = [
         permissions: {
             admin: ALL_PERMISSIONS,
             // owner: ['view', 'edit', 'delete'],
-            user: ['view'],
+            user: ['read'],
         },
     },
     {

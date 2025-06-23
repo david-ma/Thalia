@@ -27,6 +27,10 @@
       "import": "./dist/models/index.js",
       "types": "./dist/models/index.d.ts"
     },
+    "./security-models": {
+      "import": "./dist/models/security-models.js",
+      "types": "./dist/models/security-models.d.ts"
+    },
     "./security": {
       "import": "./dist/server/security.js",
       "types": "./dist/server/security.d.ts"

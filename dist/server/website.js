@@ -357,7 +357,7 @@ export const controllerFactories = {
         };
     },
 };
-function recursiveObjectMerge(primary, secondary) {
+export function recursiveObjectMerge(primary, secondary) {
     const result = { ...primary };
     const primaryKeys = Object.keys(primary);
     for (const key in secondary) {

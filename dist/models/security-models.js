@@ -43,4 +43,4 @@ export function SessionFactory(config) {
 export function AuditFactory(config) {
     return audits;
 }
-//# sourceMappingURL=security.js.map
+//# sourceMappingURL=security-models.js.map

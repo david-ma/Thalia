@@ -90,3 +90,5 @@ export * from './controllers.js'
 export * from './database.js'
 
 export * from './route-guard.js'
+
+export * from './security.js'

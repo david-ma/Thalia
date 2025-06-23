@@ -212,7 +212,7 @@ export class BasicRouteGuard extends RouteGuard {
     const pathname = pathnameOverride ?? requestInfo.pathname
     // console.debug('route-guard on:', pathname)
 
-    const matchingRoute = this.getMatchingRoute(requestInfo)
+    const matchingRoute = this.getMatchingRoute(requestInfo as any)
     // const matchingRoute = this.getMatchingRoute(host, pathname)
 
     if (Object.keys(matchingRoute).length > 0) {
@@ -316,8 +316,8 @@ export class BasicRouteGuard extends RouteGuard {
   }
 }
 
-type Role = 'admin' | 'user'
-type Permission = 'view' | 'edit' | 'delete' | 'create'
+type Role = 'admin' | 'user' | 'guest'
+type Permission = 'view' | 'edit' | 'delete' | 'create' | 'manage'
 
 type RoleRouteRule = {
   pattern: string
@@ -333,6 +333,7 @@ type RoleRouteRule = {
 export type SecurityConfig = {
   roles: Role[]
   routes: RouteRule[]
+  // routes: RouteRule[] | RoleRouteRule[]
 }
 
 /**

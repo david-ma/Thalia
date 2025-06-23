@@ -6,7 +6,7 @@
  */
 
 // Import models
-import { users, sessions, audits, type User, type NewUser, type Session, type NewSession, type Audit, type NewAudit } from './security.js'
+import { users, sessions, audits, type User, type NewUser, type Session, type NewSession, type Audit, type NewAudit } from './security-models.js'
 import { albums, images, type Album, type NewAlbum, type Image, type NewImage } from './smugmug.js'
 
 // Export types
@@ -23,12 +23,12 @@ export const models = {
 }
 
 // Export factory functions
-export { UserFactory, SessionFactory, AuditFactory } from './security.js'
+export { UserFactory, SessionFactory, AuditFactory } from './security-models.js'
 export { AlbumFactory, ImageFactory } from './smugmug.js'
 
 // Export all from security
 // export * from './security.js'
-import * as security from './security.js'
+import * as security from './security-models.js'
 export { security }
 
 // Export all from util

@@ -116,4 +116,7 @@ export declare const controllerFactories: {
     redirectTo: (url: string) => (res: ServerResponse, _req: IncomingMessage, _website: Website) => void;
     serveFile: (url: string) => (res: ServerResponse, _req: IncomingMessage, website: Website) => void;
 };
+export declare function recursiveObjectMerge<T extends {
+    [key: string]: any;
+}>(primary: T, secondary: T): T;
 //# sourceMappingURL=website.d.ts.map

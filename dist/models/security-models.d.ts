@@ -12,4 +12,4 @@ export type NewAudit = typeof audits.$inferInsert;
 export declare function UserFactory(config: typeof baseTableConfig): SQLiteTableWithColumns<any>;
 export declare function SessionFactory(config: typeof baseTableConfig): SQLiteTableWithColumns<any>;
 export declare function AuditFactory(config: typeof baseTableConfig): SQLiteTableWithColumns<any>;
-//# sourceMappingURL=security.d.ts.map
+//# sourceMappingURL=security-models.d.ts.map

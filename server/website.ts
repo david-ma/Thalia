@@ -461,7 +461,7 @@ export const controllerFactories = {
   },
 }
 
-function recursiveObjectMerge<
+export function recursiveObjectMerge<
   T extends {
     [key: string]: any
   },

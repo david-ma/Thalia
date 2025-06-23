@@ -37,7 +37,7 @@ export declare class BasicRouteGuard extends RouteGuard {
     handleRequest(req: IncomingMessage, res: ServerResponse, website: Website, requestInfo: RequestInfo, pathnameOverride?: string): boolean;
     protected parseCookies(req: IncomingMessage): Record<string, string>;
 }
-type Role = 'admin' | 'user';
+type Role = 'admin' | 'user' | 'guest';
 export type SecurityConfig = {
     roles: Role[];
     routes: RouteRule[];

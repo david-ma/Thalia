@@ -16,8 +16,13 @@ import formidable from 'formidable';
  */
 export class RouteGuard {
     constructor(website) {
+        console.log('Constructing RouteGuard');
         this.website = website;
     }
+    /**
+     * Promised based request handler, so we can chain multiple handlers together.
+     *
+     */
     handleRequestChain(request) {
         return Promise.resolve(request);
     }
@@ -27,6 +32,7 @@ export class BasicRouteGuard extends RouteGuard {
         super(website);
         this.routes = {};
         this.salt = 0;
+        console.log('Constructing BasicRouteGuard');
         this.website = website;
         this.salt = Math.floor(Math.random() * 999);
         this.loadRoutes();
@@ -55,7 +61,7 @@ export class BasicRouteGuard extends RouteGuard {
                     request.res.setHeader('Set-Cookie', `${cookieName}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
                     request.res.writeHead(302, { Location: '/' });
                     request.res.end();
-                    return finish("Logged out");
+                    return finish('Logged out');
                 }
                 if (cookies[cookieName] === correctPassword) {
                     return next(request);
@@ -64,14 +70,14 @@ export class BasicRouteGuard extends RouteGuard {
                     const form = formidable({ multiples: false });
                     form.parse(request.req, (err, fields) => {
                         if (err) {
-                            return finish("Error parsing form data");
+                            return finish('Error parsing form data');
                         }
                         const password = this.saltPassword(fields?.['password']?.[0] ?? '');
                         if (password === correctPassword) {
                             request.res.setHeader('Set-Cookie', `${cookieName}=${password}; Path=/`);
                             request.res.writeHead(302, { Location: request.pathname });
                             request.res.end();
-                            return finish("Logged in");
+                            return finish('Logged in');
                         }
                         else {
                             const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
@@ -80,10 +86,10 @@ export class BasicRouteGuard extends RouteGuard {
                             });
                             request.res.writeHead(401, { 'Content-Type': 'text/html' });
                             request.res.end(login_html);
-                            return finish("Invalid password");
+                            return finish('Invalid password');
                         }
                     });
-                    return finish("Form submitted");
+                    return finish('Form submitted');
                 }
                 else {
                     const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
@@ -91,15 +97,15 @@ export class BasicRouteGuard extends RouteGuard {
                     });
                     request.res.writeHead(401, { 'Content-Type': 'text/html' });
                     request.res.end(login_html);
-                    return finish("Login page");
+                    return finish('Login page');
                 }
             }
             else if (routeRule.proxyTarget) {
                 this.handleProxy(request.req, request.res, routeRule);
-                return finish("Proxy request");
+                return finish('Proxy request');
             }
             else {
-                console.debug("No route rule found?");
+                console.debug('No route rule found?');
                 return next(request);
             }
         });
@@ -277,11 +283,12 @@ export class BasicRouteGuard extends RouteGuard {
  * This also requires email, so that people can be invited, authenticated and reset their password.
  *
  */
-export class RoleRouteGaurd extends BasicRouteGuard {
+export class RoleRouteGuard extends BasicRouteGuard {
     constructor(website) {
-        console.log('RouteGaurdWithUsers', website.config.security);
         super(website);
         this.roleRoutes = {};
+        console.log('Constructing RoleRouteGuard');
+        console.log('RouteGuardWithUsers', website.config.security);
     }
     handleRequest(req, res, website, requestInfo, pathnameOverride) {
         // Check security first

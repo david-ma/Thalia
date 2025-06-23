@@ -63,7 +63,6 @@ const AuditMachine: Machine = new CrudFactory(audits, {
   ],
 })
 
-
 export interface RoleRouteRule extends RouteRule {
   path: string
   permissions: {
@@ -74,7 +73,6 @@ export interface RoleRouteRule extends RouteRule {
   ownerOnly?: string[] // Actions only the owner can perform
 }
 
-
 const ALL_PERMISSIONS = ['view', 'edit', 'delete', 'create']
 const ALL_ROLES = ['admin', 'user', 'guest']
 // special role, "owner" is used for user-specific permissions
@@ -83,35 +81,35 @@ const default_routes: RoleRouteRule[] = [
   {
     path: '/',
     permissions: {
-      'guest': ALL_PERMISSIONS,
+      guest: ALL_PERMISSIONS,
     },
   },
   {
     path: '/admin',
     permissions: {
-      'admin': ALL_PERMISSIONS,
-    }
+      admin: ALL_PERMISSIONS,
+    },
   },
   {
     path: '/user',
     permissions: {
-      'admin': ALL_PERMISSIONS,
-      'owner': ['view', 'edit', 'delete'],
-      'user': ['view'],
-    }
+      admin: ALL_PERMISSIONS,
+      owner: ['view', 'edit', 'delete'],
+      user: ['view'],
+    },
   },
   {
     path: '/sessions',
     permissions: {
-      'admin': ALL_PERMISSIONS,
-    }
+      admin: ALL_PERMISSIONS,
+    },
   },
   {
     path: '/audits',
     permissions: {
-      'admin': ALL_PERMISSIONS,
-    }
-  }
+      admin: ALL_PERMISSIONS,
+    },
+  },
 ]
 
 export const securityConfig: RawWebsiteConfig = {
@@ -134,4 +132,3 @@ export const securityConfig: RawWebsiteConfig = {
   },
   routes: default_routes,
 }
-

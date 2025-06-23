@@ -23,9 +23,14 @@ import { RequestHandler } from './request-handler.js'
 export class RouteGuard {
   protected website: Website
   constructor(website: Website) {
+    console.log('Constructing RouteGuard')
     this.website = website
   }
 
+  /**
+   * Promised based request handler, so we can chain multiple handlers together.
+   *
+   */
   public handleRequestChain(request: RequestHandler): Promise<RequestHandler> {
     return Promise.resolve(request)
   }
@@ -39,12 +44,13 @@ export class BasicRouteGuard extends RouteGuard {
 
   constructor(website: Website) {
     super(website)
+    console.log('Constructing BasicRouteGuard')
     this.website = website
     this.salt = Math.floor(Math.random() * 999)
     this.loadRoutes()
   }
 
-  private getMatchingRoute(request: RequestHandler): RouteRule {
+  protected getMatchingRoute(request: RequestHandler): RouteRule {
     const requestInfo = request.requestInfo
     const host = requestInfo.host
     const pathname = requestInfo.pathname
@@ -54,7 +60,7 @@ export class BasicRouteGuard extends RouteGuard {
 
   public handleRequestChain(request: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
-      if(request.website.env === 'development' && request.pathname.startsWith('/browser-sync/')) {
+      if (request.website.env === 'development' && request.pathname.startsWith('/browser-sync/')) {
         return next(request)
       }
 
@@ -68,12 +74,12 @@ export class BasicRouteGuard extends RouteGuard {
         const correctPassword = this.saltPassword(routeRule.password)
         const cookies = this.parseCookies(request.req)
         const cookieName = `auth_${this.website.name}${routeRule.path}`
-        
-        if(request.pathname.startsWith(`${routeRule.path}/logout`)) {
+
+        if (request.pathname.startsWith(`${routeRule.path}/logout`)) {
           request.res.setHeader('Set-Cookie', `${cookieName}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`)
           request.res.writeHead(302, { Location: '/' })
           request.res.end()
-          return finish("Logged out")
+          return finish('Logged out')
         }
 
         if (cookies[cookieName] === correctPassword) {
@@ -84,7 +90,7 @@ export class BasicRouteGuard extends RouteGuard {
           const form = formidable({ multiples: false })
           form.parse(request.req, (err, fields) => {
             if (err) {
-              return finish("Error parsing form data")
+              return finish('Error parsing form data')
             }
 
             const password = this.saltPassword(fields?.['password']?.[0] ?? '')
@@ -92,7 +98,7 @@ export class BasicRouteGuard extends RouteGuard {
               request.res.setHeader('Set-Cookie', `${cookieName}=${password}; Path=/`)
               request.res.writeHead(302, { Location: request.pathname })
               request.res.end()
-              return finish("Logged in")
+              return finish('Logged in')
             } else {
               const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
                 route: request.pathname,
@@ -100,24 +106,23 @@ export class BasicRouteGuard extends RouteGuard {
               })
               request.res.writeHead(401, { 'Content-Type': 'text/html' })
               request.res.end(login_html)
-              return finish("Invalid password")
+              return finish('Invalid password')
             }
           })
-          return finish("Form submitted")
+          return finish('Form submitted')
         } else {
           const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
             route: request.pathname,
           })
           request.res.writeHead(401, { 'Content-Type': 'text/html' })
           request.res.end(login_html)
-          return finish("Login page")
+          return finish('Login page')
         }
-
       } else if (routeRule.proxyTarget) {
         this.handleProxy(request.req, request.res, routeRule)
-        return finish("Proxy request")
+        return finish('Proxy request')
       } else {
-        console.debug("No route rule found?")
+        console.debug('No route rule found?')
         return next(request)
       }
     })
@@ -294,7 +299,6 @@ export class BasicRouteGuard extends RouteGuard {
     return false // Request not handled by guard
   }
 
-
   // protected setCookie(res: ServerResponse, name: string, value: string, path: string = '/') {
   //   res.setHeader('Set-Cookie', `${name}=${value}; Path=${path}`)
   // }
@@ -342,12 +346,13 @@ export type SecurityConfig = {
  * This also requires email, so that people can be invited, authenticated and reset their password.
  *
  */
-export class RoleRouteGaurd extends BasicRouteGuard {
+export class RoleRouteGuard extends BasicRouteGuard {
   private roleRoutes: Record<string, RoleRouteRule> = {}
 
   constructor(website: Website) {
-    console.log('RouteGaurdWithUsers', website.config.security)
     super(website)
+    console.log('Constructing RoleRouteGuard')
+    console.log('RouteGuardWithUsers', website.config.security)
   }
 
   public handleRequest(

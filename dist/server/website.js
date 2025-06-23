@@ -23,7 +23,7 @@ import fs from 'fs';
 import path from 'path';
 import Handlebars from 'handlebars';
 import { cwd } from 'process';
-import { RoleRouteGaurd, BasicRouteGuard, RouteGuard } from './route-guard.js';
+import { RoleRouteGuard, BasicRouteGuard, RouteGuard } from './route-guard.js';
 import { ThaliaDatabase } from './database.js';
 export class Website {
     /**
@@ -49,9 +49,13 @@ export class Website {
      */
     static async create(config) {
         const website = new Website(config);
-        return Promise.all([website.loadPartials(), website.loadConfig(config).then(() => website.loadDatabase())]).then(() => {
-            if (website.config.security) {
-                website.routeGuard = new RoleRouteGaurd(website);
+        return Promise.all([website.loadPartials(), website.loadConfig(config).then(() => website.loadDatabase())]).then(([partials, websiteConfig]) => {
+            if (websiteConfig &&
+                websiteConfig.machines &&
+                websiteConfig.machines.users &&
+                websiteConfig.machines.sessions &&
+                websiteConfig.machines.audits) {
+                website.routeGuard = new RoleRouteGuard(website);
             }
             else if (website.config.routes.length > 0) {
                 website.routeGuard = new BasicRouteGuard(website);

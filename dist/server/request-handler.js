@@ -81,7 +81,7 @@ export class RequestHandler {
             if (fs.statSync(requestHandler.projectPublicPath).isDirectory()) {
                 const indexPath = path.join(requestHandler.pathname, 'index.html');
                 requestHandler.handleRequest(requestHandler.req, requestHandler.res, requestHandler.requestInfo, indexPath);
-                return finish(`Redirected to ${requestHandler.pathname}/index.html`);
+                return finish(`Redirected to ${indexPath}`);
             }
             else {
                 const contentType = RequestHandler.getContentType(requestHandler.pathname);
@@ -116,11 +116,13 @@ export class RequestHandler {
                 target = thaliaHandlebarsPath;
             }
             if (target) {
-                requestHandler.website.asyncServeHandlebarsTemplate({
+                requestHandler.website
+                    .asyncServeHandlebarsTemplate({
                     res: requestHandler.res,
                     templatePath: target,
                     data: requestHandler.requestInfo, // Or send an empty object?
-                }).then(() => {
+                })
+                    .then(() => {
                     finish(`Successfully rendered handlebars template ${requestHandler.pathname}`);
                 });
             }

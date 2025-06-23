@@ -6,9 +6,7 @@ const FruitMachine = new CrudFactory(fruit);
 import { CrudFactory } from 'thalia/controllers';
 import { securityConfig } from 'thalia/security';
 import { recursiveObjectMerge } from 'thalia/website';
-// recursiveObjectMerge(securityConfig, 
-export const config = recursiveObjectMerge(securityConfig, {
-    domains: ['example.com'],
+const fruitConfig = {
     database: {
         schemas: {
             fruit,
@@ -20,5 +18,16 @@ export const config = recursiveObjectMerge(securityConfig, {
     controllers: {
         fruit: FruitMachine.controller.bind(FruitMachine),
     },
-});
+};
+const basicSecurityConfig = recursiveObjectMerge({
+    routes: [
+        {
+            path: '/fruit',
+            password: 'hunter2',
+        }
+    ]
+}, fruitConfig);
+const roleBasedSecurityConfig = recursiveObjectMerge(securityConfig, fruitConfig);
+// export const config: RawWebsiteConfig = basicSecurityConfig
+export const config = roleBasedSecurityConfig;
 //# sourceMappingURL=config.js.map

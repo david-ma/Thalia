@@ -21,6 +21,10 @@ import { RequestHandler } from './request-handler.js';
 export declare class RouteGuard {
     protected website: Website;
     constructor(website: Website);
+    /**
+     * Promised based request handler, so we can chain multiple handlers together.
+     *
+     */
     handleRequestChain(request: RequestHandler): Promise<RequestHandler>;
 }
 export declare class BasicRouteGuard extends RouteGuard {
@@ -29,7 +33,7 @@ export declare class BasicRouteGuard extends RouteGuard {
     protected routeRule: RouteRule;
     protected website: Website;
     constructor(website: Website);
-    private getMatchingRoute;
+    protected getMatchingRoute(request: RequestHandler): RouteRule;
     handleRequestChain(request: RequestHandler): Promise<RequestHandler>;
     private handleProxy;
     private loadRoutes;
@@ -48,7 +52,7 @@ export type SecurityConfig = {
  * This also requires email, so that people can be invited, authenticated and reset their password.
  *
  */
-export declare class RoleRouteGaurd extends BasicRouteGuard {
+export declare class RoleRouteGuard extends BasicRouteGuard {
     private roleRoutes;
     constructor(website: Website);
     handleRequest(req: IncomingMessage, res: ServerResponse, website: Website, requestInfo: RequestInfo, pathnameOverride?: string): boolean;

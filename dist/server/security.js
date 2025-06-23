@@ -39,35 +39,35 @@ const default_routes = [
     {
         path: '/',
         permissions: {
-            'guest': ALL_PERMISSIONS,
+            guest: ALL_PERMISSIONS,
         },
     },
     {
         path: '/admin',
         permissions: {
-            'admin': ALL_PERMISSIONS,
-        }
+            admin: ALL_PERMISSIONS,
+        },
     },
     {
         path: '/user',
         permissions: {
-            'admin': ALL_PERMISSIONS,
-            'owner': ['view', 'edit', 'delete'],
-            'user': ['view'],
-        }
+            admin: ALL_PERMISSIONS,
+            owner: ['view', 'edit', 'delete'],
+            user: ['view'],
+        },
     },
     {
         path: '/sessions',
         permissions: {
-            'admin': ALL_PERMISSIONS,
-        }
+            admin: ALL_PERMISSIONS,
+        },
     },
     {
         path: '/audits',
         permissions: {
-            'admin': ALL_PERMISSIONS,
-        }
-    }
+            admin: ALL_PERMISSIONS,
+        },
+    },
 ];
 export const securityConfig = {
     database: {

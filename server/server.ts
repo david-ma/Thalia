@@ -13,6 +13,7 @@ import url from 'url'
 import { Server as SocketServer } from 'socket.io'
 import { Socket } from 'socket.io'
 import { RequestHandler } from './request-handler.js'
+import { UserAuth, Permission } from './route-guard.js'
 
 export type RequestInfo = {
   host: string
@@ -24,6 +25,9 @@ export type RequestInfo = {
   controller: string
   action: string
   slug: string
+  cookies: Record<string, string>
+  userAuth?: UserAuth
+  permissions?: Permission[]
 }
 
 export class Server extends EventEmitter {
@@ -61,6 +65,7 @@ export class Server extends EventEmitter {
     const controller = parts[1] ?? ''
     const action = parts[2] ?? ''
     const slug = parts.pop() ?? ''
+    const cookies = this.parseCookies(req)
 
     return {
       host,
@@ -72,6 +77,7 @@ export class Server extends EventEmitter {
       controller,
       action,
       slug,
+      cookies,
     }
   }
 
@@ -175,5 +181,21 @@ export class Server extends EventEmitter {
 
   public getPort(): number {
     return this.port
+  }
+
+  private parseCookies(req: IncomingMessage): Record<string, string> {
+    const cookies: Record<string, string> = {}
+    const cookieHeader = req.headers.cookie
+
+    if (cookieHeader) {
+      cookieHeader.split(';').forEach((cookie) => {
+        const [name, value] = cookie.trim().split('=')
+        if (name && value) {
+          cookies[name] = value
+        }
+      })
+    }
+
+    return cookies
   }
 }

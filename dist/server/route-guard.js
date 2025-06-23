@@ -1,5 +1,6 @@
 import http from 'http';
 import formidable from 'formidable';
+import { eq } from 'drizzle-orm';
 /**
  * The RouteGuard class provides an alternative "handleRequest" method, which checks for an authentication cookie.
  * If the cookie is present, the request is allowed to proceed.
@@ -41,7 +42,12 @@ export class BasicRouteGuard extends RouteGuard {
         const requestInfo = request.requestInfo;
         const host = requestInfo.host;
         const pathname = requestInfo.pathname;
-        return Object.entries(this.routes).find(([key]) => pathname.startsWith(key.replace(host, '')))?.[1] ?? {};
+        const fullpath = host + pathname;
+        return (Object.entries(this.routes).find(([route, rule]) => {
+            if (fullpath.startsWith(route)) {
+                return [route, rule];
+            }
+        })?.[1] ?? {});
     }
     handleRequestChain(request) {
         return new Promise((next, finish) => {
@@ -55,7 +61,7 @@ export class BasicRouteGuard extends RouteGuard {
             this.routeRule = routeRule;
             if (routeRule.password) {
                 const correctPassword = this.saltPassword(routeRule.password);
-                const cookies = this.parseCookies(request.req);
+                const cookies = request.requestInfo.cookies;
                 const cookieName = `auth_${this.website.name}${routeRule.path}`;
                 if (request.pathname.startsWith(`${routeRule.path}/logout`)) {
                     request.res.setHeader('Set-Cookie', `${cookieName}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
@@ -105,7 +111,7 @@ export class BasicRouteGuard extends RouteGuard {
                 return finish('Proxy request');
             }
             else {
-                console.debug('No route rule found?');
+                console.debug('No route rule password found');
                 return next(request);
             }
         });
@@ -186,7 +192,7 @@ export class BasicRouteGuard extends RouteGuard {
             // Check security if required
             if (matchingRoute?.password) {
                 const correctPassword = this.saltPassword(matchingRoute.password);
-                const cookies = this.parseCookies(req);
+                const cookies = requestInfo.cookies;
                 const cookieName = `auth_${website.name}${matchingRoute.path}`;
                 // if developer mode, and browser-sync
                 if (website.env === 'development' && pathname.startsWith('/browser-sync/')) {
@@ -260,22 +266,6 @@ export class BasicRouteGuard extends RouteGuard {
         }
         return false; // Request not handled by guard
     }
-    // protected setCookie(res: ServerResponse, name: string, value: string, path: string = '/') {
-    //   res.setHeader('Set-Cookie', `${name}=${value}; Path=${path}`)
-    // }
-    parseCookies(req) {
-        const cookies = {};
-        const cookieHeader = req.headers.cookie;
-        if (cookieHeader) {
-            cookieHeader.split(';').forEach((cookie) => {
-                const [name, value] = cookie.trim().split('=');
-                if (name && value) {
-                    cookies[name] = value;
-                }
-            });
-        }
-        return cookies;
-    }
 }
 /**
  * If we have a database, we can use the security package.
@@ -290,52 +280,65 @@ export class RoleRouteGuard extends BasicRouteGuard {
         console.log('Constructing RoleRouteGuard');
         console.log('RouteGuardWithUsers', website.config.security);
     }
-    handleRequest(req, res, website, requestInfo, pathnameOverride) {
-        // Check security first
-        const userAuth = this.getUserAuth(req); // Future: will be passed from handleRequest
-        const canAccess = this.checkRouteAccess(requestInfo.url, userAuth);
-        const pathname = pathnameOverride ?? requestInfo.pathname;
-        if (!canAccess) {
-            res.writeHead(403, { 'Content-Type': 'text/html' });
-            res.end('Access denied');
-            return true;
-        }
-        // If access granted, pass to controller
-        // const controller = this.website.controllers[requestInfo.controller]
-        // controller(res, req, website, requestInfo)
-        // this.website.handleRequest(req, res, requestInfo, pathname)
-        throw new Error('Not implemented');
-        return true;
+    getMatchingRoute(request) {
+        return super.getMatchingRoute(request);
     }
-    checkRouteAccess(url, userAuth) {
-        // Match URL against security patterns
-        const routeRule = this.findMatchingRoute(url);
-        if (!routeRule)
-            return true; // No rule = allow access
-        return this.canPerformAction(userAuth, routeRule, 'view');
+    handleRequestChain(request) {
+        return new Promise((next, finish) => {
+            const routeRule = this.getMatchingRoute(request);
+            console.log('RouteRule', routeRule);
+            this.getUserAuth(request.req, request.requestInfo).then((userAuth) => {
+                const permissions = routeRule.permissions?.[userAuth.role] ?? routeRule.permissions?.guest ?? [];
+                request.requestInfo.userAuth = userAuth;
+                request.requestInfo.permissions = permissions;
+                const allowed = this.canPerformAction(userAuth, routeRule, 'view');
+                return allowed;
+            });
+            if (Object.keys(routeRule).length === 0) {
+                return next(request);
+            }
+            return next(request);
+        });
     }
-    findMatchingRoute(url) {
-        return this.roleRoutes[url];
-    }
-    getUserAuth(req) {
-        return {
-            isAuthenticated: true,
-            role: 'admin',
-        };
+    async getUserAuth(req, requestInfo) {
+        return new Promise((resolve, reject) => {
+            const sessionId = requestInfo.cookies.sessionId;
+            const drizzle = this.website.db.drizzle;
+            const sessions = this.website.db.machines.sessions.table;
+            if (!sessionId) {
+                resolve({
+                    role: 'guest',
+                });
+            }
+            else {
+                drizzle
+                    .select()
+                    .from(sessions)
+                    .where(eq(sessions.sid, sessionId))
+                    .then((result) => {
+                    console.log('Result', result);
+                    resolve({
+                        role: 'guest',
+                    });
+                })
+                    .catch((err) => {
+                    console.error('Error getting user auth', err);
+                    resolve({
+                        role: 'guest',
+                    });
+                });
+            }
+        });
     }
     canPerformAction(userAuth, routeRule, action, resourceOwner) {
-        // Check if user is authenticated
-        if (routeRule.requireAuth && !this.isAuthenticated(userAuth)) {
-            return false;
+        // If no permissions are defined, allow access
+        if (!routeRule.permissions) {
+            return true;
         }
         // Check if action is allowed for user's role
-        const allowedRoles = routeRule.permissions[action];
-        if (allowedRoles && allowedRoles !== '*' && !allowedRoles.includes(userAuth.role)) {
+        const userPermissions = routeRule.permissions[userAuth.role] || routeRule.permissions.guest || [];
+        if (!userPermissions.includes(action)) {
             return false;
-        }
-        // Check owner-only permissions
-        if (routeRule.ownerOnly?.includes(action)) {
-            return userAuth.username === resourceOwner || userAuth.role === 'admin';
         }
         return true;
     }
@@ -349,6 +352,4 @@ export class RoleRouteGuard extends BasicRouteGuard {
         return true;
     }
 }
-// Future:
-// Enterprise route guard, with 3rd party authentication.
 //# sourceMappingURL=route-guard.js.map

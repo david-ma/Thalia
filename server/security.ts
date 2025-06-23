@@ -22,7 +22,7 @@ Our schema will be modelled on django security, for easy migration.
 
 */
 
-import { SecurityConfig } from './route-guard.js'
+import { Permission, Role, SecurityConfig } from './route-guard.js'
 export type { SecurityConfig }
 
 import { users, sessions, audits } from '../models/security-models.js'
@@ -65,16 +65,14 @@ const AuditMachine: Machine = new CrudFactory(audits, {
 
 export interface RoleRouteRule extends RouteRule {
   path: string
-  permissions: {
-    [key: string]: string[]
-  }
-  allowAnonymous?: boolean
+  permissions: Partial<Record<Role, Permission[]>>
   // For user-specific permissions
-  ownerOnly?: string[] // Actions only the owner can perform
+  // ownerOnly?: string[] // Actions only the owner can perform
+  // Hardcode "owner: userId" to objects that can be owned?
 }
 
-const ALL_PERMISSIONS = ['view', 'edit', 'delete', 'create']
-const ALL_ROLES = ['admin', 'user', 'guest']
+const ALL_PERMISSIONS: Permission[] = ['view', 'edit', 'delete', 'create']
+const ALL_ROLES: Role[] = ['admin', 'user', 'guest']
 // special role, "owner" is used for user-specific permissions
 
 const default_routes: RoleRouteRule[] = [
@@ -94,7 +92,7 @@ const default_routes: RoleRouteRule[] = [
     path: '/user',
     permissions: {
       admin: ALL_PERMISSIONS,
-      owner: ['view', 'edit', 'delete'],
+      // owner: ['view', 'edit', 'delete'],
       user: ['view'],
     },
   },

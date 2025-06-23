@@ -30,6 +30,7 @@ import { type LibSQLDatabase } from 'drizzle-orm/libsql';
 export type Machine = {
     init: (website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string) => void;
     controller: Controller;
+    table: SQLiteTableWithColumns<any>;
 };
 /**
  * The CrudFactory is a class that generates a CRUD controller for a given table.
@@ -44,7 +45,7 @@ export type Machine = {
  */
 export declare class CrudFactory implements Machine {
     name: string;
-    private table;
+    table: SQLiteTableWithColumns<any>;
     private website;
     private db;
     private sqlite;

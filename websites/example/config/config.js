@@ -24,10 +24,21 @@ const basicSecurityConfig = recursiveObjectMerge({
         {
             path: '/fruit',
             password: 'hunter2',
-        }
-    ]
+        },
+    ],
 }, fruitConfig);
-const roleBasedSecurityConfig = recursiveObjectMerge(securityConfig, fruitConfig);
+const roleBasedSecurityConfig = recursiveObjectMerge(recursiveObjectMerge(securityConfig, fruitConfig), {
+    routes: [
+        {
+            path: '/fruit',
+            permissions: {
+                admin: ['view', 'edit', 'delete', 'create'],
+                user: ['view'],
+                guest: ['view'],
+            },
+        },
+    ],
+});
 // export const config: RawWebsiteConfig = basicSecurityConfig
 export const config = roleBasedSecurityConfig;
 //# sourceMappingURL=config.js.map

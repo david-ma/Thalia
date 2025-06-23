@@ -1,13 +1,9 @@
-import { SecurityConfig } from './route-guard.js';
+import { Permission, Role, SecurityConfig } from './route-guard.js';
 export type { SecurityConfig };
 import { RawWebsiteConfig, RouteRule } from './types.js';
 export interface RoleRouteRule extends RouteRule {
     path: string;
-    permissions: {
-        [key: string]: string[];
-    };
-    allowAnonymous?: boolean;
-    ownerOnly?: string[];
+    permissions: Partial<Record<Role, Permission[]>>;
 }
 export declare const securityConfig: RawWebsiteConfig;
 //# sourceMappingURL=security.d.ts.map

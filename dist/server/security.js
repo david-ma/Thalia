@@ -52,7 +52,7 @@ const default_routes = [
         path: '/user',
         permissions: {
             admin: ALL_PERMISSIONS,
-            owner: ['view', 'edit', 'delete'],
+            // owner: ['view', 'edit', 'delete'],
             user: ['view'],
         },
     },

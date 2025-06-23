@@ -32,6 +32,7 @@ export class Server extends EventEmitter {
         const controller = parts[1] ?? '';
         const action = parts[2] ?? '';
         const slug = parts.pop() ?? '';
+        const cookies = this.parseCookies(req);
         return {
             host,
             domain,
@@ -42,6 +43,7 @@ export class Server extends EventEmitter {
             controller,
             action,
             slug,
+            cookies,
         };
     }
     /**
@@ -131,6 +133,19 @@ export class Server extends EventEmitter {
     }
     getPort() {
         return this.port;
+    }
+    parseCookies(req) {
+        const cookies = {};
+        const cookieHeader = req.headers.cookie;
+        if (cookieHeader) {
+            cookieHeader.split(';').forEach((cookie) => {
+                const [name, value] = cookie.trim().split('=');
+                if (name && value) {
+                    cookies[name] = value;
+                }
+            });
+        }
+        return cookies;
     }
 }
 //# sourceMappingURL=server.js.map

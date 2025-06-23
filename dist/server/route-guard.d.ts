@@ -39,9 +39,10 @@ export declare class BasicRouteGuard extends RouteGuard {
     private loadRoutes;
     private saltPassword;
     handleRequest(req: IncomingMessage, res: ServerResponse, website: Website, requestInfo: RequestInfo, pathnameOverride?: string): boolean;
-    protected parseCookies(req: IncomingMessage): Record<string, string>;
 }
-type Role = 'admin' | 'user' | 'guest';
+export type Role = 'admin' | 'user' | 'guest';
+export type Permission = 'view' | 'edit' | 'delete' | 'create' | 'manage';
+import { RoleRouteRule } from './security.js';
 export type SecurityConfig = {
     roles: Role[];
     routes: RouteRule[];
@@ -55,14 +56,17 @@ export type SecurityConfig = {
 export declare class RoleRouteGuard extends BasicRouteGuard {
     private roleRoutes;
     constructor(website: Website);
-    handleRequest(req: IncomingMessage, res: ServerResponse, website: Website, requestInfo: RequestInfo, pathnameOverride?: string): boolean;
-    private checkRouteAccess;
-    private findMatchingRoute;
+    protected getMatchingRoute(request: RequestHandler): RoleRouteRule;
+    handleRequestChain(request: RequestHandler): Promise<RequestHandler>;
     private getUserAuth;
     private canPerformAction;
     private isAuthenticated;
     private hasRole;
     private isLoggedIn;
 }
-export {};
+export type UserAuth = {
+    role: Role;
+    userId?: string;
+    sessionId?: string;
+};
 //# sourceMappingURL=route-guard.d.ts.map

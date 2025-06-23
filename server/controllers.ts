@@ -123,6 +123,7 @@ import { type LibSQLDatabase } from 'drizzle-orm/libsql'
 export type Machine = {
   init: (website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string) => void
   controller: Controller
+  table: SQLiteTableWithColumns<any>
 }
 
 /**
@@ -138,7 +139,7 @@ export type Machine = {
  */
 export class CrudFactory implements Machine {
   public name!: string
-  private table: SQLiteTableWithColumns<any>
+  public table: SQLiteTableWithColumns<any>
   private website!: Website
   private db!: LibSQLDatabase
   private sqlite!: libsql.Client

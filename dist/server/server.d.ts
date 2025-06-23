@@ -8,6 +8,7 @@ import { EventEmitter } from 'events';
 import { ServerMode, ServerOptions } from './types.js';
 import { Router } from './router.js';
 import { Website } from './website.js';
+import { UserAuth, Permission } from './route-guard.js';
 export type RequestInfo = {
     host: string;
     domain: string;
@@ -18,6 +19,9 @@ export type RequestInfo = {
     controller: string;
     action: string;
     slug: string;
+    cookies: Record<string, string>;
+    userAuth?: UserAuth;
+    permissions?: Permission[];
 };
 export declare class Server extends EventEmitter {
     private httpServer;
@@ -43,5 +47,6 @@ export declare class Server extends EventEmitter {
     stop(): Promise<void>;
     getMode(): ServerMode;
     getPort(): number;
+    private parseCookies;
 }
 //# sourceMappingURL=server.d.ts.map

@@ -73,12 +73,13 @@ export interface DatabaseConfig {
 }
 import { SecurityConfig } from './route-guard.js';
 export type { SecurityConfig };
+import { RoleRouteRule } from './security.js';
 export interface RawWebsiteConfig {
     domains?: string[];
     controllers?: {
         [key: string]: Controller;
     };
-    routes?: RouteRule[];
+    routes?: RouteRule[] | RoleRouteRule[];
     websockets?: RawWebsocketConfig;
     database?: DatabaseConfig;
     security?: SecurityConfig;

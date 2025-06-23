@@ -130,7 +130,7 @@ export class BasicRouteGuard extends RouteGuard {
             });
             proxyReq.on('error', (error) => {
                 console.error(`Proxy upgrade error for ${route.path}:`, error);
-                res.writeHead(500);
+                // res.writeHead(500)
                 res.end('Proxy Upgrade Error');
             });
             req.pipe(proxyReq);

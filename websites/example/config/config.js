@@ -67,9 +67,18 @@ export const config = {
         albums: AlbumMachine.controller.bind(AlbumMachine),
         images: ImageMachine.controller.bind(ImageMachine),
     },
-    // routes: [
-    //   {
-    //     password: 'password',
-    //   },
+    routes: [
+    // {
+    //   // password: 'password',
+    //   proxyTarget: {
+    //     host: '100.106.6.69',
+    //     // host: 'watch.david-ma.net',
+    //     // port: 80
+    //     // port: 443,
+    //     port: 32400,
+    //   }
+    // },
+    ],
+    // security
 };
 //# sourceMappingURL=config.js.map

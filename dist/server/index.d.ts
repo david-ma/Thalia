@@ -24,4 +24,5 @@ export * from './controllers.js';
 export * from './database.js';
 export * from './route-guard.js';
 export * from './security.js';
+export * from './mail.js';
 //# sourceMappingURL=index.d.ts.map

@@ -159,7 +159,7 @@ export class RequestHandler {
     }
     static tryController(requestHandler) {
         return new Promise((next, finish) => {
-            console.log('Trying to execute controller');
+            // console.debug(`Trying to execute controller '${requestHandler.requestInfo.controller}'`)
             const controllerSlug = requestHandler.requestInfo.controller;
             const controller = requestHandler.website.controllers[controllerSlug];
             if (!controller) {

@@ -392,31 +392,38 @@ export const controllerFactories = {
         };
     },
 };
-export function recursiveObjectMerge(primary, secondary) {
-    const result = { ...primary };
-    const primaryKeys = Object.keys(primary);
-    for (const key in secondary) {
-        if (!primaryKeys.includes(key)) {
-            result[key] = secondary[key];
+/**
+ * This function merges two objects, and returns a new object.
+ * It does not mutate the original objects.
+ * Arrays are concatenated.
+ * Objects are merged recursively.
+ * The additional object takes precedence over the base object.
+ */
+export function recursiveObjectMerge(baseObject, additionalObject) {
+    const result = { ...baseObject };
+    const baseObjectKeys = Object.keys(baseObject);
+    for (const key in additionalObject) {
+        if (!baseObjectKeys.includes(key)) {
+            result[key] = additionalObject[key];
         }
-        else if (Array.isArray(secondary[key])) {
+        else if (Array.isArray(additionalObject[key])) {
             if (Array.isArray(result[key])) {
-                result[key] = result[key].concat(secondary[key]);
+                result[key] = result[key].concat(additionalObject[key]);
             }
             else {
-                result[key] = secondary[key];
+                result[key] = additionalObject[key];
             }
         }
-        else if (typeof secondary[key] === 'object') {
+        else if (typeof additionalObject[key] === 'object') {
             if (typeof result[key] === 'object') {
-                result[key] = recursiveObjectMerge(result[key], secondary[key]);
+                result[key] = recursiveObjectMerge(result[key], additionalObject[key]);
             }
             else {
-                result[key] = secondary[key];
+                result[key] = additionalObject[key];
             }
         }
         else {
-            result[key] = secondary[key];
+            result[key] = additionalObject[key];
         }
     }
     return result;

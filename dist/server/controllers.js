@@ -535,7 +535,7 @@ export class CrudFactory {
 }
 CrudFactory.blacklist = ['createdAt', 'updatedAt', 'deletedAt']; // Filter 'id' as well?
 import formidable from 'formidable';
-function parseForm(res, req) {
+export function parseForm(res, req) {
     return new Promise((resolve, reject) => {
         const methods = ['POST', 'PUT', 'PATCH', 'DELETE'];
         if (!methods.includes(req.method ?? '')) {

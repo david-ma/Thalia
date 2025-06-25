@@ -28,6 +28,13 @@ type CrudOptions = {
 };
 import { type LibSQLDatabase } from 'drizzle-orm/libsql';
 import { Permission } from './route-guard.js';
+/**
+ * A Machine is a singleton that needs to be initialised by Thalia.
+ * They provide controllers.
+ * CrudFactories are Machines.
+ * MailService is a Machine.
+ *
+ */
 export type Machine = {
     init: (website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string) => void;
     controller: Controller;
@@ -126,5 +133,11 @@ export declare class CrudFactory implements Machine {
      */
     private reportError;
 }
+import formidable from 'formidable';
+type ParsedForm = {
+    fields: Record<string, string>;
+    files: formidable.Files<string>;
+};
+export declare function parseForm(res: ServerResponse, req: IncomingMessage): Promise<ParsedForm>;
 export {};
 //# sourceMappingURL=controllers.d.ts.map

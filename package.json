@@ -38,6 +38,10 @@
     "./controllers": {
       "import": "./dist/server/controllers.js",
       "types": "./dist/server/controllers.d.ts"
+    },
+    "./mail": {
+      "import": "./dist/server/mail.js",
+      "types": "./dist/server/mail.d.ts"
     }
   },
   "bin": {
@@ -63,12 +67,14 @@
     "drizzle-orm": "^0.44.2",
     "formidable": "^3.5.1",
     "handlebars": "^4.7.8",
+    "nodemailer": "^7.0.3",
     "sass": "1.77.6",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "@types/formidable": "^3.4.5",
     "@types/node": "^20.12.5",
+    "@types/nodemailer": "^6.4.17",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "autoprefixer": "10.2.6",

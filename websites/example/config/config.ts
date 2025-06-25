@@ -1,8 +1,3 @@
-// import { RawWebsiteConfig } from 'thalia/types'
-// import { users, sessions, audits } from 'thalia/models'
-
-// import { users } from 'thalia/models'
-
 import { fruit } from '../models/fruit.js'
 
 const FruitMachine = new CrudFactory(fruit)
@@ -26,17 +21,10 @@ const fruitConfig: RawWebsiteConfig = {
   },
 }
 
-const basicSecurityConfig: RawWebsiteConfig = recursiveObjectMerge(
-  {
-    routes: [
-      {
-        path: '/fruit',
-        password: 'hunter2',
-      },
-    ],
-  },
-  fruitConfig,
-)
+import { MailService } from 'thalia/mail'
+import path from 'path'
+const mailAuthPath = path.join(import.meta.dirname, 'mailAuth.js')
+const mailService = new MailService(mailAuthPath)
 
 const roleBasedSecurityConfig: RawWebsiteConfig = recursiveObjectMerge(
   recursiveObjectMerge(securityConfig, fruitConfig),
@@ -51,8 +39,12 @@ const roleBasedSecurityConfig: RawWebsiteConfig = recursiveObjectMerge(
         },
       },
     ],
+    database: {
+      schemas: {},
+      machines: {
+        mail: mailService,
+      },
+    },
   },
 )
-
-// export const config: RawWebsiteConfig = basicSecurityConfig
 export const config: RawWebsiteConfig = roleBasedSecurityConfig

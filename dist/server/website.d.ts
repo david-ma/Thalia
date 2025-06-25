@@ -116,7 +116,12 @@ export declare const controllerFactories: {
     redirectTo: (url: string) => (res: ServerResponse, _req: IncomingMessage, _website: Website) => void;
     serveFile: (url: string) => (res: ServerResponse, _req: IncomingMessage, website: Website) => void;
 };
-export declare function recursiveObjectMerge<T extends {
-    [key: string]: any;
-}>(primary: T, secondary: T): T;
+/**
+ * This function merges two objects, and returns a new object.
+ * It does not mutate the original objects.
+ * Arrays are concatenated.
+ * Objects are merged recursively.
+ * The additional object takes precedence over the base object.
+ */
+export declare function recursiveObjectMerge<T extends Record<string, any>>(baseObject: T, additionalObject: T): T;
 //# sourceMappingURL=website.d.ts.map

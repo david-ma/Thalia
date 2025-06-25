@@ -289,7 +289,7 @@ export class RoleRouteGuard extends BasicRouteGuard {
     handleRequestChain(request) {
         return new Promise((next, finish) => {
             const routeRule = this.getMatchingRoute(request);
-            console.log('RouteRule', routeRule);
+            // console.debug('Hnadling request chain RouteRule', routeRule)
             return this.getUserAuth(request.req, request.requestInfo)
                 .then((userAuth) => {
                 // Look up permissions for the user

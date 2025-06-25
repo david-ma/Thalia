@@ -250,6 +250,8 @@ export class Website {
     return templates
   }
 
+  // TODO: Process SCSS in templates
+  // TODO: Move JS to the end of the body
   private readAllViewsInFolder(folder: string): Views {
     const views: Views = {}
     this.handlebars.registerPartial('styles', '')

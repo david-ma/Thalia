@@ -22,6 +22,27 @@
       "when": 1750256913560,
       "tag": "0002_huge_lucky_pierre",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1750811859735,
+      "tag": "0003_safe_midnight",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1750813795395,
+      "tag": "0004_illegal_carlie_cooper",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1750818489755,
+      "tag": "0005_wakeful_tana_nile",
+      "breakpoints": true
     }
   ]
 }

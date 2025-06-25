@@ -1,0 +1,58 @@
+<style>
+  section {
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    background-color: #f0f0f0;
+    padding: 10px;
+  }
+
+  div {
+    margin-bottom: 10px;
+  }
+
+  div.email_template {
+    border: 1px solid #888;
+    background-color: white;
+    padding: 5px;
+  }
+</style>
+
+<section>
+  <div>
+    <h1>Email Debug</h1>
+    <p>From: {{from}}</p>
+    <p>To: {{to}}</p>
+    <p>pject: {{pject}}</p>
+    <p>Text: {{text}}</p>
+    <p>HTML: {{html}}</p>
+  </div>
+</section>
+<section>
+  <h2>New User Email</h2>
+  <p>newUserEmail.hbs</p>
+  <div class="email_template">
+    {{> newUserEmail }}
+  </div>
+</section>
+<section>
+  <h2>Invite</h2>
+  <p>invite.hbs</p>
+  <div class="email_template">
+    {{> invite }}
+  </div>
+</section>
+<section>
+  <h2>Reset Password</h2>
+  <p>resetPassword.hbs</p>
+  <div class="email_template">
+    {{> resetPassword }}
+  </div>
+</section>
+<section>
+  <h2>Verify Email</h2>
+  <p>verifyEmail.hbs</p>
+  <div class="email_template">
+    {{> verifyEmail }}
+  </div>
+</section>
+<section>

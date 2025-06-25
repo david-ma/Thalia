@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { recursiveObjectMerge } from './website.js';
 export class MailService {
     /**
@@ -9,10 +10,13 @@ export class MailService {
      */
     constructor(authPath, defaultSendMailOptions = {}) {
         this.isInitialized = false;
+        this.table = mailTable;
         this.authPath = authPath;
         this.defaultSendMailOptions = defaultSendMailOptions;
     }
-    init() {
+    init(website, _db, _sqlite, name) {
+        this.website = website;
+        this.name = name;
         this.safeImport(this.authPath).then(({ mailAuth, transport }) => {
             if (transport) {
                 this.transporter = nodemailer.createTransport(transport);
@@ -34,30 +38,62 @@ export class MailService {
             }
         });
     }
-    controller(res, _req, _website, _requestInfo) {
+    controller(res, _req, _website, requestInfo) {
+        console.log("hey we're doing the mail controller");
         if (this.isInitialized) {
-            res.end('Mail service is ready');
+            if (this.website.env === 'development') {
+                // Render the email that will be sent?
+                // newUserEmail.hbs
+                const html = this.website.getContentHtml('emailDebug')({
+                    websiteName: this.website.name,
+                    websiteURL: requestInfo.host,
+                    email: 'test@example.com',
+                    token: '1234567890',
+                });
+                res.end(html);
+            }
+            else {
+                res.end('Mail service is ready');
+            }
         }
         else {
             res.end('Mail service is not ready');
         }
     }
     async sendEmail(sendMailOptions) {
-        return new Promise((resolve, reject) => {
+        // log the email to the database
+        return this.website.db.drizzle
+            .insert(this.table)
+            .values({
+            from: sendMailOptions.from,
+            to: sendMailOptions.to,
+            subject: sendMailOptions.subject,
+            text: sendMailOptions.text,
+            html: sendMailOptions.html,
+        })
+            .catch((error) => {
+            console.error('Error logging email to database', error);
+            throw error;
+        })
+            .then(() => {
             if (!this.transporter || !this.isInitialized) {
                 console.error('No transporter found or not initialized');
-                reject('No transporter found or not initialized');
-                return;
+                return 'No transporter found or not initialized';
             }
             const mailOptions = recursiveObjectMerge(this.defaultSendMailOptions, sendMailOptions);
             this.transporter.sendMail(mailOptions, (error, info) => {
                 if (error) {
-                    reject(error);
+                    throw error;
                 }
                 else {
-                    resolve('Email sent');
+                    console.log('Email sent', info);
+                    return 'Email sent';
                 }
             });
+        })
+            .catch((error) => {
+            console.error('Error sending email', error);
+            return error;
         });
     }
     /**
@@ -84,4 +120,15 @@ export class MailService {
         return this.transporter !== null && this.isInitialized;
     }
 }
+import { baseTableConfig } from '../models/util.js';
+export const mailTable = sqliteTable('mail', {
+    ...baseTableConfig,
+    from: text('from'),
+    to: text('to'),
+    cc: text('cc'),
+    bcc: text('bcc'),
+    subject: text('subject'),
+    text: text('text'),
+    html: text('html'),
+});
 //# sourceMappingURL=mail.js.map

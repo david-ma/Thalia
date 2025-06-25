@@ -21,7 +21,7 @@ const fruitConfig: RawWebsiteConfig = {
   },
 }
 
-import { MailService } from 'thalia/mail'
+import { MailService, mailTable } from 'thalia/mail'
 import path from 'path'
 const mailAuthPath = path.join(import.meta.dirname, 'mailAuth.js')
 const mailService = new MailService(mailAuthPath)
@@ -40,10 +40,15 @@ const roleBasedSecurityConfig: RawWebsiteConfig = recursiveObjectMerge(
       },
     ],
     database: {
-      schemas: {},
+      schemas: {
+        mail: mailTable,
+      },
       machines: {
         mail: mailService,
       },
+    },
+    controllers: {
+      mail: mailService.controller.bind(mailService),
     },
   },
 )

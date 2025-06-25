@@ -144,7 +144,7 @@ export const securityConfig: RawWebsiteConfig = {
         res.end(website.getContentHtml('forgotPassword')({}))
       } else if (method === 'POST') {
         parseForm(res, req).then((form) => {
-          console.log("We have a post!")
+          console.log('We have a post!')
           console.log('Form', form)
           // Send an email to the user with a link to reset their password
 

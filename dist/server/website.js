@@ -196,6 +196,8 @@ export class Website {
         }
         return templates;
     }
+    // TODO: Process SCSS in templates
+    // TODO: Move JS to the end of the body
     readAllViewsInFolder(folder) {
         const views = {};
         this.handlebars.registerPartial('styles', '');

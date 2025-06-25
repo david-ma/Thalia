@@ -68,5 +68,10 @@ export type UserAuth = {
     role: Role;
     userId?: string;
     sessionId?: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+    isActive?: boolean;
+    isVerified?: boolean;
 };
 //# sourceMappingURL=route-guard.d.ts.map

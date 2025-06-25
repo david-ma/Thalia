@@ -332,6 +332,7 @@ export class RoleRouteGuard extends BasicRouteGuard {
             const sessionId = requestInfo.cookies.sessionId;
             const drizzle = this.website.db.drizzle;
             const sessions = this.website.db.machines.sessions.table;
+            const users = this.website.db.machines.users.table;
             if (!sessionId) {
                 resolve({
                     role: 'guest',
@@ -341,11 +342,23 @@ export class RoleRouteGuard extends BasicRouteGuard {
                 drizzle
                     .select()
                     .from(sessions)
+                    .leftJoin(users, eq(sessions.userId, users.id))
                     .where(eq(sessions.sid, sessionId))
-                    .then((result) => {
-                    console.log('getUserAuth Result', result);
+                    .then(([result]) => {
+                    if (!result) {
+                        resolve({
+                            role: 'guest',
+                        });
+                    }
                     resolve({
-                        role: 'guest',
+                        userId: result.users.id,
+                        sessionId: result.sessions.sid,
+                        name: result.users.name,
+                        role: result.users.role,
+                        email: result.users.email,
+                        phone: result.users.phone,
+                        isActive: result.users.isActive,
+                        isVerified: result.users.isVerified,
                     });
                 })
                     .catch((err) => {

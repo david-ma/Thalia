@@ -26,9 +26,9 @@ export type NewUser = typeof users.$inferInsert
 // Session Model
 export const sessions: SQLiteTableWithColumns<any> = sqliteTable('sessions', {
   sid: text('sid').primaryKey().notNull(),
-  expires: text('expires').notNull(),
+  expires: text('expires'),
   data: text('data', { mode: 'json' }),
-  userId: text('user_id').references(() => users.id),
+  userId: integer('user_id').references(() => users.id),
   loggedOut: integer('logged_out', { mode: 'boolean' }).notNull().default(false),
   createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`)
@@ -40,7 +40,7 @@ export type NewSession = typeof sessions.$inferInsert
 // Audit Model
 export const audits: SQLiteTableWithColumns<any> = sqliteTable('audits', {
   ...baseTableConfig,
-  userId: text('user_id').references(() => users.id),
+  userId: integer('user_id').references(() => users.id),
   ip: text('ip').notNull(),
   sessionId: text('session_id').references(() => sessions.sid),
   action: text('action').notNull(),

@@ -15,14 +15,16 @@ export declare class ThaliaSecurity implements Machine {
     table: SQLiteTableWithColumns<any>;
     private salt;
     private mailService;
+    private website;
     constructor(options?: {
         salt?: string;
         mailAuthPath?: string;
     });
-    init(website: Website, _db: any, _sqlite: any, _name: string): void;
+    init(website: Website, db: any, sqlite: any, name: string): void;
     controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
     hashPassword(password: string): string;
     private logonController;
+    private setCookie;
     private forgotPasswordController;
     securityConfig(): RawWebsiteConfig;
 }

@@ -16,9 +16,9 @@ export const users = sqliteTable('users', {
 // Session Model
 export const sessions = sqliteTable('sessions', {
     sid: text('sid').primaryKey().notNull(),
-    expires: text('expires').notNull(),
+    expires: text('expires'),
     data: text('data', { mode: 'json' }),
-    userId: text('user_id').references(() => users.id),
+    userId: integer('user_id').references(() => users.id),
     loggedOut: integer('logged_out', { mode: 'boolean' }).notNull().default(false),
     createdAt: text('created_at').notNull().default(sql `CURRENT_TIMESTAMP`),
     updatedAt: text('updated_at').notNull().default(sql `CURRENT_TIMESTAMP`)
@@ -26,7 +26,7 @@ export const sessions = sqliteTable('sessions', {
 // Audit Model
 export const audits = sqliteTable('audits', {
     ...baseTableConfig,
-    userId: text('user_id').references(() => users.id),
+    userId: integer('user_id').references(() => users.id),
     ip: text('ip').notNull(),
     sessionId: text('session_id').references(() => sessions.sid),
     action: text('action').notNull(),

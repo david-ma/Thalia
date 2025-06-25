@@ -11,11 +11,15 @@
     <input id="loginButton" type="submit" value="Login" />
   </form>
   <ul>
-    <li><a href="/newUser">Create
-        New Account</a></li>
-    <li><a href="/forgotPassword">Forgot
-        password</a></li>
+    <li><a href="/newUser">Create New Account</a></li>
+    <li><a href="/forgotPassword">Forgot password</a></li>
   </ul>
+  {{#if message}}
+  <p class="message">{{message}}</p>
+  {{/if}}
+  {{#if error}}
+  <p class="error">{{error}}</p>
+  {{/if}}
 </div>
 
 <script>

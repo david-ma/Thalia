@@ -122,6 +122,7 @@ export class ThaliaSecurity implements Machine {
   public table!: SQLiteTableWithColumns<any>
   private salt: string = 'wXMGCAwPhG7rk82pSM0captn16BXbMqw'
   private mailService: MailService
+  private website!: Website
 
   constructor(
     options: {
@@ -139,8 +140,9 @@ export class ThaliaSecurity implements Machine {
     this.mailService = new MailService(options.mailAuthPath ?? '')
   }
 
-  public init(website: Website, _db: any, _sqlite: any, _name: string) {
-    console.log('ThaliaSecurity init')
+  public init(website: Website, db: any, sqlite: any, name: string) {
+    this.website = website
+    this.mailService.init(website, db, sqlite, 'mail')
   }
 
   public controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void {
@@ -175,7 +177,7 @@ export class ThaliaSecurity implements Machine {
         drizzle
           .select()
           .from(usersTable)
-          .where(eq(usersTable.email, form.fields.email))
+          .where(eq(usersTable.email, form.fields.Email))
           .then(
             ([user]) => {
               console.log('Found User', user)
@@ -206,26 +208,49 @@ export class ThaliaSecurity implements Machine {
           )
 
           .then((user) => {
+            if (!user) {
+              res.end(website.getContentHtml('userLogin')({ error: 'Invalid email or password' }))
+              return
+            }
             console.log('We have a user', user)
             console.log('Generating a session')
 
             // Generate a session
             const session = website.db.machines.sessions.table
-            const sessionId = crypto.randomBytes(32).toString('hex')
-            website.db.drizzle.insert(session).values({
-              sid: sessionId,
-              // userId: user.id,
-            })
+            const sessionId = crypto.randomBytes(16).toString('hex')
+            website.db.drizzle
+              .insert(session)
+              .values({
+                sid: sessionId,
+                userId: user.id,
+              })
+              .then((data) => {
+                this.setCookie(res, sessionId)
+                res.end(website.getContentHtml('userLogin')({ message: 'Login successful' }))
+              })
 
             // TODO: Implement logon
-            res.end(website.getContentHtml('userLogin')({}))
+            // res.end(website.getContentHtml('userLogin')({}))
           })
-
-        console.log('We are here?')
       })
     } else {
       res.end('Method not allowed')
     }
+  }
+
+  // private getUserFromSession(sessionId: string): Promise<User> {
+  //   const session = this.website.db.machines.sessions.table
+  //   const drizzle = this.website.db.drizzle
+  //   const user = this.website.db.machines.users.table
+  //   return drizzle.select().from(user).where(eq(session.sid, sessionId)).then(([user]) => user)
+  // }
+
+  private setCookie(res: ServerResponse, sessionId: string): void {
+    if (res.headersSent) {
+      console.log('Headers already sent')
+      return
+    }
+    res.setHeader('Set-Cookie', `sessionId=${sessionId}; Path=/; HttpOnly; SameSite=Strict`)
   }
 
   private forgotPasswordController(

@@ -102,8 +102,9 @@ export class ThaliaSecurity {
         console.log('import.meta.dirname', import.meta.dirname);
         this.mailService = new MailService(options.mailAuthPath ?? '');
     }
-    init(website, _db, _sqlite, _name) {
-        console.log('ThaliaSecurity init');
+    init(website, db, sqlite, name) {
+        this.website = website;
+        this.mailService.init(website, db, sqlite, 'mail');
     }
     controller(res, req, website, requestInfo) {
         console.log('ThaliaSecurity controller');
@@ -134,7 +135,7 @@ export class ThaliaSecurity {
                 drizzle
                     .select()
                     .from(usersTable)
-                    .where(eq(usersTable.email, form.fields.email))
+                    .where(eq(usersTable.email, form.fields.Email))
                     .then(([user]) => {
                     console.log('Found User', user);
                     if (!user) {
@@ -160,24 +161,46 @@ export class ThaliaSecurity {
                     throw error;
                 })
                     .then((user) => {
+                    if (!user) {
+                        res.end(website.getContentHtml('userLogin')({ error: 'Invalid email or password' }));
+                        return;
+                    }
                     console.log('We have a user', user);
                     console.log('Generating a session');
                     // Generate a session
                     const session = website.db.machines.sessions.table;
-                    const sessionId = crypto.randomBytes(32).toString('hex');
-                    website.db.drizzle.insert(session).values({
+                    const sessionId = crypto.randomBytes(16).toString('hex');
+                    website.db.drizzle
+                        .insert(session)
+                        .values({
                         sid: sessionId,
-                        // userId: user.id,
+                        userId: user.id,
+                    })
+                        .then((data) => {
+                        this.setCookie(res, sessionId);
+                        res.end(website.getContentHtml('userLogin')({ message: 'Login successful' }));
                     });
                     // TODO: Implement logon
-                    res.end(website.getContentHtml('userLogin')({}));
+                    // res.end(website.getContentHtml('userLogin')({}))
                 });
-                console.log('We are here?');
             });
         }
         else {
             res.end('Method not allowed');
         }
+    }
+    // private getUserFromSession(sessionId: string): Promise<User> {
+    //   const session = this.website.db.machines.sessions.table
+    //   const drizzle = this.website.db.drizzle
+    //   const user = this.website.db.machines.users.table
+    //   return drizzle.select().from(user).where(eq(session.sid, sessionId)).then(([user]) => user)
+    // }
+    setCookie(res, sessionId) {
+        if (res.headersSent) {
+            console.log('Headers already sent');
+            return;
+        }
+        res.setHeader('Set-Cookie', `sessionId=${sessionId}; Path=/; HttpOnly; SameSite=Strict`);
     }
     forgotPasswordController(res, req, website, requestInfo) {
         const method = requestInfo.method;

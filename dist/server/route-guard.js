@@ -17,7 +17,6 @@ import { eq } from 'drizzle-orm';
  */
 export class RouteGuard {
     constructor(website) {
-        console.log('Constructing RouteGuard');
         this.website = website;
     }
     /**
@@ -33,7 +32,6 @@ export class BasicRouteGuard extends RouteGuard {
         super(website);
         this.routes = {};
         this.salt = 0;
-        console.log('Constructing BasicRouteGuard');
         this.website = website;
         this.salt = Math.floor(Math.random() * 999);
         this.loadRoutes();
@@ -280,8 +278,6 @@ export class RoleRouteGuard extends BasicRouteGuard {
     constructor(website) {
         super(website);
         this.roleRoutes = {};
-        console.log('Constructing RoleRouteGuard');
-        console.log('RouteGuardWithUsers', website.config.security);
     }
     getMatchingRoute(request) {
         return super.getMatchingRoute(request);
@@ -347,7 +343,7 @@ export class RoleRouteGuard extends BasicRouteGuard {
                     .from(sessions)
                     .where(eq(sessions.sid, sessionId))
                     .then((result) => {
-                    console.log('Result', result);
+                    console.log('getUserAuth Result', result);
                     resolve({
                         role: 'guest',
                     });

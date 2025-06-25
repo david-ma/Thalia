@@ -71,11 +71,9 @@ const default_routes = [
 ];
 import { parseForm } from './controllers.js';
 import { eq } from 'drizzle-orm';
-// const mailService = new MailService('./config/mailAuth.js', {
-//   from: '7oclockco@gmail.com',
-//   to: 'test@david-ma.net',
-// })
-export const securityConfig = {
+export class ThaliaSecurity {
+}
+ThaliaSecurity.securityConfig = {
     database: {
         schemas: {
             users,
@@ -92,6 +90,25 @@ export const securityConfig = {
         users: UserMachine.controller.bind(UserMachine),
         sessions: SessionMachine.controller.bind(SessionMachine),
         audits: AuditMachine.controller.bind(AuditMachine),
+        logon: (res, req, website, requestInfo) => {
+            const method = requestInfo.method;
+            if (method === 'GET') {
+                res.end(website.getContentHtml('userLogin')({}));
+            }
+            else if (method === 'POST') {
+                parseForm(res, req).then((form) => {
+                    console.log('Login attempt:', form);
+                    // TODO: Implement logon
+                    res.end(website.getContentHtml('userLogin')({}));
+                });
+            }
+            else {
+                res.end('Method not allowed');
+            }
+        },
+        admin: (res, req, website, requestInfo) => {
+            res.end(website.getContentHtml('admin')({ requestInfo }));
+        },
         forgotPassword: (res, req, website, requestInfo) => {
             const method = requestInfo.method;
             if (method === 'GET') {

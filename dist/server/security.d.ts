@@ -5,5 +5,7 @@ export interface RoleRouteRule extends RouteRule {
     path: string;
     permissions: Partial<Record<Role, Permission[]>>;
 }
-export declare const securityConfig: RawWebsiteConfig;
+export declare class ThaliaSecurity {
+    static securityConfig: RawWebsiteConfig;
+}
 //# sourceMappingURL=security.d.ts.map

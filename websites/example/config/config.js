@@ -1,7 +1,7 @@
 import { fruit } from '../models/fruit.js';
 const FruitMachine = new CrudFactory(fruit);
 import { CrudFactory } from 'thalia/controllers';
-import { securityConfig } from 'thalia/security';
+import { ThaliaSecurity } from 'thalia/security';
 import { recursiveObjectMerge } from 'thalia/website';
 const fruitConfig = {
     database: {
@@ -20,7 +20,7 @@ import { MailService, mailTable } from 'thalia/mail';
 import path from 'path';
 const mailAuthPath = path.join(import.meta.dirname, 'mailAuth.js');
 const mailService = new MailService(mailAuthPath);
-const roleBasedSecurityConfig = recursiveObjectMerge(recursiveObjectMerge(securityConfig, fruitConfig), {
+const roleBasedSecurityConfig = recursiveObjectMerge(recursiveObjectMerge(ThaliaSecurity.securityConfig, fruitConfig), {
     routes: [
         {
             path: '/fruit',

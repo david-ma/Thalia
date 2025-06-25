@@ -21,13 +21,15 @@ const fruitConfig: RawWebsiteConfig = {
   },
 }
 
-import { MailService, mailTable } from 'thalia/mail'
 import path from 'path'
 const mailAuthPath = path.join(import.meta.dirname, 'mailAuth.js')
-const mailService = new MailService(mailAuthPath)
+
+const security = new ThaliaSecurity({
+  mailAuthPath: mailAuthPath,
+})
 
 const roleBasedSecurityConfig: RawWebsiteConfig = recursiveObjectMerge(
-  recursiveObjectMerge(ThaliaSecurity.securityConfig, fruitConfig),
+  recursiveObjectMerge(security.securityConfig(), fruitConfig),
   {
     routes: [
       {
@@ -39,17 +41,6 @@ const roleBasedSecurityConfig: RawWebsiteConfig = recursiveObjectMerge(
         },
       },
     ],
-    database: {
-      schemas: {
-        mail: mailTable,
-      },
-      machines: {
-        mail: mailService,
-      },
-    },
-    controllers: {
-      mail: mailService.controller.bind(mailService),
-    },
   },
 )
 export const config: RawWebsiteConfig = roleBasedSecurityConfig

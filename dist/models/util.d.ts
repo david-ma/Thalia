@@ -1,7 +1,3 @@
-export declare const baseTableConfig: {
-    id: import("drizzle-orm").NotNull<import("drizzle-orm").IsPrimaryKey<import("drizzle-orm").HasDefault<import("drizzle-orm").NotNull<import("drizzle-orm/sqlite-core").SQLiteIntegerBuilderInitial<"id">>>>>;
-    createdAt: import("drizzle-orm").HasRuntimeDefault<import("drizzle-orm").HasDefault<import("drizzle-orm").NotNull<import("drizzle-orm/sqlite-core").SQLiteTextBuilderInitial<"created_at", [string, ...string[]], number | undefined>>>>;
-    updatedAt: import("drizzle-orm").HasRuntimeDefault<import("drizzle-orm").HasDefault<import("drizzle-orm").HasDefault<import("drizzle-orm").NotNull<import("drizzle-orm/sqlite-core").SQLiteTextBuilderInitial<"updated_at", [string, ...string[]], number | undefined>>>>>;
-    deletedAt: import("drizzle-orm/sqlite-core").SQLiteTextBuilderInitial<"deleted_at", [string, ...string[]], number | undefined>;
-};
+export declare const vc: (name: string, length?: number) => import("drizzle-orm/mysql-core").MySqlVarCharBuilderInitial<string, [string, ...string[]], number>;
+export declare const baseTableConfig: any;
 //# sourceMappingURL=util.d.ts.map

@@ -1,6 +1,6 @@
-import { sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { baseTableConfig } from '../node_modules/thalia/dist/models/util.js';
-export const fruit = sqliteTable('fruit', {
+import { mysqlTable, text } from "drizzle-orm/mysql-core";
+export const fruit = mysqlTable('fruit', {
     ...baseTableConfig,
     name: text('name').notNull(),
     color: text('color').notNull(),

@@ -6,16 +6,17 @@
  */
 
 import { models } from '../node_modules/thalia/dist/models/index.js'
-import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
+// import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
+import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 
-const users: SQLiteTableWithColumns<any> = models.users
-const sessions: SQLiteTableWithColumns<any> = models.sessions
-const audits: SQLiteTableWithColumns<any> = models.audits
-const albums: SQLiteTableWithColumns<any> = models.albums
-const images: SQLiteTableWithColumns<any> = models.images
+const users: MySqlTableWithColumns<any> = models.users
+const sessions: MySqlTableWithColumns<any> = models.sessions
+const audits: MySqlTableWithColumns<any> = models.audits
+const albums: MySqlTableWithColumns<any> = models.albums
+const images: MySqlTableWithColumns<any> = models.images
 
 import { mailTable } from '../node_modules/thalia/dist/server/mail.js'
-const mail: SQLiteTableWithColumns<any> = mailTable
+const mail: MySqlTableWithColumns<any> = mailTable
 
 
 // export { users, sessions, audits, albums, images }

@@ -1,37 +1,36 @@
-import { sql } from 'drizzle-orm';
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
-import { baseTableConfig } from './util.js';
+import { mysqlTable, text, int, boolean, json, timestamp } from 'drizzle-orm/mysql-core';
+import { vc, baseTableConfig } from './util.js';
 // User Model
-export const users = sqliteTable('users', {
+export const users = mysqlTable('users', {
     ...baseTableConfig,
-    name: text('name').notNull(),
+    name: vc('name').notNull(),
     // email: text('email').notNull().unique(), // Unique causing issues in SQLite3 with DrizzleKit
-    email: text('email').notNull(),
-    password: text('password').notNull(),
+    email: vc('email').notNull().unique(),
+    password: vc('password').notNull(),
     photo: text('photo'),
-    role: text('role').notNull().default('user'),
-    locked: integer('locked', { mode: 'boolean' }).notNull().default(false),
-    verified: integer('verified', { mode: 'boolean' }).notNull().default(false)
+    role: vc('role').notNull().default('user'),
+    locked: boolean('locked').notNull().default(false),
+    verified: boolean('verified').notNull().default(false)
 });
 // Session Model
-export const sessions = sqliteTable('sessions', {
-    sid: text('sid').primaryKey().notNull(),
-    expires: text('expires'),
-    data: text('data', { mode: 'json' }),
-    userId: integer('user_id').references(() => users.id),
-    loggedOut: integer('logged_out', { mode: 'boolean' }).notNull().default(false),
-    createdAt: text('created_at').notNull().default(sql `CURRENT_TIMESTAMP`),
-    updatedAt: text('updated_at').notNull().default(sql `CURRENT_TIMESTAMP`)
+export const sessions = mysqlTable('sessions', {
+    sid: vc('sid').primaryKey().notNull(),
+    expires: timestamp('expires'),
+    data: json('data'),
+    userId: int('user_id').references(() => users.id),
+    loggedOut: boolean('logged_out').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow()
 });
 // Audit Model
-export const audits = sqliteTable('audits', {
+export const audits = mysqlTable('audits', {
     ...baseTableConfig,
-    userId: integer('user_id').references(() => users.id),
-    ip: text('ip').notNull(),
-    sessionId: text('session_id').references(() => sessions.sid),
-    action: text('action').notNull(),
-    blob: text('blob', { mode: 'json' }),
-    timestamp: text('timestamp').notNull().default(sql `CURRENT_TIMESTAMP`)
+    userId: int('user_id').references(() => users.id),
+    ip: vc('ip').notNull(),
+    sessionId: vc('session_id').references(() => sessions.sid),
+    action: vc('action').notNull(),
+    blob: json('blob'),
+    timestamp: timestamp('timestamp').notNull().defaultNow()
 });
 // Factory functions
 export function UserFactory(config) {

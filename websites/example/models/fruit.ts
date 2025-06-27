@@ -1,11 +1,10 @@
 
-import { sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 import { baseTableConfig } from '../node_modules/thalia/dist/models/util.js'
+import { mysqlTable, text } from "drizzle-orm/mysql-core";
+import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 
 
-
-export const fruit : SQLiteTableWithColumns<any> = sqliteTable('fruit', {
+export const fruit : MySqlTableWithColumns<any> = mysqlTable('fruit', {
   ...baseTableConfig,
   name: text('name').notNull(),
   color: text('color').notNull(),

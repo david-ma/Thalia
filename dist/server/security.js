@@ -136,8 +136,7 @@ export class ThaliaSecurity {
                         return;
                     }
                     // Use static method to verify password
-                    return ThaliaSecurity.verifyPassword(form.fields.Password, user.password)
-                        .then((isValidPassword) => {
+                    return ThaliaSecurity.verifyPassword(form.fields.Password, user.password).then((isValidPassword) => {
                         if (!isValidPassword) {
                             res.end(website.getContentHtml('userLogin')({ error: 'Invalid email or password' }));
                             return null;

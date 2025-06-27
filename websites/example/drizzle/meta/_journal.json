@@ -1,68 +1,12 @@
 {
   "version": "7",
-  "dialect": "sqlite",
+  "dialect": "mysql",
   "entries": [
     {
       "idx": 0,
-      "version": "6",
-      "when": 1750235226824,
+      "version": "5",
+      "when": 1751042151124,
       "tag": "0000_initial",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1750246422386,
-      "tag": "0001_clean_sleepwalker",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1750256913560,
-      "tag": "0002_huge_lucky_pierre",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1750811859735,
-      "tag": "0003_safe_midnight",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1750813795395,
-      "tag": "0004_illegal_carlie_cooper",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1750818489755,
-      "tag": "0005_wakeful_tana_nile",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1750872385309,
-      "tag": "0006_tricky_skaar",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "6",
-      "when": 1750872591952,
-      "tag": "0007_fuzzy_corsair",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "6",
-      "when": 1750872627864,
-      "tag": "0008_mysterious_slyde",
       "breakpoints": true
     }
   ]

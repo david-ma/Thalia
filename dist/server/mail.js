@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { mysqlTable, text } from 'drizzle-orm/mysql-core';
 import { recursiveObjectMerge } from './website.js';
 export class MailService {
     /**
@@ -121,7 +121,7 @@ export class MailService {
     }
 }
 import { baseTableConfig } from '../models/util.js';
-export const mailTable = sqliteTable('mail', {
+export const mailTable = mysqlTable('mail', {
     ...baseTableConfig,
     from: text('from'),
     to: text('to'),

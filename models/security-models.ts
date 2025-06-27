@@ -1,51 +1,47 @@
 import { sql } from 'drizzle-orm'
-import {
-  sqliteTable,
-  text,
-  integer,
-  type SQLiteTableWithColumns
-} from 'drizzle-orm/sqlite-core'
-import { baseTableConfig } from './util.js'
+import { mysqlTable, text, int, tinyint, boolean, varchar, json, timestamp } from 'drizzle-orm/mysql-core'
+import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
+import { vc, baseTableConfig } from './util.js'
 
 // User Model
-export const users: SQLiteTableWithColumns<any> = sqliteTable('users', {
+export const users: MySqlTableWithColumns<any> = mysqlTable('users', {
   ...baseTableConfig,
-  name: text('name').notNull(),
+  name: vc('name').notNull(),
   // email: text('email').notNull().unique(), // Unique causing issues in SQLite3 with DrizzleKit
-  email: text('email').notNull(),
-  password: text('password').notNull(),
+  email: vc('email').notNull().unique(),
+  password: vc('password').notNull(),
   photo: text('photo'),
-  role: text('role').notNull().default('user'),
-  locked: integer('locked', { mode: 'boolean' }).notNull().default(false),
-  verified: integer('verified', { mode: 'boolean' }).notNull().default(false)
+  role: vc('role').notNull().default('user'),
+  locked: boolean('locked').notNull().default(false),
+  verified: boolean('verified').notNull().default(false)
 })
 
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 
 // Session Model
-export const sessions: SQLiteTableWithColumns<any> = sqliteTable('sessions', {
-  sid: text('sid').primaryKey().notNull(),
-  expires: text('expires'),
-  data: text('data', { mode: 'json' }),
-  userId: integer('user_id').references(() => users.id),
-  loggedOut: integer('logged_out', { mode: 'boolean' }).notNull().default(false),
-  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`)
+export const sessions: MySqlTableWithColumns<any> = mysqlTable('sessions', {
+  sid: vc('sid').primaryKey().notNull(),
+  expires: timestamp('expires'),
+  data: json('data'),
+  userId: int('user_id').references(() => users.id),
+  loggedOut: boolean('logged_out').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow()
 })
 
 export type Session = typeof sessions.$inferSelect
 export type NewSession = typeof sessions.$inferInsert
 
 // Audit Model
-export const audits: SQLiteTableWithColumns<any> = sqliteTable('audits', {
+export const audits: MySqlTableWithColumns<any> = mysqlTable('audits', {
   ...baseTableConfig,
-  userId: integer('user_id').references(() => users.id),
-  ip: text('ip').notNull(),
-  sessionId: text('session_id').references(() => sessions.sid),
-  action: text('action').notNull(),
-  blob: text('blob', { mode: 'json' }),
-  timestamp: text('timestamp').notNull().default(sql`CURRENT_TIMESTAMP`)
+  userId: int('user_id').references(() => users.id),
+  ip: vc('ip').notNull(),
+  sessionId: vc('session_id').references(() => sessions.sid),
+  action: vc('action').notNull(),
+  blob: json('blob'),
+  timestamp: timestamp('timestamp').notNull().defaultNow()
 })
 
 export type Audit = typeof audits.$inferSelect

@@ -177,20 +177,19 @@ export class ThaliaSecurity implements Machine {
             }
 
             // Use static method to verify password
-            return ThaliaSecurity.verifyPassword(form.fields.Password, user.password)
-              .then((isValidPassword) => {
-                if (!isValidPassword) {
-                  res.end(website.getContentHtml('userLogin')({ error: 'Invalid email or password' }))
-                  return null
-                }
+            return ThaliaSecurity.verifyPassword(form.fields.Password, user.password).then((isValidPassword) => {
+              if (!isValidPassword) {
+                res.end(website.getContentHtml('userLogin')({ error: 'Invalid email or password' }))
+                return null
+              }
 
-                if (user.isActive === false) {
-                  res.end(website.getContentHtml('userLogin')({ error: 'Account is locked' }))
-                  return null
-                }
+              if (user.isActive === false) {
+                res.end(website.getContentHtml('userLogin')({ error: 'Account is locked' }))
+                return null
+              }
 
-                return user
-              })
+              return user
+            })
           })
           .then((user) => {
             if (!user) return
@@ -329,7 +328,10 @@ export class ThaliaSecurity implements Machine {
         },
         logout: (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
           // set cookie to expire in 1970
-          res.setHeader('Set-Cookie', `sessionId=; Path=/; HttpOnly; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT`)
+          res.setHeader(
+            'Set-Cookie',
+            `sessionId=; Path=/; HttpOnly; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT`,
+          )
           // redirect to home /
           res.writeHead(302, { Location: '/' })
           res.end()

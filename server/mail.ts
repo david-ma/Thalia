@@ -1,6 +1,7 @@
 import nodemailer, { SendMailOptions, Transporter } from 'nodemailer'
 import { Machine } from './controllers.js'
-import { sqliteTable, SQLiteTableWithColumns, text } from 'drizzle-orm/sqlite-core'
+import { mysqlTable, text } from 'drizzle-orm/mysql-core'
+import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import { IncomingMessage, ServerResponse } from 'http'
 import { Website } from './website.js'
 import { RequestInfo } from './server.js'
@@ -12,7 +13,7 @@ export class MailService implements Machine {
   private transporter!: Transporter
   private isInitialized = false
   private authPath: string
-  public table: SQLiteTableWithColumns<any> = mailTable
+  public table: MySqlTableWithColumns<any> = mailTable
   private website!: Website
   private name!: string
 
@@ -142,7 +143,7 @@ export class MailService implements Machine {
 
 import { baseTableConfig } from '../models/util.js'
 
-export const mailTable = sqliteTable('mail', {
+export const mailTable: MySqlTableWithColumns<any> = mysqlTable('mail', {
   ...baseTableConfig,
   from: text('from'),
   to: text('to'),

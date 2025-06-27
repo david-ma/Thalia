@@ -1,6 +1,7 @@
 import { ServerResponse, IncomingMessage } from 'http'
 import { Controller, Website } from './website.js'
 import { CrudFactory, Machine } from './controllers.js'
+import bcrypt from 'bcryptjs'
 
 /*
 This is the Thalia role based security system.
@@ -120,23 +121,14 @@ import crypto from 'crypto'
 
 export class ThaliaSecurity implements Machine {
   public table!: SQLiteTableWithColumns<any>
-  private salt: string = 'wXMGCAwPhG7rk82pSM0captn16BXbMqw'
   private mailService: MailService
   private website!: Website
 
   constructor(
     options: {
-      salt?: string
       mailAuthPath?: string
-    } = {
-      // mailAuthPath: path.join(import.meta.dirname, '..',)
-    },
+    } = {},
   ) {
-    console.log('ThaliaSecurity constructor')
-    this.salt = options.salt || this.salt
-
-    console.log('import.meta.dirname', import.meta.dirname)
-
     this.mailService = new MailService(options.mailAuthPath ?? '')
   }
 
@@ -148,15 +140,16 @@ export class ThaliaSecurity implements Machine {
     console.log('ThaliaSecurity controller')
   }
 
-  public hashPassword(password: string): string {
-    return crypto
-      .createHash('sha256')
-      .update(password + this.salt)
-      .digest('hex')
+  public static hashPassword(password: string): Promise<string> {
+    // Use bcrypt with 10 rounds (same as Laravel default)
+    return bcrypt.hash(password, 10)
+  }
+
+  public static verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+    return bcrypt.compare(password, hashedPassword)
   }
 
   private logonController(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void {
-    const security = website.db.machines.security as ThaliaSecurity
     const drizzle = website.db.drizzle
     const usersTable = website.db.machines.users.table
 
@@ -172,66 +165,56 @@ export class ThaliaSecurity implements Machine {
           return
         }
 
-        const password = security.hashPassword(form.fields.password)
         drizzle
           .select()
           .from(usersTable)
           .where(eq(usersTable.email, form.fields.Email))
-          .then(
-            ([user]) => {
-              console.log('Found User', user)
-              if (!user) {
-                res.end(website.getContentHtml('userLogin')({ error: 'Invalid email or password' }))
-                return
-              }
-              if (user.password !== password) {
-                res.end(website.getContentHtml('userLogin')({ error: 'Invalid email or password' }))
-                return
-              }
-              if (user.isActive === false) {
-                res.end(website.getContentHtml('userLogin')({ error: 'Account is locked' }))
-                return
-              }
-              // if (user.isVerified === false) {
-              //   res.end(website.getContentHtml('userLogin')({ error: 'Account is not verified' }))
-              //   return
-              // }
-
-              return user
-            },
-            (error) => {
-              console.error('Error logging in:', error)
-              res.end(website.getContentHtml('userLogin')({ error: 'An error occurred' }))
-              throw error
-            },
-          )
-
-          .then((user) => {
+          .then(([user]) => {
+            console.log('Found User', user)
             if (!user) {
               res.end(website.getContentHtml('userLogin')({ error: 'Invalid email or password' }))
               return
             }
+
+            // Use static method to verify password
+            return ThaliaSecurity.verifyPassword(form.fields.Password, user.password)
+              .then((isValidPassword) => {
+                if (!isValidPassword) {
+                  res.end(website.getContentHtml('userLogin')({ error: 'Invalid email or password' }))
+                  return null
+                }
+
+                if (user.isActive === false) {
+                  res.end(website.getContentHtml('userLogin')({ error: 'Account is locked' }))
+                  return null
+                }
+
+                return user
+              })
+          })
+          .then((user) => {
+            if (!user) return
+
             console.log('We have a user', user)
             console.log('Generating a session')
 
             // Generate a session
             const session = website.db.machines.sessions.table
             const sessionId = crypto.randomBytes(16).toString('hex')
-            website.db.drizzle
+            return website.db.drizzle
               .insert(session)
               .values({
                 sid: sessionId,
                 userId: user.id,
               })
-              .then((data) => {
+              .then(() => {
                 this.setCookie(res, sessionId)
-                // res.end(website.getContentHtml('userLogin')({ message: 'Login successful' }))
-                // redirect to homepage
-                
+                // TODO: Redirect to homepage
               })
-
-            // TODO: Implement logon
-            // res.end(website.getContentHtml('userLogin')({}))
+          })
+          .catch((error) => {
+            console.error('Error logging in:', error)
+            res.end(website.getContentHtml('userLogin')({ error: 'An error occurred' }))
           })
       })
     } else {

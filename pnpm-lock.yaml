@@ -11,6 +11,9 @@ importers:
       '@libsql/client':
         specifier: ^0.15.9
         version: 0.15.9
+      bcryptjs:
+        specifier: ^3.0.2
+        version: 3.0.2
       drizzle-kit:
         specifier: ^0.31.1
         version: 0.31.1
@@ -1001,6 +1004,10 @@ packages:
 
   batch@0.6.1:
     resolution: {integrity: sha512-x+VAiMRL6UPkx+kudNvxTl6hB2XNNCG2r+7wixVfIYwu/2HKRXimwQyaumLjMveWvT2Hkd/cAJw+QBMfJ/EKVw==}
+
+  bcryptjs@3.0.2:
+    resolution: {integrity: sha512-k38b3XOZKv60C4E2hVsXTolJWfkGRMbILBIe2IBITXciy5bOsTKot5kDrf3ZfufQtQOUN5mXceUEpU1rTl9Uog==}
+    hasBin: true
 
   better-sqlite3@11.10.0:
     resolution: {integrity: sha512-EwhOpyXiOEL/lKzHz9AW1msWFNzGc/z+LzeB3/jnFJpxu+th2yqvzsSWas1v9jgs9+xiXJcD5A8CJxAG2TaghQ==}
@@ -4586,6 +4593,8 @@ snapshots:
   base64id@2.0.0: {}
 
   batch@0.6.1: {}
+
+  bcryptjs@3.0.2: {}
 
   better-sqlite3@11.10.0:
     dependencies:

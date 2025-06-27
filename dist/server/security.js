@@ -1,4 +1,5 @@
 import { CrudFactory } from './controllers.js';
+import bcrypt from 'bcryptjs';
 /*
 This is the Thalia role based security system.
 
@@ -93,13 +94,7 @@ import { parseForm } from './controllers.js';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 export class ThaliaSecurity {
-    constructor(options = {
-    // mailAuthPath: path.join(import.meta.dirname, '..',)
-    }) {
-        this.salt = 'wXMGCAwPhG7rk82pSM0captn16BXbMqw';
-        console.log('ThaliaSecurity constructor');
-        this.salt = options.salt || this.salt;
-        console.log('import.meta.dirname', import.meta.dirname);
+    constructor(options = {}) {
         this.mailService = new MailService(options.mailAuthPath ?? '');
     }
     init(website, db, sqlite, name) {
@@ -108,14 +103,14 @@ export class ThaliaSecurity {
     controller(res, req, website, requestInfo) {
         console.log('ThaliaSecurity controller');
     }
-    hashPassword(password) {
-        return crypto
-            .createHash('sha256')
-            .update(password + this.salt)
-            .digest('hex');
+    static hashPassword(password) {
+        // Use bcrypt with 10 rounds (same as Laravel default)
+        return bcrypt.hash(password, 10);
+    }
+    static verifyPassword(password, hashedPassword) {
+        return bcrypt.compare(password, hashedPassword);
     }
     logonController(res, req, website, requestInfo) {
-        const security = website.db.machines.security;
         const drizzle = website.db.drizzle;
         const usersTable = website.db.machines.users.table;
         const method = requestInfo.method;
@@ -130,7 +125,6 @@ export class ThaliaSecurity {
                     res.end(website.getContentHtml('userLogin')({ error: 'Email and password are required' }));
                     return;
                 }
-                const password = security.hashPassword(form.fields.password);
                 drizzle
                     .select()
                     .from(usersTable)
@@ -141,47 +135,42 @@ export class ThaliaSecurity {
                         res.end(website.getContentHtml('userLogin')({ error: 'Invalid email or password' }));
                         return;
                     }
-                    if (user.password !== password) {
-                        res.end(website.getContentHtml('userLogin')({ error: 'Invalid email or password' }));
-                        return;
-                    }
-                    if (user.isActive === false) {
-                        res.end(website.getContentHtml('userLogin')({ error: 'Account is locked' }));
-                        return;
-                    }
-                    // if (user.isVerified === false) {
-                    //   res.end(website.getContentHtml('userLogin')({ error: 'Account is not verified' }))
-                    //   return
-                    // }
-                    return user;
-                }, (error) => {
-                    console.error('Error logging in:', error);
-                    res.end(website.getContentHtml('userLogin')({ error: 'An error occurred' }));
-                    throw error;
+                    // Use static method to verify password
+                    return ThaliaSecurity.verifyPassword(form.fields.Password, user.password)
+                        .then((isValidPassword) => {
+                        if (!isValidPassword) {
+                            res.end(website.getContentHtml('userLogin')({ error: 'Invalid email or password' }));
+                            return null;
+                        }
+                        if (user.isActive === false) {
+                            res.end(website.getContentHtml('userLogin')({ error: 'Account is locked' }));
+                            return null;
+                        }
+                        return user;
+                    });
                 })
                     .then((user) => {
-                    if (!user) {
-                        res.end(website.getContentHtml('userLogin')({ error: 'Invalid email or password' }));
+                    if (!user)
                         return;
-                    }
                     console.log('We have a user', user);
                     console.log('Generating a session');
                     // Generate a session
                     const session = website.db.machines.sessions.table;
                     const sessionId = crypto.randomBytes(16).toString('hex');
-                    website.db.drizzle
+                    return website.db.drizzle
                         .insert(session)
                         .values({
                         sid: sessionId,
                         userId: user.id,
                     })
-                        .then((data) => {
+                        .then(() => {
                         this.setCookie(res, sessionId);
-                        // res.end(website.getContentHtml('userLogin')({ message: 'Login successful' }))
-                        // redirect to homepage
+                        // TODO: Redirect to homepage
                     });
-                    // TODO: Implement logon
-                    // res.end(website.getContentHtml('userLogin')({}))
+                })
+                    .catch((error) => {
+                    console.error('Error logging in:', error);
+                    res.end(website.getContentHtml('userLogin')({ error: 'An error occurred' }));
                 });
             });
         }

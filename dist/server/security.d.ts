@@ -13,16 +13,15 @@ import { RequestInfo } from './server.js';
 import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
 export declare class ThaliaSecurity implements Machine {
     table: SQLiteTableWithColumns<any>;
-    private salt;
     private mailService;
     private website;
     constructor(options?: {
-        salt?: string;
         mailAuthPath?: string;
     });
     init(website: Website, db: any, sqlite: any, name: string): void;
     controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
-    hashPassword(password: string): string;
+    static hashPassword(password: string): Promise<string>;
+    static verifyPassword(password: string, hashedPassword: string): Promise<boolean>;
     private logonController;
     private setCookie;
     private forgotPasswordController;

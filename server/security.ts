@@ -116,11 +116,13 @@ const default_routes: RoleRouteRule[] = [
 import { RequestInfo } from './server.js'
 import { parseForm } from './controllers.js'
 import { eq, Table } from 'drizzle-orm'
-import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
+import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
+// import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
+
 import crypto from 'crypto'
 
 export class ThaliaSecurity implements Machine {
-  public table!: SQLiteTableWithColumns<any>
+  public table!: MySqlTableWithColumns<any>
   private mailService: MailService
   private website!: Website
 
@@ -132,7 +134,7 @@ export class ThaliaSecurity implements Machine {
     this.mailService = new MailService(options.mailAuthPath ?? '')
   }
 
-  public init(website: Website, db: any, sqlite: any, name: string) {
+  public init(website: Website, name: string) {
     this.website = website
   }
 
@@ -296,6 +298,35 @@ export class ThaliaSecurity implements Machine {
     }
   }
 
+  private setupController(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void {
+    const drizzle = website.db.drizzle
+    const usersTable = website.db.machines.users.table
+
+    drizzle
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.role, 'admin'))
+      .then((users) => {
+        console.log('Users', users)
+        // If an admin user exists, we don't need to set up.
+        if (users.length > 0) {
+          res.end(website.getContentHtml('setup')({ error: 'Admin user already exists' }))
+          return
+        }
+
+        const html = website.getContentHtml('setup')({})
+        res.end(html)
+      })
+
+    // drizzle.insert(usersTable).values({
+    //   email: 'admin@example.com',
+    //   password: 'password',
+    //   name: 'Admin',
+    // })
+
+    // console.log('Setup controller')
+  }
+
   public securityConfig(): RawWebsiteConfig {
     return {
       database: {
@@ -320,6 +351,7 @@ export class ThaliaSecurity implements Machine {
         admin: (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
           res.end(website.getContentHtml('admin')({ requestInfo }))
         },
+        setup: this.setupController.bind(this),
         mail: this.mailService.controller.bind(this.mailService),
         logon: this.logonController.bind(this),
         forgotPassword: this.forgotPasswordController.bind(this),

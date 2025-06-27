@@ -5,8 +5,6 @@ import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Website } from './website.js';
 import { RequestInfo } from './server.js';
-import { LibSQLDatabase } from 'drizzle-orm/libsql';
-import * as libsql from '@libsql/client';
 export declare class MailService implements Machine {
     private transporter;
     private isInitialized;
@@ -22,7 +20,7 @@ export declare class MailService implements Machine {
      * or an object with a just the username & password, for gmail.
      */
     constructor(authPath: string, defaultSendMailOptions?: SendMailOptions);
-    init(website: Website, _db: LibSQLDatabase, _sqlite: libsql.Client, name: string): void;
+    init(website: Website, name: string): void;
     controller(res: ServerResponse, _req: IncomingMessage, _website: Website, requestInfo: RequestInfo): void;
     sendEmail(sendMailOptions: SendMailOptions): Promise<string>;
     /**

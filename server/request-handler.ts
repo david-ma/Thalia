@@ -140,7 +140,7 @@ export class RequestHandler {
 
       const handlebarsPath = requestHandler.projectSourcePath.replace('.html', '.hbs')
       const thaliaHandlebarsPath = requestHandler.thaliaSourcePath.replace('.html', '.hbs')
-      let target = null
+      let target: string | null = null
 
       if (fs.existsSync(handlebarsPath)) {
         target = handlebarsPath
@@ -172,7 +172,7 @@ export class RequestHandler {
 
       const scssPath = requestHandler.projectSourcePath.replace('.css', '.scss')
       const thaliaScssPath = requestHandler.thaliaSourcePath.replace('.css', '.scss')
-      let target = null
+      let target: string | null = null
 
       if (fs.existsSync(scssPath)) {
         target = scssPath

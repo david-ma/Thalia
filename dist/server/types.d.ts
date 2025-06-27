@@ -1,6 +1,6 @@
 import { Controller } from './website.js';
 import { Socket } from 'socket.io';
-import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
+import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core';
 export type ServerMode = 'standalone' | 'multiplex';
 export interface ServerOptions {
     node_env: string;
@@ -65,7 +65,7 @@ export interface BasicWebsiteConfig {
 import { Machine } from './controllers.js';
 export interface DatabaseConfig {
     schemas: {
-        [key: string]: SQLiteTableWithColumns<any>;
+        [key: string]: MySqlTableWithColumns<any>;
     };
     machines?: {
         [key: string]: Machine;

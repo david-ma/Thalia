@@ -6,8 +6,6 @@ import { IncomingMessage, ServerResponse } from 'http'
 import { Website } from './website.js'
 import { RequestInfo } from './server.js'
 import { recursiveObjectMerge } from './website.js'
-import { LibSQLDatabase } from 'drizzle-orm/libsql'
-import * as libsql from '@libsql/client'
 
 export class MailService implements Machine {
   private transporter!: Transporter
@@ -30,7 +28,7 @@ export class MailService implements Machine {
     this.defaultSendMailOptions = defaultSendMailOptions
   }
 
-  public init(website: Website, _db: LibSQLDatabase, _sqlite: libsql.Client, name: string) {
+  public init(website: Website, name: string) {
     this.website = website
     this.name = name
 

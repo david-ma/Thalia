@@ -11,9 +11,7 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { Website } from './website.js';
 import { type Controller } from './website.js';
-import { type SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
 import { RequestInfo } from './server.js';
-import * as libsql from '@libsql/client';
 /**
  * Read the latest 10 logs from the log directory
  */
@@ -26,8 +24,8 @@ type CrudRelationship = {
 type CrudOptions = {
     relationships?: CrudRelationship[];
 };
-import { type LibSQLDatabase } from 'drizzle-orm/libsql';
 import { Permission } from './route-guard.js';
+import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core';
 /**
  * A Machine is a singleton that needs to be initialised by Thalia.
  * They provide controllers.
@@ -36,9 +34,9 @@ import { Permission } from './route-guard.js';
  *
  */
 export type Machine = {
-    init: (website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string) => void;
+    init: (website: Website, name: string) => void;
     controller: Controller;
-    table: SQLiteTableWithColumns<any>;
+    table: MySqlTableWithColumns<any>;
 };
 /**
  * The CrudFactory is a class that generates a CRUD controller for a given table.
@@ -53,13 +51,12 @@ export type Machine = {
  */
 export declare class CrudFactory implements Machine {
     name: string;
-    table: SQLiteTableWithColumns<any>;
+    table: MySqlTableWithColumns<any>;
     private website;
     private db;
-    private sqlite;
     private static blacklist;
-    constructor(table: SQLiteTableWithColumns<any>, options?: CrudOptions | any);
-    init(website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string): void;
+    constructor(table: MySqlTableWithColumns<any>, options?: CrudOptions | any);
+    init(website: Website, name: string): void;
     static getAction(requestInfo: RequestInfo): Permission;
     /**
      * Generate a CRUD controller for a given table.

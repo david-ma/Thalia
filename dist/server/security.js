@@ -92,12 +92,13 @@ const default_routes = [
 ];
 import { parseForm } from './controllers.js';
 import { eq } from 'drizzle-orm';
+// import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 import crypto from 'crypto';
 export class ThaliaSecurity {
     constructor(options = {}) {
         this.mailService = new MailService(options.mailAuthPath ?? '');
     }
-    init(website, db, sqlite, name) {
+    init(website, name) {
         this.website = website;
     }
     controller(res, req, website, requestInfo) {
@@ -239,6 +240,30 @@ export class ThaliaSecurity {
             res.end('Method not allowed');
         }
     }
+    setupController(res, req, website, requestInfo) {
+        const drizzle = website.db.drizzle;
+        const usersTable = website.db.machines.users.table;
+        drizzle
+            .select()
+            .from(usersTable)
+            .where(eq(usersTable.role, 'admin'))
+            .then((users) => {
+            console.log('Users', users);
+            // If an admin user exists, we don't need to set up.
+            if (users.length > 0) {
+                res.end(website.getContentHtml('setup')({ error: 'Admin user already exists' }));
+                return;
+            }
+            const html = website.getContentHtml('setup')({});
+            res.end(html);
+        });
+        // drizzle.insert(usersTable).values({
+        //   email: 'admin@example.com',
+        //   password: 'password',
+        //   name: 'Admin',
+        // })
+        // console.log('Setup controller')
+    }
     securityConfig() {
         return {
             database: {
@@ -263,6 +288,7 @@ export class ThaliaSecurity {
                 admin: (res, req, website, requestInfo) => {
                     res.end(website.getContentHtml('admin')({ requestInfo }));
                 },
+                setup: this.setupController.bind(this),
                 mail: this.mailService.controller.bind(this.mailService),
                 logon: this.logonController.bind(this),
                 forgotPassword: this.forgotPasswordController.bind(this),

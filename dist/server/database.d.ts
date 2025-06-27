@@ -14,17 +14,15 @@
  * In Thalia/server/controllers.ts, we will provide a CRUD factory,
  * which will provide easy to use functions for CRUD operations.
  */
-import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
-import { type LibSQLDatabase } from 'drizzle-orm/libsql';
 import { Website } from './website.js';
 import { Machine } from './controllers.js';
+import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core';
 export declare class ThaliaDatabase {
     private website;
     private url;
-    private sqlite;
-    drizzle: LibSQLDatabase;
+    drizzle: MySqlTableWithColumns<any>;
     schemas: {
-        [key: string]: SQLiteTableWithColumns<any>;
+        [key: string]: MySqlTableWithColumns<any>;
     };
     machines: {
         [key: string]: Machine;

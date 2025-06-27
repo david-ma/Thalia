@@ -2,7 +2,8 @@ import { IncomingMessage, ServerResponse } from 'http'
 import { Controller } from './website.js'
 import { Socket } from 'socket.io'
 import { RequestInfo } from './server.js'
-import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
+// import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
+import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 
 // import { type TSchema } from 'drizzle-orm'
 // import { PgTableWithColumns } from 'drizzle-orm/pg-core'
@@ -86,7 +87,7 @@ import { Machine } from './controllers.js'
 export interface DatabaseConfig {
   // schemas: any
   schemas: {
-    [key: string]: SQLiteTableWithColumns<any>
+    [key: string]: MySqlTableWithColumns<any>
     //   // [key: string]: SQLiteTableWithColumns<any> | SQLiteTable<any> | any
     // [key: string]: any
   }

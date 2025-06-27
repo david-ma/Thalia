@@ -73,12 +73,13 @@ export class CrudFactory {
     constructor(table, options) {
         this.table = table;
     }
-    init(website, db, sqlite, name) {
+    init(website, name) {
         this.name = name;
         this.website = website;
-        this.db = db;
-        this.sqlite = sqlite;
-        db.select()
+        this.db = website.db.drizzle;
+        // this.sqlite = sqlite
+        this.db
+            .select()
             .from(this.table)
             .then((records) => {
             console.debug('CrudFactory', this.name, 'initialised, it has', records.length, 'records');
@@ -533,6 +534,8 @@ export class CrudFactory {
         res.end(html);
     }
 }
+// private db!: LibSQLDatabase<Record<string, never>>
+// private sqlite!: libsql.Client
 CrudFactory.blacklist = ['createdAt', 'updatedAt', 'deletedAt']; // Filter 'id' as well?
 import formidable from 'formidable';
 export function parseForm(res, req) {

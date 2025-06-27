@@ -14,9 +14,7 @@ import fs from 'fs'
 import path from 'path'
 import { type Controller } from './website.js'
 import { eq, isNull } from 'drizzle-orm'
-import { type SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 import { RequestInfo } from './server.js'
-import * as libsql from '@libsql/client'
 import url from 'url'
 import { ParsedUrlQuery } from 'querystring'
 
@@ -118,8 +116,9 @@ type CrudOptions = {
   relationships?: CrudRelationship[]
 }
 
-import { type LibSQLDatabase } from 'drizzle-orm/libsql'
+// import { type LibSQLDatabase } from 'drizzle-orm/libsql'
 import { Permission } from './route-guard.js'
+import { MySqlDatabase, MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 
 /**
  * A Machine is a singleton that needs to be initialised by Thalia.
@@ -129,9 +128,9 @@ import { Permission } from './route-guard.js'
  *
  */
 export type Machine = {
-  init: (website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string) => void
+  init: (website: Website, name: string) => void
   controller: Controller
-  table: SQLiteTableWithColumns<any>
+  table: MySqlTableWithColumns<any>
 }
 
 /**
@@ -147,25 +146,27 @@ export type Machine = {
  */
 export class CrudFactory implements Machine {
   public name!: string
-  public table: SQLiteTableWithColumns<any>
+  public table: MySqlTableWithColumns<any>
   private website!: Website
-  private db!: LibSQLDatabase
-  private sqlite!: libsql.Client
+  private db!: MySqlTableWithColumns<any>
+  // private db!: LibSQLDatabase<Record<string, never>>
+  // private sqlite!: libsql.Client
   private static blacklist = ['createdAt', 'updatedAt', 'deletedAt'] // Filter 'id' as well?
 
-  constructor(table: SQLiteTableWithColumns<any>, options?: CrudOptions | any) {
+  constructor(table: MySqlTableWithColumns<any>, options?: CrudOptions | any) {
     this.table = table
   }
 
-  public init(website: Website, db: LibSQLDatabase, sqlite: libsql.Client, name: string) {
+  public init(website: Website, name: string) {
     this.name = name
     this.website = website
-    this.db = db
-    this.sqlite = sqlite
+    this.db = website.db.drizzle
+    // this.sqlite = sqlite
 
-    db.select()
+    this.db
+      .select()
       .from(this.table)
-      .then((records) => {
+      .then((records: any[]) => {
         console.debug('CrudFactory', this.name, 'initialised, it has', records.length, 'records')
 
         // console.log("Found", records.length, "records in", this.name)
@@ -276,7 +277,7 @@ export class CrudFactory implements Machine {
       throw new Error('Test data can only be generated in development mode')
     }
 
-    const records = []
+    const records: any[] = []
 
     for (let i = 0; i < amount; i++) {
       const fields = this.filteredAttributes().reduce(
@@ -325,7 +326,7 @@ export class CrudFactory implements Machine {
       .update(this.table)
       .set({ deletedAt: new Date().toISOString() })
       .where(eq(this.table.id, id))
-      .then((result) => {
+      .then((result: any) => {
         this.reportSuccess(res, 'Record deleted', `/${this.name}`)
       })
   }
@@ -341,7 +342,7 @@ export class CrudFactory implements Machine {
       .update(this.table)
       .set({ deletedAt: null })
       .where(eq(this.table.id, id))
-      .then((result) => {
+      .then((result: any) => {
         this.reportSuccess(res, 'Record restored', `/${this.name}`)
       })
   }
@@ -367,7 +368,7 @@ export class CrudFactory implements Machine {
           .update(this.table)
           .set(fields)
           .where(eq(this.table.id, id))
-          .then((result) => {
+          .then((result: any) => {
             this.reportSuccess(res, 'Record updated', `/${this.name}/show/${id}`)
           })
       })
@@ -385,7 +386,7 @@ export class CrudFactory implements Machine {
       .select(this.table)
       .from(this.table)
       .where(eq(this.table.id, id))
-      .then((records) => {
+      .then((records: any[]) => {
         if (records.length === 0) {
           res.writeHead(404, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'Record not found' }))
@@ -428,7 +429,7 @@ export class CrudFactory implements Machine {
       .select(this.table)
       .from(this.table)
       .where(eq(this.table.id, id))
-      .then((records) => {
+      .then((records: any[]) => {
         if (records.length === 0) {
           return this.reportError(res, new Error('Record not found'))
         } else if (records.length > 1) {
@@ -463,10 +464,10 @@ export class CrudFactory implements Machine {
           .insert(this.table)
           .values(fields)
           .then(
-            (result) => {
+            (result: any) => {
               this.reportSuccess(res, 'Record created' + JSON.stringify(result), `/${this.name}`)
             },
-            (error) => {
+            (error: any) => {
               this.reportError(res, new Error(`Error inserting record: ${error}`))
             },
           )
@@ -531,7 +532,7 @@ export class CrudFactory implements Machine {
     drizzleQuery
       .limit(limit)
       .offset(offset)
-      .then((records) => {
+      .then((records: any[]) => {
         // console.log("Found", records.length, "records in", this.name)
 
         const blob = {

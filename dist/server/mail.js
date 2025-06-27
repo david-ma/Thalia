@@ -14,7 +14,7 @@ export class MailService {
         this.authPath = authPath;
         this.defaultSendMailOptions = defaultSendMailOptions;
     }
-    init(website, _db, _sqlite, name) {
+    init(website, name) {
         this.website = website;
         this.name = name;
         this.safeImport(this.authPath).then(({ mailAuth, transport }) => {

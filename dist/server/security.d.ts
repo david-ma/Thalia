@@ -10,21 +10,22 @@ export interface RoleRouteRule extends RouteRule {
     permissions: Partial<Record<Role, Permission[]>>;
 }
 import { RequestInfo } from './server.js';
-import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
+import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core';
 export declare class ThaliaSecurity implements Machine {
-    table: SQLiteTableWithColumns<any>;
+    table: MySqlTableWithColumns<any>;
     private mailService;
     private website;
     constructor(options?: {
         mailAuthPath?: string;
     });
-    init(website: Website, db: any, sqlite: any, name: string): void;
+    init(website: Website, name: string): void;
     controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
     static hashPassword(password: string): Promise<string>;
     static verifyPassword(password: string, hashedPassword: string): Promise<boolean>;
     private logonController;
     private setCookie;
     private forgotPasswordController;
+    private setupController;
     securityConfig(): RawWebsiteConfig;
 }
 //# sourceMappingURL=security.d.ts.map

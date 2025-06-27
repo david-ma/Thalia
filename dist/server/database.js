@@ -14,10 +14,12 @@
  * In Thalia/server/controllers.ts, we will provide a CRUD factory,
  * which will provide easy to use functions for CRUD operations.
  */
-import { drizzle } from 'drizzle-orm/libsql';
+// import { drizzle } from 'drizzle-orm/libsql'
+// import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
+import { drizzle } from 'drizzle-orm/mysql2';
+// import { drizzle } from 'drizzle-orm'
 import { sql } from 'drizzle-orm';
 import path from 'path';
-import * as libsql from '@libsql/client';
 export class ThaliaDatabase {
     constructor(website) {
         this.schemas = {};
@@ -25,9 +27,9 @@ export class ThaliaDatabase {
         console.log('Creating database connection for', website.rootPath);
         this.website = website;
         // Create database connection
-        this.url = 'file:' + path.join(website.rootPath, 'models', 'sqlite.db');
-        this.sqlite = libsql.createClient({ url: this.url });
-        this.drizzle = drizzle(this.sqlite);
+        // this.url = 'file:' + path.join(website.rootPath, 'models', 'sqlite.db')
+        // this.sqlite = libsql.createClient({ url: this.url })
+        // this.drizzle = drizzle(this.sqlite)
         this.schemas = website.config.database?.schemas || {};
         this.machines = website.config.database?.machines || {};
     }
@@ -37,6 +39,13 @@ export class ThaliaDatabase {
      */
     async init() {
         try {
+            console.log('Initialising database connection for', this.website.rootPath);
+            // Read drizzle.config.ts
+            const drizzleConfig = await import(path.join(this.website.rootPath, 'drizzle.config.ts'));
+            console.log(drizzleConfig);
+            this.url = drizzleConfig.default.dbCredentials.url;
+            console.log(this.url);
+            this.drizzle = drizzle(this.url);
             await this.drizzle.run(sql `SELECT 1`);
             console.log(`Database connection for ${this.website.name} established successfully`);
             return Promise.all(Object.entries(this.schemas).map(async ([name, schema]) => {
@@ -58,7 +67,7 @@ export class ThaliaDatabase {
                 .then(() => {
                 // Check that the machines have the same columns as their schemas
                 Object.entries(this.machines).forEach(([name, machine]) => {
-                    machine.init(this.website, this.drizzle, this.sqlite, name);
+                    machine.init(this.website, name);
                     // console.log("Looking at machine", name)
                     // console.log(Object.keys(machine.table))
                 });

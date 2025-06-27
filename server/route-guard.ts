@@ -486,6 +486,7 @@ export class RoleRouteGuard extends BasicRouteGuard {
 
 // Future:
 // Enterprise route guard, with 3rd party authentication.
+// BetterAuth?
 
 export type UserAuth = {
   role: Role

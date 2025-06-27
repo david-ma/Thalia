@@ -21,7 +21,7 @@ export class MailService {
             if (transport) {
                 this.transporter = nodemailer.createTransport(transport);
                 this.isInitialized = true;
-                console.log('Mail transporter initialized successfully');
+                console.log('Mail transporter initialized successfully using transport config');
             }
             else if (mailAuth) {
                 this.transporter = nodemailer.createTransport({
@@ -31,7 +31,7 @@ export class MailService {
                     auth: mailAuth,
                 });
                 this.isInitialized = true;
-                console.log('Mail transporter initialized successfully');
+                console.log('Mail transporter initialized successfully using mailAuth config');
             }
             else {
                 console.error('No mailAuth found in mailAuth.js');

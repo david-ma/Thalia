@@ -142,7 +142,6 @@ export class ThaliaSecurity implements Machine {
 
   public init(website: Website, db: any, sqlite: any, name: string) {
     this.website = website
-    this.mailService.init(website, db, sqlite, 'mail')
   }
 
   public controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void {
@@ -226,7 +225,9 @@ export class ThaliaSecurity implements Machine {
               })
               .then((data) => {
                 this.setCookie(res, sessionId)
-                res.end(website.getContentHtml('userLogin')({ message: 'Login successful' }))
+                // res.end(website.getContentHtml('userLogin')({ message: 'Login successful' }))
+                // redirect to homepage
+                
               })
 
             // TODO: Implement logon
@@ -342,6 +343,13 @@ export class ThaliaSecurity implements Machine {
         forgotPassword: this.forgotPasswordController.bind(this),
         newUser: (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
           res.end(website.getContentHtml('newUser')({}))
+        },
+        logout: (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
+          // set cookie to expire in 1970
+          res.setHeader('Set-Cookie', `sessionId=; Path=/; HttpOnly; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT`)
+          // redirect to home /
+          res.writeHead(302, { Location: '/' })
+          res.end()
         },
       },
       routes: default_routes,

@@ -37,7 +37,7 @@ export class MailService implements Machine {
       if (transport) {
         this.transporter = nodemailer.createTransport(transport)
         this.isInitialized = true
-        console.log('Mail transporter initialized successfully')
+        console.log('Mail transporter initialized successfully using transport config')
       } else if (mailAuth) {
         this.transporter = nodemailer.createTransport({
           host: 'smtp.gmail.com',
@@ -46,7 +46,7 @@ export class MailService implements Machine {
           auth: mailAuth,
         })
         this.isInitialized = true
-        console.log('Mail transporter initialized successfully')
+        console.log('Mail transporter initialized successfully using mailAuth config')
       } else {
         console.error('No mailAuth found in mailAuth.js')
       }

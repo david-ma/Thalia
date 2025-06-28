@@ -149,8 +149,9 @@ export class Website {
             path.join(cwd(), 'node_modules', 'thalia', 'src', 'views'),
             path.join(cwd(), 'src', 'views'),
             path.join(cwd(), 'websites', 'example', 'src', 'partials'),
-            path.join(this.rootPath, 'src', 'partials'),
+            path.join(this.rootPath, 'src'),
         ];
+        console.log('Rootpath is:', this.rootPath);
         for (const path of paths) {
             if (fs.existsSync(path)) {
                 this.readAllViewsInFolder(path);
@@ -158,6 +159,8 @@ export class Website {
         }
     }
     getContentHtml(content, template = 'wrapper') {
+        console.log('Getting content html for:', content);
+        console.log('Env is:', this.env);
         if (this.env == 'development') {
             this.loadPartials();
         }

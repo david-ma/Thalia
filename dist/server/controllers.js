@@ -11,6 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import { eq, isNull } from 'drizzle-orm';
 import url from 'url';
+import crypto from 'crypto';
 /**
  * Read the latest 10 logs from the log directory
  */
@@ -570,6 +571,88 @@ export function parseForm(res, req) {
             }
             return obj;
         }, {});
+    }
+}
+export class SmugMugUploader {
+    constructor() { }
+    async init(website, name) {
+        this.website = website;
+        this.name = name;
+        import(path.join(this.website.rootPath, 'config', 'secrets.js'))
+            .then(({ smugmug }) => {
+            this.tokens = smugmug;
+        })
+            .catch((error) => {
+            console.error('Error loading secrets:', error);
+        });
+    }
+    controller(res, req, website, requestInfo) {
+        const method = req.method ?? '';
+        console.log("Hey we're running a controller called 'uploadPhoto'");
+        if (method != 'POST') {
+            res.end('This should be a post');
+            return;
+        }
+        parseForm(res, req).then(({ fields, files }) => {
+            console.log('Fields:', fields);
+            console.log('Files:', files);
+            const filepath = files.fileToUpload?.[0]?.filepath ?? '';
+            console.log('Filepath:', filepath);
+            const result = {
+                success: true,
+                message: 'We got a photo form you, I guess?',
+                filepath,
+            };
+            res.end(JSON.stringify(result));
+        });
+    }
+    signRequest(method, targetUrl) {
+        const params = {
+            oauth_consumer_key: this.tokens.consumer_key,
+            oauth_nonce: Math.random().toString().replace('0.', ''),
+            oauth_signature_method: 'HMAC-SHA1',
+            oauth_timestamp: Date.now(),
+            oauth_token: this.tokens.oauth_token,
+            oauth_token_secret: this.tokens.oauth_token_secret,
+            oauth_version: '1.0',
+        };
+        const sortedParams = SmugMugUploader.sortParams(params);
+        const escapedParams = SmugMugUploader.oauthEscape(SmugMugUploader.expandParams(sortedParams));
+        params.oauth_signature = SmugMugUploader.b64_hmac_sha1(`${this.tokens.consumer_secret}&${this.tokens.oauth_token_secret}`, `${method}&${SmugMugUploader.oauthEscape(targetUrl)}&${escapedParams}`);
+        // It seems like smugmug doesn't like the + in the signature,
+        // and I don't know how to escape it properly, so I'm just
+        // going to regenerate the signature if it contains a + or /
+        return params.oauth_signature.match(/[\+\/]/) ? this.signRequest(method, targetUrl) : params;
+    }
+    static b64_hmac_sha1(key, data) {
+        return crypto.createHmac('sha1', key).update(data).digest('base64');
+    }
+    static expandParams(params) {
+        return Object.keys(params)
+            .map((key) => `${key}=${params[key]}`)
+            .join('&');
+    }
+    static sortParams(object) {
+        const keys = Object.keys(object).sort();
+        const result = {};
+        keys.forEach(function (key) {
+            result[key] = object[key];
+        });
+        return result;
+    }
+    static oauthEscape(string) {
+        if (string === undefined) {
+            return '';
+        }
+        if (string instanceof Array) {
+            throw new Error('Array passed to _oauthEscape');
+        }
+        return encodeURIComponent(string)
+            .replace(/\!/g, '%21')
+            .replace(/\*/g, '%2A')
+            .replace(/'/g, '%27')
+            .replace(/\(/g, '%28')
+            .replace(/\)/g, '%29');
     }
 }
 //# sourceMappingURL=controllers.js.map

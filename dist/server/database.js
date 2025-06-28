@@ -17,7 +17,6 @@
 // import { drizzle } from 'drizzle-orm/libsql'
 // import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 import { drizzle } from 'drizzle-orm/mysql2';
-// import { drizzle } from 'drizzle-orm'
 import { sql } from 'drizzle-orm';
 import path from 'path';
 export class ThaliaDatabase {
@@ -39,14 +38,20 @@ export class ThaliaDatabase {
      */
     async init() {
         try {
-            console.log('Initialising database connection for', this.website.rootPath);
+            // console.log('Initialising database connection for', this.website.rootPath)
             // Read drizzle.config.ts
+            // Assert we're running node v24 to read a .ts file
+            if (process.version.split('.')[0] !== 'v24') {
+                console.error('Thalia currently requires node v24 to run');
+                process.exit(1);
+            }
             const drizzleConfig = await import(path.join(this.website.rootPath, 'drizzle.config.ts'));
-            console.log(drizzleConfig);
+            // console.log(drizzleConfig)
             this.url = drizzleConfig.default.dbCredentials.url;
-            console.log(this.url);
+            // console.log(this.url)
             this.drizzle = drizzle(this.url);
-            await this.drizzle.run(sql `SELECT 1`);
+            // await this.drizzle.$inferSelect(sql`SELECT 1`)
+            // await this.drizzle.run(sql`SELECT 1`)
             console.log(`Database connection for ${this.website.name} established successfully`);
             return Promise.all(Object.entries(this.schemas).map(async ([name, schema]) => {
                 return this.drizzle.select({ [name]: sql `count(*)` }).from(schema);

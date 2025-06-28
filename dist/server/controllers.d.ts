@@ -136,5 +136,19 @@ type ParsedForm = {
     files: formidable.Files<string>;
 };
 export declare function parseForm(res: ServerResponse, req: IncomingMessage): Promise<ParsedForm>;
+export declare class SmugMugUploader implements Machine {
+    private website;
+    name: string;
+    table: MySqlTableWithColumns<any>;
+    private tokens;
+    constructor();
+    init(website: Website, name: string): Promise<void>;
+    controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
+    private signRequest;
+    private static b64_hmac_sha1;
+    private static expandParams;
+    private static sortParams;
+    private static oauthEscape;
+}
 export {};
 //# sourceMappingURL=controllers.d.ts.map

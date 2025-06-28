@@ -1,26 +1,39 @@
 <style>
   #uploadImageLabel {
-    font-size: 20px;
+    font-size: 16px;
     font-family: 'Bobby Jones', 'Comico', cursive;
   }
 
-#uploadImageLabel:hover {
+  #uploadImageLabel:hover {
     pointer: cursor;
   }
 
   #imageHelpText {
     background: none;
   }
+
+  .image-container {
+    width: 200px;
+    height: 100px;
+    border: 1px dotted #999;
+    padding: 10px;
+  }
 </style>
 
-<label id="uploadImageLabel" for="fileToUpload"><img id="image"
-    src="{{#if image_url}}{{ image_url }}{{else}}{{thumbnail}}{{/if}}">
-  <span id="imageHelpText">Click to upload image</span>
-</label>
+<div class="image-container">
 
-<form id="imageForm" style="display: none;">
-  <input type="file" accept="image/*" name="fileToUpload" id="fileToUpload" />
-</form>
+  <label id="uploadImageLabel" for="fileToUpload"><img id="image"
+      src="{{#if image_url}}{{ image_url }}{{else}}{{thumbnail}}{{/if}}">
+    <span id="imageHelpText">Click to upload image</span>
+  </label>
+
+  <form id="imageForm" style="display: none;">
+    <input type="file" accept="image/*" name="fileToUpload" id="fileToUpload" />
+  </form>
+
+
+</div>
+
 <br />
 
 <script>
@@ -47,7 +60,7 @@
         var formData = new FormData(document.getElementById("imageForm"));
 
         $.ajax({
-          url: 'https://upload.david-ma.net/uploadPhoto',
+          url: '/uploadPhoto',
           type: 'POST',
           data: formData,
           cache: false,

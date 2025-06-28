@@ -17,6 +17,7 @@ import { eq, isNull } from 'drizzle-orm'
 import { RequestInfo } from './server.js'
 import url from 'url'
 import { ParsedUrlQuery } from 'querystring'
+import crypto from 'crypto'
 
 /**
  * Read the latest 10 logs from the log directory
@@ -70,41 +71,6 @@ export const latestlogs = async (res: ServerResponse, _req: IncomingMessage, web
     res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
-
-// import { blob } from "./blob.js";
-// import { customType } from "./custom.js";
-// import { integer } from "./integer.js";
-// import { numeric } from "./numeric.js";
-// import { real } from "./real.js";
-// import { text } from "./text.js";
-// export declare function getSQLiteColumnBuilders(): {
-//     blob: typeof blob;
-//     customType: typeof customType;
-//     integer: typeof integer;
-//     numeric: typeof numeric;
-//     real: typeof real;
-//     text: typeof text;
-// };
-// export type SQLiteColumnBuilders = ReturnType<typeof getSQLiteColumnBuilders>;
-
-// const SQLiteColumnTypes = {
-//   blob: 'blob',
-//   customType: 'customType',
-//   integer: 'integer',
-//   numeric: 'numeric',
-//   real: 'real',
-//   text: 'text',
-// }
-
-// Map Drizzle<SQLiteColumnBuilders> to DataTables.net types
-// const SQLiteColumnTypes = {
-//   blob: 'blob',
-//   customType: 'customType',
-//   integer: 'integer',
-//   numeric: 'numeric',
-//   real: 'real',
-//   text: 'text',
-// }
 
 type CrudRelationship = {
   foreignTable: string
@@ -759,5 +725,116 @@ export function parseForm(res: ServerResponse, req: IncomingMessage): Promise<Pa
       },
       {} as Record<string, string>,
     )
+  }
+}
+
+export class SmugMugUploader implements Machine {
+  private website!: Website
+  public name!: string
+  public table!: MySqlTableWithColumns<any>
+  private tokens!: {
+    consumer_key: string
+    consumer_secret: string
+    oauth_token: string
+    oauth_token_secret: string
+  }
+
+  constructor() {}
+
+  public async init(website: Website, name: string) {
+    this.website = website
+    this.name = name
+
+    import(path.join(this.website.rootPath, 'config', 'secrets.js'))
+      .then(({ smugmug }) => {
+        this.tokens = smugmug
+      })
+      .catch((error) => {
+        console.error('Error loading secrets:', error)
+      })
+  }
+
+  controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    const method = req.method ?? ''
+    console.log("Hey we're running a controller called 'uploadPhoto'")
+
+    if (method != 'POST') {
+      res.end('This should be a post')
+      return
+    }
+
+    parseForm(res, req).then(({ fields, files }) => {
+      console.log('Fields:', fields)
+      console.log('Files:', files)
+      const filepath = files.fileToUpload?.[0]?.filepath ?? ''
+      console.log('Filepath:', filepath)
+
+      const result = {
+        success: true,
+        message: 'We got a photo form you, I guess?',
+        filepath,
+      }
+      res.end(JSON.stringify(result))
+    })
+  }
+
+  private signRequest(method: string, targetUrl: string) {
+    const params: any = {
+      oauth_consumer_key: this.tokens.consumer_key,
+      oauth_nonce: Math.random().toString().replace('0.', ''),
+      oauth_signature_method: 'HMAC-SHA1',
+      oauth_timestamp: Date.now(),
+      oauth_token: this.tokens.oauth_token,
+      oauth_token_secret: this.tokens.oauth_token_secret,
+      oauth_version: '1.0',
+    }
+
+    const sortedParams = SmugMugUploader.sortParams(params)
+    const escapedParams = SmugMugUploader.oauthEscape(SmugMugUploader.expandParams(sortedParams))
+
+    params.oauth_signature = SmugMugUploader.b64_hmac_sha1(
+      `${this.tokens.consumer_secret}&${this.tokens.oauth_token_secret}`,
+      `${method}&${SmugMugUploader.oauthEscape(targetUrl)}&${escapedParams}`,
+    )
+
+    // It seems like smugmug doesn't like the + in the signature,
+    // and I don't know how to escape it properly, so I'm just
+    // going to regenerate the signature if it contains a + or /
+
+    return params.oauth_signature.match(/[\+\/]/) ? this.signRequest(method, targetUrl) : params
+  }
+
+  private static b64_hmac_sha1(key: string, data: string) {
+    return crypto.createHmac('sha1', key).update(data).digest('base64')
+  }
+
+  private static expandParams(params: any) {
+    return Object.keys(params)
+      .map((key) => `${key}=${params[key]}`)
+      .join('&')
+  }
+
+  private static sortParams(object: object) {
+    const keys = Object.keys(object).sort()
+    const result = {}
+    keys.forEach(function (key) {
+      result[key] = object[key]
+    })
+    return result
+  }
+
+  private static oauthEscape(string: string) {
+    if (string === undefined) {
+      return ''
+    }
+    if ((string as any) instanceof Array) {
+      throw new Error('Array passed to _oauthEscape')
+    }
+    return encodeURIComponent(string)
+      .replace(/\!/g, '%21')
+      .replace(/\*/g, '%2A')
+      .replace(/'/g, '%27')
+      .replace(/\(/g, '%28')
+      .replace(/\)/g, '%29')
   }
 }

@@ -1,13 +1,7 @@
 import { Controller } from './website.js';
 import { Socket } from 'socket.io';
-<<<<<<< Updated upstream
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core';
 export type ServerMode = 'standalone' | 'multiplex';
-=======
-import { RequestInfo } from './server.js';
-import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core';
-export type ServerMode = 'standalone' | 'multiplex' | 'development';
->>>>>>> Stashed changes
 export interface ServerOptions {
     node_env: string;
     project: string;
@@ -68,7 +62,6 @@ export interface BasicWebsiteConfig {
     mode: ServerMode;
     port: number;
 }
-<<<<<<< Updated upstream
 import { Machine } from './controllers.js';
 export interface DatabaseConfig {
     schemas: {
@@ -76,12 +69,6 @@ export interface DatabaseConfig {
     };
     machines?: {
         [key: string]: Machine;
-=======
-export type DatabaseTable = SQLiteTableWithColumns<any>;
-export interface DatabaseConfig {
-    schemas: {
-        [key: string]: DatabaseTable;
->>>>>>> Stashed changes
     };
 }
 import { SecurityConfig } from './route-guard.js';

@@ -150,9 +150,6 @@ export declare class SmugMugUploader implements Machine {
     constructor();
     init(website: Website, name: string): Promise<void>;
     oauthCallback(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
-    asdfcontroller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
-    private sendToSmugmugUsingFile;
-    private sendToSmugmugUsingUri;
     controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
     private signRequest;
     private static b64_hmac_sha1;

@@ -598,10 +598,10 @@ export class SmugMugUploader {
                 throw new Error('Consumer key and secret are required');
             }
             if (smugmug.oauth_token && smugmug.oauth_token_secret) {
-                console.log("OAuth token and secret are already set");
+                console.log('OAuth token and secret are already set');
                 return smugmug;
             }
-            console.log("Getting a request token");
+            console.log('Getting a request token');
             // Get the request token
             const requestParams = {
                 oauth_callback: 'oob',
@@ -609,7 +609,7 @@ export class SmugMugUploader {
                 oauth_nonce: Math.random().toString().replace('0.', ''),
                 oauth_signature_method: 'HMAC-SHA1',
                 oauth_timestamp: Math.floor(Date.now() / 1000),
-                oauth_version: '1.0'
+                oauth_version: '1.0',
             };
             const sortedParams = SmugMugUploader.sortParams(requestParams);
             const escapedParams = SmugMugUploader.oauthEscape(SmugMugUploader.expandParams(sortedParams));
@@ -621,8 +621,8 @@ export class SmugMugUploader {
                 path: '/services/oauth/1.0a/getRequestToken?' + new URLSearchParams(requestParams).toString(),
                 method: 'GET',
                 headers: {
-                    'Accept': 'application/json'
-                }
+                    Accept: 'application/json',
+                },
             };
             const req = https.request(requestOptions, (res) => {
                 // console.log('Request Token Response Status:', res.statusCode)
@@ -642,14 +642,16 @@ export class SmugMugUploader {
                         // console.log("Request token is", this.tokens.oauth_token)
                         // console.log("Request token secret is", this.tokens.oauth_token_secret)
                         // Now we can get the authorization URL
-                        const authorizationUrl = this.AUTHORIZE_URL + '?' + new URLSearchParams({
-                            oauth_token: this.tokens.oauth_token,
-                            oauth_callback: this.callbackUrl
-                        }).toString();
-                        console.log("Authorization URL is", authorizationUrl);
+                        const authorizationUrl = this.AUTHORIZE_URL +
+                            '?' +
+                            new URLSearchParams({
+                                oauth_token: this.tokens.oauth_token,
+                                oauth_callback: this.callbackUrl,
+                            }).toString();
+                        console.log('Authorization URL is', authorizationUrl);
                     }
                     else {
-                        console.error("Request token failed");
+                        console.error('Request token failed');
                     }
                 });
             });
@@ -671,22 +673,24 @@ export class SmugMugUploader {
             oauth_signature_method: 'HMAC-SHA1',
             oauth_timestamp: Date.now(),
             oauth_nonce: Math.random().toString().replace('0.', ''),
-            oauth_verifier: query.oauth_verifier
+            oauth_verifier: query.oauth_verifier,
         };
         const sorted = SmugMugUploader.sortParams(tokenExchangeParams);
-        const normalized = encodeURIComponent(Object.entries(sorted).map(([key, value]) => `${key}=${value}`).join('&'));
+        const normalized = encodeURIComponent(Object.entries(sorted)
+            .map(([key, value]) => `${key}=${value}`)
+            .join('&'));
         const method = 'POST';
         tokenExchangeParams.oauth_signature = SmugMugUploader.b64_hmac_sha1(`${this.tokens.consumer_secret}&${this.tokens.oauth_token_secret}`, `${method}&${encodeURIComponent(this.ACCESS_TOKEN_URL)}&${normalized}`);
         const url = this.ACCESS_TOKEN_URL + '?' + new URLSearchParams(tokenExchangeParams).toString();
-        console.log("Token exchange url is", url);
+        console.log('Token exchange url is', url);
         const options = {
             host: 'api.smugmug.com',
             port: 443,
             path: '/services/oauth/1.0a/getAccessToken?' + new URLSearchParams(tokenExchangeParams).toString(),
             method: 'POST',
             headers: {
-                'Accept': 'application/json'
-            }
+                Accept: 'application/json',
+            },
         };
         const httpsRequest = https.request(options, (httpsResponse) => {
             console.log('Token Exchange Response Status:', httpsResponse.statusCode);
@@ -704,7 +708,7 @@ export class SmugMugUploader {
                     acc[key] = value;
                     return acc;
                 }, {});
-                console.log("Response is", response);
+                console.log('Response is', response);
                 this.tokens.oauth_token = response.oauth_token;
                 this.tokens.oauth_token_secret = response.oauth_token_secret;
                 res.end(JSON.stringify(response));
@@ -715,22 +719,32 @@ export class SmugMugUploader {
         });
         httpsRequest.end();
     }
-    controller(res, req, website, requestInfo) {
-        this.sendToSmugmug({
+    asdfcontroller(res, req, website, requestInfo) {
+        this.sendToSmugmugUsingFile({
             target: 'https://david-ma.net/img/headland.jpg',
             filepath: '/Users/david/Desktop/headland.jpg',
-            albumId: 'jHhcL7',
+            albumId: this.album,
             caption: 'A test caption',
             keywords: 'test, keywords',
-        }).then((data) => {
-            console.log("Data is", data);
+        })
+            .then((data) => {
+            console.log('Data is', data);
             res.end(JSON.stringify(data));
-        }).catch((error) => {
-            console.error("Error is", error);
+        })
+            .catch((error) => {
+            console.error('Error is', error);
             res.end(JSON.stringify({ error: error.message }));
         });
     }
-    async sendToSmugmug(opt) {
+    async sendToSmugmugUsingFile(opt) {
+        return new Promise((resolve, reject) => {
+            const data = fs.readFileSync(opt.filepath);
+            const host = 'api.smugmug.com';
+            const path = `/api/v2/album/${opt.albumId}!uploadfromfile`;
+            const targetUrl = `https://${host}${path}`;
+        });
+    }
+    async sendToSmugmugUsingUri(opt) {
         return new Promise((resolve, reject) => {
             const data = fs.readFileSync(opt.filepath);
             const host = 'api.smugmug.com';
@@ -804,7 +818,7 @@ export class SmugMugUploader {
             req.end();
         });
     }
-    blahcontroller(res, req, website, requestInfo) {
+    controller(res, req, website, requestInfo) {
         const method = req.method ?? '';
         console.log("Hey we're running a controller called 'uploadPhoto'");
         if (method != 'POST') {
@@ -812,131 +826,12 @@ export class SmugMugUploader {
             return;
         }
         parseForm(res, req)
-            // .then(({ fields, files }) => {
-            //   const file = files.fileToUpload?.[0]
-            //   if (!file) {
-            //     res.end('File not uploaded')
-            //     return
-            //   }
-            //   const { originalFilename, filepath, mimetype, size } = file
-            //   // console.log('Filepath:', filepath)
-            //   const data = fs.readFileSync(filepath)
-            //   const host = 'api.smugmug.com'
-            //   const path = `/api/v2/album/${this.album}!uploadfromuri`
-            //   const targetUrl = `https://${host}${path}`
-            //   const method = 'POST'
-            //   const MD5 = crypto.createHash('md5').update(data).digest('hex')
-            //   console.log("Path is", path)
-            //   const payload = JSON.stringify({
-            //     // ByteCount: Buffer.byteLength(data),
-            //     ByteCount: 278642,
-            //     Caption: '',
-            //     Hidden: false,
-            //     Keywords: null,
-            //     MD5Sum: MD5,
-            //     Title: '',
-            //     Cookie: 'cookieGoesHereLol',
-            //     FileName: '',
-            //     AllowInsecure: false,
-            //     // Uri: `https://dataviz.david-ma.net/tmp/${file.name}`
-            //     Uri: 'https://david-ma.net/img/headland.jpg'
-            //   })
-            //   // const extraParams = {
-            //   //   // ByteCount: Buffer.byteLength(data),
-            //   //   // MD5Sum: MD5
-            //   // }
-            //   const params = this.signRequest(method, targetUrl)
-            //   const options = {
-            //     host: host,
-            //     port: 443,
-            //     path: path,
-            //     method: method,
-            //     headers: {
-            //       Authorization: SmugMugUploader.bundleAuthorization(targetUrl, params),
-            //       'Content-Type': 'application/json',
-            //       'Content-Length': payload.length,
-            //       Accept: 'application/json; charset=utf-8'
-            //     }
-            //   }
-            //   const httpsRequest = https.request(options, function (res :IncomingMessage) {
-            //     console.log('STATUS: ' + res.statusCode)
-            //     console.log('HEADERS: ' + JSON.stringify(res.headers))
-            //     res.setEncoding('utf8')
-            //     res.on('data', function (chunk) {
-            //       console.log('BODY: ' + chunk)
-            //     })
-            //   })
-            //   httpsRequest.on('error', function (e) {
-            //     console.log('problem with request: ' + e.message)
-            //     console.log(e)
-            //   })
-            //   httpsRequest.on('close', (data) => {
-            //     console.log("Smugmug upload done?", data)
-            //     res.end('success')
-            //   })
-            //   httpsRequest.write(payload)
-            //   httpsRequest.end()
-            //   // res.end('success')
-            //   // const result = {
-            //   //   success: true,
-            //   //   message: 'We got a photo form you, I guess?',
-            //   //   filepath,
-            //   // }
-            //   // res.end(JSON.stringify(result))
-            //   // return { fields, files }
-            //   return {fields: [], files: []}
-            // })
-            // .then(({ fields, files }) => {
-            //   const testUrl = 'https://api.smugmug.com/api/v2/user/frostickle!albums'
-            //   const testParams = this.signRequest('GET', testUrl)
-            //   console.log('Test Authorization:', SmugMugUploader.bundleAuthorization(testUrl, testParams))
-            //   const testOptions = {
-            //     host: 'api.smugmug.com',
-            //     port: 443,
-            //     path: '/api/v2/user/david-ma/albums',
-            //     method: 'GET',
-            //     headers: {
-            //       'Authorization': SmugMugUploader.bundleAuthorization(testUrl, testParams),
-            //       'Accept': 'application/json'
-            //     }
-            //   }
-            //   const testRequest = https.request(testOptions, function (res: IncomingMessage) {
-            //     console.log('TEST STATUS: ' + res.statusCode)
-            //     res.setEncoding('utf8')
-            //     res.on('data', function (chunk) {
-            //       console.log('TEST BODY: ' + chunk)
-            //     })
-            //   })
-            //   // res.end('testing lol')
-            //   testRequest.on('close', (data) => {
-            //     console.log('TEST CLOSE: ' + data)
-            //     // throw new Error('early exit')
-            //     return { fields, files }
-            //   })
-            //   testRequest.end()
-            // })
             .then(({ fields, files }) => {
             const file = files.fileToUpload?.[0];
             if (!file) {
                 res.end('File not uploaded');
                 return;
             }
-            // PersistentFile {
-            //   _events: [Object: null prototype],
-            //   _eventsCount: 1,
-            //   _maxListeners: undefined,
-            //   lastModifiedDate: 2025-06-28T15:11:25.325Z,
-            //   filepath: '/var/folders/m7/nmq_s6w15lndb_jbp2g5ppn80000gn/T/kh2tfgw2fqnncygqi1jd1ai2v',
-            //   newFilename: 'kh2tfgw2fqnncygqi1jd1ai2v',
-            //   originalFilename: '️ My basement library is my favorite place.png',
-            //   mimetype: 'image/png',
-            //   hashAlgorithm: false,
-            //   size: 4810828,
-            //   _writeStream: [WriteStream],
-            //   hash: null,
-            //   Symbol(shapeMode): false,
-            //   Symbol(kCapture): false
-            // }
             const { originalFilename, filepath, mimetype, size } = file;
             // console.log('Filepath:', filepath)
             const data = fs.readFileSync(filepath);
@@ -946,6 +841,7 @@ export class SmugMugUploader {
             const method = 'POST';
             // Sign the request (same OAuth process)
             const params = this.signRequest(method, targetUrl);
+            // https://forum.uipath.com/t/unable-to-pass-binary-image-data-inside-http-request-body/849190/8
             // Create the multipart form data
             const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substr(2, 8);
             const formData = SmugMugUploader.createMultipartFormData(file, boundary);
@@ -957,8 +853,9 @@ export class SmugMugUploader {
                 headers: {
                     Authorization: SmugMugUploader.bundleAuthorization(targetUrl, params),
                     'Content-Type': `multipart/form-data; boundary=${boundary}`,
+                    // 'Content-Type': file.mimetype,
                     'Content-Length': formData.length,
-                    'X-Smug-AlbumUri': this.album,
+                    'X-Smug-AlbumUri': '/api/v2/album/' + this.album,
                     'X-Smug-ResponseType': 'JSON',
                     'X-Smug-Version': 'v2',
                 },
@@ -972,7 +869,8 @@ export class SmugMugUploader {
                 });
             });
             httpsRequest.on('error', function (e) {
-                console.log('problem with request: ' + e.message);
+                console.log('problem with request:');
+                console.log(e);
             });
             httpsRequest.on('close', (data) => {
                 console.log('Smugmug upload done?', data);
@@ -1037,15 +935,17 @@ export class SmugMugUploader {
     static bundleAuthorization(url, params) {
         const keys = Object.keys(params);
         // const authorization = `OAuth realm="${url}",${keys.map(key => `${key}="${encodeURIComponent(params[key])}"`).join(',')}`
-        const authorization = `OAuth realm="${url}",${keys.map((key) => `${key}="${params[key]}"`).join(',')}`;
-        // const authorization = `OAuth realm="${url}",${keys.map(key => {
-        //   let value = params[key]
-        //   // Double-encode the oauth_signature specifically
-        //   if (key === 'oauth_signature') {
-        //     value = encodeURIComponent(value)
-        //   }
-        //   return `${key}="${value}"`
-        // }).join(',')}`
+        // const authorization = `OAuth realm="${url}",${keys.map((key) => `${key}="${params[key]}"`).join(',')}`
+        const authorization = `OAuth realm="${url}",${keys
+            .map((key) => {
+            let value = params[key];
+            // Double-encode the oauth_signature specifically
+            if (key === 'oauth_signature') {
+                value = encodeURIComponent(value);
+            }
+            return `${key}="${value}"`;
+        })
+            .join(',')}`;
         return authorization;
     }
     static createMultipartFormData(file, boundary) {
@@ -1055,6 +955,7 @@ export class SmugMugUploader {
             'Content-Type: ' + file.mimetype,
             '',
             fs.readFileSync(file.filepath),
+            '', // Add empty line after file data
             `--${boundary}--`,
         ];
         return Buffer.concat(parts.map((part) => (typeof part === 'string' ? Buffer.from(part + '\r\n') : part)));

@@ -896,7 +896,19 @@ export class SmugMugUploader implements Machine {
 
       httpsResponse.on('end', () => {
         console.log('Token Exchange Response:', data)
-        res.end(JSON.stringify(data))
+
+        const response = data.split('&').reduce((acc, item) => {
+          const [key, value] = item.split('=')
+          acc[key] = value
+          return acc
+        }, {} as Record<string, string>)
+
+        console.log("Response is", response)
+
+        this.tokens.oauth_token = response.oauth_token
+        this.tokens.oauth_token_secret = response.oauth_token_secret
+
+        res.end(JSON.stringify(response))
       })
     })
 
@@ -914,7 +926,6 @@ export class SmugMugUploader implements Machine {
       target: 'https://david-ma.net/img/headland.jpg',
       filepath: '/Users/david/Desktop/headland.jpg',
       albumId: 'jHhcL7',
-      md5: '1234567890',
       caption: 'A test caption',
       keywords: 'test, keywords',
     }).then((data) => {

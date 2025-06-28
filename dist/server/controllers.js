@@ -12,6 +12,7 @@ import path from 'path';
 import { eq, isNull } from 'drizzle-orm';
 import url from 'url';
 import crypto from 'crypto';
+import https from 'https';
 /**
  * Read the latest 10 logs from the log directory
  */
@@ -581,6 +582,7 @@ export class SmugMugUploader {
         import(path.join(this.website.rootPath, 'config', 'secrets.js'))
             .then(({ smugmug }) => {
             this.tokens = smugmug;
+            this.album = smugmug.album;
         })
             .catch((error) => {
             console.error('Error loading secrets:', error);
@@ -594,16 +596,73 @@ export class SmugMugUploader {
             return;
         }
         parseForm(res, req).then(({ fields, files }) => {
-            console.log('Fields:', fields);
-            console.log('Files:', files);
-            const filepath = files.fileToUpload?.[0]?.filepath ?? '';
-            console.log('Filepath:', filepath);
-            const result = {
-                success: true,
-                message: 'We got a photo form you, I guess?',
-                filepath,
+            const file = files.fileToUpload?.[0];
+            if (!file) {
+                res.end('File not uploaded');
+                return;
+            }
+            const { originalFilename, filepath, mimetype, size } = file;
+            // console.log('Filepath:', filepath)
+            const data = fs.readFileSync(filepath);
+            const host = 'api.smugmug.com';
+            const path = `/api/v2/album/${this.album}!uploadfromuri`;
+            const targetUrl = `https://${host}${path}`;
+            const method = 'POST';
+            const MD5 = crypto.createHash('md5').update(data).digest('hex');
+            const payload = JSON.stringify({
+                ByteCount: Buffer.byteLength(data),
+                Caption: '',
+                Hidden: false,
+                Keywords: null,
+                MD5Sum: MD5,
+                Title: '',
+                Cookie: 'cookieGoesHereLol',
+                FileName: '',
+                AllowInsecure: false,
+                Uri: `https://dataviz.david-ma.net/tmp/${file.name}`
+            });
+            // const extraParams = {
+            //   // ByteCount: Buffer.byteLength(data),
+            //   // MD5Sum: MD5
+            // }
+            const params = this.signRequest(method, targetUrl);
+            const options = {
+                host: host,
+                port: 443,
+                path: path,
+                method: method,
+                headers: {
+                    Authorization: SmugMugUploader.bundleAuthorization(targetUrl, params),
+                    'Content-Type': 'application/json',
+                    'Content-Length': payload.length,
+                    Accept: 'application/json; charset=utf-8'
+                }
             };
-            res.end(JSON.stringify(result));
+            const httpsRequest = https.request(options, function (res) {
+                console.log('STATUS: ' + res.statusCode);
+                console.log('HEADERS: ' + JSON.stringify(res.headers));
+                res.setEncoding('utf8');
+                res.on('data', function (chunk) {
+                    console.log('BODY: ' + chunk);
+                });
+            });
+            httpsRequest.on('error', function (e) {
+                console.log('problem with request: ' + e.message);
+                console.log(e);
+            });
+            httpsRequest.on('close', (data) => {
+                console.log("Smugmug upload done?", data);
+                res.end('success');
+            });
+            httpsRequest.write(payload);
+            httpsRequest.end();
+            // res.end('success')
+            // const result = {
+            //   success: true,
+            //   message: 'We got a photo form you, I guess?',
+            //   filepath,
+            // }
+            // res.end(JSON.stringify(result))
         });
     }
     signRequest(method, targetUrl) {
@@ -653,6 +712,11 @@ export class SmugMugUploader {
             .replace(/'/g, '%27')
             .replace(/\(/g, '%28')
             .replace(/\)/g, '%29');
+    }
+    static bundleAuthorization(url, params) {
+        const keys = Object.keys(params);
+        const authorization = `OAuth realm="${url}",${keys.map(key => `${key}="${params[key]}"`).join(',')}`;
+        return authorization;
     }
 }
 //# sourceMappingURL=controllers.js.map

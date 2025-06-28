@@ -140,6 +140,7 @@ export declare class SmugMugUploader implements Machine {
     private website;
     name: string;
     table: MySqlTableWithColumns<any>;
+    private album;
     private tokens;
     constructor();
     init(website: Website, name: string): Promise<void>;
@@ -149,6 +150,7 @@ export declare class SmugMugUploader implements Machine {
     private static expandParams;
     private static sortParams;
     private static oauthEscape;
+    private static bundleAuthorization;
 }
 export {};
 //# sourceMappingURL=controllers.d.ts.map

@@ -18,6 +18,7 @@ import { RequestInfo } from './server.js'
 import url from 'url'
 import { ParsedUrlQuery } from 'querystring'
 import crypto from 'crypto'
+import https from 'https'
 
 /**
  * Read the latest 10 logs from the log directory
@@ -732,6 +733,7 @@ export class SmugMugUploader implements Machine {
   private website!: Website
   public name!: string
   public table!: MySqlTableWithColumns<any>
+  private album!: string
   private tokens!: {
     consumer_key: string
     consumer_secret: string
@@ -748,13 +750,14 @@ export class SmugMugUploader implements Machine {
     import(path.join(this.website.rootPath, 'config', 'secrets.js'))
       .then(({ smugmug }) => {
         this.tokens = smugmug
+        this.album = smugmug.album
       })
       .catch((error) => {
         console.error('Error loading secrets:', error)
       })
   }
 
-  controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+  public controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const method = req.method ?? ''
     console.log("Hey we're running a controller called 'uploadPhoto'")
 
@@ -764,17 +767,95 @@ export class SmugMugUploader implements Machine {
     }
 
     parseForm(res, req).then(({ fields, files }) => {
-      console.log('Fields:', fields)
-      console.log('Files:', files)
-      const filepath = files.fileToUpload?.[0]?.filepath ?? ''
-      console.log('Filepath:', filepath)
+      const file = files.fileToUpload?.[0]
 
-      const result = {
-        success: true,
-        message: 'We got a photo form you, I guess?',
-        filepath,
+      if (!file) {
+        res.end('File not uploaded')
+        return
       }
-      res.end(JSON.stringify(result))
+
+      const { originalFilename, filepath, mimetype, size } = file
+
+      // console.log('Filepath:', filepath)
+
+      const data = fs.readFileSync(filepath)
+
+      const host = 'api.smugmug.com'
+      const path = `/api/v2/album/${this.album}!uploadfromuri`
+      const targetUrl = `https://${host}${path}`
+      const method = 'POST'
+      const MD5 = crypto.createHash('md5').update(data).digest('hex')
+
+
+      const payload = JSON.stringify({
+        ByteCount: Buffer.byteLength(data),
+        Caption: '',
+        Hidden: false,
+        Keywords: null,
+        MD5Sum: MD5,
+        Title: '',
+        Cookie: 'cookieGoesHereLol',
+        FileName: '',
+        AllowInsecure: false,
+        Uri: `https://dataviz.david-ma.net/tmp/${file.name}`
+      })
+
+
+      // const extraParams = {
+      //   // ByteCount: Buffer.byteLength(data),
+      //   // MD5Sum: MD5
+      // }
+
+      const params = this.signRequest(method, targetUrl)
+
+
+      const options = {
+        host: host,
+        port: 443,
+        path: path,
+        method: method,
+        headers: {
+          Authorization: SmugMugUploader.bundleAuthorization(targetUrl, params),
+          'Content-Type': 'application/json',
+          'Content-Length': payload.length,
+          Accept: 'application/json; charset=utf-8'
+        }
+      }
+
+      const httpsRequest = https.request(options, function (res :IncomingMessage) {
+        console.log('STATUS: ' + res.statusCode)
+        console.log('HEADERS: ' + JSON.stringify(res.headers))
+
+        res.setEncoding('utf8')
+        res.on('data', function (chunk) {
+          console.log('BODY: ' + chunk)
+        })
+      })
+
+
+      httpsRequest.on('error', function (e) {
+        console.log('problem with request: ' + e.message)
+        console.log(e)
+      })
+
+      httpsRequest.on('close', (data) => {
+        console.log("Smugmug upload done?", data)
+        res.end('success')
+      })
+
+
+
+      httpsRequest.write(payload)
+      httpsRequest.end()
+
+      // res.end('success')
+      // const result = {
+      //   success: true,
+      //   message: 'We got a photo form you, I guess?',
+      //   filepath,
+      // }
+
+      // res.end(JSON.stringify(result))
     })
   }
 
@@ -836,5 +917,12 @@ export class SmugMugUploader implements Machine {
       .replace(/'/g, '%27')
       .replace(/\(/g, '%28')
       .replace(/\)/g, '%29')
+  }
+
+
+  private static bundleAuthorization (url :string, params :object) {
+    const keys = Object.keys(params)
+    const authorization = `OAuth realm="${url}",${keys.map(key => `${key}="${params[key]}"`).join(',')}`
+    return authorization
   }
 }

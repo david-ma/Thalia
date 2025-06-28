@@ -28,6 +28,7 @@ export type RequestInfo = {
   cookies: Record<string, string>
   userAuth?: UserAuth
   permissions?: Permission[]
+  query: Record<string, string>
 }
 
 export class Server extends EventEmitter {
@@ -78,6 +79,7 @@ export class Server extends EventEmitter {
       action,
       slug,
       cookies,
+      query: urlObject.query as Record<string, string>,
     }
   }
 

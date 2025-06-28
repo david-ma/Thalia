@@ -13,6 +13,8 @@
  * The database connection is then provided to the website's controllers.
  * In Thalia/server/controllers.ts, we will provide a CRUD factory,
  * which will provide easy to use functions for CRUD operations.
+ * In Thalia/server/controllers.ts, we will provide a CRUD factory,
+ * which will provide easy to use functions for CRUD operations.
  */
 import { Website } from './website.js';
 import { Machine } from './controllers.js';

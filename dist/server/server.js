@@ -44,6 +44,7 @@ export class Server extends EventEmitter {
             action,
             slug,
             cookies,
+            query: urlObject.query,
         };
     }
     /**

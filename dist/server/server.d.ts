@@ -22,6 +22,7 @@ export type RequestInfo = {
     cookies: Record<string, string>;
     userAuth?: UserAuth;
     permissions?: Permission[];
+    query: Record<string, string>;
 };
 export declare class Server extends EventEmitter {
     private httpServer;

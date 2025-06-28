@@ -142,15 +142,24 @@ export declare class SmugMugUploader implements Machine {
     table: MySqlTableWithColumns<any>;
     private album;
     private tokens;
+    private BASE_URL;
+    private REQUEST_TOKEN_URL;
+    private ACCESS_TOKEN_URL;
+    private AUTHORIZE_URL;
+    private callbackUrl;
     constructor();
     init(website: Website, name: string): Promise<void>;
+    oauthCallback(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
     controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
+    private sendToSmugmug;
+    blahcontroller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
     private signRequest;
     private static b64_hmac_sha1;
     private static expandParams;
     private static sortParams;
     private static oauthEscape;
     private static bundleAuthorization;
+    private static createMultipartFormData;
 }
 export {};
 //# sourceMappingURL=controllers.d.ts.map

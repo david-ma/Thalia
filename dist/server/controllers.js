@@ -974,7 +974,7 @@ export class MarkdownViewerFactory {
             controller: requestInfo.controller,
             slug: requestInfo.slug,
             filename: requestInfo.slug.replace('.md', ''),
-            files: files
+            files: files,
         };
         if (files.includes(requestInfo.slug)) {
             const content = fs.readFileSync(path.join(folder_path, requestInfo.slug), 'utf8');
@@ -983,7 +983,7 @@ export class MarkdownViewerFactory {
             res.end(html(data));
         }
         else {
-            console.log("Request info", requestInfo);
+            console.log('Request info', requestInfo);
             const html = website.getContentHtml('md_list', 'wrapper');
             res.end(html(data));
         }

@@ -1066,10 +1066,9 @@ export class SmugMugUploader implements Machine {
       })
   }
 
-      // path=`${path}?_verbosity=1`
+  // path=`${path}?_verbosity=1`
   private async smugmugApiCall(path: string, method: string = 'GET') {
     // path = `${path}?_verbosity=1`
-
 
     return new Promise((resolve, reject) => {
       // Send a signed request to the API
@@ -1096,7 +1095,6 @@ export class SmugMugUploader implements Machine {
       console.log('Authorization Header:', SmugMugUploader.bundleAuthorization(targetUrl, params))
       console.log('Final URL:', options.host + options.path)
       console.log('============================')
-
 
       const httpsRequest = https.request(options, (httpsResponse: IncomingMessage) => {
         let data = ''
@@ -1242,25 +1240,19 @@ import { albums, images } from '../models/smugmug.js'
 const AlbumMachine = new CrudFactory(albums)
 const ImageMachine = new CrudFactory(images)
 
-
-
-
 import { marked } from 'marked'
-
-
-
 
 export class MarkdownViewerFactory {
   constructor(private folder: string) {}
 
-  public controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) : void {
+  public controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void {
     const folder_path = path.join(website.rootPath, this.folder)
     const files = fs.readdirSync(folder_path)
-    const data : any = {
+    const data: any = {
       controller: requestInfo.controller,
       slug: requestInfo.slug,
       filename: requestInfo.slug.replace('.md', ''),
-      files: files
+      files: files,
     }
 
     if (files.includes(requestInfo.slug)) {
@@ -1269,14 +1261,11 @@ export class MarkdownViewerFactory {
 
       const html = website.getContentHtml('md_show', 'wrapper')
       res.end(html(data))
-
     } else {
-      console.log("Request info", requestInfo)
+      console.log('Request info', requestInfo)
 
       const html = website.getContentHtml('md_list', 'wrapper')
       res.end(html(data))
     }
   }
 }
-
-

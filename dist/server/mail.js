@@ -123,11 +123,11 @@ export class MailService {
 import { baseTableConfig, vc } from '../models/util.js';
 export const mailTable = mysqlTable('mail', {
     ...baseTableConfig,
-    from: vc('from'),
-    to: vc('to'),
-    cc: vc('cc'),
-    bcc: vc('bcc'),
-    subject: vc('subject'),
+    from: vc('from', 500),
+    to: vc('to', 1000),
+    cc: vc('cc', 1000),
+    bcc: vc('bcc', 1000),
+    subject: vc('subject', 1000),
     text: text('text'),
     html: text('html'),
 });

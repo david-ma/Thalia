@@ -63,7 +63,7 @@ function startServer(projectName) {
   const projectRoot = path.resolve(thaliaDirectory, 'websites', projectName)
 
   // Start tsc for the server
-  const tsc = spawn('tsc', ['--watch'], {
+  const tsc = spawn('tsc', ['--watch', '--skipLibCheck'], {
     env,
     stdio: 'inherit',
     cwd: thaliaDirectory,
@@ -84,7 +84,7 @@ function startServer(projectName) {
   })
 
   // start tsc in project config
-  const projectTsc = spawn('tsc', ['--watch'], {
+  const projectTsc = spawn('tsc', ['--watch', '--skipLibCheck'], {
     env,
     stdio: 'inherit',
     cwd: `${projectRoot}/config`,

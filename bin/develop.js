@@ -72,7 +72,7 @@ function startServer(projectName) {
   // Start nodemon for the server
   const nodemon = spawn('nodemon', ['--watch', 'dist',
     '--watch', `websites/${projectName}`,
-    'dist/server/index.js'], {
+    'dist/server/cli.js'], {
     env: {
       ...env,
       PROJECT: projectName,

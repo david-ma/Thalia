@@ -11,6 +11,10 @@
       "import": "./dist/server/index.js",
       "types": "./dist/server/index.d.ts"
     },
+    "./cli": {
+      "import": "./dist/server/cli.js",
+      "types": "./dist/server/cli.d.ts"
+    },
     "./types": {
       "import": "./dist/server/types.js",
       "types": "./dist/server/types.d.ts"
@@ -45,7 +49,7 @@
     }
   },
   "bin": {
-    "thalia": "./dist/server/index.js"
+    "thalia": "./dist/server/cli.js"
   },
   "files": [
     "dist/**/*",
@@ -55,7 +59,7 @@
     "src/views/**/*.hbs"
   ],
   "scripts": {
-    "start": "node dist/server/index.js",
+    "start": "node dist/server/cli.js",
     "pm2-start": "pm2 startOrReload ecosystem.config.json",
     "build": "tsc",
     "dev": "node bin/develop.js",
@@ -109,7 +113,7 @@
     "node": ">=22"
   },
   "nodemonConfig": {
-    "exec": "node dist/server/index.js",
+    "exec": "node dist/server/cli.js",
     "verbose": true,
     "watch": [
       "./dist/server/**/*.js",

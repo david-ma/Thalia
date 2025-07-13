@@ -935,7 +935,7 @@ export class SmugMugUploader {
             'Content-Type: ' + file.mimetype,
             '',
             fs.readFileSync(file.filepath),
-            '',
+            '', // Add empty line after file data
             `--${boundary}--`,
         ];
         return Buffer.concat(parts.map((part) => (typeof part === 'string' ? Buffer.from(part + '\r\n') : part)));

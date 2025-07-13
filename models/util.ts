@@ -9,8 +9,7 @@ export type ThaliaTableConfig = {
   createdAt: MySqlTimestampBuilderInitial<'created_at'>
   updatedAt: MySqlTimestampBuilderInitial<'updated_at'>
   deletedAt: MySqlTimestampBuilderInitial<'deleted_at'>
-  [key: string]: MySqlColumnBuilder<any>
-}
+} & Record<string, MySqlColumnBuilder<any>>
 
 // Base table configuration for MySQL
 export const baseTableConfig: ThaliaTableConfig = {

@@ -5,7 +5,6 @@ export type ThaliaTableConfig = {
     createdAt: MySqlTimestampBuilderInitial<'created_at'>;
     updatedAt: MySqlTimestampBuilderInitial<'updated_at'>;
     deletedAt: MySqlTimestampBuilderInitial<'deleted_at'>;
-    [key: string]: MySqlColumnBuilder<any>;
-};
+} & Record<string, MySqlColumnBuilder<any>>;
 export declare const baseTableConfig: ThaliaTableConfig;
 //# sourceMappingURL=util.d.ts.map

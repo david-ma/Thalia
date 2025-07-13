@@ -1241,3 +1241,37 @@ export class SmugMugUploader implements Machine {
 import { albums, images } from '../models/smugmug.js'
 const AlbumMachine = new CrudFactory(albums)
 const ImageMachine = new CrudFactory(images)
+
+
+
+
+import { marked } from 'marked'
+
+
+export class MarkdownViewerFactory {
+  constructor(private folder: string) {}
+
+  public controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) : void {
+    const folder_path = path.join(website.rootPath, this.folder)
+    const files = fs.readdirSync(folder_path)
+
+    if (files.includes(requestInfo.slug)) {
+      const content = fs.readFileSync(path.join(folder_path, requestInfo.slug), 'utf8')
+      const obsidian_html = marked.parse(content)
+
+      const html = website.getContentHtml('md_show', 'wrapper')
+      res.end(html({
+        obsidian_html
+      }))
+
+    } else {
+
+      const html = website.getContentHtml('md_list', 'wrapper')
+      res.end(html({
+        files: files
+      }))
+    }
+  }
+}
+
+

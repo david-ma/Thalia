@@ -7,6 +7,7 @@
  * 3. Handling form submissions
  * 4. Handling file uploads
  */
+/// <reference types="node" resolution-mode="require"/>
 import { IncomingMessage, ServerResponse } from 'http';
 import { Website } from './website.js';
 import { type Controller } from './website.js';
@@ -161,6 +162,11 @@ export declare class SmugMugUploader implements Machine {
     private static bundleAuthorization;
     private static createMultipartFormData;
     smugmugConfig(): RawWebsiteConfig;
+}
+export declare class MarkdownViewerFactory {
+    private folder;
+    constructor(folder: string);
+    controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
 }
 export {};
 //# sourceMappingURL=controllers.d.ts.map

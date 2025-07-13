@@ -3,7 +3,6 @@
  *
  * This class will be more easily testable, and more easily extendable.
  */
-/// <reference types="node" resolution-mode="require"/>
 import { IncomingMessage, ServerResponse } from 'http';
 import { Website } from './website.js';
 import { RequestInfo } from './server.js';

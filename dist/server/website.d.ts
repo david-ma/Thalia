@@ -19,7 +19,6 @@
  * - Request routing (handled by Router)
  * - Request processing (handled by Handler)
  */
-/// <reference types="node" resolution-mode="require"/>
 import { BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule, ClientInfo } from './types.js';
 import { IncomingMessage, ServerResponse } from 'http';
 import Handlebars from 'handlebars';

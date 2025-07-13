@@ -10,9 +10,12 @@ const thaliaDirectory = process.cwd()
 
 // Get project name from command line arguments
 let projectName = process.argv[2]
-const listOfProjects = fs
+const rawListOfProjects = fs
   .readdirSync(path.resolve(thaliaDirectory, 'websites'))
   .filter((file) => fs.statSync(path.resolve(thaliaDirectory, 'websites', file)).isDirectory())
+  .filter((file) => file !== 'default' && file !== 'example')
+
+const listOfProjects = ['default', 'example', ...rawListOfProjects]
 
 if (projectName) {
   if (!listOfProjects.includes(projectName)) {

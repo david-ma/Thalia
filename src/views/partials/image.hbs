@@ -78,11 +78,14 @@
             d3.select("#imageHelpText").text("Image uploaded! Click save!");
             const data = JSON.parse(imageBlob);
 
+            console.log("photo uploaded! imageBlob:")
+            console.log(imageBlob)
+
             d3.select("#image").attr("src", data.thumbnail);
             d3.select("#image_url").attr("value", data.image_url);
             d3.select("#imageKey").attr("value", data.imageKey);
             d3.select("#thumbnail").attr("value", data.thumbnail);
-            document.getElementById("saveButton").click();
+//            document.getElementById("saveButton").click();
           }
         })
       }

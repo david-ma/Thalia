@@ -131,6 +131,7 @@ export class BasicRouteGuard extends RouteGuard {
         return finish('Proxy request')
       } else {
         console.debug('No route rule password found')
+        console.debug('Route rule', routeRule)
         return next(request)
       }
     })
@@ -140,13 +141,13 @@ export class BasicRouteGuard extends RouteGuard {
     if (!route.proxyTarget) return
 
     const options = {
-      hostname: route.proxyTarget.host,
-      port: route.proxyTarget.port,
+      hostname: route.proxyTarget.host || 'localhost',
+      port: route.proxyTarget.port || 80,
       path: req.url,
       method: req.method,
       headers: {
         ...req.headers,
-        host: route.proxyTarget.host,
+        host: route.proxyTarget.host || 'localhost',
       },
     }
 

@@ -131,6 +131,7 @@ export declare class CrudFactory implements Machine {
     private reportError;
 }
 import formidable from 'formidable';
+import { RawWebsiteConfig } from './types.js';
 type ParsedForm = {
     fields: Record<string, string>;
     files: formidable.Files<string>;
@@ -151,6 +152,8 @@ export declare class SmugMugUploader implements Machine {
     init(website: Website, name: string): Promise<void>;
     oauthCallback(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
     controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
+    private saveImage;
+    private smugmugApiCall;
     private signRequest;
     private static b64_hmac_sha1;
     private static expandParams;
@@ -158,6 +161,7 @@ export declare class SmugMugUploader implements Machine {
     private static oauthEscape;
     private static bundleAuthorization;
     private static createMultipartFormData;
+    smugmugConfig(): RawWebsiteConfig;
 }
 export {};
 //# sourceMappingURL=controllers.d.ts.map

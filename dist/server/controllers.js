@@ -721,6 +721,7 @@ export class SmugMugUploader {
     }
     controller(res, req, website, requestInfo) {
         const method = req.method ?? '';
+        const that = this;
         console.log("Hey we're running a controller called 'uploadPhoto'");
         if (method != 'POST') {
             res.end('This should be a post');
@@ -765,12 +766,16 @@ export class SmugMugUploader {
                     'X-Smug-Version': 'v2',
                 },
             };
-            const httpsRequest = https.request(options, function (res) {
-                console.log('STATUS: ' + res.statusCode);
-                console.log('HEADERS: ' + JSON.stringify(res.headers));
-                res.setEncoding('utf8');
-                res.on('data', function (chunk) {
-                    console.log('BODY: ' + chunk);
+            const httpsRequest = https.request(options, function (httpsResponse) {
+                let data = '';
+                httpsResponse.setEncoding('utf8');
+                httpsResponse.on('data', function (chunk) {
+                    data += chunk;
+                });
+                httpsResponse.on('end', () => {
+                    that.saveImage(JSON.parse(data)).then(() => {
+                        res.end(JSON.stringify(data));
+                    });
                 });
             });
             httpsRequest.on('error', function (e) {
@@ -778,7 +783,7 @@ export class SmugMugUploader {
                 console.log(e);
             });
             httpsRequest.on('close', () => {
-                res.end('success');
+                console.log('httpRequest closed');
             });
             httpsRequest.write(formData);
             httpsRequest.end();
@@ -788,6 +793,72 @@ export class SmugMugUploader {
             res.end('error');
         });
     }
+    // {"stat":"ok","method":"smugmug.images.upload","Image":{"StatusImageReplaceUri":"","ImageUri":"/api/v2/image/RvQ65Gm-0","AlbumImageUri":"/api/v2/album/jHhcL7/image/RvQ65Gm-0","URL":"https://photos.david-ma.net/Thalia/n-rXXjjD/My-Smug-Album/i-RvQ65Gm"},"Asset":{"AssetComponentUri":"/api/v2/library/asset/RvQ65Gm/component/i/RvQ65Gm","AssetUri":"/api/v2/library/asset/RvQ65Gm"}}
+    async saveImage(data) {
+        console.log('Ok, we got the data from smugmug');
+        console.log(data);
+        console.log("Let's save it to the database");
+        // AlbumImageUri
+        const AlbumImageUri = data.Image.AlbumImageUri;
+        // fetch(`${this.BASE_URL}${AlbumImageUri}`)
+        this.smugmugApiCall(AlbumImageUri)
+            // .then(res => res.json())
+            .then((data) => {
+            console.log('Pulling more data from AlbumImageUri');
+            console.log(data);
+            // const drizzle = this.website.db.drizzle
+            // drizzle.insert(images).values({
+            //   imageUri: data.Image.ImageUri,
+            //   albumUri: data.Image.AlbumImageUri,
+            //   url: data.Image.URL,
+            // })
+        })
+            .catch((err) => {
+            console.error(err);
+        });
+    }
+    // path=`${path}?_verbosity=1`
+    async smugmugApiCall(path, method = 'GET') {
+        // path = `${path}?_verbosity=1`
+        return new Promise((resolve, reject) => {
+            // Send a signed request to the API
+            // const targetUrl = `${this.BASE_URL}${path}?_verbosity=1`
+            const targetUrl = `${this.BASE_URL}${path}`;
+            const params = this.signRequest(method, targetUrl);
+            const options = {
+                host: 'api.smugmug.com',
+                port: 443,
+                path,
+                method,
+                headers: {
+                    Authorization: SmugMugUploader.bundleAuthorization(targetUrl, params),
+                    Accept: 'application/json',
+                    'X-Smug-ResponseType': 'JSON',
+                },
+            };
+            // Before making the GET request, add this:
+            console.log('=== FAILING REQUEST DEBUG ===');
+            console.log('Target URL:', targetUrl);
+            console.log('Method:', method);
+            console.log('Final OAuth Params:', JSON.stringify(params, null, 2));
+            console.log('Authorization Header:', SmugMugUploader.bundleAuthorization(targetUrl, params));
+            console.log('Final URL:', options.host + options.path);
+            console.log('============================');
+            const httpsRequest = https.request(options, (httpsResponse) => {
+                let data = '';
+                httpsResponse.on('data', (chunk) => {
+                    data += chunk;
+                });
+                httpsResponse.on('end', () => {
+                    resolve(data);
+                });
+            });
+            httpsRequest.on('error', (e) => {
+                reject(e);
+            });
+            httpsRequest.end();
+        });
+    }
     signRequest(method, targetUrl) {
         const params = {
             oauth_consumer_key: this.tokens.consumer_key,
@@ -795,11 +866,16 @@ export class SmugMugUploader {
             oauth_signature_method: 'HMAC-SHA1',
             oauth_timestamp: Math.floor(Date.now() / 1000),
             oauth_token: this.tokens.oauth_token,
-            oauth_token_secret: this.tokens.oauth_token_secret,
             oauth_version: '1.0',
+            _verbosity: '1',
         };
         const sortedParams = SmugMugUploader.sortParams(params);
         const escapedParams = SmugMugUploader.oauthEscape(SmugMugUploader.expandParams(sortedParams));
+        console.log('=== OAuth Debug ===');
+        console.log('Params (should NOT include oauth_token_secret):', JSON.stringify(params, null, 2));
+        console.log('Sorted Params:', JSON.stringify(sortedParams, null, 2));
+        console.log('Signature Base String:', `${method}&${SmugMugUploader.oauthEscape(targetUrl)}&${escapedParams}`);
+        console.log('==================');
         params.oauth_signature = SmugMugUploader.b64_hmac_sha1(`${this.tokens.consumer_secret}&${this.tokens.oauth_token_secret}`, `${method}&${SmugMugUploader.oauthEscape(targetUrl)}&${escapedParams}`);
         // It seems like smugmug doesn't like the + in the signature,
         // and I don't know how to escape it properly, so I'm just
@@ -859,10 +935,31 @@ export class SmugMugUploader {
             'Content-Type: ' + file.mimetype,
             '',
             fs.readFileSync(file.filepath),
-            '', // Add empty line after file data
+            '',
             `--${boundary}--`,
         ];
         return Buffer.concat(parts.map((part) => (typeof part === 'string' ? Buffer.from(part + '\r\n') : part)));
     }
+    smugmugConfig() {
+        return {
+            database: {
+                schemas: {
+                    albums,
+                    images,
+                },
+                machines: {
+                    albums: AlbumMachine,
+                    images: ImageMachine,
+                },
+            },
+            controllers: {
+                uploadPhoto: this.controller.bind(this),
+                oauthCallback: this.oauthCallback.bind(this),
+            },
+        };
+    }
 }
+import { albums, images } from '../models/smugmug.js';
+const AlbumMachine = new CrudFactory(albums);
+const ImageMachine = new CrudFactory(images);
 //# sourceMappingURL=controllers.js.map

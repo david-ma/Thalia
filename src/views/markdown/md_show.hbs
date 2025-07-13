@@ -1,4 +1,60 @@
+<style>
+  .obsidian-html {
+    background-color: #FFF68F;
+    font-size: 1.2em;
+    line-height: 1.5;
 
-show page
+    color: #555;
+    font-size: 22px;
+    padding: 0 !important;
+    font-family: 'Brush Script MT', cursive;
+    font-family: courier, monospace;
+    border: 1px solid #dedede;
+    height: 100%;
 
-{{{ obsidian_html }}}
+    ul {
+      padding-left: 0;
+    }
+
+    li {
+      list-style: none;
+      border-bottom: 1px solid #460AA1;
+      text-indent: 25px;
+      height: auto;
+      padding: 10px;
+      text-transform: capitalize;
+
+      &:hover {
+        background-color: #555;
+        transition: all 0.2s;
+      }
+    }
+
+    h4 {
+      color: #cd0000;
+      font-size: 42px;
+      letter-spacing: -2px;
+      text-align: left;
+      border-bottom: 1px solid #460AA1;
+    }
+
+    .lines {
+      border-left: 1px solid #ffaa9f;
+      border-right: 1px solid #ffaa9f;
+      width: 5px;
+      float: left;
+      height: 100%;
+      margin-left: 40px;
+      margin-right: 10px;
+    }
+  }
+</style>
+
+
+<div class="obsidian-html">
+  <div class="lines"></div>
+  <h4>{{filename}}</h4>
+  {{{ obsidian_html }}}
+</div>
+
+<a href="/{{controller}}">Back</a>

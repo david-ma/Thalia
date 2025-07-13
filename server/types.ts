@@ -1,5 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http'
-import { Controller } from './website.js'
+import { Controller, Website } from './website.js'
 import { Socket } from 'socket.io'
 import { RequestInfo } from './server.js'
 // import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
@@ -44,9 +44,9 @@ export interface RouteRule {
   path?: string // The subpath to match (e.g., '/api' or '/admin')
   password?: string // If set, requires this password
   proxyTarget?: {
-    // Optional proxy target
-    host: string
-    port: number
+    // If set, proxy the request to this target
+    host?: string // Default: localhost
+    port?: number // Default: 80
   }
 }
 
@@ -60,14 +60,16 @@ export interface ClientInfo {
   timestamp: string
 }
 
+export type WebsocketListener = (socket: Socket, data: any, clientInfo: ClientInfo, website: Website) => void
+
 export type RawWebsocketConfig = {
-  listeners?: { [key: string]: (socket: Socket, data: any, clientInfo: ClientInfo) => void }
+  listeners?: Record<string, WebsocketListener>
   onSocketConnection?: (socket: Socket, clientInfo: ClientInfo) => void
   onSocketDisconnect?: (socket: Socket, clientInfo: ClientInfo) => void
 }
 
 export interface WebsocketConfig extends RawWebsocketConfig {
-  listeners: { [key: string]: (socket: Socket, data: any, clientInfo: ClientInfo) => void }
+  listeners: Record<string, WebsocketListener>
   onSocketConnection: (socket: Socket, clientInfo: ClientInfo) => void
   onSocketDisconnect: (socket: Socket, clientInfo: ClientInfo) => void
 }
@@ -85,15 +87,8 @@ import { Machine } from './controllers.js'
 // export type DatabaseTable = SQLiteTableWithColumns<any> | PgTableWithColumns<any>
 // export type DatabaseTable = SQLiteTableWithColumns<any>
 export interface DatabaseConfig {
-  // schemas: any
-  schemas: {
-    [key: string]: MySqlTableWithColumns<any>
-    //   // [key: string]: SQLiteTableWithColumns<any> | SQLiteTable<any> | any
-    // [key: string]: any
-  }
-  machines?: {
-    [key: string]: Machine
-  }
+  schemas: Record<string, any>
+  machines?: Record<string, Machine>
 }
 
 import { SecurityConfig } from './route-guard.js'
@@ -103,7 +98,7 @@ import { RoleRouteRule } from './security.js'
 
 export interface RawWebsiteConfig {
   domains?: string[]
-  controllers?: { [key: string]: Controller }
+  controllers?: Record<string, Controller>
   routes?: RouteRule[] | RoleRouteRule[]
   websockets?: RawWebsocketConfig
   database?: DatabaseConfig
@@ -114,7 +109,7 @@ export interface WebsiteConfig extends BasicWebsiteConfig, RawWebsiteConfig {
   name: string
   rootPath: string
   domains: string[]
-  controllers: { [key: string]: Controller }
+  controllers: Record<string, Controller>
   routes: RouteRule[]
   websockets: WebsocketConfig
 }

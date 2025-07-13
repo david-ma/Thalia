@@ -23,6 +23,9 @@ import { Thalia } from './thalia.js';
 import fs from 'fs';
 const project = process.argv.find((arg) => arg.startsWith('--project'))?.split('=')[1] || process.env['PROJECT'] || 'default';
 const port = parseInt(process.argv.find((arg) => arg.startsWith('--port'))?.split('=')[1] || process.env['PORT'] || '1337');
+if (process.env['NODE_ENV'] === 'production') {
+    console.debug = () => { };
+}
 let options = {
     node_env: process.env['NODE_ENV'] || 'development',
     mode: 'standalone',

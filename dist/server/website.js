@@ -359,7 +359,7 @@ export class Website {
         const listeners = this.config.websockets?.listeners || {};
         for (const [eventName, listener] of Object.entries(listeners)) {
             socket.on(eventName, (data) => {
-                listener(socket, data, clientInfo);
+                listener(socket, data, clientInfo, this);
             });
         }
         socket.on('disconnect', (reason, description) => {

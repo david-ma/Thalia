@@ -139,15 +139,15 @@ export class MailService implements Machine {
   }
 }
 
-import { baseTableConfig } from '../models/util.js'
+import { baseTableConfig, vc } from '../models/util.js'
 
 export const mailTable: MySqlTableWithColumns<any> = mysqlTable('mail', {
   ...baseTableConfig,
-  from: text('from'),
-  to: text('to'),
-  cc: text('cc'),
-  bcc: text('bcc'),
-  subject: text('subject'),
+  from: vc('from'),
+  to: vc('to'),
+  cc: vc('cc'),
+  bcc: vc('bcc'),
+  subject: vc('subject'),
   text: text('text'),
   html: text('html'),
 })

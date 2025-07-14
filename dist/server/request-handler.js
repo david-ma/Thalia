@@ -7,6 +7,7 @@ import path from 'path';
 import { dirname } from 'path';
 import fs from 'fs';
 import * as sass from 'sass';
+import zlib from 'zlib';
 export class RequestHandler {
     constructor(website) {
         this.website = website;
@@ -95,14 +96,37 @@ export class RequestHandler {
                     return;
                 }
             }
+            const acceptedEncoding = requestHandler.req.headers['accept-encoding'] ?? '';
+            const isGzipAccepted = acceptedEncoding.includes('gzip');
+            const isDeflateAccepted = acceptedEncoding.includes('deflate');
+            const isBrotliAccepted = acceptedEncoding.includes('br');
+            const contentType = RequestHandler.getContentType(requestHandler.pathname);
+            requestHandler.res.setHeader('Content-Type', contentType);
+            const gzippable = ['text/html', 'text/css', 'text/javascript', 'application/json', 'image/svg+xml'];
             if (fs.statSync(targetPath).isDirectory()) {
                 const indexPath = path.join(requestHandler.pathname, 'index.html');
                 requestHandler.handleRequest(requestHandler.req, requestHandler.res, requestHandler.requestInfo, indexPath);
                 return finish(`Redirected to ${indexPath}`);
             }
+            else if (gzippable.includes(contentType) && isGzipAccepted) {
+                const inputFile = fs.readFileSync(targetPath);
+                zlib.gzip(inputFile, (err, result) => {
+                    if (err) {
+                        console.error('Error gzipping file:', err);
+                        requestHandler.res.writeHead(500);
+                        requestHandler.res.end('Internal Server Error');
+                        return finish('Error gzipping file');
+                    }
+                    requestHandler.res.writeHead(200, {
+                        'Content-Encoding': 'gzip',
+                        'Content-Length': result.length.toString(),
+                        'Content-Type': contentType,
+                    });
+                    requestHandler.res.end(result);
+                    return finish(`Successfully gzipped file ${requestHandler.pathname}`);
+                });
+            }
             else {
-                const contentType = RequestHandler.getContentType(requestHandler.pathname);
-                requestHandler.res.setHeader('Content-Type', contentType);
                 const stream = fs.createReadStream(targetPath);
                 stream.on('error', (error) => {
                     console.error('Error streaming file:', error);

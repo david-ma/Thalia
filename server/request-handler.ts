@@ -51,9 +51,10 @@ export class RequestHandler {
       .then(RequestHandler.tryController)
       .then(RequestHandler.tryScss)
       .then(RequestHandler.tryHandlebars)
-      .then(RequestHandler.tryPublicFile)
-      // .then(this.tryStaticFile)
-      // .then(this.tryError)
+      .then((rh) => RequestHandler.tryStaticFile('dist', rh))
+      .then((rh) => RequestHandler.tryStaticFile('public', rh))
+      .then((rh) => RequestHandler.tryStaticFile('docs', rh))
+      .then(RequestHandler.fileNotFound)
       .catch((message) => {
         if (typeof message === typeof Error) {
           this.renderError(message)
@@ -102,21 +103,30 @@ export class RequestHandler {
   //   })
   // }
 
-  private static tryPublicFile(requestHandler: RequestHandler): Promise<RequestHandler> {
+  private static fileNotFound(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
-      if (!fs.existsSync(requestHandler.projectPublicPath)) {
+      requestHandler.res.writeHead(404)
+      requestHandler.res.end('404 Not Found')
+      return finish('404 Not Found')
+    })
+  }
+
+  private static tryStaticFile(folder: string, requestHandler: RequestHandler): Promise<RequestHandler> {
+    const targetPath = path.join(requestHandler.rootPath, folder, requestHandler.pathname)
+    return new Promise((next, finish) => {
+      if (!fs.existsSync(targetPath)) {
         next(requestHandler)
         return
       }
 
-      if (fs.statSync(requestHandler.projectPublicPath).isDirectory()) {
+      if (fs.statSync(targetPath).isDirectory()) {
         const indexPath = path.join(requestHandler.pathname, 'index.html')
         requestHandler.handleRequest(requestHandler.req, requestHandler.res, requestHandler.requestInfo, indexPath)
         return finish(`Redirected to ${indexPath}`)
       } else {
         const contentType = RequestHandler.getContentType(requestHandler.pathname)
         requestHandler.res.setHeader('Content-Type', contentType)
-        const stream = fs.createReadStream(requestHandler.projectPublicPath)
+        const stream = fs.createReadStream(targetPath)
         stream.on('error', (error) => {
           console.error('Error streaming file:', error)
           requestHandler.res.writeHead(500)

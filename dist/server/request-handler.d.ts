@@ -3,7 +3,6 @@
  *
  * This class will be more easily testable, and more easily extendable.
  */
-/// <reference types="node" resolution-mode="require"/>
 import { IncomingMessage, ServerResponse } from 'http';
 import { Website } from './website.js';
 import { RequestInfo } from './server.js';
@@ -22,7 +21,8 @@ export declare class RequestHandler {
     handleRequest(req: IncomingMessage, res: ServerResponse, requestInfo: RequestInfo, pathnameOverride?: string): void;
     private renderError;
     private static getContentType;
-    private static tryPublicFile;
+    private static fileNotFound;
+    private static tryStaticFile;
     private static tryHandlebars;
     private static tryScss;
     private static tryController;

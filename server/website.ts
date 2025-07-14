@@ -216,7 +216,7 @@ export class Website {
     }
 
     const templateFile = this.handlebars.partials[template] ?? ''
-    const contentFile = this.handlebars.partials[content] ?? '404'
+    const contentFile = this.handlebars.partials[content] ?? this.handlebars.partials['content'] ?? '404'
     this.handlebars.registerPartial('styles', '')
     this.handlebars.registerPartial('scripts', '')
     this.handlebars.registerPartial('content', '')

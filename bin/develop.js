@@ -15,7 +15,7 @@ const rawListOfProjects = fs
   .filter((file) => fs.statSync(path.resolve(thaliaDirectory, 'websites', file)).isDirectory())
   .filter((file) => file !== 'default' && file !== 'example')
 
-const listOfProjects = ['default', 'example', ...rawListOfProjects]
+const listOfProjects = ['example', ...rawListOfProjects]
 
 if (projectName) {
   if (!listOfProjects.includes(projectName)) {

@@ -54,7 +54,7 @@ export class ThaliaDatabase {
             this.drizzle = drizzle(this.url);
             // await this.drizzle.$inferSelect(sql`SELECT 1`)
             // await this.drizzle.run(sql`SELECT 1`)
-            console.log(`Database connection for ${this.website.name} established successfully`);
+            console.log(`Starting Drizzle database connection for ${this.website.name}`);
             return Promise.all(Object.entries(this.schemas).map(async ([name, schema]) => {
                 return this.drizzle.select({ [name]: sql `count(*)` }).from(schema);
             }))

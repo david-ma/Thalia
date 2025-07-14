@@ -428,9 +428,14 @@ export class Website {
 
   public static async loadAllWebsites(options: ServerOptions): Promise<Website[]> {
     if (options.mode == 'multiplex') {
-      // Check if the root path exists
-      // Load all websites from the root path (should be the websites folder)
-      const websites = fs.readdirSync(options.rootPath)
+      const filters = ['example']
+
+      const websites = fs
+        .readdirSync(options.rootPath)
+        .filter((website) => fs.statSync(path.join(options.rootPath, website)).isDirectory())
+        .filter((website) => !filters.includes(website))
+
+      console.debug('Loading websites: ', websites)
 
       return Promise.all(
         websites.map(async (website) => {

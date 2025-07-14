@@ -1,3 +1,4 @@
+/// <reference types="node" resolution-mode="require"/>
 import { ServerResponse, IncomingMessage } from 'http';
 import { Website } from './website.js';
 import { Machine } from './controllers.js';

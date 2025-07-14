@@ -54,6 +54,7 @@ export class RequestHandler {
       .then((rh) => RequestHandler.tryStaticFile('dist', rh))
       .then((rh) => RequestHandler.tryStaticFile('public', rh))
       .then((rh) => RequestHandler.tryStaticFile('docs', rh))
+      .then((rh) => RequestHandler.tryStaticFile('data', rh))
       .then(RequestHandler.fileNotFound)
       .catch((message) => {
         if (typeof message === typeof Error) {
@@ -112,11 +113,16 @@ export class RequestHandler {
   }
 
   private static tryStaticFile(folder: string, requestHandler: RequestHandler): Promise<RequestHandler> {
-    const targetPath = path.join(requestHandler.rootPath, folder, requestHandler.pathname)
+    let targetPath = path.join(requestHandler.rootPath, folder, requestHandler.pathname)
     return new Promise((next, finish) => {
       if (!fs.existsSync(targetPath)) {
-        next(requestHandler)
-        return
+        if (fs.existsSync(`${targetPath}.gz`)) {
+          targetPath += '.gz'
+          requestHandler.res.setHeader('Content-Encoding', 'gzip')
+        } else {
+          next(requestHandler)
+          return
+        }
       }
 
       if (fs.statSync(targetPath).isDirectory()) {

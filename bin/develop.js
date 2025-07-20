@@ -91,6 +91,17 @@ function startServer(projectName) {
   })
 
   const processes = [tsc, nodemon, projectTsc]
+
+  if(fs.existsSync(`${projectRoot}/webpack.config.js`)) {
+    // start webpack for the project
+    const webpack = spawn('webpack', ['--watch', '--config', `${projectRoot}/webpack.config.js`], {
+      env,
+      stdio: 'inherit',
+      cwd: projectRoot,
+    })
+    processes.push(webpack)
+  }
+
   const bs = browserSync.create({
     files: [`${thaliaDirectory}/dist/**/*`, `${projectRoot}/**/*`, `${thaliaDirectory}/src/**/*.hbs`],
   })

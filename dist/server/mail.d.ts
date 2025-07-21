@@ -1,4 +1,3 @@
-/// <reference types="node" resolution-mode="require"/>
 import { SendMailOptions } from 'nodemailer';
 import { Machine } from './controllers.js';
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core';

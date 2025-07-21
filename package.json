@@ -46,6 +46,10 @@
     "./mail": {
       "import": "./dist/server/mail.js",
       "types": "./dist/server/mail.d.ts"
+    },
+    "./util": {
+      "import": "./dist/server/util.js",
+      "types": "./dist/server/util.d.ts"
     }
   },
   "bin": {

@@ -33,5 +33,24 @@ const roleBasedSecurityConfig = recursiveObjectMerge(recursiveObjectMerge(securi
         },
     ],
 });
-export const config = roleBasedSecurityConfig;
+import { albums, images } from '../models/drizzle-schema.js';
+const AlbumMachine = new CrudFactory(albums);
+const ImageMachine = new CrudFactory(images);
+const smugmugConfig = {
+    controllers: {
+        albums: AlbumMachine.controller.bind(AlbumMachine),
+        images: ImageMachine.controller.bind(ImageMachine),
+    },
+    database: {
+        schemas: {
+            albums,
+            images,
+        },
+        machines: {
+            albums: AlbumMachine,
+            images: ImageMachine,
+        },
+    },
+};
+export const config = recursiveObjectMerge(roleBasedSecurityConfig, smugmugConfig);
 //# sourceMappingURL=config.js.map

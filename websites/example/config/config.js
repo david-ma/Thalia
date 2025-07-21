@@ -19,7 +19,7 @@ const fruitConfig = {
 import path from 'path';
 const mailAuthPath = path.join(import.meta.dirname, 'mailAuth.js');
 const security = new ThaliaSecurity({
-    mailAuthPath: mailAuthPath,
+    mailAuthPath,
 });
 const roleBasedSecurityConfig = recursiveObjectMerge(recursiveObjectMerge(security.securityConfig(), fruitConfig), {
     routes: [

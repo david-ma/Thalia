@@ -10,6 +10,23 @@ export interface RoleRouteRule extends RouteRule {
 }
 import { RequestInfo } from './server.js';
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core';
+import { MySql2Database } from 'drizzle-orm/mysql2';
+export type UserDetails = {
+    email: string;
+    password: string;
+    name: string;
+    role: string;
+    locked: boolean;
+    verified: boolean;
+};
+export declare class SecurityService {
+    website: Website;
+    db: MySql2Database;
+    constructor(drizzleConfig: any);
+    createUser(user: UserDetails): Promise<{
+        [x: string]: any;
+    }[] | null>;
+}
 export declare class ThaliaSecurity implements Machine {
     table: MySqlTableWithColumns<any>;
     private mailService;

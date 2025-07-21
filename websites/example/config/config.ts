@@ -25,7 +25,7 @@ import path from 'path'
 const mailAuthPath = path.join(import.meta.dirname, 'mailAuth.js')
 
 const security = new ThaliaSecurity({
-  mailAuthPath: mailAuthPath,
+  mailAuthPath,
 })
 
 const roleBasedSecurityConfig: RawWebsiteConfig = recursiveObjectMerge(

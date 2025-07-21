@@ -94,6 +94,25 @@ import { parseForm } from './controllers.js';
 import { eq } from 'drizzle-orm';
 // import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 import crypto from 'crypto';
+import { drizzle } from 'drizzle-orm/mysql2';
+export class SecurityService {
+    constructor(drizzleConfig) {
+        this.db = drizzle(drizzleConfig.default.dbCredentials.url);
+    }
+    createUser(user) {
+        return bcrypt.hash(user.password, 10).then((hashedPassword) => {
+            user.password = hashedPassword;
+            return this.db
+                .insert(users)
+                .values(user)
+                .$returningId()
+                .catch((error) => {
+                console.error("Error creating user " + user.email);
+                return null;
+            });
+        });
+    }
+}
 export class ThaliaSecurity {
     constructor(options = {}) {
         this.mailService = new MailService(options.mailAuthPath ?? '');
@@ -166,6 +185,8 @@ export class ThaliaSecurity {
                         .then(() => {
                         this.setCookie(res, sessionId);
                         // TODO: Redirect to homepage
+                        res.writeHead(302, { Location: '/' });
+                        res.end();
                     });
                 })
                     .catch((error) => {

@@ -347,7 +347,7 @@ export class RoleRouteGuard extends BasicRouteGuard {
                     .where(eq(sessions.sid, sessionId))
                     .then(([result]) => {
                     if (!result) {
-                        resolve({
+                        return resolve({
                             role: 'guest',
                         });
                     }

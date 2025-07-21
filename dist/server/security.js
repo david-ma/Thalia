@@ -150,7 +150,6 @@ export class ThaliaSecurity {
                     .from(usersTable)
                     .where(eq(usersTable.email, form.fields.Email))
                     .then(([user]) => {
-                    console.log('Found User', user);
                     if (!user) {
                         res.end(website.getContentHtml('userLogin')({ error: 'Invalid email or password' }));
                         return;
@@ -171,8 +170,6 @@ export class ThaliaSecurity {
                     .then((user) => {
                     if (!user)
                         return;
-                    console.log('We have a user', user);
-                    console.log('Generating a session');
                     // Generate a session
                     const session = website.db.machines.sessions.table;
                     const sessionId = crypto.randomBytes(16).toString('hex');

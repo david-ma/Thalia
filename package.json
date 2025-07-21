@@ -89,6 +89,7 @@
     "@typescript-eslint/parser": "^4.33.0",
     "autoprefixer": "10.2.6",
     "browser-sync": "^3.0.4",
+    "bun": "^1.2.19",
     "copy-webpack-plugin": "^12.0.2",
     "css-loader": "^6.11.0",
     "css-minimizer-webpack-plugin": "^6.0.0",
@@ -112,7 +113,8 @@
     "webpack": "^5.99.9",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.2.2",
-    "webpack-merge": "^5.10.0"
+    "webpack-merge": "^5.10.0",
+    "@types/bun": "latest"
   },
   "engines": {
     "node": ">=22"

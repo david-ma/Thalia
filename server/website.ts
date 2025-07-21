@@ -516,6 +516,7 @@ export const controllerFactories = {
  * Arrays are concatenated.
  * Objects are merged recursively.
  * The additional object takes precedence over the base object.
+ * Also known as deepMerge
  */
 export function recursiveObjectMerge<T extends Record<string, any>>(baseObject: T, additionalObject: T): T {
   const result: T = { ...baseObject }

@@ -1,8 +1,8 @@
 import { fruit } from '../models/fruit.js';
-const FruitMachine = new CrudFactory(fruit);
 import { CrudFactory } from 'thalia/controllers';
 import { ThaliaSecurity } from 'thalia/security';
 import { recursiveObjectMerge } from 'thalia/website';
+const FruitMachine = new CrudFactory(fruit);
 const fruitConfig = {
     database: {
         schemas: {

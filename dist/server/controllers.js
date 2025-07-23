@@ -740,17 +740,18 @@ export class SmugMugUploader {
     async uploadImageToSmugmug(form) {
         const that = this;
         const file = form.files.fileToUpload?.[0];
+        const drizzle = this.website.db.drizzle;
         if (!file) {
             return Promise.reject(new Error('No file provided'));
         }
         const md5sum = crypto.createHash('md5').update(fs.readFileSync(file.filepath)).digest('hex');
-        return that.website.db.drizzle
+        return drizzle
             .select()
             .from(images)
             .where(eq(images.archivedMD5, md5sum))
-            .then((images) => {
-            if (images.length > 0) {
-                return Promise.resolve(images[0]);
+            .then((imageResults) => {
+            if (imageResults.length > 0) {
+                return Promise.resolve(imageResults[0]);
             }
             else {
                 return new Promise((resolve, reject) => {
@@ -793,7 +794,18 @@ export class SmugMugUploader {
                             data += chunk;
                         });
                         httpsResponse.on('end', () => {
-                            resolve(that.saveImage(JSON.parse(data)));
+                            that.saveImage(JSON.parse(data)).then((newImage) => {
+                                drizzle
+                                    .select()
+                                    .from(images)
+                                    .where(eq(images.id, newImage[0].insertId))
+                                    .then((imageResults) => {
+                                    resolve(imageResults[0]);
+                                })
+                                    .catch((err) => {
+                                    reject(err);
+                                });
+                            });
                         });
                     });
                     httpsRequest.on('error', function (e) {

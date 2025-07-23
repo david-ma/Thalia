@@ -6,10 +6,10 @@ import { vc, baseTableConfig } from './util.js'
 export const albums: MySqlTableWithColumns<any> = mysqlTable('albums', {
   ...baseTableConfig,
   description: text('description'),
-  name: vc('name').notNull(),
-  privacy: vc('privacy').notNull(),
-  url: vc('url').notNull(),
-  password: vc('password').notNull()
+  name: vc('name'),
+  privacy: vc('privacy'),
+  url: vc('url'),
+  password: vc('password')
 })
 
 export type Album = typeof albums.$inferSelect
@@ -19,19 +19,19 @@ export type NewAlbum = typeof albums.$inferInsert
 export const images: MySqlTableWithColumns<any> = mysqlTable('images', {
   ...baseTableConfig,
   caption: text('caption'),
-  albumId: int('album_id').notNull().references(() => albums.id),
-  filename: vc('filename').notNull(),
-  url: vc('url').notNull(),
-  originalSize: int('original_size').notNull(),
-  originalWidth: int('original_width').notNull(),
-  originalHeight: int('original_height').notNull(),
-  thumbnailUrl: vc('thumbnail_url').notNull(),
-  archivedUri: vc('archived_uri').notNull(),
-  archivedSize: int('archived_size').notNull(),
-  archivedMD5: vc('archived_md5').notNull(),
+  albumId: int('album_id').references(() => albums.id),
+  filename: vc('filename'),
+  url: vc('url'),
+  originalSize: int('original_size'),
+  originalWidth: int('original_width'),
+  originalHeight: int('original_height'),
+  thumbnailUrl: vc('thumbnail_url'),
+  archivedUri: vc('archived_uri'),
+  archivedSize: int('archived_size'),
+  archivedMD5: vc('archived_md5'),
   imageKey: vc('image_key').notNull(),
-  preferredDisplayFileExtension: vc('preferred_display_file_extension').notNull(),
-  uri: vc('uri').notNull()
+  preferredDisplayFileExtension: vc('preferred_display_file_extension'),
+  uri: vc('uri')
 })
 
 export type Image = typeof images.$inferSelect

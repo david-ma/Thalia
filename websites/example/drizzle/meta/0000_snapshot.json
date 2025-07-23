@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "d30cf69a-a1d0-410c-8f1c-63c86bc364cd",
+  "id": "342365ce-a9bc-4ac2-8062-ee9d5ccca0a6",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "albums": {
@@ -36,7 +36,8 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "NULL"
         },
         "description": {
           "name": "description",
@@ -49,28 +50,28 @@
           "name": "name",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "privacy": {
           "name": "privacy",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "url": {
           "name": "url",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "password": {
           "name": "password",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         }
       },
@@ -119,7 +120,8 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "NULL"
         },
         "user_id": {
           "name": "user_id",
@@ -237,7 +239,8 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "NULL"
         },
         "name": {
           "name": "name",
@@ -306,7 +309,8 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "NULL"
         },
         "caption": {
           "name": "caption",
@@ -319,70 +323,70 @@
           "name": "album_id",
           "type": "int",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "filename": {
           "name": "filename",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "url": {
           "name": "url",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "original_size": {
           "name": "original_size",
           "type": "int",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "original_width": {
           "name": "original_width",
           "type": "int",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "original_height": {
           "name": "original_height",
           "type": "int",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "thumbnail_url": {
           "name": "thumbnail_url",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "archived_uri": {
           "name": "archived_uri",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "archived_size": {
           "name": "archived_size",
           "type": "int",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "archived_md5": {
           "name": "archived_md5",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "image_key": {
@@ -396,14 +400,14 @@
           "name": "preferred_display_file_extension",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "uri": {
           "name": "uri",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         }
       },
@@ -466,39 +470,40 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "NULL"
         },
         "from": {
           "name": "from",
-          "type": "text",
+          "type": "varchar(500)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "to": {
           "name": "to",
-          "type": "text",
+          "type": "varchar(1000)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "cc": {
           "name": "cc",
-          "type": "text",
+          "type": "varchar(1000)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "bcc": {
           "name": "bcc",
-          "type": "text",
+          "type": "varchar(1000)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "subject": {
           "name": "subject",
-          "type": "text",
+          "type": "varchar(1000)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -647,7 +652,8 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "NULL"
         },
         "name": {
           "name": "name",

@@ -803,15 +803,16 @@ export class SmugMugUploader {
         // fetch(`${this.BASE_URL}${AlbumImageUri}`)
         this.smugmugApiCall(AlbumImageUri)
             // .then(res => res.json())
-            .then((data) => {
+            .then((response) => {
             console.log('Pulling more data from AlbumImageUri');
-            console.log(data);
-            // const drizzle = this.website.db.drizzle
-            // drizzle.insert(images).values({
-            //   imageUri: data.Image.ImageUri,
-            //   albumUri: data.Image.AlbumImageUri,
-            //   url: data.Image.URL,
-            // })
+            console.log(response);
+            const drizzle = this.website.db.drizzle;
+            return drizzle.insert(images).values({
+                imageUri: data.Image.ImageUri,
+                albumUri: data.Image.AlbumImageUri,
+                url: data.Image.URL,
+                albumId: response.Response.AlbumImage.AlbumKey,
+            });
         })
             .catch((err) => {
             console.error(err);

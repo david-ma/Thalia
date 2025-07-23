@@ -73,12 +73,8 @@ function startServer(projectName) {
   const nodemon = spawn('nodemon', ['--watch', 'dist',
     '--watch', `websites/${projectName}`,
     'dist/server/cli.js'], {
-    env: {
-      ...env,
-      PROJECT: projectName,
-      PORT: 1337,
-      WEBSITE: projectName,
-    },
+    env,
+    reloadDelay: 1000,
     stdio: 'inherit',
     cwd: thaliaDirectory,
   })

@@ -39,7 +39,7 @@ export class RequestHandler {
             if (typeof message === typeof Error) {
                 this.renderError(message);
             }
-            console.debug('Successfully finished the request handler chain', message);
+            console.debug('Successfully finished the request handler chain:', message);
         });
     }
     renderError(error) {

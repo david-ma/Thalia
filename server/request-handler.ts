@@ -63,7 +63,7 @@ export class RequestHandler {
           this.renderError(message)
         }
 
-        console.debug('Successfully finished the request handler chain', message)
+        console.debug('Successfully finished the request handler chain:', message)
       })
   }
 

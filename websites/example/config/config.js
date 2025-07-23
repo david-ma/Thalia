@@ -40,8 +40,8 @@ import { SmugMugUploader } from 'thalia/controllers';
 const smugMugUploader = new SmugMugUploader();
 const smugmugConfig = {
     controllers: {
-        albums: AlbumMachine.controller.bind(AlbumMachine),
-        images: ImageMachine.controller.bind(ImageMachine),
+        smugmugAlbums: AlbumMachine.controller.bind(AlbumMachine),
+        smugmugImages: ImageMachine.controller.bind(ImageMachine),
         uploadPhoto: smugMugUploader.controller.bind(smugMugUploader),
     },
     database: {

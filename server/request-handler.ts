@@ -56,6 +56,7 @@ export class RequestHandler {
       .then((rh) => RequestHandler.tryStaticFile('public', rh))
       .then((rh) => RequestHandler.tryStaticFile('docs', rh))
       .then((rh) => RequestHandler.tryStaticFile('data', rh))
+      .then((rh) => RequestHandler.tryStaticFile('public', rh, true)) // Serve assets from the thalia root
       .then(RequestHandler.fileNotFound)
       .catch((message) => {
         if (typeof message === typeof Error) {
@@ -113,8 +114,17 @@ export class RequestHandler {
     })
   }
 
-  private static tryStaticFile(folder: string, requestHandler: RequestHandler): Promise<RequestHandler> {
+  private static tryStaticFile(
+    folder: string,
+    requestHandler: RequestHandler,
+    thaliaAsset: boolean = false, // If true, the path is relative to the thalia root
+  ): Promise<RequestHandler> {
     let targetPath = path.join(requestHandler.rootPath, folder, requestHandler.pathname)
+
+    if (thaliaAsset) {
+      targetPath = path.join(requestHandler.thaliaRoot, folder, requestHandler.pathname)
+    }
+
     return new Promise((next, finish) => {
       if (!fs.existsSync(targetPath)) {
         if (fs.existsSync(`${targetPath}.gz`)) {

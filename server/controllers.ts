@@ -961,7 +961,7 @@ export class SmugMugUploader implements Machine {
    * Take a ParsedForm, and upload the image to SmugMug.
    * If the image already exists, return the existing image.
    * If the image doesn't exist, upload it to SmugMug, and return the new image.
-   * 
+   *
    * TODO:
    * - Tests
    * - Make it more efficient

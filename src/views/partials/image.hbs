@@ -89,15 +89,15 @@
   function handleDrop(e) {
     const dt = e.dataTransfer;
     const files = dt.files;
-    
+
     // Clear the file input first
     fileInput.files = null;
-    
+
     // Create a new FileList-like object and assign it to the input
     const dataTransfer = new DataTransfer();
     dataTransfer.items.add(files[0]);
     fileInput.files = dataTransfer.files;
-    
+
     handleFiles({ target: { files: files } });
   }
 
@@ -108,7 +108,7 @@
     }
 
     const file = event.target.files[0];
-    
+
     // Validate file type
     if (!file.type.startsWith('image/')) {
       alert('Please select an image file');
@@ -124,7 +124,7 @@
     // Create FormData and manually append the file
     const formData = new FormData();
     formData.append('fileToUpload', file);
-    
+
     // Add any other form fields you need
     formData.append('caption', '');
     formData.append('filename', file.name);
@@ -141,7 +141,7 @@
       success: function (data) {
         data = JSON.parse(data);
         console.log("success: data", data);
-        
+
         imagePreview.src = data.thumbnailUrl;
         imageHelpText.textContent = "Image uploaded! Click save!";
         document.getElementById('image').src = data.thumbnailUrl;
@@ -164,62 +164,62 @@
 
 
 
-/*
-
-  d3.select("#fileToUpload").on("change", function (event, thing, thing2) {
-    d3.select("#imageHelpText").text("Uploading image... please wait");
-    //loading.gif
-    d3.select("#image").attr("src", "/images/loading.gif");
-
-    console.log("event", event)
-    console.log("thing", thing)
-    console.log("thing2", thing2)
-
-    var file = event.target.files[0];
-    var filetype = file.type;
-    console.log("filetype", filetype)
-
-    if (file) {
-      console.log("Hey, we have a file")
-
-      var reader = new FileReader();
-      reader.onloadend = function (event) {
-        console.log(event);
-
-        var formData = new FormData(document.getElementById("imageForm"));
-
-        $.ajax({
-          url: '/uploadPhoto',
-          type: 'POST',
-          data: formData,
-          cache: false,
-          contentType: false,
-          processData: false,
-          error: function (err) {
-            console.log("There's an error!")
-
-            d3.select("#imageHelpText").text("Error. Try again :(");
-            d3.select("#image").attr("src", "");
-
-            console.log("err", err)
-          },
-          success: function (imageBlob) {
-            d3.select("#imageHelpText").text("Image uploaded! Click save!");
-            const data = JSON.parse(imageBlob);
-
-            console.log("photo uploaded! imageBlob:")
-            console.log(imageBlob)
-
-            d3.select("#image").attr("src", data.thumbnail);
-            d3.select("#image_url").attr("value", data.image_url);
-            d3.select("#imageKey").attr("value", data.imageKey);
-            d3.select("#thumbnail").attr("value", data.thumbnail);
-//            document.getElementById("saveButton").click();
-          }
-        })
+  /*
+  
+    d3.select("#fileToUpload").on("change", function (event, thing, thing2) {
+      d3.select("#imageHelpText").text("Uploading image... please wait");
+      //loading.gif
+      d3.select("#image").attr("src", "/images/loading.gif");
+  
+      console.log("event", event)
+      console.log("thing", thing)
+      console.log("thing2", thing2)
+  
+      var file = event.target.files[0];
+      var filetype = file.type;
+      console.log("filetype", filetype)
+  
+      if (file) {
+        console.log("Hey, we have a file")
+  
+        var reader = new FileReader();
+        reader.onloadend = function (event) {
+          console.log(event);
+  
+          var formData = new FormData(document.getElementById("imageForm"));
+  
+          $.ajax({
+            url: '/uploadPhoto',
+            type: 'POST',
+            data: formData,
+            cache: false,
+            contentType: false,
+            processData: false,
+            error: function (err) {
+              console.log("There's an error!")
+  
+              d3.select("#imageHelpText").text("Error. Try again :(");
+              d3.select("#image").attr("src", "");
+  
+              console.log("err", err)
+            },
+            success: function (imageBlob) {
+              d3.select("#imageHelpText").text("Image uploaded! Click save!");
+              const data = JSON.parse(imageBlob);
+  
+              console.log("photo uploaded! imageBlob:")
+              console.log(imageBlob)
+  
+              d3.select("#image").attr("src", data.thumbnail);
+              d3.select("#image_url").attr("value", data.image_url);
+              d3.select("#imageKey").attr("value", data.imageKey);
+              d3.select("#thumbnail").attr("value", data.thumbnail);
+  //            document.getElementById("saveButton").click();
+            }
+          })
+        }
+        reader.readAsDataURL(file);
       }
-      reader.readAsDataURL(file);
-    }
-  });
-*/
+    });
+  */
 </script>

@@ -33,6 +33,7 @@ export class RequestHandler {
             .then((rh) => RequestHandler.tryStaticFile('public', rh))
             .then((rh) => RequestHandler.tryStaticFile('docs', rh))
             .then((rh) => RequestHandler.tryStaticFile('data', rh))
+            .then((rh) => RequestHandler.tryStaticFile('public', rh, true)) // Serve assets from the thalia root
             .then(RequestHandler.fileNotFound)
             .catch((message) => {
             if (typeof message === typeof Error) {
@@ -83,8 +84,11 @@ export class RequestHandler {
             return finish('404 Not Found');
         });
     }
-    static tryStaticFile(folder, requestHandler) {
+    static tryStaticFile(folder, requestHandler, thaliaAsset = false) {
         let targetPath = path.join(requestHandler.rootPath, folder, requestHandler.pathname);
+        if (thaliaAsset) {
+            targetPath = path.join(requestHandler.thaliaRoot, folder, requestHandler.pathname);
+        }
         return new Promise((next, finish) => {
             if (!fs.existsSync(targetPath)) {
                 if (fs.existsSync(`${targetPath}.gz`)) {

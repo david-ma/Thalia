@@ -737,6 +737,15 @@ export class SmugMugUploader {
             res.end('error');
         });
     }
+    /**
+     * Take a ParsedForm, and upload the image to SmugMug.
+     * If the image already exists, return the existing image.
+     * If the image doesn't exist, upload it to SmugMug, and return the new image.
+     *
+     * TODO:
+     * - Tests
+     * - Make it more efficient
+     */
     async uploadImageToSmugmug(form) {
         const that = this;
         const file = form.files.fileToUpload?.[0];
@@ -822,7 +831,6 @@ export class SmugMugUploader {
             }
         });
     }
-    // {"stat":"ok","method":"smugmug.images.upload","Image":{"StatusImageReplaceUri":"","ImageUri":"/api/v2/image/RvQ65Gm-0","AlbumImageUri":"/api/v2/album/jHhcL7/image/RvQ65Gm-0","URL":"https://photos.david-ma.net/Thalia/n-rXXjjD/My-Smug-Album/i-RvQ65Gm"},"Asset":{"AssetComponentUri":"/api/v2/library/asset/RvQ65Gm/component/i/RvQ65Gm","AssetUri":"/api/v2/library/asset/RvQ65Gm"}}
     async saveImage(data) {
         console.log('Ok, we got the data from smugmug');
         console.log(data);

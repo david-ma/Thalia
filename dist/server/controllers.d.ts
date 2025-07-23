@@ -151,6 +151,15 @@ export declare class SmugMugUploader implements Machine {
     init(website: Website, name: string): Promise<void>;
     oauthCallback(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
     controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
+    /**
+     * Take a ParsedForm, and upload the image to SmugMug.
+     * If the image already exists, return the existing image.
+     * If the image doesn't exist, upload it to SmugMug, and return the new image.
+     *
+     * TODO:
+     * - Tests
+     * - Make it more efficient
+     */
     private uploadImageToSmugmug;
     private saveImage;
     private smugmugApiCall;

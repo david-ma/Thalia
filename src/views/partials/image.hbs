@@ -20,7 +20,11 @@
   }
 </style>
 
+
+<img id="image_preview" src="" />
+
 <div class="image-container">
+
 
   <label id="uploadImageLabel" for="fileToUpload"><img id="image"
       src="{{#if image_url}}{{ image_url }}{{else}}{{thumbnail}}{{/if}}">
@@ -41,6 +45,14 @@
   // do not use d3.js
 
   document.getElementById("fileToUpload").addEventListener("change", function (event) {
+
+    if (event.target.files.length === 0) {
+      console.log("No file selected")
+      return
+    }
+
+    const file = event.target.files[0]
+
     console.log("event", event)
     console.log("event.target", event.target)
     console.log("event.target.files", event.target.files)
@@ -61,10 +73,16 @@
       contentType: false,
       processData: false,
       success: function (data) {
-        console.log("data", data)
+        data = JSON.parse(data)
+
+        console.log("success: data", data)
+
+        $("#image_preview").attr("src", data.thumbnailUrl);
+
       },
       error: function (err) {
         console.log("err", err)
+
       }
     })
   })

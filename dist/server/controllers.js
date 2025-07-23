@@ -819,16 +819,15 @@ export class SmugMugUploader {
     }
     // path=`${path}?_verbosity=1`
     async smugmugApiCall(path, method = 'GET') {
-        // path = `${path}?_verbosity=1`
         return new Promise((resolve, reject) => {
-            // Send a signed request to the API
-            // const targetUrl = `${this.BASE_URL}${path}?_verbosity=1`
-            const targetUrl = `${this.BASE_URL}${path}`;
+            // Add verbosity as a query parameter to the URL
+            const urlWithVerbosity = `${path}?_verbosity=1`;
+            const targetUrl = `${this.BASE_URL}${urlWithVerbosity}`;
             const params = this.signRequest(method, targetUrl);
             const options = {
                 host: 'api.smugmug.com',
                 port: 443,
-                path,
+                path: urlWithVerbosity,
                 method,
                 headers: {
                     Authorization: SmugMugUploader.bundleAuthorization(targetUrl, params),
@@ -860,6 +859,14 @@ export class SmugMugUploader {
         });
     }
     signRequest(method, targetUrl) {
+        // Parse the URL to extract base URL and query parameters
+        const urlObj = new URL(targetUrl);
+        const baseUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`;
+        // Get query parameters from URL
+        const queryParams = {};
+        urlObj.searchParams.forEach((value, key) => {
+            queryParams[key] = value;
+        });
         const params = {
             oauth_consumer_key: this.tokens.consumer_key,
             oauth_nonce: Math.random().toString().replace('0.', ''),
@@ -867,16 +874,18 @@ export class SmugMugUploader {
             oauth_timestamp: Math.floor(Date.now() / 1000),
             oauth_token: this.tokens.oauth_token,
             oauth_version: '1.0',
-            _verbosity: '1',
+            ...queryParams, // Include query parameters in OAuth signature
         };
         const sortedParams = SmugMugUploader.sortParams(params);
         const escapedParams = SmugMugUploader.oauthEscape(SmugMugUploader.expandParams(sortedParams));
         console.log('=== OAuth Debug ===');
+        console.log('Base URL:', baseUrl);
+        console.log('Query Params:', queryParams);
         console.log('Params (should NOT include oauth_token_secret):', JSON.stringify(params, null, 2));
         console.log('Sorted Params:', JSON.stringify(sortedParams, null, 2));
-        console.log('Signature Base String:', `${method}&${SmugMugUploader.oauthEscape(targetUrl)}&${escapedParams}`);
+        console.log('Signature Base String:', `${method}&${SmugMugUploader.oauthEscape(baseUrl)}&${escapedParams}`);
         console.log('==================');
-        params.oauth_signature = SmugMugUploader.b64_hmac_sha1(`${this.tokens.consumer_secret}&${this.tokens.oauth_token_secret}`, `${method}&${SmugMugUploader.oauthEscape(targetUrl)}&${escapedParams}`);
+        params.oauth_signature = SmugMugUploader.b64_hmac_sha1(`${this.tokens.consumer_secret}&${this.tokens.oauth_token_secret}`, `${method}&${SmugMugUploader.oauthEscape(baseUrl)}&${escapedParams}`);
         // It seems like smugmug doesn't like the + in the signature,
         // and I don't know how to escape it properly, so I'm just
         // going to regenerate the signature if it contains a + or /

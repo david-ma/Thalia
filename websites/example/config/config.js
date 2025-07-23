@@ -36,10 +36,13 @@ const roleBasedSecurityConfig = recursiveObjectMerge(recursiveObjectMerge(securi
 import { albums, images } from '../models/drizzle-schema.js';
 const AlbumMachine = new CrudFactory(albums);
 const ImageMachine = new CrudFactory(images);
+import { SmugMugUploader } from 'thalia/controllers';
+const smugMugUploader = new SmugMugUploader();
 const smugmugConfig = {
     controllers: {
         albums: AlbumMachine.controller.bind(AlbumMachine),
         images: ImageMachine.controller.bind(ImageMachine),
+        uploadPhoto: smugMugUploader.controller.bind(smugMugUploader),
     },
     database: {
         schemas: {
@@ -49,6 +52,7 @@ const smugmugConfig = {
         machines: {
             albums: AlbumMachine,
             images: ImageMachine,
+            smugmug: smugMugUploader,
         },
     },
 };

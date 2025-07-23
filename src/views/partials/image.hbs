@@ -37,14 +37,58 @@
 <br />
 
 <script>
+  // Attach a function to #fileToUpload so that when it changes, we upload the image to smugmug
+  // do not use d3.js
+
+  document.getElementById("fileToUpload").addEventListener("change", function (event) {
+    console.log("event", event)
+    console.log("event.target", event.target)
+    console.log("event.target.files", event.target.files)
+    console.log("event.target.files[0]", event.target.files[0])
+    console.log("event.target.files[0].name", event.target.files[0].name)
+    console.log("event.target.files[0].type", event.target.files[0].type)
+    console.log("event.target.files[0].size", event.target.files[0].size)
+    console.log("event.target.files[0].lastModified", event.target.files[0].lastModified)
+
+
+    var formData = new FormData(document.getElementById("imageForm"));
+
+    $.ajax({
+      url: '/uploadPhoto',
+      type: 'POST',
+      data: formData,
+      cache: false,
+      contentType: false,
+      processData: false,
+      success: function (data) {
+        console.log("data", data)
+      },
+      error: function (err) {
+        console.log("err", err)
+      }
+    })
+  })
+
+
+
+
   // TODO: Rewrite so we don't need D3js
   // Or at least, give a warning
   // Or maybe load it in this file?
+
+
+
+
+/*
 
   d3.select("#fileToUpload").on("change", function (event, thing, thing2) {
     d3.select("#imageHelpText").text("Uploading image... please wait");
     //loading.gif
     d3.select("#image").attr("src", "/images/loading.gif");
+
+    console.log("event", event)
+    console.log("thing", thing)
+    console.log("thing2", thing2)
 
     var file = event.target.files[0];
     var filetype = file.type;
@@ -92,4 +136,5 @@
       reader.readAsDataURL(file);
     }
   });
+*/
 </script>

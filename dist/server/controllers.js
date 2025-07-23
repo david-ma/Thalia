@@ -595,7 +595,7 @@ export class SmugMugUploader {
         })
             .then((smugmug) => {
             if (!smugmug.consumer_key || !smugmug.consumer_secret) {
-                throw new Error('Consumer key and secret are required');
+                throw new Error('Consumer key and secret are required, expected in config/secrets.js');
             }
             if (smugmug.oauth_token && smugmug.oauth_token_secret) {
                 console.log('OAuth token and secret are already set');

@@ -33,12 +33,17 @@
 
 <div class="image-container" id="dropZone">
   <label id="uploadImageLabel" for="fileToUpload">
-    <img id="image" src="{{#if image_url}}{{ image_url }}{{else}}{{thumbnail}}{{/if}}">
+    {{!-- <img id="image" src="{{#if image_url}}{{ image_url }}{{else}}{{thumbnail}}{{/if}}"> --}}
+
+    <div id="image_previews">
+      <img id="loading" />
+    </div>
+
     <span id="imageHelpText">Click to upload image or drag & drop</span>
   </label>
 
   <form id="imageForm" style="display: none;">
-    <input type="file" accept="image/*" name="fileToUpload" id="fileToUpload" />
+    <input type="file" accept="image/*" name="fileToUpload" id="fileToUpload" multiple/>
   </form>
 </div>
 
@@ -89,12 +94,7 @@
     const files = dt.files;
 
     // Clear the file input first
-    fileInput.files = null;
-
-    // Create a new FileList-like object and assign it to the input
-    const dataTransfer = new DataTransfer();
-    dataTransfer.items.add(files[0]);
-    fileInput.files = dataTransfer.files;
+    fileInput.files = files;
 
     handleFiles({ target: { files: files } });
   }
@@ -105,7 +105,9 @@
       return;
     }
 
-    const file = event.target.files[0];
+    const files = event.target.files;
+
+    Promise.all(Array.from(files).map(file => {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -117,7 +119,7 @@
 
     // Show uploading state
     imageHelpText.textContent = "Uploading image... please wait";
-    document.getElementById('image').src = "/images/loading.gif";
+    document.getElementById('loading').src = "/images/loading.gif";
 
     // Create FormData and manually append the file
     const formData = new FormData();
@@ -141,14 +143,19 @@
         console.log("success: data", data);
 
         imageHelpText.textContent = "Image uploaded! Click save!";
-        document.getElementById('image').src = data.thumbnailUrl;
+//        document.getElementById('image').src = data.thumbnailUrl;
+
+        document.getElementById('image_previews').innerHTML += `<img src="${data.thumbnailUrl}" />`;
       },
       error: function (err) {
         console.log("err", err);
         imageHelpText.textContent = "Error. Try again :(";
-        document.getElementById('image').src = "";
       }
     });
+
+    })).finally(() => {
+      document.getElementById('loading').src = "";
+    })
   }
 
 

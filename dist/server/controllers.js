@@ -739,64 +739,75 @@ export class SmugMugUploader {
     }
     async uploadImageToSmugmug(form) {
         const that = this;
-        return new Promise((resolve, reject) => {
-            const file = form.files.fileToUpload?.[0];
-            if (!file) {
-                reject(new Error('File not uploaded'));
-                return;
+        const file = form.files.fileToUpload?.[0];
+        if (!file) {
+            return Promise.reject(new Error('No file provided'));
+        }
+        const md5sum = crypto.createHash('md5').update(fs.readFileSync(file.filepath)).digest('hex');
+        return that.website.db.drizzle
+            .select()
+            .from(images)
+            .where(eq(images.archivedMD5, md5sum))
+            .then((images) => {
+            if (images.length > 0) {
+                return Promise.resolve(images[0]);
             }
-            const caption = form.fields.caption ?? '';
-            const filename = form.fields.filename ?? file.originalFilename ?? '';
-            const title = form.fields.title ?? filename ?? caption ?? '';
-            const keywords = form.fields.keywords ?? title ?? caption ?? filename ?? this.website.name ?? '';
-            const host = 'upload.smugmug.com';
-            const path = '/';
-            const targetUrl = `https://${host}${path}`;
-            const method = 'POST';
-            // Sign the request (same OAuth process)
-            const params = this.signRequest(method, targetUrl);
-            // https://forum.uipath.com/t/unable-to-pass-binary-image-data-inside-http-request-body/849190/8
-            // Create the multipart form data
-            const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substr(2, 8);
-            const formData = SmugMugUploader.createMultipartFormData(file, boundary);
-            const options = {
-                host: host,
-                port: 443,
-                path: path,
-                method: method,
-                headers: {
-                    Authorization: SmugMugUploader.bundleAuthorization(targetUrl, params),
-                    'Content-Type': `multipart/form-data; boundary=${boundary}`,
-                    'Content-Length': formData.length,
-                    'X-Smug-AlbumUri': `/api/v2/album/${this.album}`,
-                    'X-Smug-Caption': caption,
-                    'X-Smug-FileName': filename,
-                    'X-Smug-Keywords': keywords,
-                    'X-Smug-ResponseType': 'JSON',
-                    'X-Smug-Title': title,
-                    'X-Smug-Version': 'v2',
-                },
-            };
-            const httpsRequest = https.request(options, function (httpsResponse) {
-                let data = '';
-                httpsResponse.setEncoding('utf8');
-                httpsResponse.on('data', function (chunk) {
-                    data += chunk;
+            else {
+                return new Promise((resolve, reject) => {
+                    const caption = form.fields.caption ?? '';
+                    const filename = form.fields.filename ?? file.originalFilename ?? '';
+                    const title = form.fields.title ?? filename ?? caption ?? '';
+                    const keywords = form.fields.keywords ?? title ?? caption ?? filename ?? this.website.name ?? '';
+                    const host = 'upload.smugmug.com';
+                    const path = '/';
+                    const targetUrl = `https://${host}${path}`;
+                    const method = 'POST';
+                    // Sign the request (same OAuth process)
+                    const params = this.signRequest(method, targetUrl);
+                    // https://forum.uipath.com/t/unable-to-pass-binary-image-data-inside-http-request-body/849190/8
+                    // Create the multipart form data
+                    const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substr(2, 8);
+                    const formData = SmugMugUploader.createMultipartFormData(file, boundary);
+                    const options = {
+                        host: host,
+                        port: 443,
+                        path: path,
+                        method: method,
+                        headers: {
+                            Authorization: SmugMugUploader.bundleAuthorization(targetUrl, params),
+                            'Content-Type': `multipart/form-data; boundary=${boundary}`,
+                            'Content-Length': formData.length,
+                            'X-Smug-AlbumUri': `/api/v2/album/${this.album}`,
+                            'X-Smug-Caption': caption,
+                            'X-Smug-FileName': filename,
+                            'X-Smug-Keywords': keywords,
+                            'X-Smug-ResponseType': 'JSON',
+                            'X-Smug-Title': title,
+                            'X-Smug-Version': 'v2',
+                        },
+                    };
+                    const httpsRequest = https.request(options, function (httpsResponse) {
+                        let data = '';
+                        httpsResponse.setEncoding('utf8');
+                        httpsResponse.on('data', function (chunk) {
+                            data += chunk;
+                        });
+                        httpsResponse.on('end', () => {
+                            resolve(that.saveImage(JSON.parse(data)));
+                        });
+                    });
+                    httpsRequest.on('error', function (e) {
+                        console.log('problem with request:');
+                        console.log(e);
+                        reject(e);
+                    });
+                    httpsRequest.on('close', () => {
+                        console.log('httpRequest closed');
+                    });
+                    httpsRequest.write(formData);
+                    httpsRequest.end();
                 });
-                httpsResponse.on('end', () => {
-                    resolve(that.saveImage(JSON.parse(data)));
-                });
-            });
-            httpsRequest.on('error', function (e) {
-                console.log('problem with request:');
-                console.log(e);
-                reject(e);
-            });
-            httpsRequest.on('close', () => {
-                console.log('httpRequest closed');
-            });
-            httpsRequest.write(formData);
-            httpsRequest.end();
+            }
         });
     }
     // {"stat":"ok","method":"smugmug.images.upload","Image":{"StatusImageReplaceUri":"","ImageUri":"/api/v2/image/RvQ65Gm-0","AlbumImageUri":"/api/v2/album/jHhcL7/image/RvQ65Gm-0","URL":"https://photos.david-ma.net/Thalia/n-rXXjjD/My-Smug-Album/i-RvQ65Gm"},"Asset":{"AssetComponentUri":"/api/v2/library/asset/RvQ65Gm/component/i/RvQ65Gm","AssetUri":"/api/v2/library/asset/RvQ65Gm"}}

@@ -598,10 +598,10 @@ export class SmugMugUploader {
                 throw new Error('Consumer key and secret are required, expected in config/secrets.js');
             }
             if (smugmug.oauth_token && smugmug.oauth_token_secret) {
-                console.log('OAuth token and secret are already set');
+                // console.log('OAuth token and secret are already set')
                 return smugmug;
             }
-            console.log('Getting a request token');
+            // console.log('Getting a request token')
             // Get the request token
             const requestParams = {
                 oauth_callback: 'oob',
@@ -648,7 +648,7 @@ export class SmugMugUploader {
                                 oauth_token: this.tokens.oauth_token,
                                 oauth_callback: this.callbackUrl,
                             }).toString();
-                        console.log('Authorization URL is', authorizationUrl);
+                        // console.log('Authorization URL is', authorizationUrl)
                     }
                     else {
                         console.error('Request token failed');
@@ -682,7 +682,7 @@ export class SmugMugUploader {
         const method = 'POST';
         tokenExchangeParams.oauth_signature = SmugMugUploader.b64_hmac_sha1(`${this.tokens.consumer_secret}&${this.tokens.oauth_token_secret}`, `${method}&${encodeURIComponent(this.ACCESS_TOKEN_URL)}&${normalized}`);
         const url = this.ACCESS_TOKEN_URL + '?' + new URLSearchParams(tokenExchangeParams).toString();
-        console.log('Token exchange url is', url);
+        // console.log('Token exchange url is', url)
         const options = {
             host: 'api.smugmug.com',
             port: 443,
@@ -693,7 +693,7 @@ export class SmugMugUploader {
             },
         };
         const httpsRequest = https.request(options, (httpsResponse) => {
-            console.log('Token Exchange Response Status:', httpsResponse.statusCode);
+            // console.log('Token Exchange Response Status:', httpsResponse.statusCode)
             let data = '';
             httpsResponse.on('data', (chunk) => {
                 data += chunk;
@@ -702,13 +702,13 @@ export class SmugMugUploader {
                 console.error('Token Exchange Error:', e);
             });
             httpsResponse.on('end', () => {
-                console.log('Token Exchange Response:', data);
+                // console.log('Token Exchange Response:', data)
                 const response = data.split('&').reduce((acc, item) => {
                     const [key, value] = item.split('=');
                     acc[key] = value;
                     return acc;
                 }, {});
-                console.log('Response is', response);
+                // console.log('Response is', response)
                 this.tokens.oauth_token = response.oauth_token;
                 this.tokens.oauth_token_secret = response.oauth_token_secret;
                 res.end(JSON.stringify(response));
@@ -721,7 +721,7 @@ export class SmugMugUploader {
     }
     controller(res, req, website, requestInfo) {
         const method = req.method ?? '';
-        console.log("Hey we're running a controller called 'uploadPhoto'");
+        // console.log("Hey we're running a controller called 'uploadPhoto'")
         if (method != 'POST') {
             res.end('This should be a post');
             return;
@@ -729,7 +729,7 @@ export class SmugMugUploader {
         parseForm(res, req)
             .then(this.uploadImageToSmugmug.bind(this))
             .then((data) => {
-            console.log('Finished uploading, with this data:', data);
+            // console.log('Finished uploading, with this data:', data)
             res.end(JSON.stringify(data));
         })
             .catch((err) => {
@@ -818,13 +818,13 @@ export class SmugMugUploader {
                         });
                     });
                     httpsRequest.on('error', function (e) {
-                        console.log('problem with request:');
-                        console.log(e);
+                        console.error('problem with request:');
+                        console.error(e);
                         reject(e);
                     });
-                    httpsRequest.on('close', () => {
-                        console.log('httpRequest closed');
-                    });
+                    // httpsRequest.on('close', () => {
+                    //   console.log('httpRequest closed')
+                    // })
                     httpsRequest.write(formData);
                     httpsRequest.end();
                 });
@@ -832,17 +832,9 @@ export class SmugMugUploader {
         });
     }
     async saveImage(data) {
-        console.log('Ok, we got the data from smugmug');
-        console.log(data);
-        console.log("Let's save it to the database");
-        // AlbumImageUri
         const AlbumImageUri = data.Image.AlbumImageUri;
-        // fetch(`${this.BASE_URL}${AlbumImageUri}`)
         return (this.smugmugApiCall(AlbumImageUri)
-            // .then(res => res.json())
             .then((response) => {
-            console.log('Pulling more data from AlbumImageUri');
-            console.log(response);
             const responseData = JSON.parse(response);
             const drizzle = this.website.db.drizzle;
             return drizzle.insert(images).values({
@@ -886,14 +878,6 @@ export class SmugMugUploader {
                     'X-Smug-ResponseType': 'JSON',
                 },
             };
-            // Before making the GET request, add this:
-            console.log('=== FAILING REQUEST DEBUG ===');
-            console.log('Target URL:', targetUrl);
-            console.log('Method:', method);
-            console.log('Final OAuth Params:', JSON.stringify(params, null, 2));
-            console.log('Authorization Header:', SmugMugUploader.bundleAuthorization(targetUrl, params));
-            console.log('Final URL:', options.host + options.path);
-            console.log('============================');
             const httpsRequest = https.request(options, (httpsResponse) => {
                 let data = '';
                 httpsResponse.on('data', (chunk) => {
@@ -929,13 +913,6 @@ export class SmugMugUploader {
         };
         const sortedParams = SmugMugUploader.sortParams(params);
         const escapedParams = SmugMugUploader.oauthEscape(SmugMugUploader.expandParams(sortedParams));
-        console.log('=== OAuth Debug ===');
-        console.log('Base URL:', baseUrl);
-        console.log('Query Params:', queryParams);
-        console.log('Params (should NOT include oauth_token_secret):', JSON.stringify(params, null, 2));
-        console.log('Sorted Params:', JSON.stringify(sortedParams, null, 2));
-        console.log('Signature Base String:', `${method}&${SmugMugUploader.oauthEscape(baseUrl)}&${escapedParams}`);
-        console.log('==================');
         params.oauth_signature = SmugMugUploader.b64_hmac_sha1(`${this.tokens.consumer_secret}&${this.tokens.oauth_token_secret}`, `${method}&${SmugMugUploader.oauthEscape(baseUrl)}&${escapedParams}`);
         // It seems like smugmug doesn't like the + in the signature,
         // and I don't know how to escape it properly, so I'm just
@@ -1043,7 +1020,7 @@ export class MarkdownViewerFactory {
             res.end(html(data));
         }
         else {
-            console.log('Request info', requestInfo);
+            // console.log('Request info', requestInfo)
             const html = website.getContentHtml('md_list', 'wrapper');
             res.end(html(data));
         }

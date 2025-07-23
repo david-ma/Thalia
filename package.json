@@ -59,8 +59,9 @@
     "dist/**/*",
     "README.md",
     "LICENSE",
-    "src/**/*.scss",
-    "src/views/**/*.hbs"
+    "bin/**/*",
+    "public/**/*",
+    "src/**/*"
   ],
   "scripts": {
     "start": "node dist/server/cli.js",

@@ -31,8 +31,6 @@
   }
 </style>
 
-<img id="image_preview" src="" />
-
 <div class="image-container" id="dropZone">
   <label id="uploadImageLabel" for="fileToUpload">
     <img id="image" src="{{#if image_url}}{{ image_url }}{{else}}{{thumbnail}}{{/if}}">
@@ -142,7 +140,6 @@
         data = JSON.parse(data);
         console.log("success: data", data);
 
-        imagePreview.src = data.thumbnailUrl;
         imageHelpText.textContent = "Image uploaded! Click save!";
         document.getElementById('image').src = data.thumbnailUrl;
       },

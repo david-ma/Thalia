@@ -938,7 +938,6 @@ export class SmugMugUploader implements Machine {
 
   public controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const method = req.method ?? ''
-    const that = this
     console.log("Hey we're running a controller called 'uploadPhoto'")
 
     if (method != 'POST') {
@@ -992,37 +991,44 @@ export class SmugMugUploader implements Machine {
           },
         }
 
-        const httpsRequest = https.request(options, function (httpsResponse: IncomingMessage) {
-          let data: string = ''
-
-          httpsResponse.setEncoding('utf8')
-          httpsResponse.on('data', function (chunk) {
-            data += chunk
-          })
-
-          httpsResponse.on('end', () => {
-            that.saveImage(JSON.parse(data)).then(() => {
-              res.end(JSON.stringify(data))
-            })
-          })
+        this.uploadImage(formData, options).then((data) => {
+          res.end(JSON.stringify(data))
         })
 
-        httpsRequest.on('error', function (e) {
-          console.log('problem with request:')
-          console.log(e)
-        })
-
-        httpsRequest.on('close', () => {
-          console.log('httpRequest closed')
-        })
-
-        httpsRequest.write(formData)
-        httpsRequest.end()
       })
       .catch((err) => {
         console.error('Error uploading photo:', err)
         res.end('error')
       })
+  }
+
+  private async uploadImage(formData: any, options: any) {
+    const that = this
+
+    const httpsRequest = https.request(options, function (httpsResponse: IncomingMessage) {
+      let data: string = ''
+
+      httpsResponse.setEncoding('utf8')
+      httpsResponse.on('data', function (chunk) {
+        data += chunk
+      })
+
+      httpsResponse.on('end', () => {
+        return that.saveImage(JSON.parse(data))
+      })
+    })
+
+    httpsRequest.on('error', function (e) {
+      console.log('problem with request:')
+      console.log(e)
+    })
+
+    httpsRequest.on('close', () => {
+      console.log('httpRequest closed')
+    })
+
+    httpsRequest.write(formData)
+    httpsRequest.end()
   }
 
   // {"stat":"ok","method":"smugmug.images.upload","Image":{"StatusImageReplaceUri":"","ImageUri":"/api/v2/image/RvQ65Gm-0","AlbumImageUri":"/api/v2/album/jHhcL7/image/RvQ65Gm-0","URL":"https://photos.david-ma.net/Thalia/n-rXXjjD/My-Smug-Album/i-RvQ65Gm"},"Asset":{"AssetComponentUri":"/api/v2/library/asset/RvQ65Gm/component/i/RvQ65Gm","AssetUri":"/api/v2/library/asset/RvQ65Gm"}}
@@ -1049,17 +1055,30 @@ export class SmugMugUploader implements Machine {
     const AlbumImageUri = data.Image.AlbumImageUri
 
     // fetch(`${this.BASE_URL}${AlbumImageUri}`)
-    this.smugmugApiCall(AlbumImageUri)
+    return this.smugmugApiCall(AlbumImageUri)
       // .then(res => res.json())
-      .then((response :any) => {
+      .then((response:any) => {
         console.log('Pulling more data from AlbumImageUri')
         console.log(response)
+        const responseData = JSON.parse(response)
         const drizzle = this.website.db.drizzle
         return drizzle.insert(images).values({
           imageUri: data.Image.ImageUri,
           albumUri: data.Image.AlbumImageUri,
+          caption: responseData.Response.AlbumImage.Caption,
+          // albumId: responseData.Response.AlbumImage.AlbumKey,
+          filename: responseData.Response.AlbumImage.FileName,
           url: data.Image.URL,
-          albumId: response.Response.AlbumImage.AlbumKey,
+          originalSize: responseData.Response.AlbumImage.OriginalSize,
+          originalWidth: responseData.Response.AlbumImage.OriginalWidth,
+          originalHeight: responseData.Response.AlbumImage.OriginalHeight,
+          thumbnailUrl: responseData.Response.AlbumImage.ThumbnailUrl,
+          archivedUri: responseData.Response.AlbumImage.ArchivedUri,
+          archivedSize: responseData.Response.AlbumImage.ArchivedSize,
+          archivedMD5: responseData.Response.AlbumImage.ArchivedMD5,
+          imageKey: responseData.Response.AlbumImage.ImageKey,
+          preferredDisplayFileExtension: responseData.Response.AlbumImage.PreferredDisplayFileExtension,
+          uri: responseData.Response.AlbumImage.Uri,
         })
       })
       .catch((err) => {

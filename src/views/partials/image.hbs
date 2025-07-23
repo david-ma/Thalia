@@ -17,53 +17,119 @@
     height: 100px;
     border: 1px dotted #999;
     padding: 10px;
+    transition: all 0.3s ease;
+  }
+
+  .image-container.drag-over {
+    border: 2px dashed #007bff;
+    background-color: rgba(0, 123, 255, 0.1);
+    transform: scale(1.02);
+  }
+
+  .image-container.drag-over #imageHelpText {
+    color: #007bff;
   }
 </style>
 
-
 <img id="image_preview" src="" />
 
-<div class="image-container">
-
-
-  <label id="uploadImageLabel" for="fileToUpload"><img id="image"
-      src="{{#if image_url}}{{ image_url }}{{else}}{{thumbnail}}{{/if}}">
-    <span id="imageHelpText">Click to upload image</span>
+<div class="image-container" id="dropZone">
+  <label id="uploadImageLabel" for="fileToUpload">
+    <img id="image" src="{{#if image_url}}{{ image_url }}{{else}}{{thumbnail}}{{/if}}">
+    <span id="imageHelpText">Click to upload image or drag & drop</span>
   </label>
 
   <form id="imageForm" style="display: none;">
     <input type="file" accept="image/*" name="fileToUpload" id="fileToUpload" />
   </form>
-
-
 </div>
 
 <br />
 
 <script>
-  // Attach a function to #fileToUpload so that when it changes, we upload the image to smugmug
-  // do not use d3.js
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileToUpload');
+  const imageHelpText = document.getElementById('imageHelpText');
+  const imagePreview = document.getElementById('image_preview');
 
-  document.getElementById("fileToUpload").addEventListener("change", function (event) {
+  // Prevent default drag behaviors
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+  });
 
+  // Highlight drop zone when item is dragged over it
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, highlight, false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, unhighlight, false);
+  });
+
+  // Handle dropped files
+  dropZone.addEventListener('drop', handleDrop, false);
+
+  // Handle file input change
+  fileInput.addEventListener('change', handleFiles);
+
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function highlight(e) {
+    dropZone.classList.add('drag-over');
+  }
+
+  function unhighlight(e) {
+    dropZone.classList.remove('drag-over');
+  }
+
+  function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    
+    // Clear the file input first
+    fileInput.files = null;
+    
+    // Create a new FileList-like object and assign it to the input
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(files[0]);
+    fileInput.files = dataTransfer.files;
+    
+    handleFiles({ target: { files: files } });
+  }
+
+  function handleFiles(event) {
     if (event.target.files.length === 0) {
-      console.log("No file selected")
-      return
+      console.log("No file selected");
+      return;
     }
 
-    const file = event.target.files[0]
+    const file = event.target.files[0];
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
 
-    console.log("event", event)
-    console.log("event.target", event.target)
-    console.log("event.target.files", event.target.files)
-    console.log("event.target.files[0]", event.target.files[0])
-    console.log("event.target.files[0].name", event.target.files[0].name)
-    console.log("event.target.files[0].type", event.target.files[0].type)
-    console.log("event.target.files[0].size", event.target.files[0].size)
-    console.log("event.target.files[0].lastModified", event.target.files[0].lastModified)
+    console.log("File selected:", file.name, file.type, file.size);
 
+    // Show uploading state
+    imageHelpText.textContent = "Uploading image... please wait";
+    document.getElementById('image').src = "/images/loading.gif";
 
-    var formData = new FormData(document.getElementById("imageForm"));
+    // Create FormData and manually append the file
+    const formData = new FormData();
+    formData.append('fileToUpload', file);
+    
+    // Add any other form fields you need
+    formData.append('caption', '');
+    formData.append('filename', file.name);
+    formData.append('title', file.name);
+    formData.append('keywords', '');
 
     $.ajax({
       url: '/uploadPhoto',
@@ -73,19 +139,20 @@
       contentType: false,
       processData: false,
       success: function (data) {
-        data = JSON.parse(data)
-
-        console.log("success: data", data)
-
-        $("#image_preview").attr("src", data.thumbnailUrl);
-
+        data = JSON.parse(data);
+        console.log("success: data", data);
+        
+        imagePreview.src = data.thumbnailUrl;
+        imageHelpText.textContent = "Image uploaded! Click save!";
+        document.getElementById('image').src = data.thumbnailUrl;
       },
       error: function (err) {
-        console.log("err", err)
-
+        console.log("err", err);
+        imageHelpText.textContent = "Error. Try again :(";
+        document.getElementById('image').src = "";
       }
-    })
-  })
+    });
+  }
 
 
 

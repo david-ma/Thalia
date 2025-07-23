@@ -151,7 +151,7 @@ export declare class SmugMugUploader implements Machine {
     init(website: Website, name: string): Promise<void>;
     oauthCallback(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
     controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void;
-    private uploadImage;
+    private uploadImageToSmugmug;
     private saveImage;
     private smugmugApiCall;
     private signRequest;

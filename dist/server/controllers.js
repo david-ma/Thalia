@@ -727,16 +727,28 @@ export class SmugMugUploader {
             return;
         }
         parseForm(res, req)
-            .then(({ fields, files }) => {
-            const file = files.fileToUpload?.[0];
+            .then(this.uploadImageToSmugmug.bind(this))
+            .then((data) => {
+            console.log('Finished uploading, with this data:', data);
+            res.end(JSON.stringify(data));
+        })
+            .catch((err) => {
+            console.error('Error uploading photo:', err);
+            res.end('error');
+        });
+    }
+    async uploadImageToSmugmug(form) {
+        const that = this;
+        return new Promise((resolve, reject) => {
+            const file = form.files.fileToUpload?.[0];
             if (!file) {
-                res.end('File not uploaded');
+                reject(new Error('File not uploaded'));
                 return;
             }
-            const caption = fields.caption ?? '';
-            const filename = fields.filename ?? file.originalFilename ?? '';
-            const title = fields.title ?? filename ?? caption ?? '';
-            const keywords = fields.keywords ?? title ?? caption ?? filename ?? this.website.name ?? '';
+            const caption = form.fields.caption ?? '';
+            const filename = form.fields.filename ?? file.originalFilename ?? '';
+            const title = form.fields.title ?? filename ?? caption ?? '';
+            const keywords = form.fields.keywords ?? title ?? caption ?? filename ?? this.website.name ?? '';
             const host = 'upload.smugmug.com';
             const path = '/';
             const targetUrl = `https://${host}${path}`;
@@ -765,36 +777,27 @@ export class SmugMugUploader {
                     'X-Smug-Version': 'v2',
                 },
             };
-            this.uploadImage(formData, options).then((data) => {
-                res.end(JSON.stringify(data));
+            const httpsRequest = https.request(options, function (httpsResponse) {
+                let data = '';
+                httpsResponse.setEncoding('utf8');
+                httpsResponse.on('data', function (chunk) {
+                    data += chunk;
+                });
+                httpsResponse.on('end', () => {
+                    resolve(that.saveImage(JSON.parse(data)));
+                });
             });
-        })
-            .catch((err) => {
-            console.error('Error uploading photo:', err);
-            res.end('error');
-        });
-    }
-    async uploadImage(formData, options) {
-        const that = this;
-        const httpsRequest = https.request(options, function (httpsResponse) {
-            let data = '';
-            httpsResponse.setEncoding('utf8');
-            httpsResponse.on('data', function (chunk) {
-                data += chunk;
+            httpsRequest.on('error', function (e) {
+                console.log('problem with request:');
+                console.log(e);
+                reject(e);
             });
-            httpsResponse.on('end', () => {
-                return that.saveImage(JSON.parse(data));
+            httpsRequest.on('close', () => {
+                console.log('httpRequest closed');
             });
+            httpsRequest.write(formData);
+            httpsRequest.end();
         });
-        httpsRequest.on('error', function (e) {
-            console.log('problem with request:');
-            console.log(e);
-        });
-        httpsRequest.on('close', () => {
-            console.log('httpRequest closed');
-        });
-        httpsRequest.write(formData);
-        httpsRequest.end();
     }
     // {"stat":"ok","method":"smugmug.images.upload","Image":{"StatusImageReplaceUri":"","ImageUri":"/api/v2/image/RvQ65Gm-0","AlbumImageUri":"/api/v2/album/jHhcL7/image/RvQ65Gm-0","URL":"https://photos.david-ma.net/Thalia/n-rXXjjD/My-Smug-Album/i-RvQ65Gm"},"Asset":{"AssetComponentUri":"/api/v2/library/asset/RvQ65Gm/component/i/RvQ65Gm","AssetUri":"/api/v2/library/asset/RvQ65Gm"}}
     async saveImage(data) {
@@ -804,7 +807,7 @@ export class SmugMugUploader {
         // AlbumImageUri
         const AlbumImageUri = data.Image.AlbumImageUri;
         // fetch(`${this.BASE_URL}${AlbumImageUri}`)
-        return this.smugmugApiCall(AlbumImageUri)
+        return (this.smugmugApiCall(AlbumImageUri)
             // .then(res => res.json())
             .then((response) => {
             console.log('Pulling more data from AlbumImageUri');
@@ -832,7 +835,7 @@ export class SmugMugUploader {
         })
             .catch((err) => {
             console.error(err);
-        });
+        }));
     }
     // path=`${path}?_verbosity=1`
     async smugmugApiCall(path, method = 'GET') {

@@ -44,7 +44,6 @@ const roleBasedSecurityConfig: RawWebsiteConfig = recursiveObjectMerge(
   },
 )
 
-
 import { parseForm } from 'thalia'
 
 import { albums, images } from '../models/drizzle-schema.js'
@@ -72,6 +71,5 @@ const smugmugConfig: RawWebsiteConfig = {
     },
   },
 }
-
 
 export const config: RawWebsiteConfig = recursiveObjectMerge(roleBasedSecurityConfig, smugmugConfig)

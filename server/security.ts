@@ -149,7 +149,7 @@ export class SecurityService {
         .values(user)
         .$returningId()
         .catch((error) => {
-          console.error("Error creating user " + user.email)
+          console.error('Error creating user ' + user.email)
           return null
         })
     })

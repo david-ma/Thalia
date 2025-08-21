@@ -90,20 +90,25 @@ export class RequestHandler {
             targetPath = path.join(requestHandler.thaliaRoot, folder, requestHandler.pathname);
         }
         return new Promise((next, finish) => {
+            const acceptedEncoding = requestHandler.req.headers['accept-encoding'] ?? '';
+            const isGzipAccepted = acceptedEncoding.includes('gzip');
+            const isDeflateAccepted = acceptedEncoding.includes('deflate');
+            const isBrotliAccepted = acceptedEncoding.includes('br');
             if (!fs.existsSync(targetPath)) {
-                if (fs.existsSync(`${targetPath}.gz`)) {
+                if (isGzipAccepted && fs.existsSync(`${targetPath}.gz`)) {
                     targetPath += '.gz';
                     requestHandler.res.setHeader('Content-Encoding', 'gzip');
+                    requestHandler.res.setHeader('Content-Type', RequestHandler.getContentType(targetPath));
+                    requestHandler.res.setHeader('Content-Length', fs.statSync(targetPath).size.toString());
+                    const stream = fs.createReadStream(targetPath);
+                    stream.pipe(requestHandler.res);
+                    return finish(`Successfully streamed gzipped file ${requestHandler.pathname}`);
                 }
                 else {
                     next(requestHandler);
                     return;
                 }
             }
-            const acceptedEncoding = requestHandler.req.headers['accept-encoding'] ?? '';
-            const isGzipAccepted = acceptedEncoding.includes('gzip');
-            const isDeflateAccepted = acceptedEncoding.includes('deflate');
-            const isBrotliAccepted = acceptedEncoding.includes('br');
             const contentType = RequestHandler.getContentType(requestHandler.pathname);
             requestHandler.res.setHeader('Content-Type', contentType);
             const gzippable = ['text/html', 'text/css', 'text/javascript', 'application/json', 'image/svg+xml'];

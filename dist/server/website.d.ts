@@ -19,7 +19,7 @@
  * - Request routing (handled by Router)
  * - Request processing (handled by Handler)
  */
-import { BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule, ClientInfo } from './types.js';
+import { BasicWebsiteConfig, WebsiteConfig, ServerOptions, RouteRule, ClientInfo, ServerMode } from './types.js';
 import { IncomingMessage, ServerResponse } from 'http';
 import Handlebars from 'handlebars';
 import { RouteGuard } from './route-guard.js';
@@ -45,6 +45,17 @@ export declare class Website {
     };
     routeGuard: RouteGuard;
     db: ThaliaDatabase;
+    version: {
+        websiteName: string;
+        version: string;
+        gitHash: string;
+        thaliaVersion: string;
+        thaliaGitHash: string;
+        serverMode: ServerMode;
+        processStartTime: string;
+        nodeVersion: string;
+        NODE_ENV: string;
+    };
     /**
      * Creates a new Website instance
      * Should only be called by the static "create" method

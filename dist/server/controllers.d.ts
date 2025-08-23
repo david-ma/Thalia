@@ -15,6 +15,7 @@ import { RequestInfo } from './server.js';
  * Read the latest 10 logs from the log directory
  */
 export declare const latestlogs: (res: ServerResponse, _req: IncomingMessage, website: Website) => Promise<void>;
+export declare const version: (res: ServerResponse, _req: IncomingMessage, website: Website) => Promise<void>;
 type CrudRelationship = {
     foreignTable: string;
     foreignColumn: string;

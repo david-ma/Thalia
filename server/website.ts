@@ -39,6 +39,8 @@ import { RoleRouteGuard, BasicRouteGuard, RouteGuard } from './route-guard.js'
 import { Socket } from 'socket.io'
 import { RequestInfo } from './server.js'
 import { ThaliaDatabase } from './database.js'
+import { version } from './controllers.js'
+import { execSync } from 'child_process'
 
 interface Views {
   [key: string]: string
@@ -62,6 +64,17 @@ export class Website {
   public routes: { [key: string]: RouteRule } = {}
   public routeGuard!: RouteGuard
   public db!: ThaliaDatabase
+  public version!: {
+    websiteName: string
+    version: string
+    gitHash: string
+    thaliaVersion: string
+    thaliaGitHash: string
+    serverMode: ServerMode
+    processStartTime: string
+    nodeVersion: string
+    NODE_ENV: string
+  }
 
   /**
    * Creates a new Website instance
@@ -73,6 +86,41 @@ export class Website {
     this.rootPath = config.rootPath
     this.mode = config.mode
     this.port = config.port
+    this.version = {
+      websiteName: this.name,
+      version: '',
+      gitHash: '',
+      thaliaVersion: '',
+      thaliaGitHash: '',
+      serverMode: this.mode,
+      processStartTime: new Date().toLocaleString('en-AU', {
+        timeZone: 'Australia/Melbourne',
+      }),
+      nodeVersion: process.version,
+      NODE_ENV: this.env,
+    }
+
+    try {
+      this.version.thaliaVersion = JSON.parse(
+        fs.readFileSync(path.join(import.meta.dirname, '..', '..', 'package.json'), 'utf8'),
+      ).version
+      this.version.thaliaGitHash = execSync('git rev-parse --short HEAD', { cwd: import.meta.dirname })
+        .toString()
+        .trim()
+
+      if (fs.existsSync(path.join(this.rootPath, 'package.json'))) {
+        this.version.version = JSON.parse(fs.readFileSync(path.join(this.rootPath, 'package.json'), 'utf8')).version
+      }
+      if (fs.existsSync(path.join(this.rootPath, '.git'))) {
+        this.version.gitHash = execSync('git rev-parse --short HEAD', {
+          cwd: this.rootPath,
+        })
+          .toString()
+          .trim()
+      }
+    } catch (error) {
+      console.error('Error loading version:', error)
+    }
   }
 
   /**
@@ -109,7 +157,9 @@ export class Website {
     this.config = {
       ...basicConfig,
       domains: [],
-      controllers: {},
+      controllers: {
+        version,
+      },
       routes: [],
       websockets: {
         listeners: {},

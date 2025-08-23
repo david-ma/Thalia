@@ -25,6 +25,8 @@ import Handlebars from 'handlebars';
 import { cwd } from 'process';
 import { RoleRouteGuard, BasicRouteGuard, RouteGuard } from './route-guard.js';
 import { ThaliaDatabase } from './database.js';
+import { version } from './controllers.js';
+import { execSync } from 'child_process';
 export class Website {
     /**
      * Creates a new Website instance
@@ -43,6 +45,38 @@ export class Website {
         this.rootPath = config.rootPath;
         this.mode = config.mode;
         this.port = config.port;
+        this.version = {
+            websiteName: this.name,
+            version: '',
+            gitHash: '',
+            thaliaVersion: '',
+            thaliaGitHash: '',
+            serverMode: this.mode,
+            processStartTime: new Date().toLocaleString('en-AU', {
+                timeZone: 'Australia/Melbourne',
+            }),
+            nodeVersion: process.version,
+            NODE_ENV: this.env,
+        };
+        try {
+            this.version.thaliaVersion = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '..', '..', 'package.json'), 'utf8')).version;
+            this.version.thaliaGitHash = execSync('git rev-parse --short HEAD', { cwd: import.meta.dirname })
+                .toString()
+                .trim();
+            if (fs.existsSync(path.join(this.rootPath, 'package.json'))) {
+                this.version.version = JSON.parse(fs.readFileSync(path.join(this.rootPath, 'package.json'), 'utf8')).version;
+            }
+            if (fs.existsSync(path.join(this.rootPath, '.git'))) {
+                this.version.gitHash = execSync('git rev-parse --short HEAD', {
+                    cwd: this.rootPath,
+                })
+                    .toString()
+                    .trim();
+            }
+        }
+        catch (error) {
+            console.error('Error loading version:', error);
+        }
     }
     /**
      * Given a basic website config (name & rootPath), load the website.
@@ -74,7 +108,9 @@ export class Website {
         this.config = {
             ...basicConfig,
             domains: [],
-            controllers: {},
+            controllers: {
+                version,
+            },
             routes: [],
             websockets: {
                 listeners: {},

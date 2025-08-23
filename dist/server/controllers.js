@@ -60,6 +60,17 @@ export const latestlogs = async (res, _req, website) => {
         res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 };
+export const version = async (res, _req, website) => {
+    try {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(website.version));
+    }
+    catch (error) {
+        console.error(`Error in ${website.name}/version: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        res.writeHead(500, { 'Content-Type': 'text/html' });
+        res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+};
 /**
  * The CrudFactory is a class that generates a CRUD controller for a given table.
  * CrudFactory is a Machine, which means it has an init method, and provides a controller method.
@@ -833,7 +844,7 @@ export class SmugMugUploader {
     }
     async saveImage(data) {
         const AlbumImageUri = data.Image.AlbumImageUri;
-        return (this.smugmugApiCall(AlbumImageUri)
+        return this.smugmugApiCall(AlbumImageUri)
             .then((response) => {
             const responseData = JSON.parse(response);
             const drizzle = this.website.db.drizzle;
@@ -858,7 +869,7 @@ export class SmugMugUploader {
         })
             .catch((err) => {
             console.error(err);
-        }));
+        });
     }
     // path=`${path}?_verbosity=1`
     async smugmugApiCall(path, method = 'GET') {

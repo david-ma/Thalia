@@ -73,6 +73,17 @@ export const latestlogs = async (res: ServerResponse, _req: IncomingMessage, web
   }
 }
 
+export const version = async (res: ServerResponse, _req: IncomingMessage, website: Website) => {
+  try {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(website.version))
+  } catch (error) {
+    console.error(`Error in ${website.name}/version: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    res.writeHead(500, { 'Content-Type': 'text/html' })
+    res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}
+
 type CrudRelationship = {
   foreignTable: string
   foreignColumn: string
@@ -1079,34 +1090,32 @@ export class SmugMugUploader implements Machine {
     }
   }) {
     const AlbumImageUri = data.Image.AlbumImageUri
-    return (
-      this.smugmugApiCall(AlbumImageUri)
-        .then((response: any) => {
-          const responseData = JSON.parse(response)
-          const drizzle = this.website.db.drizzle
-          return drizzle.insert(images).values({
-            imageUri: data.Image.ImageUri,
-            albumUri: data.Image.AlbumImageUri,
-            caption: responseData.Response.AlbumImage.Caption,
-            // albumId: responseData.Response.AlbumImage.AlbumKey,
-            filename: responseData.Response.AlbumImage.FileName,
-            url: data.Image.URL,
-            originalSize: responseData.Response.AlbumImage.OriginalSize,
-            originalWidth: responseData.Response.AlbumImage.OriginalWidth,
-            originalHeight: responseData.Response.AlbumImage.OriginalHeight,
-            thumbnailUrl: responseData.Response.AlbumImage.ThumbnailUrl,
-            archivedUri: responseData.Response.AlbumImage.ArchivedUri,
-            archivedSize: responseData.Response.AlbumImage.ArchivedSize,
-            archivedMD5: responseData.Response.AlbumImage.ArchivedMD5,
-            imageKey: responseData.Response.AlbumImage.ImageKey,
-            preferredDisplayFileExtension: responseData.Response.AlbumImage.PreferredDisplayFileExtension,
-            uri: responseData.Response.AlbumImage.Uri,
-          })
+    return this.smugmugApiCall(AlbumImageUri)
+      .then((response: any) => {
+        const responseData = JSON.parse(response)
+        const drizzle = this.website.db.drizzle
+        return drizzle.insert(images).values({
+          imageUri: data.Image.ImageUri,
+          albumUri: data.Image.AlbumImageUri,
+          caption: responseData.Response.AlbumImage.Caption,
+          // albumId: responseData.Response.AlbumImage.AlbumKey,
+          filename: responseData.Response.AlbumImage.FileName,
+          url: data.Image.URL,
+          originalSize: responseData.Response.AlbumImage.OriginalSize,
+          originalWidth: responseData.Response.AlbumImage.OriginalWidth,
+          originalHeight: responseData.Response.AlbumImage.OriginalHeight,
+          thumbnailUrl: responseData.Response.AlbumImage.ThumbnailUrl,
+          archivedUri: responseData.Response.AlbumImage.ArchivedUri,
+          archivedSize: responseData.Response.AlbumImage.ArchivedSize,
+          archivedMD5: responseData.Response.AlbumImage.ArchivedMD5,
+          imageKey: responseData.Response.AlbumImage.ImageKey,
+          preferredDisplayFileExtension: responseData.Response.AlbumImage.PreferredDisplayFileExtension,
+          uri: responseData.Response.AlbumImage.Uri,
         })
-        .catch((err) => {
-          console.error(err)
-        })
-    )
+      })
+      .catch((err) => {
+        console.error(err)
+      })
   }
 
   // path=`${path}?_verbosity=1`

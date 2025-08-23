@@ -33,7 +33,7 @@ export class Website {
      * Should only be called by the static "create" method
      */
     constructor(config) {
-        this.env = 'development';
+        this.env = process.env.NODE_ENV || 'development';
         this.mode = 'standalone';
         this.port = 1337;
         this.handlebars = Handlebars.create();

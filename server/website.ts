@@ -53,7 +53,7 @@ export interface Controller {
 export class Website {
   public readonly name: string
   public readonly rootPath: string
-  public readonly env: string = 'development'
+  public readonly env: string = process.env.NODE_ENV || 'development'
   private readonly mode: ServerMode = 'standalone'
   private readonly port: number = 1337
   public config!: WebsiteConfig

@@ -27,6 +27,7 @@ import { RoleRouteGuard, BasicRouteGuard, RouteGuard } from './route-guard.js';
 import { ThaliaDatabase } from './database.js';
 import { version } from './controllers.js';
 import { execSync } from 'child_process';
+import os from 'os';
 export class Website {
     /**
      * Creates a new Website instance
@@ -57,6 +58,7 @@ export class Website {
             }),
             nodeVersion: process.version,
             NODE_ENV: this.env,
+            hostname: os.hostname(),
         };
         try {
             this.version.thaliaVersion = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '..', '..', 'package.json'), 'utf8')).version;

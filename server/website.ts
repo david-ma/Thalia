@@ -41,6 +41,7 @@ import { RequestInfo } from './server.js'
 import { ThaliaDatabase } from './database.js'
 import { version } from './controllers.js'
 import { execSync } from 'child_process'
+import os from 'os'
 
 interface Views {
   [key: string]: string
@@ -74,6 +75,7 @@ export class Website {
     processStartTime: string
     nodeVersion: string
     NODE_ENV: string
+    hostname: string
   }
 
   /**
@@ -98,6 +100,7 @@ export class Website {
       }),
       nodeVersion: process.version,
       NODE_ENV: this.env,
+      hostname: os.hostname(),
     }
 
     try {

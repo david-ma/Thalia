@@ -55,6 +55,9 @@ export declare class Website {
         processStartTime: string;
         nodeVersion: string;
         NODE_ENV: string;
+        hostname: string;
+        platform: string;
+        runtime: string;
     };
     /**
      * Creates a new Website instance

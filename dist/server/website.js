@@ -59,6 +59,9 @@ export class Website {
             nodeVersion: process.version,
             NODE_ENV: this.env,
             hostname: os.hostname(),
+            platform: process.platform,
+            // node, bun, deno, etc
+            runtime: process.versions.node,
         };
         try {
             this.version.thaliaVersion = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '..', '..', 'package.json'), 'utf8')).version;

@@ -91,7 +91,12 @@ export class BasicRouteGuard extends RouteGuard {
         }
 
         if (cookies[cookieName] === correctPassword) {
-          return next(request)
+          if (routeRule.proxyTarget) {
+            this.handleProxy(request.req, request.res, routeRule)
+            return finish('Proxy request')
+          } else {
+            return next(request)
+          }
         }
 
         if (request.req.method === 'POST') {

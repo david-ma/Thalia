@@ -76,6 +76,8 @@ export class Website {
     nodeVersion: string
     NODE_ENV: string
     hostname: string
+    platform: string
+    runtime: string
   }
 
   /**
@@ -101,6 +103,9 @@ export class Website {
       nodeVersion: process.version,
       NODE_ENV: this.env,
       hostname: os.hostname(),
+      platform: process.platform,
+      // node, bun, deno, etc
+      runtime: process.versions.node,
     }
 
     try {

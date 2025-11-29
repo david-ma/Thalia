@@ -28,6 +28,7 @@ import { ThaliaDatabase } from './database.js';
 import { version } from './controllers.js';
 import { execSync } from 'child_process';
 import os from 'os';
+import { ConfigurationError, TemplateError } from './errors.js';
 export class Website {
     /**
      * Creates a new Website instance
@@ -132,7 +133,10 @@ export class Website {
             import('file://' + configPath)
                 .then((configFile) => {
                 if (!configFile.config) {
-                    throw new Error(`configFile for ${this.name} has no exported config.`);
+                    throw new ConfigurationError(`configFile for ${this.name} has no exported config.`, {
+                        website: this.name,
+                        configPath,
+                    });
                 }
                 this.config = recursiveObjectMerge(this.config, configFile.config);
             }, (err) => {
@@ -172,7 +176,10 @@ export class Website {
         // Check that controller is a function
         if (typeof controller !== 'function') {
             console.error(`Controller: ${controller} is not a function`);
-            throw new Error(`Controller must be a function`);
+            throw new ConfigurationError(`Controller must be a function`, {
+                controllerPath: controller,
+                website: this.name,
+            });
         }
         // Check that controller accepts up to 4 parameters (res, req, website, requestInfo)
         return controller;
@@ -298,6 +305,7 @@ export class Website {
         }
         catch (error) {
             console.error(`Error reading views from ${folder}:`, error);
+            // Don't throw - partial loading failures shouldn't crash the server
         }
         Object.entries(views).forEach(([name, content]) => {
             this.handlebars.registerPartial(name, content);
@@ -350,7 +358,10 @@ export class Website {
                 templateFile = this.templates()[template] ?? this.handlebars.partials[template];
             }
             if (!templateFile) {
-                throw new Error(`Template ${template} not found`);
+                throw new TemplateError(`Template ${template} not found`, {
+                    template,
+                    website: this.name,
+                });
             }
             if (this.env == 'development') {
                 // insert a {{> browsersync }} before </body>
@@ -377,13 +388,20 @@ export class Website {
                 .filter((website) => !filters.includes(website));
             console.debug('Loading websites: ', websites);
             return Promise.all(websites.map(async (website) => {
-                return Website.create({
-                    name: website,
-                    rootPath: path.join(options.rootPath, website),
-                    mode: options.mode,
-                    port: options.port,
-                });
-            }));
+                try {
+                    return await Website.create({
+                        name: website,
+                        rootPath: path.join(options.rootPath, website),
+                        mode: options.mode,
+                        port: options.port,
+                    });
+                }
+                catch (error) {
+                    console.error(`Failed to load website "${website}":`, error);
+                    // Return null to filter out failed websites
+                    return null;
+                }
+            })).then((websites) => websites.filter((w) => w !== null));
         }
         return Promise.all([
             Website.create({
@@ -412,13 +430,24 @@ export class Website {
     }
     /**
      * Load database configuration and initialize database connection
+     * Database initialization failures are logged but don't prevent the website from loading
      */
     loadDatabase() {
         return new Promise((resolve) => {
             if (this.config.database) {
                 const db = new ThaliaDatabase(this);
                 this.db = db;
-                resolve(this.db.init());
+                db.init()
+                    .then(() => {
+                    resolve(this.db);
+                })
+                    .catch((error) => {
+                    console.warn(`Failed to initialize database for website "${this.name}":`, error);
+                    console.warn(`Website "${this.name}" will continue without database connection`);
+                    // Set db to undefined so code can check if database is available
+                    this.db = null;
+                    resolve(null);
+                });
             }
             else {
                 resolve(null);

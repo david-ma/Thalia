@@ -447,7 +447,7 @@ export class RoleRouteGuard extends BasicRouteGuard {
               isVerified: result.users.isVerified,
             })
           })
-          .catch((err) => {
+          .catch((err: unknown) => {
             console.error('Error getting user auth', err)
             resolve({
               role: 'guest',

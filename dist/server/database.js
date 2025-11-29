@@ -21,6 +21,7 @@
 import { drizzle } from 'drizzle-orm/mysql2';
 import { sql } from 'drizzle-orm';
 import path from 'path';
+import { DatabaseError } from './errors.js';
 export class ThaliaDatabase {
     constructor(website) {
         this.schemas = {};
@@ -42,11 +43,7 @@ export class ThaliaDatabase {
         try {
             // console.log('Initialising database connection for', this.website.rootPath)
             // Read drizzle.config.ts
-            // Assert we're running node v24 to read a .ts file
-            if (process.version.split('.')[0] !== 'v24') {
-                console.error('Thalia currently requires node v24 to run');
-                process.exit(1);
-            }
+            // Bun can import TypeScript files natively, so no version check needed
             const drizzleConfig = await import(path.join(this.website.rootPath, 'drizzle.config.ts'));
             // console.log(drizzleConfig)
             this.url = drizzleConfig.default.dbCredentials.url;
@@ -60,7 +57,10 @@ export class ThaliaDatabase {
             }))
                 .catch((error) => {
                 console.error(`Error getting data from the ${this.website.name} database:`, error);
-                throw error;
+                throw new DatabaseError(`Failed to query database for ${this.website.name}`, {
+                    website: this.website.name,
+                    originalError: error instanceof Error ? error.message : String(error),
+                });
             })
                 .then((results) => {
                 const counts = results.reduce((acc, result) => {
@@ -88,7 +88,10 @@ export class ThaliaDatabase {
         }
         catch (error) {
             console.error(`Unable to connect to the ${this.website.name} database:`, error);
-            throw error;
+            throw new DatabaseError(`Failed to connect to database for ${this.website.name}`, {
+                website: this.website.name,
+                originalError: error instanceof Error ? error.message : String(error),
+            });
         }
     }
 }

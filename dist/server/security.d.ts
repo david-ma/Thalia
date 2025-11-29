@@ -44,4 +44,6 @@ export declare class ThaliaSecurity implements Machine {
     private setupController;
     securityConfig(): RawWebsiteConfig;
 }
+export declare class SnipeSecurity extends ThaliaSecurity {
+}
 //# sourceMappingURL=security.d.ts.map

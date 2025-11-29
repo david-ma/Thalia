@@ -992,7 +992,7 @@ export class SmugMugUploader implements Machine {
       .select()
       .from(images)
       .where(eq(images.archivedMD5, md5sum))
-      .then((imageResults) => {
+      .then((imageResults: Image[]) => {
         if (imageResults.length > 0) {
           return Promise.resolve(imageResults[0])
         } else {
@@ -1048,10 +1048,10 @@ export class SmugMugUploader implements Machine {
                     .select()
                     .from(images)
                     .where(eq(images.id, newImage[0].insertId))
-                    .then((imageResults) => {
+                    .then((imageResults: Image[]) => {
                       resolve(imageResults[0])
                     })
-                    .catch((err) => {
+                    .catch((err: unknown) => {
                       reject(err)
                     })
                 })
@@ -1156,7 +1156,7 @@ export class SmugMugUploader implements Machine {
     })
   }
 
-  private signRequest(method: string, targetUrl: string) {
+  private signRequest(method: string, targetUrl: string): Record<string, string> {
     // Parse the URL to extract base URL and query parameters
     const urlObj = new URL(targetUrl)
     const baseUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`
@@ -1202,9 +1202,9 @@ export class SmugMugUploader implements Machine {
       .join('&')
   }
 
-  private static sortParams(object: object) {
+  private static sortParams(object: Record<string, string>): Record<string, string> {
     const keys = Object.keys(object).sort()
-    const result = {}
+    const result: Record<string, string> = {}
     keys.forEach(function (key) {
       result[key] = object[key]
     })
@@ -1226,7 +1226,7 @@ export class SmugMugUploader implements Machine {
       .replace(/\)/g, '%29')
   }
 
-  private static bundleAuthorization(url: string, params: object) {
+  private static bundleAuthorization(url: string, params: Record<string, string>): string {
     const keys = Object.keys(params)
 
     // const authorization = `OAuth realm="${url}",${keys.map(key => `${key}="${encodeURIComponent(params[key])}"`).join(',')}`
@@ -1235,7 +1235,7 @@ export class SmugMugUploader implements Machine {
 
     const authorization = `OAuth realm="${url}",${keys
       .map((key) => {
-        let value = params[key]
+        let value: string = params[key]
         // Double-encode the oauth_signature specifically
         if (key === 'oauth_signature') {
           value = encodeURIComponent(value)
@@ -1281,7 +1281,7 @@ export class SmugMugUploader implements Machine {
   }
 }
 
-import { albums, images } from '../models/smugmug.js'
+import { albums, images, type Image } from '../models/smugmug.js'
 const AlbumMachine = new CrudFactory(albums)
 const ImageMachine = new CrudFactory(images)
 

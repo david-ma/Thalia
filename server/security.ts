@@ -28,7 +28,7 @@ import { MailService, mailTable } from './mail.js'
 import { Permission, Role, SecurityConfig } from './route-guard.js'
 export type { SecurityConfig }
 
-import { users, sessions, audits } from '../models/security-models.js'
+import { users, sessions, audits, type User } from '../models/security-models.js'
 import { RawWebsiteConfig, RouteRule } from './types.js'
 
 const UserMachine: Machine = new CrudFactory(users, {
@@ -206,7 +206,7 @@ export class ThaliaSecurity implements Machine {
           .select()
           .from(usersTable)
           .where(eq(usersTable.email, form.fields.Email))
-          .then(([user]) => {
+          .then(([user]: [User | undefined]) => {
             if (!user) {
               res.end(website.getContentHtml('userLogin')({ error: 'Invalid email or password' }))
               return
@@ -227,7 +227,7 @@ export class ThaliaSecurity implements Machine {
               return user
             })
           })
-          .then((user) => {
+          .then((user: User | null) => {
             if (!user) return
 
             // Generate a session
@@ -246,7 +246,7 @@ export class ThaliaSecurity implements Machine {
                 res.end()
               })
           })
-          .catch((error) => {
+          .catch((error: unknown) => {
             console.error('Error logging in:', error)
             res.end(website.getContentHtml('userLogin')({ error: 'An error occurred' }))
           })
@@ -313,7 +313,7 @@ export class ThaliaSecurity implements Machine {
           .select()
           .from(user)
           .where(eq(user.email, form.fields.email))
-          .then(([user]) => {
+          .then(([user]: [User | undefined]) => {
             if (!user) {
               // Don't tell the user that the email is not found, just say it's been sent
               res.end(website.getContentHtml('forgotPassword')({ error: 'Email sent' }))
@@ -339,7 +339,7 @@ export class ThaliaSecurity implements Machine {
       .select()
       .from(usersTable)
       .where(eq(usersTable.role, 'admin'))
-      .then((users) => {
+      .then((users: User[]) => {
         console.log('Users', users)
         // If an admin user exists, we don't need to set up.
         if (users.length > 0) {
@@ -406,3 +406,5 @@ export class ThaliaSecurity implements Machine {
     }
   }
 }
+
+export class SnipeSecurity extends ThaliaSecurity {}

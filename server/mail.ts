@@ -87,7 +87,7 @@ export class MailService implements Machine {
         text: sendMailOptions.text,
         html: sendMailOptions.html,
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error('Error logging email to database', error)
         throw error
       })
@@ -108,7 +108,7 @@ export class MailService implements Machine {
           }
         })
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error('Error sending email', error)
         return error
       })

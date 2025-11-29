@@ -122,6 +122,7 @@ export declare class Website {
     handleSocketConnection(socket: Socket, clientInfo: ClientInfo): void;
     /**
      * Load database configuration and initialize database connection
+     * Database initialization failures are logged but don't prevent the website from loading
      */
     private loadDatabase;
 }

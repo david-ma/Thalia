@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { spawn } from 'child_process'
 import path from 'path'
@@ -43,7 +43,7 @@ if (projectName) {
       projectName = projectName
       if (!projectName) {
         console.error('Please specify a project name')
-        console.error('Usage: node bin/develop.js <project-name>')
+        console.error('Usage: bun bin/develop.js <project-name>')
         process.exit(1)
       }
       console.log(`Starting server for project: ${projectName}\n`)
@@ -69,7 +69,7 @@ function startServer(projectName) {
     cwd: thaliaDirectory,
   })
 
-  // Start nodemon for the server
+  // Start nodemon for the server (using bun to run the CLI)
   const nodemon = spawn('nodemon', ['--watch', 'dist',
     '--watch', `websites/${projectName}`,
     'dist/server/cli.js'], {
@@ -88,14 +88,29 @@ function startServer(projectName) {
 
   const processes = [tsc, nodemon, projectTsc]
 
-  if(fs.existsSync(`${projectRoot}/webpack.config.js`)) {
-    // start webpack for the project
+  // start webpack for the project
+  if(fs.existsSync(`${projectRoot}/webpack.config.cjs`)) {
+    const webpack = spawn('webpack', ['--watch', '--config', `${projectRoot}/webpack.config.cjs`], {
+      env,
+      stdio: 'inherit',
+      cwd: projectRoot,
+    })
+    processes.push(webpack)
+  } else if(fs.existsSync(`${projectRoot}/webpack.config.js`)) {
     const webpack = spawn('webpack', ['--watch', '--config', `${projectRoot}/webpack.config.js`], {
       env,
       stdio: 'inherit',
       cwd: projectRoot,
     })
     processes.push(webpack)
+  } else {
+    // start tsc in project root if no webpack config
+    const projectTsc = spawn('tsc', ['--watch', '--skipLibCheck'], {
+      env,
+      stdio: 'inherit',
+      cwd: projectRoot,
+    })
+    processes.push(projectTsc)
   }
 
   const bs = browserSync.create({

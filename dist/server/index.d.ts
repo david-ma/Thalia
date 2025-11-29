@@ -3,6 +3,7 @@
  * only exports types and classes
  */
 export * from './thalia.js';
+export * from './errors.js';
 export * from './types.js';
 export * from './server.js';
 export * from './website.js';

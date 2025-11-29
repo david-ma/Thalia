@@ -325,4 +325,6 @@ export class ThaliaSecurity {
         };
     }
 }
+export class SnipeSecurity extends ThaliaSecurity {
+}
 //# sourceMappingURL=security.js.map

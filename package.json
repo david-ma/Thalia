@@ -64,11 +64,11 @@
     "src/**/*"
   ],
   "scripts": {
-    "start": "node dist/server/cli.js",
+    "start": "bun dist/server/cli.js",
     "pm2-start": "pm2 startOrReload ecosystem.config.json",
     "build": "tsc",
-    "dev": "node bin/develop.js",
-    "init": "node dist/bin/create-project.js"
+    "dev": "bun bin/develop.js",
+    "init": "bun dist/bin/create-project.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -121,7 +121,7 @@
     "node": ">=22"
   },
   "nodemonConfig": {
-    "exec": "node dist/server/cli.js",
+    "exec": "bun dist/server/cli.js",
     "verbose": true,
     "watch": [
       "./dist/server/**/*.js",

@@ -4,6 +4,7 @@
  */
 // Export everything from thalia.js
 export * from './thalia.js';
+export * from './errors.js';
 export * from './types.js';
 export * from './server.js';
 export * from './website.js';

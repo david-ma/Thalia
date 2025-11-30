@@ -92,7 +92,7 @@ function startServer(projectName: string) {
   setTimeout(() => {
     bs.init({
       proxy: `http://localhost:${port}`,
-      port: getPort({ port: 3000 }),
+      port: 3000,
       open: false,
       notify: false,
       reloadDelay: 1000,
@@ -104,13 +104,38 @@ function startServer(projectName: string) {
     })
   }, 1000)
 
-  // Cleanup on exit
-  process.on('SIGINT', () => {
+  // Cleanup function
+  const cleanup = () => {
     console.log('\nShutting down...')
+    
+    // Kill all child processes
+    processes.forEach((p) => {
+      if (p && !p.killed) {
+        p.kill('SIGTERM')
+        // Force kill after 2 seconds if still alive
+        setTimeout(() => {
+          if (p && !p.killed) {
+            p.kill('SIGKILL')
+          }
+        }, 2000)
+      }
+    })
+    
+    // Cleanup BrowserSync
     bs.cleanup()
     bs.exit()
-    processes.forEach((p) => p.kill('SIGINT'))
-    process.exit(0)
+    
+    setTimeout(() => process.exit(0), 2500)
+  }
+
+  // Handle all exit signals
+  process.on('SIGINT', cleanup)
+  process.on('SIGTERM', cleanup)
+  
+  // Handle uncaught errors
+  process.on('uncaughtException', (err) => {
+    console.error('Uncaught exception:', err)
+    cleanup()
   })
 }
 

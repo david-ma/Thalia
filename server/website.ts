@@ -519,7 +519,7 @@ export class Website {
 
   public static async loadAllWebsites(options: ServerOptions): Promise<Website[]> {
     if (options.mode == 'multiplex') {
-      const filters = ['example']
+      const filters = ['example', 'example-minimal', 'example-auth', 'example-src']
 
       const websites = fs
         .readdirSync(options.rootPath)

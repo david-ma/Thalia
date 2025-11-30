@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 /*
  * Command Line Interface for Thalia
  *
@@ -34,47 +35,51 @@ if (process.env['NODE_ENV'] === 'production') {
   console.debug = () => {}
 }
 
-// Get available port (prefer 1337, or use --port if provided)
-const port = await getPort({ port: preferredPort })
+async function main() {
+  // Get available port (prefer 1337, or use --port if provided)
+  const port = await getPort({ port: preferredPort })
 
-let options: ServerOptions = {
-  node_env: process.env['NODE_ENV'] || 'development',
-  mode: 'standalone',
-  project: project,
-  rootPath: cwd(),
-  port: port,
-}
-console.log('Checking if websites directory exists at', path.join(options.rootPath, 'websites'))
-if (!fs.existsSync(path.join(options.rootPath, 'websites'))) {
-  // If there's no websites directory, we're in standalone mode
-  options.mode = 'standalone'
-  options.project = path.basename(options.rootPath)
-} else if (project == 'default') {
-  console.log(`Running in multiplex mode. Loading all projects.`)
-  options.mode = 'multiplex'
-  options.rootPath = path.join(options.rootPath, 'websites')
-} else {
-  console.log(`Running in standalone mode for project: ${project}`)
-  options.mode = 'standalone'
-  options.rootPath = path.join(options.rootPath, 'websites', project)
-}
+  let options: ServerOptions = {
+    node_env: process.env['NODE_ENV'] || 'development',
+    mode: 'standalone',
+    project: project,
+    rootPath: cwd(),
+    port: port,
+  }
+  console.log('Checking if websites directory exists at', path.join(options.rootPath, 'websites'))
+  if (!fs.existsSync(path.join(options.rootPath, 'websites'))) {
+    // If there's no websites directory, we're in standalone mode
+    options.mode = 'standalone'
+    options.project = path.basename(options.rootPath)
+  } else if (project == 'default') {
+    console.log(`Running in multiplex mode. Loading all projects.`)
+    options.mode = 'multiplex'
+    options.rootPath = path.join(options.rootPath, 'websites')
+  } else {
+    console.log(`Running in standalone mode for project: ${project}`)
+    options.mode = 'standalone'
+    options.rootPath = path.join(options.rootPath, 'websites', project)
+  }
 
-console.log('Creating Thalia with options:', options)
-Thalia.init(options)
-  .then((thalia) => {
-    thalia.start()
+  console.log('Creating Thalia with options:', options)
+  Thalia.init(options)
+    .then((thalia) => {
+      thalia.start()
 
-    process.on('SIGINT', () => {
-      thalia.stop()
-      process.exit(0)
+      process.on('SIGINT', () => {
+        thalia.stop()
+        process.exit(0)
+      })
+
+      process.on('SIGTERM', () => {
+        thalia.stop()
+        process.exit(0)
+      })
     })
-
-    process.on('SIGTERM', () => {
-      thalia.stop()
-      process.exit(0)
+    .catch((error) => {
+      console.error('Error starting Thalia:', error)
+      process.exit(1)
     })
-  })
-  .catch((error) => {
-    console.error('Error starting Thalia:', error)
-    process.exit(1)
-  })
+}
+
+main()

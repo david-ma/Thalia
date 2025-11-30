@@ -67,7 +67,7 @@
   "scripts": {
     "start": "bash start.sh",
     "start:watch": "nodemon --exec bun server/cli.ts",
-    "pm2-start": "pm2 startOrReload pm2.config.cjs",
+    "pm2-start": "pm2 startOrReload pm2.config.cs",
     "typecheck": "tsc --noEmit",
     "dev": "bun bin/develop.js",
     "test": "bun test",
@@ -119,7 +119,6 @@
     "webpack-merge": "^5.10.0"
   },
   "engines": {
-    "node": ">=22.18.0",
     "bun": ">=1.0.0"
   },
   "eslintConfig": {

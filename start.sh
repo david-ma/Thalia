@@ -1,8 +1,6 @@
 #!/bin/sh
 
-# Default to example-minimal (lightweight, no DB required)
-# Use example-auth for full-featured example (requires Docker/DB)
-PROJECT="${1:-example-minimal}"
+PROJECT="${1:-default}"
 PORT="${2}"
 
 echo Hello user, running David Ma\'s Thalia server at localhost

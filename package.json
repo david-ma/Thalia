@@ -64,11 +64,11 @@
     "src/**/*"
   ],
   "scripts": {
-    "start": "bun dist/server/cli.js",
-    "pm2-start": "pm2 startOrReload ecosystem.config.json",
-    "build": "tsc",
+    "start": "bash start.sh",
+    "start:watch": "nodemon --exec bun server/cli.ts",
+    "pm2-start": "pm2 startOrReload pm2.config.cjs",
+    "typecheck": "tsc --noEmit",
     "dev": "bun bin/develop.js",
-    "init": "bun dist/bin/create-project.js",
     "test": "bun test",
     "test:unit": "bun test tests/Unit",
     "test:integration": "bun test tests/Integration"
@@ -92,7 +92,6 @@
     "@types/nodemailer": "^6.4.17",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
-    "autoprefixer": "10.2.6",
     "browser-sync": "^3.0.4",
     "bun": "^1.2.19",
     "copy-webpack-plugin": "^12.0.2",
@@ -107,9 +106,6 @@
     "get-port-please": "^3.2.0",
     "handlebars-loader": "^1.7.3",
     "html-webpack-plugin": "^5.6.3",
-    "nodemon": "^3.1.10",
-    "postcss": "^8.5.6",
-    "postcss-loader": "^8.1.1",
     "prettier": "^3.6.2",
     "sass-loader": "^14.2.1",
     "style-loader": "^3.3.4",
@@ -123,25 +119,6 @@
   },
   "engines": {
     "node": ">=22"
-  },
-  "nodemonConfig": {
-    "exec": "bun dist/server/cli.js",
-    "verbose": true,
-    "watch": [
-      "./dist/server/**/*.js",
-      "./websites/**/config.js",
-      "./websites/**/config/*.js",
-      "./websites/**/db_bootstrap.js",
-      "./websites/**/models/**/*.js",
-      "./websites/**/src/**/*.hbs"
-    ],
-    "ignore": [
-      "node_modules/*",
-      "public/*",
-      "*.ts",
-      "tsconfig.json"
-    ],
-    "delay": "500"
   },
   "eslintConfig": {
     "plugins": [

@@ -2,7 +2,8 @@
   "apps": [
     {
       "name": "thalia",
-      "script": "dist/server/cli.js",
+      "script": "bun",
+      "args": "server/cli.ts",
       "env": {
         "NODE_ENV": "production",
         "PORT": 1337

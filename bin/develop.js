@@ -15,9 +15,9 @@ let projectName = process.argv[2]
 const rawListOfProjects = fs
   .readdirSync(path.resolve(thaliaDirectory, 'websites'))
   .filter((file) => fs.statSync(path.resolve(thaliaDirectory, 'websites', file)).isDirectory())
-  .filter((file) => file !== 'default' && file !== 'example')
+  .filter((file) => file !== 'default')
 
-const listOfProjects = ['example', ...rawListOfProjects]
+const listOfProjects = rawListOfProjects
 
 if (projectName) {
   if (!listOfProjects.includes(projectName)) {
@@ -27,8 +27,6 @@ if (projectName) {
   startServer(projectName)
 } else {
   // No project name provided? Ask for it
-
-  // list them in a numbered list
   console.log('Available projects:')
   console.log(listOfProjects.map((project, index) => `${index + 1}. ${project}`).join('\n'))
 
@@ -42,10 +40,8 @@ if (projectName) {
       return listOfProjects[projectNumberInt - 1]
     })
     .then((projectName) => {
-      projectName = projectName
       if (!projectName) {
         console.error('Please specify a project name')
-        console.error('Usage: bun bin/develop.js <project-name>')
         process.exit(1)
       }
       console.log(`Starting server for project: ${projectName}\n`)
@@ -54,72 +50,40 @@ if (projectName) {
 }
 
 function startServer(projectName) {
-  // Set up environment for child processes
   const env = {
     ...process.env,
     PORT: 1337,
     PROJECT: projectName,
   }
 
-  // Get the project root directory
   const projectRoot = path.resolve(thaliaDirectory, 'websites', projectName)
 
-  // Start tsc for the server
-  const tsc = spawn('tsc', ['--watch', '--skipLibCheck'], {
+  // Start Bun server with --watch (auto-restart on file changes)
+  const server = spawn('bun', ['--watch', 'server/cli.ts', `--project=${projectName}`], {
     env,
     stdio: 'inherit',
     cwd: thaliaDirectory,
   })
 
-  // Start nodemon for the server (using bun to run the CLI)
-  const nodemon = spawn('nodemon', ['--watch', 'dist',
-    '--watch', `websites/${projectName}`,
-    'dist/server/cli.js'], {
-    env,
-    reloadDelay: 1000,
-    stdio: 'inherit',
-    cwd: thaliaDirectory,
-  })
+  const processes = [server]
 
-  // start tsc in project config
-  const projectTsc = spawn('tsc', ['--watch', '--skipLibCheck'], {
-    env,
-    stdio: 'inherit',
-    cwd: `${projectRoot}/config`,
-  })
-
-  const processes = [tsc, nodemon, projectTsc]
-
-  // start webpack for the project
-  if(fs.existsSync(`${projectRoot}/webpack.config.cjs`)) {
-    const webpack = spawn('webpack', ['--watch', '--config', `${projectRoot}/webpack.config.cjs`], {
+  // Start webpack if config exists
+  if (fs.existsSync(`${projectRoot}/webpack.config.cjs`) || fs.existsSync(`${projectRoot}/webpack.config.js`)) {
+    const webpackConfig = fs.existsSync(`${projectRoot}/webpack.config.cjs`) 
+      ? 'webpack.config.cjs' 
+      : 'webpack.config.js'
+    
+    const webpack = spawn('webpack', ['--watch', '--config', webpackConfig], {
       env,
       stdio: 'inherit',
       cwd: projectRoot,
     })
     processes.push(webpack)
-  } else if(fs.existsSync(`${projectRoot}/webpack.config.js`)) {
-    const webpack = spawn('webpack', ['--watch', '--config', `${projectRoot}/webpack.config.js`], {
-      env,
-      stdio: 'inherit',
-      cwd: projectRoot,
-    })
-    processes.push(webpack)
-  } else {
-    // start tsc in project root if no webpack config
-    const projectTsc = spawn('tsc', ['--watch', '--skipLibCheck'], {
-      env,
-      stdio: 'inherit',
-      cwd: projectRoot,
-    })
-    processes.push(projectTsc)
   }
 
-  const bs = browserSync.create({
-    files: [`${thaliaDirectory}/dist/**/*`, `${projectRoot}/**/*`, `${thaliaDirectory}/src/**/*.hbs`],
-  })
+  // BrowserSync for live reload
+  const bs = browserSync.create()
 
-  // set timeout for 500ms
   setTimeout(() => {
     bs.init({
       proxy: `http://localhost:1337`,
@@ -127,17 +91,20 @@ function startServer(projectName) {
       open: false,
       notify: false,
       reloadDelay: 1000,
-      files: [`${thaliaDirectory}/dist/**/*`, `${projectRoot}/**/*`],
+      files: [
+        `${projectRoot}/**/*`,
+        `${thaliaDirectory}/server/**/*`,
+        `${thaliaDirectory}/src/**/*.hbs`
+      ],
     })
-  }, 500)
+  }, 1000)
 
-  // If the user presses Ctrl+C, kill all processes
+  // Cleanup on exit
   process.on('SIGINT', () => {
-    console.log('SIGINT received, exiting')
-
+    console.log('\nShutting down...')
     bs.cleanup()
     bs.exit()
-    processes.forEach((process) => process.kill('SIGINT'))
+    processes.forEach((p) => p.kill('SIGINT'))
     process.exit(0)
   })
 }
@@ -147,16 +114,12 @@ function prompt(query) {
     input: process.stdin,
     output: process.stdout,
   })
-  let response
   rl.setPrompt(query)
   rl.prompt()
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     rl.on('line', (userInput) => {
-      response = userInput
       rl.close()
-    })
-    rl.on('close', () => {
-      resolve(response)
+      resolve(userInput)
     })
   })
 }

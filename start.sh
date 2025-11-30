@@ -4,10 +4,11 @@
 # Allow different ports
 # Check that port isn't being used
 
-SITE="${1:-default}"
+# Default to example-minimal (lightweight, no DB required)
+# Use example-auth for full-featured example (requires Docker/DB)
+PROJECT="${1:-example-minimal}"
 PORT="${2:-1337}"
-export NODE_OPTIONS='--max-http-header-size=65536'
 
-echo Hello user, running David Ma\'s nodejs server at localhost
+echo Hello user, running David Ma\'s Thalia server at localhost
 echo
-node bin/thalia.js --site $SITE --port $PORT
+bun dist/server/cli.js --project=$PROJECT --port=$PORT

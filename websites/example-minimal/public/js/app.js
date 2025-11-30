@@ -1,4 +1,4 @@
-// Simple JavaScript for test-minimal
+// Simple JavaScript for example-minimal
 document.addEventListener('DOMContentLoaded', function() {
   const title = document.getElementById('title');
   if (title) {

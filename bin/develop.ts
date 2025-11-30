@@ -2,7 +2,7 @@
 
 console.log('Starting development server...')
 
-import { spawn } from 'child_process'
+import { spawn, ChildProcess } from 'child_process'
 import path from 'path'
 import browserSync from 'browser-sync'
 import fs from 'fs'
@@ -49,10 +49,10 @@ if (projectName) {
     })
 }
 
-function startServer(projectName) {
-  const env = {
+function startServer(projectName: string) {
+  const env: NodeJS.ProcessEnv = {
     ...process.env,
-    PORT: 1337,
+    PORT: '1337',
     PROJECT: projectName,
   }
 
@@ -65,7 +65,7 @@ function startServer(projectName) {
     cwd: thaliaDirectory,
   })
 
-  const processes = [server]
+  const processes: ChildProcess[] = [server]
 
   // Start webpack if config exists
   if (fs.existsSync(`${projectRoot}/webpack.config.cjs`) || fs.existsSync(`${projectRoot}/webpack.config.js`)) {
@@ -73,7 +73,7 @@ function startServer(projectName) {
       ? 'webpack.config.cjs' 
       : 'webpack.config.js'
     
-    const webpack = spawn('webpack', ['--watch', '--config', webpackConfig], {
+    const webpack = spawn('npx', ['webpack', '--watch', '--config', webpackConfig], {
       env,
       stdio: 'inherit',
       cwd: projectRoot,
@@ -109,7 +109,7 @@ function startServer(projectName) {
   })
 }
 
-function prompt(query) {
+function prompt(query: string): Promise<string> {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,

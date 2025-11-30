@@ -181,7 +181,7 @@ export class Website {
   }
 
   /**
-   * Load config/config.js for the website, if it exists
+   * Load config/config.ts for the website, if it exists
    * If it doesn't exist, we'll use the default config
    */
   private async loadConfig(basicConfig: BasicWebsiteConfig): Promise<Website> {
@@ -204,7 +204,7 @@ export class Website {
     }
 
     return new Promise((resolve, reject) => {
-      const configPath = path.join(this.rootPath, 'config', 'config.js')
+      const configPath = path.join(this.rootPath, 'config', 'config.ts')
       import('file://' + configPath)
         .then(
           (configFile: { config: RawWebsiteConfig }) => {
@@ -219,10 +219,10 @@ export class Website {
           },
           (err) => {
             if (fs.existsSync(configPath)) {
-              console.error('config.js failed to load for', this.name)
+              console.error('config.ts failed to load for', this.name)
               console.error(err)
             } else {
-              console.error(`Website "${this.name}" does not have a config.js file`)
+              console.error(`Website "${this.name}" does not have a config.ts file`)
             }
           },
         )

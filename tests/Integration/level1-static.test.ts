@@ -30,8 +30,8 @@ describe('Level 1: Static Files', () => {
     expect(response.headers.get('content-type')).toContain('text/html')
     
     const html = await response.text()
-    expect(html).toContain('Hello from Test Minimal')
-    expect(html).toContain('This is a minimal test website')
+    expect(html).toContain('Hello from Example Minimal')
+    expect(html).toContain('This is a minimal example website')
   })
 
   test('should serve CSS files', async () => {

@@ -9,7 +9,7 @@ echo Hello user, running David Ma\'s Thalia server at localhost
 echo
 
 if [ -n "$PORT" ]; then
-  bun dist/server/cli.js --project=$PROJECT --port=$PORT
+  bun server/cli.ts --project=$PROJECT --port=$PORT
 else
-  bun dist/server/cli.js --project=$PROJECT
+  bun server/cli.ts --project=$PROJECT
 fi

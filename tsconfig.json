@@ -1,44 +1,23 @@
 {
   "compilerOptions": {
-    // Language and Environment
-    "target": "ES2020",
-    "lib": ["ES2020"],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "strict": true,
-    "strictNullChecks": true,
     "skipLibCheck": true,
-    "noImplicitAny": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "dist",
-    "rootDir": ".",
-    "declaration": true,
-    "composite": true,
-    "declarationMap": true,
-    "removeComments": false,
-    "sourceMap": true,
-    "baseUrl": ".",
-    "paths": {
-      "thalia": ["./index"],
-      "thalia/*": ["./*"],
-      "thalia/models/*": ["./models/*"]
-    }
-  },
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node"
+    "types": ["bun-types"]
   },
   "include": [
     "server/**/*",
     "models/**/*",
-    "index.ts",
-    "websites/example-auth/**/*"
+    "tests/**/*"
   ],
   "exclude": [
-    "old_server",
     "node_modules",
     "dist",
+    "old_server",
     "websites/**/*"
   ]
-} 
+}

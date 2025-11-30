@@ -7,7 +7,6 @@
  * 3. Handling form submissions
  * 4. Handling file uploads
  */
-/// <reference types="node" resolution-mode="require"/>
 import { IncomingMessage, ServerResponse } from 'http';
 import { Website } from './website.js';
 import { type Controller } from './website.js';

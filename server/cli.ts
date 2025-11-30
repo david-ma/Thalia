@@ -23,16 +23,19 @@ import { ServerOptions } from './types.js'
 import path from 'path'
 import { Thalia } from './thalia.js'
 import fs from 'fs'
+import { getPort } from 'get-port-please'
 
 const project =
   process.argv.find((arg) => arg.startsWith('--project'))?.split('=')[1] || process.env['PROJECT'] || 'default'
-const port = parseInt(
-  process.argv.find((arg) => arg.startsWith('--port'))?.split('=')[1] || process.env['PORT'] || '1337',
-)
+const portArg = process.argv.find((arg) => arg.startsWith('--port'))?.split('=')[1] || process.env['PORT']
+const preferredPort = portArg ? parseInt(portArg) : 1337
 
 if (process.env['NODE_ENV'] === 'production') {
   console.debug = () => {}
 }
+
+// Get available port (prefer 1337, or use --port if provided)
+const port = await getPort({ port: preferredPort })
 
 let options: ServerOptions = {
   node_env: process.env['NODE_ENV'] || 'development',

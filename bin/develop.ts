@@ -7,8 +7,13 @@ import path from 'path'
 import browserSync from 'browser-sync'
 import fs from 'fs'
 import readline from 'readline'
+import { getPort } from 'get-port-please'
 
 const thaliaDirectory = process.cwd()
+
+// Get a port using get-port-please
+const preferredPort = 1337
+const port = await getPort({ port: preferredPort })
 
 // Get project name from command line arguments
 let projectName = process.argv[2]
@@ -52,7 +57,7 @@ if (projectName) {
 function startServer(projectName: string) {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
-    PORT: '1337',
+    PORT: port.toString(),
     PROJECT: projectName,
   }
 
@@ -86,8 +91,8 @@ function startServer(projectName: string) {
 
   setTimeout(() => {
     bs.init({
-      proxy: `http://localhost:1337`,
-      port: 3000,
+      proxy: `http://localhost:${port}`,
+      port: getPort({ port: 3000 }),
       open: false,
       notify: false,
       reloadDelay: 1000,

@@ -4,64 +4,65 @@
   "version": "1.0.1",
   "type": "module",
   "description": "Yet another server framework for serving websites",
-  "main": "./dist/server/index.js",
-  "types": "./dist/server/index.d.ts",
+  "main": "./server/index.ts",
+  "types": "./server/index.ts",
   "exports": {
     ".": {
-      "import": "./dist/server/index.js",
-      "types": "./dist/server/index.d.ts"
+      "import": "./server/index.ts",
+      "types": "./server/index.ts"
     },
     "./cli": {
-      "import": "./dist/server/cli.js",
-      "types": "./dist/server/cli.d.ts"
+      "import": "./server/cli.ts",
+      "types": "./server/cli.ts"
     },
     "./types": {
-      "import": "./dist/server/types.js",
-      "types": "./dist/server/types.d.ts"
+      "import": "./server/types.ts",
+      "types": "./server/types.ts"
     },
     "./server": {
-      "import": "./dist/server/server.js",
-      "types": "./dist/server/server.d.ts"
+      "import": "./server/server.ts",
+      "types": "./server/server.ts"
     },
     "./website": {
-      "import": "./dist/server/website.js",
-      "types": "./dist/server/website.d.ts"
+      "import": "./server/website.ts",
+      "types": "./server/website.ts"
     },
     "./models": {
-      "import": "./dist/models/index.js",
-      "types": "./dist/models/index.d.ts"
+      "import": "./models/index.ts",
+      "types": "./models/index.ts"
     },
     "./security-models": {
-      "import": "./dist/models/security-models.js",
-      "types": "./dist/models/security-models.d.ts"
+      "import": "./models/security-models.ts",
+      "types": "./models/security-models.ts"
     },
     "./security": {
-      "import": "./dist/server/security.js",
-      "types": "./dist/server/security.d.ts"
+      "import": "./server/security.ts",
+      "types": "./server/security.ts"
     },
     "./controllers": {
-      "import": "./dist/server/controllers.js",
-      "types": "./dist/server/controllers.d.ts"
+      "import": "./server/controllers.ts",
+      "types": "./server/controllers.ts"
     },
     "./mail": {
-      "import": "./dist/server/mail.js",
-      "types": "./dist/server/mail.d.ts"
+      "import": "./server/mail.ts",
+      "types": "./server/mail.ts"
     },
     "./util": {
-      "import": "./dist/server/util.js",
-      "types": "./dist/server/util.d.ts"
+      "import": "./server/util.ts",
+      "types": "./server/util.ts"
     }
   },
   "bin": {
-    "thalia": "./dist/server/cli.js"
+    "thalia": "./server/cli.ts"
   },
   "files": [
-    "dist/**/*",
-    "README.md",
-    "LICENSE",
+    "server/**/*",
+    "models/**/*",
     "bin/**/*",
     "public/**/*",
-    "src/**/*"
+    "src/**/*",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "start": "bash start.sh",
@@ -118,7 +119,8 @@
     "webpack-merge": "^5.10.0"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.18.0",
+    "bun": ">=1.0.0"
   },
   "eslintConfig": {
     "plugins": [

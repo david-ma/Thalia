@@ -58,8 +58,8 @@ export const checkSession: SecurityMiddleware = async function (
   if (failure) {
     failure()
   } else {
-    controller.res.writeHead(401)
-    controller.res.end('Unauthorized')
+    // controller.res.writeHead(401)
+    controller.res.end('Unauthorized lol')
   }
 }
 

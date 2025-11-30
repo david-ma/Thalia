@@ -158,15 +158,20 @@ export class Server extends EventEmitter {
 
   public async stop(): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (!this.httpServer) {
+      if (!this.httpServer || !this.httpServer.listening) {
         resolve()
         return
       }
 
-      this.socketServer.close()
+      if (this.socketServer && typeof this.socketServer.close === 'function') {
+        this.socketServer.close()
+      }
+      
+      const httpServer = this.httpServer
       this.socketServer = {} as SocketServer
       this.httpServer = {} as HttpServer
-      this.httpServer.close((err) => {
+      
+      httpServer.close((err) => {
         if (err) {
           reject(err)
           return

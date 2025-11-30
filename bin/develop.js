@@ -1,5 +1,7 @@
 #!/usr/bin/env bun
 
+console.log('Starting development server...')
+
 import { spawn } from 'child_process'
 import path from 'path'
 import browserSync from 'browser-sync'

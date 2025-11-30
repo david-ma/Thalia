@@ -8,7 +8,7 @@
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
 import { startTestServer, stopTestServer, fetchFromServer } from './helpers.js'
 
-const PROJECT = 'test-minimal'
+const PROJECT = 'example-minimal'
 
 describe('Level 1: Static Files', () => {
   let port: number

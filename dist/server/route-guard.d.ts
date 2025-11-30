@@ -1,3 +1,4 @@
+/// <reference types="node" resolution-mode="require"/>
 import { IncomingMessage, ServerResponse } from 'http';
 import { RouteRule } from './types.js';
 import { Website } from './website.js';

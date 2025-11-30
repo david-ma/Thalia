@@ -110,12 +110,34 @@ export class Website {
     }
 
     try {
-      this.version.thaliaVersion = JSON.parse(
-        fs.readFileSync(path.join(import.meta.dirname, '..', '..', 'package.json'), 'utf8'),
-      ).version
-      this.version.thaliaGitHash = execSync('git rev-parse --short HEAD', { cwd: import.meta.dirname })
-        .toString()
-        .trim()
+      // Find Thalia root directory by looking for package.json
+      // Start from current file location and go up until we find it
+      let thaliaRoot = import.meta.dirname
+      while (thaliaRoot !== path.dirname(thaliaRoot)) {
+        const packageJsonPath = path.join(thaliaRoot, 'package.json')
+        if (fs.existsSync(packageJsonPath)) {
+          // Check if this is actually Thalia's package.json (has "name": "thalia")
+          try {
+            const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
+            if (pkg.name === 'thalia') {
+              break
+            }
+          } catch {
+            // Not valid JSON, continue searching
+          }
+        }
+        thaliaRoot = path.dirname(thaliaRoot)
+      }
+      
+      const thaliaPackageJson = path.join(thaliaRoot, 'package.json')
+      if (fs.existsSync(thaliaPackageJson)) {
+        this.version.thaliaVersion = JSON.parse(
+          fs.readFileSync(thaliaPackageJson, 'utf8'),
+        ).version
+        this.version.thaliaGitHash = execSync('git rev-parse --short HEAD', { cwd: thaliaRoot })
+          .toString()
+          .trim()
+      }
 
       if (fs.existsSync(path.join(this.rootPath, 'package.json'))) {
         this.version.version = JSON.parse(fs.readFileSync(path.join(this.rootPath, 'package.json'), 'utf8')).version

@@ -8,6 +8,7 @@ import { getPort } from 'get-port-please'
 import path from 'path'
 
 let testServers: Map<string, { thalia: Thalia; port: number }> = new Map()
+let portCounter = 3000 // Start from 3000 and increment to avoid collisions
 
 /**
  * Start a test server for a specific project
@@ -25,7 +26,17 @@ export async function startTestServer(
     return existing
   }
 
-  const testPort = port || (await getPort())
+  // Use a unique port for each test to avoid collisions when running in parallel
+  let testPort: number
+  if (port) {
+    testPort = port
+  } else {
+    // Try to get an available port starting from a base port
+    // Use project name hash to get consistent but different ports per project
+    const basePort = 3000 + (project.charCodeAt(0) % 1000)
+    testPort = await getPort({ port: basePort, portRange: [basePort, basePort + 100] })
+  }
+  
   const thaliaRoot = process.cwd()
   // Use standalone mode for tests - only load the specific project
   const rootPath = path.join(thaliaRoot, 'websites', project)
@@ -40,6 +51,9 @@ export async function startTestServer(
 
   const thalia = await Thalia.init(options)
   await thalia.start()
+
+  // Wait a bit for server to be fully ready
+  await new Promise(resolve => setTimeout(resolve, 100))
 
   const serverInfo = { thalia, port: testPort }
   testServers.set(project, serverInfo)
@@ -69,9 +83,12 @@ export async function stopAllTestServers(): Promise<void> {
 /**
  * Fetch from a test server
  */
-export async function fetchFromServer(url: string, port: number): Promise<Response> {
+export async function fetchFromServer(url: string, port: number, options?: RequestInit): Promise<Response> {
   const fullUrl = url.startsWith('http') ? url : `http://localhost:${port}${url}`
-  return fetch(fullUrl)
+  // Add Host header to ensure requests go to the right server
+  const headers = new Headers(options?.headers)
+  headers.set('Host', `localhost:${port}`)
+  return fetch(fullUrl, { ...options, headers })
 }
 
 /**

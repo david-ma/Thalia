@@ -5,7 +5,7 @@
  * - pnpm drizzle-kit push
  */
 
-import { models } from '../node_modules/thalia/dist/models/index.js'
+import { models } from 'thalia/models'
 // import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 
@@ -15,7 +15,7 @@ const audits: MySqlTableWithColumns<any> = models.audits
 const albums: MySqlTableWithColumns<any> = models.albums
 const images: MySqlTableWithColumns<any> = models.images
 
-import { mailTable } from '../node_modules/thalia/dist/server/mail.js'
+import { mailTable } from 'thalia/mail'
 const mail: MySqlTableWithColumns<any> = mailTable
 
 

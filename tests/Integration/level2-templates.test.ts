@@ -8,7 +8,7 @@
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
 import { startTestServer, stopTestServer, fetchFromServer } from './helpers.js'
 
-const PROJECT = 'test-templates'
+const PROJECT = 'example-src'
 
 describe('Level 2: Handlebars Templates', () => {
   let port: number

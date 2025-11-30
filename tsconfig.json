@@ -33,7 +33,7 @@
     "server/**/*",
     "models/**/*",
     "index.ts",
-    "websites/example/**/*"
+    "websites/example-auth/**/*"
   ],
   "exclude": [
     "old_server",

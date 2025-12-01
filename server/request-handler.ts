@@ -190,6 +190,10 @@ export class RequestHandler {
     })
   }
 
+  /**
+   * Tries to render handlebars templates from <PROJECT_DIR>/src
+   * Partials are loaded using loadPartials() from website.ts
+   */
   private static tryHandlebars(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
       if (!requestHandler.pathname.endsWith('.html')) {

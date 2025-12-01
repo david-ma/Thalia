@@ -33,11 +33,12 @@ const roleBasedSecurityConfig = recursiveObjectMerge(recursiveObjectMerge(securi
         },
     ],
 });
-import { albums, images } from '../models/drizzle-schema.js';
-const AlbumMachine = new CrudFactory(albums);
-const ImageMachine = new CrudFactory(images);
-import { SmugMugUploader } from 'thalia/controllers';
-const smugMugUploader = new SmugMugUploader();
+import { albums, images } from '../models/drizzle-schema'
+import { CrudFactory, SmugMugUploader } from '../../../server/controllers'
+
+const AlbumMachine = new CrudFactory(albums as any)
+const ImageMachine = new CrudFactory(images as any)
+const smugMugUploader = new SmugMugUploader()
 const smugmugConfig = {
     controllers: {
         smugmugAlbums: AlbumMachine.controller.bind(AlbumMachine),

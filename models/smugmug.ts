@@ -1,6 +1,6 @@
 import { mysqlTable, text, int, varchar } from 'drizzle-orm/mysql-core'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
-import { vc, baseTableConfig } from './util.js'
+import { vc, baseTableConfig } from './util'
 
 // Album Model
 export const albums: MySqlTableWithColumns<any> = mysqlTable('albums', {

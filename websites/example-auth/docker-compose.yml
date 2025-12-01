@@ -1,29 +1,21 @@
-{
-  "volumes": {
-    "db_data": {}
-  },
-  "services": {
-    "db": {
-      "image": "mariadb:11.4.7",
-      "restart": "unless-stopped",
-      "volumes": [
-        "db_data:/var/lib/mysql"
-      ],
-      "ports": [
-        "3350:3306"
-      ],
-      "environment": {
-        "MYSQL_DATABASE": "thalia",
-        "MYSQL_USER": "not_root",
-        "MYSQL_PASSWORD": "password",
-        "MYSQL_ROOT_PASSWORD": "master_password"
-      },
-      "healthcheck": {
-        "test": ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"],
-        "interval": "5s",
-        "timeout": "1s",
-        "retries": 5
-      }
-    }
-  }
-}
+volumes:
+  db_data:
+
+services:
+  db:
+    image: mariadb:11.4.7
+    restart: unless-stopped
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3346:3306"
+    environment:
+      MYSQL_DATABASE: example_auth
+      MYSQL_USER: not_root
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: master_password
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 1s
+      retries: 5

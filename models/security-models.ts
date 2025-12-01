@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { mysqlTable, text, int, tinyint, boolean, varchar, json, timestamp } from 'drizzle-orm/mysql-core'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
-import { vc, baseTableConfig } from './util.js'
+import { vc, baseTableConfig } from './util'
 
 // User Model
 export const users: MySqlTableWithColumns<any> = mysqlTable('users', {

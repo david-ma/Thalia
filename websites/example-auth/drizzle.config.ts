@@ -1,11 +1,15 @@
 import { defineConfig } from "drizzle-kit";
 
-// Read docker-compose.yml for the database credentials (written as a JSON object)
+const yaml = require('js-yaml');
+
+// Read docker-compose.json for the database credentials
 import fs from 'fs'
-const dockerCompose = fs.readFileSync('docker-compose.yml', 'utf8')
-const dockerComposeJson = JSON.parse(dockerCompose)
-const { MYSQL_USER, MYSQL_PASSWORD, MYSQL_HOST, MYSQL_DATABASE } = dockerComposeJson.services.db.environment
-const MYSQL_PORT = dockerComposeJson.services.db.ports[0].split(':')[0]
+const dockerComposeYaml = yaml.load(fs.readFileSync('docker-compose.yml', 'utf8'))
+const { MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE } = dockerComposeYaml.services.db.environment
+// Port mapping format: "host:container" - extract host port (3346)
+const MYSQL_PORT = dockerComposeYaml.services.db.ports[0].split(':')[0]
+// Use localhost when connecting from host, or 'db' when connecting from within Docker network
+const MYSQL_HOST = process.env.MYSQL_HOST || 'localhost'
 const url = `mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}`
 
 export default defineConfig({

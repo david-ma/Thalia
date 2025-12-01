@@ -1,8 +1,8 @@
 /**
  * Usage:
  * - Add your model schemas here
- * - pnpm drizzle-kit generate
- * - pnpm drizzle-kit push
+ * - bun drizzle-kit generate
+ * - bun drizzle-kit push
  */
 
 import { models } from 'thalia/models'

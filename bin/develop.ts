@@ -8,6 +8,7 @@ import browserSync from 'browser-sync'
 import fs from 'fs'
 import readline from 'readline'
 import { getPort } from 'get-port-please'
+import { spinner } from '../server/util.js'
 
 const thaliaDirectory = process.cwd()
 
@@ -74,10 +75,10 @@ function startServer(projectName: string) {
 
   // Start webpack if config exists
   if (fs.existsSync(`${projectRoot}/webpack.config.cjs`) || fs.existsSync(`${projectRoot}/webpack.config.js`)) {
-    const webpackConfig = fs.existsSync(`${projectRoot}/webpack.config.cjs`) 
-      ? 'webpack.config.cjs' 
+    const webpackConfig = fs.existsSync(`${projectRoot}/webpack.config.cjs`)
+      ? 'webpack.config.cjs'
       : 'webpack.config.js'
-    
+
     const webpack = spawn('npx', ['webpack', '--watch', '--config', webpackConfig], {
       env,
       stdio: 'inherit',
@@ -96,42 +97,38 @@ function startServer(projectName: string) {
       open: false,
       notify: false,
       reloadDelay: 1000,
-      files: [
-        `${projectRoot}/**/*`,
-        `${thaliaDirectory}/server/**/*`,
-        `${thaliaDirectory}/src/**/*.hbs`
-      ],
+      files: [`${projectRoot}/**/*`, `${thaliaDirectory}/server/**/*`, `${thaliaDirectory}/src/**/*.hbs`],
     })
   }, 1000)
 
   // Cleanup function
   const cleanup = () => {
-    console.log('\nShutting down...')
-    
-    // Kill all child processes
-    processes.forEach((p) => {
-      if (p && !p.killed) {
-        p.kill('SIGTERM')
-        // Force kill after 2 seconds if still alive
-        setTimeout(() => {
-          if (p && !p.killed) {
-            p.kill('SIGKILL')
-          }
-        }, 2000)
-      }
+    const line = spinner('Shutting down...')
+
+    Promise.all([
+      ...processes.map((p) => {
+        if (p && !p.killed) {
+          p.kill('SIGTERM')
+          // Force kill after 2 seconds if still alive
+          setTimeout(() => {
+            if (p && !p.killed) {
+              p.kill('SIGKILL')
+            }
+          }, 1500)
+        }
+      }),
+      bs.cleanup(),
+      bs.exit(),
+    ]).then(() => {
+      line()
+      process.exit(0)
     })
-    
-    // Cleanup BrowserSync
-    bs.cleanup()
-    bs.exit()
-    
-    setTimeout(() => process.exit(0), 2500)
   }
 
   // Handle all exit signals
   process.on('SIGINT', cleanup)
   process.on('SIGTERM', cleanup)
-  
+
   // Handle uncaught errors
   process.on('uncaughtException', (err) => {
     console.error('Uncaught exception:', err)

@@ -1,5 +1,5 @@
 // Asynchronous for each, doing a limited number of things at a time.
-async function asyncForEach(
+export async function asyncForEach(
   array: any[],
   limit: number,
   callback: (item: any, index: number, array: any[], done: () => void) => void,
@@ -21,4 +21,32 @@ async function asyncForEach(
   return 1
 }
 
-export { asyncForEach }
+// Simple spinner
+export function spinner(string: string = 'Loading...') {
+  const dots = {
+    interval: 80,
+    frames: [
+      "⠋",
+      "⠙",
+      "⠹",
+      "⠸",
+      "⠼",
+      "⠴",
+      "⠦",
+      "⠧",
+      "⠇",
+      "⠏"
+    ]
+  }
+
+  let i = 0
+  const spinnerInterval = setInterval(() => {
+    process.stdout.write(`\r${dots.frames[i]} ${string}`)
+    i = (i + 1) % dots.frames.length
+  }, dots.interval)
+
+  return () => {
+    process.stdout.write(`\r${string}\n`)
+    clearInterval(spinnerInterval)
+  }
+}

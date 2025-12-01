@@ -47,7 +47,12 @@ if (!fs.existsSync(path.join(rootPath, 'websites'))) {
       console.error(`Project ${projectName} not found`)
       process.exit(1)
     }
-    startServer({ projectName, projectRoot: path.resolve(thaliaDirectory, 'websites', projectName), thaliaDirectory, standalone: false })
+    startServer({
+      projectName,
+      projectRoot: path.resolve(thaliaDirectory, 'websites', projectName),
+      thaliaDirectory,
+      standalone: false,
+    })
   } else {
     // No project name provided? Ask for it
     console.log('Available projects:')
@@ -98,13 +103,12 @@ function startServer({
   let server: ChildProcess
 
   if (standalone) {
-      // Start Bun server with --watch (auto-restart on file changes)
-      server = spawn('bun', ['--watch', 'thalia'], {
-        env,
-        stdio: 'inherit',
-        cwd: projectRoot,
-      })
-
+    // Start Bun server with --watch (auto-restart on file changes)
+    server = spawn('bun', ['--watch', 'thalia'], {
+      env,
+      stdio: 'inherit',
+      cwd: projectRoot,
+    })
   } else {
     // Start Bun server with --watch (auto-restart on file changes)
     server = spawn('bun', ['--watch', 'server/cli.ts', `--project=${projectName}`], {
@@ -113,7 +117,6 @@ function startServer({
       cwd: thaliaDirectory,
     })
   }
-
 
   const processes: ChildProcess[] = [server]
 

@@ -53,7 +53,8 @@
     }
   },
   "bin": {
-    "thalia": "./server/cli.ts"
+    "thalia": "./server/cli.ts",
+    "thalia-develop": "./bin/develop.ts"
   },
   "files": [
     "server/**/*",

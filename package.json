@@ -67,12 +67,11 @@
   ],
   "scripts": {
     "start": "bun server/cli.ts",
-    "start:watch": "nodemon --exec bun server/cli.ts",
-    "pm2-start": "pm2 startOrReload pm2.config.cjs",
-    "pm2-stop": "pm2 delete pm2.config.cjs",
+    "pm2-start": "pm2 startOrReload pm2.config.json",
+    "pm2-stop": "pm2 delete pm2.config.json",
     "typecheck": "tsc --noEmit",
     "dev": "bun bin/develop.ts",
-    "test": "bun test",
+    "test": "bun test tests",
     "test:unit": "bun test tests/Unit",
     "test:integration": "bun test tests/Integration"
   },

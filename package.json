@@ -66,7 +66,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "start": "bash start.sh",
+    "start": "bun server/cli.ts",
     "start:watch": "nodemon --exec bun server/cli.ts",
     "pm2-start": "pm2 startOrReload pm2.config.cjs",
     "pm2-stop": "pm2 delete pm2.config.cjs",
@@ -78,6 +78,7 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
+    "bun": "^1.3.3",
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.2",
     "formidable": "^3.5.4",

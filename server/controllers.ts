@@ -1315,6 +1315,27 @@ export class MarkdownViewerFactory {
   }
 }
 
+
+/**
+ * This controller serves a hbs or md file inside of a wrapper
+ * @param filename - A hbs or md file to serve
+ * @param data - Data to pass to the content template
+ * @param wrapper_template - The wrapper template to use, default is 'wrapper'
+ * @returns Controller function that serves the content inside of a wrapper
+ */
+export function wrap(filename: string, data: any = {}, wrapper_template: string = 'wrapper'): Controller {
+  const ext = path.extname(filename).toLowerCase()
+  if (ext === '.md') {
+    return md_file(filename, data, wrapper_template)
+  } else if (ext === '.hbs') {
+    return hbs(filename.replace(ext, ''), data, wrapper_template)
+  } else {
+    return (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
+      res.end('404 Not Found')
+    }
+  }
+}
+
 /**
  * This is a simple Handlebars wrapper server, that serves content instide of a wrapper
  * @param content_template - Put in the name of a handlebars template, that you want wrapped and served

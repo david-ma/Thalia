@@ -193,15 +193,31 @@ export class RequestHandler {
   /**
    * Tries to render handlebars templates from <PROJECT_DIR>/src
    * Partials are loaded using loadPartials() from website.ts
+   * 
+   * If there is a handlebars template matching the incoming path, we render it.
+   * We look for the template in the following order:
+   * 
+   * <PROJECT_DIR>/src/pathname.hbs // This is the project's own template
+   * <THALIA_ROOT>/src/pathname.hbs // This is the thalia default template
+   * 
+   * In future, we could serve anything with .hbs after it, e.g. data.json.hbs or test.js.hbs
+   * But this is not required yet so we have not implemented it.
    */
   private static tryHandlebars(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
-      if (!requestHandler.pathname.endsWith('.html')) {
-        return next(requestHandler)
+      let pathname = requestHandler.pathname
+      
+      // If pathname is a directory, try index.html
+      if (!pathname.endsWith('.html')) {
+        if (pathname.endsWith('/')) {
+          pathname = pathname + 'index.html'
+        } else {
+          pathname = pathname + '/index.html'
+        }
       }
 
-      const handlebarsPath = requestHandler.projectSourcePath.replace('.html', '.hbs')
-      const thaliaHandlebarsPath = requestHandler.thaliaSourcePath.replace('.html', '.hbs')
+      const handlebarsPath = path.join(requestHandler.rootPath, 'src', pathname.replace('.html', '.hbs'))
+      const thaliaHandlebarsPath = path.join(requestHandler.thaliaRoot, 'src', pathname.replace('.html', '.hbs'))
       let target: string | null = null
 
       if (fs.existsSync(handlebarsPath)) {

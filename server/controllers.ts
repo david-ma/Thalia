@@ -1302,7 +1302,7 @@ export class MarkdownViewerFactory {
 
     if (files.includes(requestInfo.slug)) {
       const content = fs.readFileSync(path.join(folder_path, requestInfo.slug), 'utf8')
-      data.obsidian_html = marked.parse(content)
+      data.obsidian_html = marked.parse(content, { async: false })
 
       const html = website.getContentHtml('md_show', 'wrapper')
       res.end(html(data))
@@ -1315,7 +1315,6 @@ export class MarkdownViewerFactory {
   }
 }
 
-
 /**
  * This is a simple Handlebars wrapper server, that serves content instide of a wrapper
  * @param content_template - Put in the name of a handlebars template, that you want wrapped and served
@@ -1323,9 +1322,27 @@ export class MarkdownViewerFactory {
  * @param wrapper_template - The wrapper template to use, default is 'wrapper'
  * @returns Controller function that serves the content inside of a wrapper
  */
-export function hbs(content_template: string, data: any = {}, wrapper_template: string = 'wrapper') :Controller {
+export function hbs(content_template: string, data: any = {}, wrapper_template: string = 'wrapper'): Controller {
   return (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
     const html = website.getContentHtml(content_template, wrapper_template)
     res.end(html({ content: content_template, wrapper: wrapper_template, ...data }))
+  }
+}
+
+/**
+ * This controller serves a markdown file inside of a wrapper
+ * @param filename - The filename of the markdown file to serve, <PROJECT>/src/$filename.md
+ * @param data - Data to pass to the content template
+ * @param wrapper_template - The wrapper template to use, default is 'wrapper'
+ * @returns Controller function that serves the markdown file inside of a wrapper
+ */
+export function md_file(filename: string, data: any = {}, wrapper_template: string = 'wrapper'): Controller {
+  return (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
+    fs.promises.readFile(path.join(website.rootPath, 'src', filename), 'utf8').then((content) => {
+      website.handlebars.registerPartial('content', marked.parse(content, { async: false }))
+      const templateFile = website.handlebars.partials[wrapper_template] ?? ''
+      const html = website.handlebars.compile(templateFile)
+      res.end(html(data))
+    })
   }
 }

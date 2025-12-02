@@ -42,7 +42,9 @@ export class RequestHandler {
 
     this.projectPublicPath = path.join(this.rootPath, 'public', this.pathname)
     this.projectSourcePath = this.projectPublicPath.replace('public', 'src')
-    this.thaliaRoot = path.join(dirname(import.meta.url).replace('file://', ''), '..', '..')
+
+    // Might need a better way to get the thalia root
+    this.thaliaRoot = path.join(dirname(import.meta.url).replace('file://', ''), '..')
     this.thaliaSourcePath = path.join(this.thaliaRoot, 'src', this.pathname)
 
     // Start the request handler chain
@@ -206,7 +208,7 @@ export class RequestHandler {
   private static tryHandlebars(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
       let pathname = requestHandler.pathname
-      
+
       // If pathname is a directory, try index.html
       if (!pathname.endsWith('.html')) {
         if (pathname.endsWith('/')) {

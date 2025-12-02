@@ -282,7 +282,9 @@ export class Website {
     const paths = [
       path.join(cwd(), 'node_modules', 'thalia', 'src', 'views'),
       path.join(cwd(), 'src', 'views'),
-      path.join(cwd(), 'websites', 'example', 'src', 'partials'),
+      path.join(cwd(), 'websites', 'example-minimal', 'src', 'partials'),
+      path.join(cwd(), 'websites', 'example-src', 'src', 'partials'),
+      path.join(cwd(), 'websites', 'example-auth', 'src', 'partials'),
       path.join(this.rootPath, 'src'),
     ]
 

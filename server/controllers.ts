@@ -1314,3 +1314,18 @@ export class MarkdownViewerFactory {
     }
   }
 }
+
+
+/**
+ * This is a simple Handlebars wrapper server, that serves content instide of a wrapper
+ * @param content_template - Put in the name of a handlebars template, that you want wrapped and served
+ * @param data - Data to pass to the content template
+ * @param wrapper_template - The wrapper template to use, default is 'wrapper'
+ * @returns Controller function that serves the content inside of a wrapper
+ */
+export function hbs(content_template: string, data: any = {}, wrapper_template: string = 'wrapper') :Controller {
+  return (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
+    const html = website.getContentHtml(content_template, wrapper_template)
+    res.end(html({ content: content_template, wrapper: wrapper_template, ...data }))
+  }
+}

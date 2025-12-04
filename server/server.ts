@@ -49,17 +49,17 @@ export class Server extends EventEmitter {
   }
 
   private logRequest(req: IncomingMessage): RequestInfo {
-    const host: string = (req.headers['x-host'] as string) ?? req.headers.host
-    const domain: string = host.split(':')[0]
+    const host: string = (req.headers['x-host'] as string) ?? req.headers.host ?? 'unknown-host'
+    const domain: string = host.split(':')[0] ?? 'unknown-domain'
     const urlObject: url.UrlWithParsedQuery = url.parse(req.url ?? '', true)
     const ip: string =
       (req.headers['x-real-ip'] as string) ??
       (req.headers['x-forwarded-for'] as string) ??
       req.socket.remoteAddress ??
-      'unknown'
-    const method: string = req.method ?? 'unknown'
+      'unknown-ip'
+    const method: string = req.method ?? 'unknown-method'
 
-    console.log(`${new Date().toISOString()} ${ip} ${method} ${host}${urlObject.href}`)
+    console.log(`${new Date().toISOString()} ${ip} ${method} ${host}${urlObject.href ?? 'unknown-url'}`)
 
     const pathname = urlObject.pathname ?? '/'
     const parts = pathname.split('/')

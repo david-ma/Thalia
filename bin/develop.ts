@@ -150,6 +150,11 @@ function startServer({
 
   // Cleanup function
   const cleanup = () => {
+    console.log("\nProcesses to quit: ");
+    processes.forEach((process)=>{
+      console.log(`${process.pid} ${process.spawnargs.join(" ")}`)
+    })
+
     const line = spinner('Shutting down...')
 
     Promise.all([
@@ -168,6 +173,7 @@ function startServer({
       bs.exit(),
     ]).then(() => {
       line()
+      console.log("Done!")
       process.exit(0)
     })
   }

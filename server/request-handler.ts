@@ -202,6 +202,8 @@ export class RequestHandler {
    * <PROJECT_DIR>/src/pathname.hbs // This is the project's own template
    * <THALIA_ROOT>/src/pathname.hbs // This is the thalia default template
    * 
+   * Note that .mustache and .hbs files are both ingested as partials.
+   * 
    * In future, we could serve anything with .hbs after it, e.g. data.json.hbs or test.js.hbs
    * But this is not required yet so we have not implemented it.
    */

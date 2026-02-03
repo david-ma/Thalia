@@ -28,6 +28,8 @@ export type RequestInfo = {
   cookies: Record<string, string>
   userAuth?: UserAuth
   permissions?: Permission[]
+  version?: Record<string, string>
+  node_env: string
   query: Record<string, string>
 }
 
@@ -79,6 +81,7 @@ export class Server extends EventEmitter {
       action,
       slug,
       cookies,
+      node_env: process.env.NODE_ENV ?? 'development',
       query: urlObject.query as Record<string, string>,
     }
   }

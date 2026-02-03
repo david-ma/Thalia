@@ -126,9 +126,26 @@ function buildProject(project) {
       fs.mkdirSync(publicDir, { recursive: true });
     }
     
-    execSync(`PROJECT=${project} webpack --config webpack.prod.js`, {
-      stdio: 'inherit'
-    });
+    // Build SCSS files
+    const scssScript = path.join(__dirname, 'build-scss.ts');
+    if (fs.existsSync(scssScript)) {
+      console.log(`  Building SCSS...`);
+      try {
+        execSync(`bun ${scssScript} ${project}`, { stdio: 'inherit' });
+      } catch (error) {
+        console.error(`  ⚠️  SCSS build failed, continuing...`);
+      }
+    }
+    
+    // Build with webpack if config exists
+    const webpackConfig = path.join(__dirname, '..', 'websites', project, 'webpack.config.js');
+    if (fs.existsSync(webpackConfig)) {
+      console.log(`  Building with webpack...`);
+      execSync(`PROJECT=${project} webpack --config webpack.prod.js`, {
+        stdio: 'inherit'
+      });
+    }
+    
     console.log(`✅ Successfully built ${project}`);
   } catch (error) {
     console.error(formatError(error));

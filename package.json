@@ -71,6 +71,7 @@
     "pm2:stop": "pm2 delete pm2.config.json",
     "typecheck": "tsc --noEmit",
     "dev": "bun bin/develop.ts",
+    "build:scss": "bun bin/build-scss.ts",
     "test": "bun test tests",
     "test:unit": "bun test tests/Unit",
     "test:integration": "bun test tests/Integration"

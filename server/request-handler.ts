@@ -233,7 +233,10 @@ export class RequestHandler {
           .asyncServeHandlebarsTemplate({
             res: requestHandler.res,
             templatePath: target,
-            data: requestHandler.requestInfo, // Or send an empty object?
+            data: {
+              requestInfo: requestHandler.requestInfo,
+              version: requestHandler.website.version
+            }, // Or send an empty object?
           })
           .then(() => {
             finish(`Successfully rendered handlebars template ${requestHandler.pathname}`)

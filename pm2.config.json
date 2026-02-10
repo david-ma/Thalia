@@ -6,7 +6,34 @@
       "args": "server/cli.ts",
       "env": {
         "NODE_ENV": "production",
-        "PORT": 1337
+        "PORT": 1336
+      }
+    },
+    {
+      "name": "example-minimal",
+      "script": "bun",
+      "args": "server/cli.ts --project=example-minimal",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": 1338
+      }
+    },
+    {
+      "name": "example-src",
+      "script": "bun",
+      "args": "server/cli.ts --project=example-src",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": 1339
+      }
+    },
+    {
+      "name": "example-auth",
+      "script": "bun",
+      "args": "server/cli.ts --project=example-auth",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": 1340
       }
     }
   ]

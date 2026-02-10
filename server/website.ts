@@ -278,7 +278,7 @@ export class Website {
    *
    * The order is important, because later paths will override earlier paths.
    */
-  private loadPartials() {
+  public loadPartials() {
     const paths = [
       path.join(cwd(), 'node_modules', 'thalia', 'src', 'views'),
       path.join(cwd(), 'src', 'views'),

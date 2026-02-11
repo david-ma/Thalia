@@ -50,3 +50,7 @@ export function spinner(string: string = 'Loading...') {
     clearInterval(spinnerInterval)
   }
 }
+
+
+// Export the models utils?
+export * from '../models/util'

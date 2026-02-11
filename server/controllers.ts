@@ -91,6 +91,7 @@ type CrudRelationship = {
 }
 
 type CrudOptions = {
+  wrapperTemplate?: string
   relationships?: CrudRelationship[]
 }
 
@@ -130,9 +131,11 @@ export class CrudFactory implements Machine {
   // private db!: LibSQLDatabase<Record<string, never>>
   // private sqlite!: libsql.Client
   private static blacklist = ['createdAt', 'updatedAt', 'deletedAt'] // Filter 'id' as well?
+  private wrapperTemplate = 'crud_wrapper'
 
   constructor(table: MySqlTableWithColumns<any>, options?: CrudOptions | any) {
     this.table = table
+    this.wrapperTemplate = options?.wrapperTemplate || 'crud_wrapper'
   }
 
   public init(website: Website, name: string) {
@@ -391,7 +394,7 @@ export class CrudFactory implements Machine {
           links: [],
         }
 
-        const html = website.getContentHtml('edit')(data)
+        const html = website.getContentHtml('edit', this.wrapperTemplate)(data)
         res.writeHead(200, { 'Content-Type': 'text/html' })
         res.end(html)
       })
@@ -426,7 +429,7 @@ export class CrudFactory implements Machine {
           links: [],
         }
 
-        const html = website.getContentHtml('show')(data)
+        const html = website.getContentHtml('show', this.wrapperTemplate)(data)
         res.writeHead(200, { 'Content-Type': 'text/html' })
         res.end(html)
       })
@@ -468,7 +471,7 @@ export class CrudFactory implements Machine {
       fields,
     }
 
-    const html = website.getContentHtml('new')(data)
+    const html = website.getContentHtml('new', this.wrapperTemplate)(data)
 
     res.writeHead(200, { 'Content-Type': 'text/html' })
     res.end(html)
@@ -481,7 +484,7 @@ export class CrudFactory implements Machine {
       primaryKey: 'id',
       links: [],
     }
-    const html = website.getContentHtml('list')(data)
+    const html = website.getContentHtml('list', this.wrapperTemplate)(data)
 
     res.writeHead(200, { 'Content-Type': 'text/html' })
     res.end(html)
@@ -640,7 +643,7 @@ export class CrudFactory implements Machine {
   }
 
   private reportSuccess(res: ServerResponse, message: string, redirect: string) {
-    const html = this.website.getContentHtml('message')({
+    const html = this.website.getContentHtml('message', this.wrapperTemplate)({
       state: 'Success',
       message,
       redirect,
@@ -659,7 +662,7 @@ export class CrudFactory implements Machine {
 
     console.error(error)
 
-    const html = this.website.getContentHtml('message')({
+    const html = this.website.getContentHtml('message', this.wrapperTemplate)({
       state: 'Error',
       message: error instanceof Error ? error.message : 'Unknown error',
       redirect: `/${this.name}`,
@@ -1317,6 +1320,8 @@ export class MarkdownViewerFactory {
 
 
 /**
+ * Why not just use getContentHtml?
+ * 
  * This controller serves a hbs or md file inside of a wrapper
  * @param filename - A hbs or md file to serve
  * @param data - Data to pass to the content template
@@ -1324,6 +1329,10 @@ export class MarkdownViewerFactory {
  * @returns Controller function that serves the content inside of a wrapper
  */
 export function wrap(filename: string, data: any = {}, wrapper_template: string = 'wrapper'): Controller {
+  // TODO: Check that wrapper_template exists
+  // Check that data is valid
+  // Don't crash the server if this function crashes
+
   const ext = path.extname(filename).toLowerCase()
   if (ext === '.md') {
     return md_file(filename, data, wrapper_template)

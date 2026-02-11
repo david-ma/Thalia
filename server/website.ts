@@ -304,6 +304,11 @@ export class Website {
       this.loadPartials()
     }
 
+    // Check that the template is a valid template, otherwise use 'wrapper'
+    if (!this.handlebars.partials[template]) {
+      template = 'wrapper'
+    }
+
     const templateFile = this.handlebars.partials[template] ?? ''
     const contentFile = this.handlebars.partials[content] ?? this.handlebars.partials['404'] ?? '404'
     this.handlebars.registerPartial('styles', '')

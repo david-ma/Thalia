@@ -31,7 +31,7 @@ const project =
 const portArg = process.argv.find((arg) => arg.startsWith('--port'))?.split('=')[1] || process.env['PORT']
 const preferredPort = portArg ? parseInt(portArg) : 1337
 
-if (process.env['NODE_ENV'] === 'production') {
+if (process.env['NODE_ENV'] === 'production' && process.env['LOG_LEVEL']?.toLowerCase() !== 'debug') {
   console.debug = () => {}
 }
 

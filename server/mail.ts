@@ -53,7 +53,7 @@ export class MailService implements Machine {
   }
 
   public controller(res: ServerResponse, _req: IncomingMessage, _website: Website, requestInfo: RequestInfo) {
-    console.log("hey we're doing the mail controller")
+    console.debug("hey we're doing the mail controller")
     if (this.isInitialized) {
       if (this.website.env === 'development') {
         // Render the email that will be sent?
@@ -103,7 +103,7 @@ export class MailService implements Machine {
           if (error) {
             throw error
           } else {
-            console.log('Email sent', info)
+            console.debug('Email sent', info)
             return 'Email sent'
           }
         })

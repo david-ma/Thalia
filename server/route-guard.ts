@@ -386,7 +386,7 @@ export class RoleRouteGuard extends BasicRouteGuard {
             return next(request)
           } else {
             if (request.requestInfo.userAuth?.role === 'guest') {
-              console.log('Guest user, sending login page')
+              console.debug('Guest user, sending login page')
               // // please log in
               // const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
               //   route: request.pathname,
@@ -401,7 +401,7 @@ export class RoleRouteGuard extends BasicRouteGuard {
               request.res.end(login_html)
               return finish('User is not logged in, so we sent the login page')
             } else {
-              console.log('User has no permissions, sending access denied')
+              console.debug('User has no permissions, sending access denied')
               // access denied
               // request.res.writeHead(403, { 'Content-Type': 'text/html' })
               request.res.end('Access denied')

@@ -174,7 +174,7 @@ export class ThaliaSecurity implements Machine {
   }
 
   public controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void {
-    console.log('ThaliaSecurity controller')
+    console.debug('ThaliaSecurity controller')
   }
 
   public static hashPassword(password: string): Promise<string> {
@@ -195,9 +195,9 @@ export class ThaliaSecurity implements Machine {
       res.end(website.getContentHtml('userLogin')({}))
     } else if (method === 'POST') {
       parseForm(res, req).then((form) => {
-        console.log('Login attempt:', form)
+        console.debug('Login attempt:', form)
         if (!form.fields.Email || !form.fields.Password) {
-          console.log('Email and password are required')
+          console.debug('Email and password are required')
           res.end(website.getContentHtml('userLogin')({ error: 'Email and password are required' }))
           return
         }
@@ -265,7 +265,7 @@ export class ThaliaSecurity implements Machine {
 
   private setCookie(res: ServerResponse, sessionId: string): void {
     if (res.headersSent) {
-      console.log('Headers already sent')
+      console.debug('Headers already sent')
       return
     }
     res.setHeader('Set-Cookie', `sessionId=${sessionId}; Path=/; HttpOnly; SameSite=Strict`)
@@ -282,8 +282,8 @@ export class ThaliaSecurity implements Machine {
       res.end(website.getContentHtml('forgotPassword')({}))
     } else if (method === 'POST') {
       parseForm(res, req).then((form) => {
-        console.log('We have a post!')
-        console.log('Form', form)
+        console.debug('We have a post!')
+        console.debug('Form', form)
         // Send an email to the user with a link to reset their password
 
         if (!form.fields.email) {
@@ -297,7 +297,7 @@ export class ThaliaSecurity implements Machine {
           res.end(website.getContentHtml('forgotPassword')({ error: 'Mail service not found' }))
           return
         }
-        console.log('Mail service', mailService)
+        console.debug('Mail service', mailService)
 
         mailService.sendEmail({
           to: form.fields.email,
@@ -322,7 +322,7 @@ export class ThaliaSecurity implements Machine {
 
             // Send an email to the user with a link to reset their password
             // TODO: Implement this
-            console.log('Sending email to', user.email)
+            console.debug('Sending email to', user.email)
             res.end(website.getContentHtml('forgotPassword')({ error: 'Email sent' }))
           })
       })
@@ -340,7 +340,7 @@ export class ThaliaSecurity implements Machine {
       .from(usersTable)
       .where(eq(usersTable.role, 'admin'))
       .then((users: User[]) => {
-        console.log('Users', users)
+        console.debug('Users', users)
         // If an admin user exists, we don't need to set up.
         if (users.length > 0) {
           res.end(website.getContentHtml('setup')({ error: 'Admin user already exists' }))

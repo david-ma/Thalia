@@ -288,7 +288,7 @@ export class Website {
       path.join(this.rootPath, 'src'),
     ]
 
-    console.log('Rootpath is:', this.rootPath)
+    console.debug('Loading Partials. Rootpath is:', this.rootPath)
 
     for (const path of paths) {
       if (fs.existsSync(path)) {
@@ -298,8 +298,6 @@ export class Website {
   }
 
   public getContentHtml(content: string, template: string = 'wrapper'): HandlebarsTemplateDelegate<any> {
-    console.log('Getting content html for:', content)
-    console.log('Env is:', this.env)
     if (this.env == 'development') {
       this.loadPartials()
     }

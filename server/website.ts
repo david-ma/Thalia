@@ -29,20 +29,20 @@ import {
   RouteRule,
   ClientInfo,
   ServerMode,
-} from './types.js'
+} from './types'
 import fs from 'fs'
 import path from 'path'
 import { IncomingMessage, ServerResponse } from 'http'
 import Handlebars from 'handlebars'
 import { cwd } from 'process'
-import { RoleRouteGuard, BasicRouteGuard, RouteGuard } from './route-guard.js'
+import { RoleRouteGuard, BasicRouteGuard, RouteGuard } from './route-guard'
 import { Socket } from 'socket.io'
-import { RequestInfo } from './server.js'
-import { ThaliaDatabase } from './database.js'
-import { version } from './controllers.js'
+import { RequestInfo } from './server'
+import { ThaliaDatabase } from './database'
+import { version } from './controllers'
 import { execSync } from 'child_process'
 import os from 'os'
-import { ConfigurationError, TemplateError, FileSystemError } from './errors.js'
+import { ConfigurationError, TemplateError, FileSystemError } from './errors'
 
 interface Views {
   [key: string]: string

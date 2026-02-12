@@ -1,10 +1,10 @@
 import { IncomingMessage, ServerResponse } from 'http'
 import http from 'http'
-import { RouteRule } from './types.js'
-import { Website } from './website.js'
+import { RouteRule } from './types'
+import { Website } from './website'
 import formidable from 'formidable'
-import { RequestInfo } from './server.js'
-import { RequestHandler } from './request-handler.js'
+import { RequestInfo } from './server'
+import { RequestHandler } from './request-handler'
 import { eq } from 'drizzle-orm'
 
 /**
@@ -338,8 +338,8 @@ export class BasicRouteGuard extends RouteGuard {
 export type Role = 'admin' | 'user' | 'guest'
 export type Permission = 'read' | 'update' | 'delete' | 'create' | 'manage'
 
-import { RoleRouteRule } from './security.js'
-import { CrudFactory } from './controllers.js'
+import { RoleRouteRule } from './security'
+import { CrudFactory } from './controllers'
 
 export type SecurityConfig = {
   roles: Role[]

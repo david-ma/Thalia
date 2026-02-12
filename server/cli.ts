@@ -20,9 +20,9 @@
  */
 
 import { cwd } from 'process'
-import { ServerOptions } from './types.js'
+import { ServerOptions } from './types'
 import path from 'path'
-import { Thalia } from './thalia.js'
+import { Thalia } from './thalia'
 import fs from 'fs'
 import { getPort } from 'get-port-please'
 

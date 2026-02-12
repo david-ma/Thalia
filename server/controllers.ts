@@ -9,12 +9,11 @@
  */
 
 import { IncomingMessage, ServerResponse } from 'http'
-import { Website } from './website.js'
+import { Website, type Controller } from './website'
 import fs from 'fs'
 import path from 'path'
-import { type Controller } from './website.js'
 import { eq, isNull } from 'drizzle-orm'
-import { RequestInfo } from './server.js'
+import { RequestInfo } from './server'
 import url from 'url'
 import { ParsedUrlQuery } from 'querystring'
 import crypto from 'crypto'
@@ -96,7 +95,7 @@ type CrudOptions = {
 }
 
 // import { type LibSQLDatabase } from 'drizzle-orm/libsql'
-import { Permission } from './route-guard.js'
+import { Permission } from './route-guard'
 import { MySqlDatabase, MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 
 /**
@@ -698,7 +697,7 @@ type Attribute = {
 }
 
 import formidable from 'formidable'
-import { RawWebsiteConfig } from './types.js'
+import { RawWebsiteConfig } from './types'
 type ParsedForm = {
   fields: Record<string, string>
   files: formidable.Files<string>
@@ -1284,7 +1283,7 @@ export class SmugMugUploader implements Machine {
   }
 }
 
-import { albums, images, type Image } from '../models/smugmug.js'
+import { albums, images, type Image } from '../models/smugmug'
 const AlbumMachine = new CrudFactory(albums)
 const ImageMachine = new CrudFactory(images)
 

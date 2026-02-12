@@ -1,11 +1,11 @@
 import nodemailer, { SendMailOptions, Transporter } from 'nodemailer'
-import { Machine } from './controllers.js'
+import { Machine } from './controllers'
 import { mysqlTable, text } from 'drizzle-orm/mysql-core'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import { IncomingMessage, ServerResponse } from 'http'
-import { Website } from './website.js'
-import { RequestInfo } from './server.js'
-import { recursiveObjectMerge } from './website.js'
+import { Website } from './website'
+import { RequestInfo } from './server'
+import { recursiveObjectMerge } from './website'
 
 export class MailService implements Machine {
   private transporter!: Transporter
@@ -139,7 +139,7 @@ export class MailService implements Machine {
   }
 }
 
-import { baseTableConfig, vc } from '../models/util.js'
+import { baseTableConfig, vc } from '../models/util'
 
 export const mailTable: MySqlTableWithColumns<any> = mysqlTable('mail', {
   ...baseTableConfig,

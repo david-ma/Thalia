@@ -6,14 +6,14 @@
 
 import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http'
 import { EventEmitter } from 'events'
-import { ServerMode, ServerOptions, ClientInfo } from './types.js'
-import { Router } from './router.js'
-import { Website } from './website.js'
+import { ServerMode, ServerOptions, ClientInfo } from './types'
+import { Router } from './router'
+import { Website } from './website'
 import url from 'url'
 import { Server as SocketServer } from 'socket.io'
 import { Socket } from 'socket.io'
-import { RequestHandler } from './request-handler.js'
-import { UserAuth, Permission } from './route-guard.js'
+import { RequestHandler } from './request-handler'
+import { UserAuth, Permission } from './route-guard'
 
 export type RequestInfo = {
   host: string

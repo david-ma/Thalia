@@ -1,5 +1,5 @@
-import { Server } from './server.js'
-import { ServerOptions } from './types.js'
+import { Server } from './server'
+import { ServerOptions } from './types'
 
 export interface Thalia {
   create(options: ServerOptions): Promise<Thalia>
@@ -8,9 +8,7 @@ export interface Thalia {
   getServer(): Server
 }
 
-import { Website } from './website.js'
-// import { Database } from './database.js'
-// import { RouteGuard } from './route-guard.js'
+import { Website } from './website'
 
 // Main Thalia class for easy initialization
 export class Thalia {

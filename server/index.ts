@@ -4,18 +4,18 @@
  */
 
 // Export everything from thalia.js
-export * from './thalia.js'
+export * from './thalia'
 
-export * from './errors.js'
-export * from './types.js'
-export * from './server.js'
-export * from './website.js'
-export * from './controllers.js'
-export * from './database.js'
-export * from './route-guard.js'
-export * from './security.js'
-export * from './mail.js'
-export * from './util.js'
+export * from './errors'
+export * from './types'
+export * from './server'
+export * from './website'
+export * from './controllers'
+export * from './database'
+export * from './route-guard'
+export * from './security'
+export * from './mail'
+export * from './util'
 
 // Export models
 // export * from '../models/index.js'

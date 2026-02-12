@@ -5,8 +5,8 @@
  */
 
 import { IncomingMessage, request, ServerResponse } from 'http'
-import { Website } from './website.js'
-import { RequestInfo } from './server.js'
+import { Website } from './website'
+import { RequestInfo } from './server'
 import path from 'path'
 import { dirname } from 'path'
 import fs from 'fs'

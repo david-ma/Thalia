@@ -22,10 +22,10 @@
 import { drizzle } from 'drizzle-orm/mysql2'
 import { sql } from 'drizzle-orm'
 import path from 'path'
-import { Website } from './website.js'
-import { Machine } from './controllers.js'
+import { Website } from './website'
+import { Machine } from './controllers'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
-import { DatabaseError } from './errors.js'
+import { DatabaseError } from './errors'
 
 export class ThaliaDatabase {
   private website: Website

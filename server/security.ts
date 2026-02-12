@@ -1,6 +1,6 @@
 import { ServerResponse, IncomingMessage } from 'http'
-import { Controller, Website } from './website.js'
-import { CrudFactory, Machine } from './controllers.js'
+import { Controller, Website } from './website'
+import { CrudFactory, Machine } from './controllers'
 import bcrypt from 'bcryptjs'
 
 /*
@@ -23,13 +23,13 @@ Our schema will be modelled on django security, for easy migration.
 
 */
 
-import { MailService, mailTable } from './mail.js'
+import { MailService, mailTable } from './mail'
 
-import { Permission, Role, SecurityConfig } from './route-guard.js'
+import { Permission, Role, SecurityConfig } from './route-guard'
 export type { SecurityConfig }
 
-import { users, sessions, audits, type User } from '../models/security-models.js'
-import { RawWebsiteConfig, RouteRule } from './types.js'
+import { users, sessions, audits, type User } from '../models/security-models'
+import { RawWebsiteConfig, RouteRule } from './types'
 
 const UserMachine: Machine = new CrudFactory(users, {
   relationships: [
@@ -113,8 +113,8 @@ const default_routes: RoleRouteRule[] = [
   },
 ]
 
-import { RequestInfo } from './server.js'
-import { parseForm } from './controllers.js'
+import { RequestInfo } from './server'
+import { parseForm } from './controllers'
 import { eq, Table } from 'drizzle-orm'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 // import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'

@@ -371,6 +371,14 @@ export class Website {
       return options.data.root.blob[field] || ''
     })
 
+    this.handlebars.registerHelper('formatDate', function (date, format) {
+      if (!date) {
+        return ''
+      }
+      return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    })
+
+    // DEBUG: This does not always load reliably? Standalone mode vs multiplex mode?
     if (this.config && this.config.handlebarsHelpers) {
       for (const [name, helper] of Object.entries(this.config.handlebarsHelpers)) {
         this.handlebars.registerHelper(name, helper)

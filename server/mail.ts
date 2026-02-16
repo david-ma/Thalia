@@ -29,6 +29,7 @@ export class MailService implements Machine {
   }
 
   public init(website: Website, name: string) {
+    console.log("Initialising MailService for", website.name)
     this.website = website
     this.name = name
 
@@ -101,7 +102,9 @@ export class MailService implements Machine {
 
         this.transporter.sendMail(mailOptions, (error, info) => {
           if (error) {
-            throw error
+            console.trace("Error", error)
+            return "We had an error sending mail, mailserver probably offline"
+            // throw error
           } else {
             console.debug('Email sent', info)
             return 'Email sent'

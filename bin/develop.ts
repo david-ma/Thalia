@@ -181,6 +181,15 @@ function startServer({
   // Handle all exit signals
   process.on('SIGINT', cleanup)
   process.on('SIGTERM', cleanup)
+  process.on('SIGQUIT', cleanup)
+  process.on('SIGBREAK', cleanup)
+  process.on('SIGABRT', cleanup)
+  process.on('SIGSEGV', cleanup)
+  process.on('SIGILL', cleanup)
+  process.on('SIGFPE', cleanup)
+  process.on('SIGBUS', cleanup)
+  process.on('SIGPIPE', cleanup)
+  process.on('SIGALRM', cleanup)
 
   // Handle uncaught errors
   process.on('uncaughtException', (err) => {

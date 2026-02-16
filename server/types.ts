@@ -96,6 +96,7 @@ export interface RawWebsiteConfig {
   websockets?: RawWebsocketConfig
   database?: DatabaseConfig
   security?: SecurityConfig
+  handlebarsHelpers?: Record<string, (...args: any[]) => any>
 }
 
 export interface WebsiteConfig extends BasicWebsiteConfig, RawWebsiteConfig {

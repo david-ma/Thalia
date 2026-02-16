@@ -371,6 +371,12 @@ export class Website {
       return options.data.root.blob[field] || ''
     })
 
+    if (this.config && this.config.handlebarsHelpers) {
+      for (const [name, helper] of Object.entries(this.config.handlebarsHelpers)) {
+        this.handlebars.registerHelper(name, helper)
+      }
+    }
+
     /**
      * For the dropdown partial
      * Might be useful for radio buttons or checkboxes too

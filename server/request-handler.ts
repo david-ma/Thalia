@@ -13,6 +13,8 @@ import fs from 'fs'
 import * as sass from 'sass'
 import zlib from 'zlib'
 
+const GZIP_SIZE_THRESHOLD = 10 * 1024 // 10kb
+
 export class RequestHandler {
   constructor(public website: Website) {
     this.rootPath = this.website.rootPath
@@ -142,7 +144,7 @@ export class RequestHandler {
 
           const stream = fs.createReadStream(targetPath)
           stream.pipe(requestHandler.res)
-          return finish(`Successfully streamed gzipped file ${requestHandler.pathname}`)
+          return finish(`Successfully streamed pre-gzipped file ${requestHandler.pathname}`)
         } else {
           next(requestHandler)
           return
@@ -157,7 +159,11 @@ export class RequestHandler {
         const indexPath = path.join(requestHandler.pathname, 'index.html')
         requestHandler.handleRequest(requestHandler.req, requestHandler.res, requestHandler.requestInfo, indexPath)
         return finish(`Redirected to ${indexPath}`)
-      } else if (gzippable.includes(contentType) && isGzipAccepted) {
+      } else if (
+        gzippable.includes(contentType) &&
+        isGzipAccepted &&
+        fs.statSync(targetPath).size > GZIP_SIZE_THRESHOLD
+      ) {
         const inputFile = fs.readFileSync(targetPath)
         zlib.gzip(inputFile, (err, result) => {
           if (err) {
@@ -195,15 +201,15 @@ export class RequestHandler {
   /**
    * Tries to render handlebars templates from <PROJECT_DIR>/src
    * Partials are loaded using loadPartials() from website.ts
-   * 
+   *
    * If there is a handlebars template matching the incoming path, we render it.
    * We look for the template in the following order:
-   * 
+   *
    * <PROJECT_DIR>/src/pathname.hbs // This is the project's own template
    * <THALIA_ROOT>/src/pathname.hbs // This is the thalia default template
-   * 
+   *
    * Note that .mustache and .hbs files are both ingested as partials.
-   * 
+   *
    * In future, we could serve anything with .hbs after it, e.g. data.json.hbs or test.js.hbs
    * But this is not required yet so we have not implemented it.
    */
@@ -237,7 +243,7 @@ export class RequestHandler {
             templatePath: target,
             data: {
               requestInfo: requestHandler.requestInfo,
-              version: requestHandler.website.version
+              version: requestHandler.website.version,
             }, // Or send an empty object?
           })
           .then(() => {

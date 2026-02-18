@@ -28,6 +28,7 @@ export class RequestHandler {
   private rootPath!: string
   private projectPublicPath!: string
   private projectSourcePath!: string
+  private projectDistPath!: string // Just used for the Typescript compiler, might remove this and write to /tmp instead
   private thaliaSourcePath!: string
   private thaliaRoot!: string
 
@@ -44,6 +45,7 @@ export class RequestHandler {
 
     this.projectPublicPath = path.join(this.rootPath, 'public', this.pathname)
     this.projectSourcePath = this.projectPublicPath.replace('public', 'src')
+    this.projectDistPath = this.projectSourcePath.replace('src', 'dist')
 
     // Might need a better way to get the thalia root
     this.thaliaRoot = path.join(dirname(import.meta.url).replace('file://', ''), '..')
@@ -55,6 +57,7 @@ export class RequestHandler {
       .then(this.website.routeGuard.handleRequestChain.bind(this.website.routeGuard, this))
       .then(RequestHandler.tryController)
       .then(RequestHandler.tryScss)
+      .then(RequestHandler.tryTypescript) // Should this be above or below dist? public? docs? data? Should it change if it's in dev mode?
       .then(RequestHandler.tryHandlebars)
       .then((rh) => RequestHandler.tryStaticFile('dist', rh))
       .then((rh) => RequestHandler.tryStaticFile('public', rh))
@@ -249,6 +252,45 @@ export class RequestHandler {
           .then(() => {
             finish(`Successfully rendered handlebars template ${requestHandler.pathname}`)
           })
+      } else {
+        return next(requestHandler)
+      }
+    })
+  }
+
+  /**
+   * If we have a typescript file, we try to compile it to javascript.
+   * Sideeffect: This will create the javascript file in /dist
+   * We could create the javsacript file in /tmp instead
+   * Or we could upgrade the tryScss to also create the css file in /dist, so it matches
+   * Either way, we should aim to be consistent.
+   */
+  private static tryTypescript(requestHandler: RequestHandler): Promise<RequestHandler> {
+    return new Promise((next, finish) => {
+      if (!requestHandler.pathname.endsWith('.js')) {
+        return next(requestHandler)
+      }
+
+      const tsPath = requestHandler.projectSourcePath.replace('.js', '.ts')
+      if (fs.existsSync(tsPath)) {
+        Bun.build({
+          entrypoints: [tsPath],
+          target: 'browser',
+          outdir: requestHandler.projectDistPath // Perhaps we should write to /tmp instead
+        }).then((result) => {
+          const jsPath = result.outputs[0].path
+          return Bun.file(jsPath).text()
+        }).then((jsText) => {
+          requestHandler.res.writeHead(200, { 'Content-Type': 'text/javascript' })
+          requestHandler.res.end(jsText)
+          return finish(`Successfully compiled typescript file ${requestHandler.pathname}`)
+        }).catch((error) => {
+          // Note: We could just log this error and try next(requestHandler)
+          console.error('Error compiling typescript file:', error)
+          requestHandler.res.writeHead(500)
+          requestHandler.res.end('Internal Server Error')
+          return finish('Error compiling typescript file')
+        })
       } else {
         return next(requestHandler)
       }

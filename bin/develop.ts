@@ -11,7 +11,7 @@ import { getPort } from 'get-port-please'
 import { spinner } from '../server/util.js'
 
 // Get a port using get-port-please
-const preferredPort = 1337
+const preferredPort = process.env.PORT ? parseInt(process.env.PORT) : 1337
 const port = await getPort({ port: preferredPort })
 
 // This develop script can be run in two modes:

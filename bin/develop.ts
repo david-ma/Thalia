@@ -103,15 +103,15 @@ function startServer({
   let server: ChildProcess
 
   if (standalone) {
-    // Start Bun server with --watch (auto-restart on file changes)
-    server = spawn('bun', ['--watch', 'thalia'], {
+    // Start Bun server with --hot (soft reload on file changes; excludes node_modules)
+    server = spawn('bun', ['--hot', 'thalia'], {
       env,
       stdio: 'inherit',
       cwd: projectRoot,
     })
   } else {
-    // Start Bun server with --watch (auto-restart on file changes)
-    server = spawn('bun', ['--watch', 'server/cli.ts', `--project=${projectName}`], {
+    // Start Bun server with --hot (soft reload on file changes; excludes node_modules)
+    server = spawn('bun', ['--hot', 'server/cli.ts', `--project=${projectName}`], {
       env,
       stdio: 'inherit',
       cwd: thaliaDirectory,

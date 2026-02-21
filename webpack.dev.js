@@ -31,6 +31,9 @@ module.exports = {
       'example': path.resolve(__dirname, 'websites/example/src')
     }
   },
+  watchOptions: {
+    ignored: /node_modules/,
+  },
   module: {
     rules: [
       {

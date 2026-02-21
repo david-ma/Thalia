@@ -45,7 +45,7 @@ export class RequestHandler {
 
     this.projectPublicPath = path.join(this.rootPath, 'public', this.pathname)
     this.projectSourcePath = this.projectPublicPath.replace('public', 'src')
-    this.projectDistPath = this.projectSourcePath.replace('src', 'dist')
+    this.projectDistPath = path.join(this.rootPath, 'dist', path.dirname(this.pathname))
 
     // Might need a better way to get the thalia root
     this.thaliaRoot = path.join(dirname(import.meta.url).replace('file://', ''), '..')
@@ -56,10 +56,10 @@ export class RequestHandler {
     RequestHandler.checkPathExploit(this)
       .then(this.website.routeGuard.handleRequestChain.bind(this.website.routeGuard, this))
       .then(RequestHandler.tryController)
-      .then(RequestHandler.tryScss)
-      .then(RequestHandler.tryTypescript) // Should this be above or below dist? public? docs? data? Should it change if it's in dev mode?
-      .then(RequestHandler.tryHandlebars)
       .then((rh) => RequestHandler.tryStaticFile('dist', rh))
+      .then(RequestHandler.tryScss)
+      .then(RequestHandler.tryTypescript)
+      .then(RequestHandler.tryHandlebars)
       .then((rh) => RequestHandler.tryStaticFile('public', rh))
       .then((rh) => RequestHandler.tryStaticFile('docs', rh))
       .then((rh) => RequestHandler.tryStaticFile('data', rh))
@@ -133,6 +133,13 @@ export class RequestHandler {
     }
 
     return new Promise((next, finish) => {
+      if(process.env.NODE_ENV === 'development' && folder === 'dist') {
+        if(requestHandler.pathname.endsWith('.js') || requestHandler.pathname.endsWith('.css')) {
+          console.debug('Development mode: Skipping static file', requestHandler.pathname)
+          return next(requestHandler)
+        }
+      }
+
       const acceptedEncoding = requestHandler.req.headers['accept-encoding'] ?? ''
       const isGzipAccepted = acceptedEncoding.includes('gzip')
       const isDeflateAccepted = acceptedEncoding.includes('deflate')

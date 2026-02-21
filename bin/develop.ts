@@ -145,6 +145,9 @@ function startServer({
       notify: false,
       reloadDelay: 1000,
       files: [`${projectRoot}/**/*`, `${thaliaDirectory}/server/**/*`, `${thaliaDirectory}/src/**/*.hbs`],
+      watchOptions: {
+        ignored: '**/node_modules/**',
+      },
     })
   }, 1000)
 

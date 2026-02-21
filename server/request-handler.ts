@@ -304,6 +304,10 @@ export class RequestHandler {
     })
   }
 
+  /**
+   * This should work in the same way as tryTypescript, but for scss files.
+   * So it should save the file in the correct dist folder.
+   */
   private static tryScss(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
       if (!requestHandler.pathname.endsWith('.css')) {
@@ -322,6 +326,10 @@ export class RequestHandler {
 
       if (target) {
         const css = sass.compile(target).css.toString()
+        const cssPath = path.join(requestHandler.rootPath, 'dist', requestHandler.pathname)
+        fs.mkdirSync(path.dirname(cssPath), { recursive: true })
+        fs.writeFileSync(cssPath, css)
+        console.debug('Successfully compiled scss file', requestHandler.pathname)
         requestHandler.res.writeHead(200, { 'Content-Type': 'text/css' })
         requestHandler.res.end(css)
         return finish(`Successfully compiled scss file ${requestHandler.pathname}`)

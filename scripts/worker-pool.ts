@@ -10,7 +10,7 @@
  * concurrency, rate, and stop after repeated failures (e.g. rate limiting).
  */
 
-export type Job = () => Promise<void>;
+export type Job<T> = () => Promise<T>;
 
 export interface WorkerPoolOptions {
   /** Number of workers. */
@@ -29,9 +29,9 @@ export interface WorkerPoolOptions {
  * run() returns a Promise that resolves when all workers have finished
  * (after close and queue is drained, or after failure limits are hit).
  */
-export class WorkerPool {
-  private queue: Job[] = [];
-  private waiters: Array<(job: Job | null) => void> = [];
+export class WorkerPool<T> {
+  private queue: Job<T>[] = [];
+  private waiters: Array<(job: Job<T> | null) => void> = [];
   private closed = false;
   private activeCount = 0;
   private workerCount = 0;
@@ -52,7 +52,7 @@ export class WorkerPool {
     this.donePromise.then(callback);
   }
 
-  push(job: Job): void {
+  push(job: Job<T>): void {
     if (this.closed) return;
     if (this.waiters.length > 0) {
       const resolve = this.waiters.shift()!;
@@ -63,7 +63,7 @@ export class WorkerPool {
   }
 
   /** Queue a job to run after `ms` milliseconds. No-op if pool already closed. */
-  pushDelayed(job: Job, ms: number): void {
+  pushDelayed(job: Job<T>, ms: number): void {
     if (this.closed) return;
     setTimeout(() => this.push(job), ms);
   }
@@ -88,10 +88,10 @@ export class WorkerPool {
     return false;
   }
 
-  private getNext(): Promise<Job | null> {
+  private getNext(): Promise<Job<T> | null> {
     if (this.queue.length > 0) return Promise.resolve(this.queue.shift()!);
     if (this.closed) return Promise.resolve(null);
-    return new Promise<Job | null>((resolve) => {
+    return new Promise<Job<T>  | null>((resolve) => {
       this.waiters.push(resolve);
     });
   }
@@ -120,7 +120,10 @@ export class WorkerPool {
           .catch(() => {
             this.failureCount++;
             this.consecutiveFailures++;
-            if (this.shouldStop()) this.close();
+            if (this.shouldStop()) {
+              this.queue.length = 0;
+              this.close();
+            }
             this.activeCount--;
             if (this.queue.length === 0 && this.activeCount === 0) {
               this.closed = true;

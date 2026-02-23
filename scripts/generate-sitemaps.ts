@@ -40,12 +40,11 @@ import * as cheerio from "cheerio";
 import { WorkerPool } from "./worker-pool.js";
 
 const workerCount = 20;
-const delayMs = 10;
+const delayMs = 100;
 
 // Default target URL is localhost:1337
-const targetUrl = process.argv[2] || "localhost:1337";
-const baseUrl = "http://localhost:1337";
-const domains = ["universalbearings.com.au", "www.universalbearings.com.au", "universalbearings.david-ma.net"];
+const domain = process.argv[2] || "localhost:1337";
+const baseUrl = domain === "localhost:1337" ? "http://localhost:1337" : `https://${domain}`;
 
 /** Normalised URL key (origin + pathname) -> SitemapUrl. Used to dedupe and avoid re-crawling. */
 const crawledUrls: Record<string, SitemapUrl> = {};
@@ -74,13 +73,13 @@ class SitemapUrl {
 
     const seg = this.url.pathname.split("/")[1];
     this.category = seg ? seg.charAt(0).toUpperCase() + seg.slice(1) : "Home";
-    this.priority = 1.0;
+    // this.priority = 1.0;
   }
 
   isSameDomain(): boolean {
     // If we're on localhost, we're on the same domain
     if (this.url.hostname === "localhost") return true;
-    return domains.includes(this.url.hostname);
+    return this.url.hostname === domain;
   }
 
   crawl(): Promise<SitemapUrl> {
@@ -110,6 +109,7 @@ function makeCrawlJob(entry: SitemapUrl): () => Promise<void> {
       .crawl()
       .then(() => {
         console.log(entry.loc, entry.statusCode);
+        console.log("Links:", entry.links.length);
         for (const link of entry.links) {
           if (!link.isSameDomain()) continue;
           const k = normaliseKey(link.loc);
@@ -131,7 +131,7 @@ function main(): void {
     writeErrorReport(Object.values(crawledUrls));
   });
 
-  const entry = new SitemapUrl(targetUrl);
+  const entry = new SitemapUrl(baseUrl);
   const key = normaliseKey(entry.loc);
   crawledUrls[key] = entry;
 
@@ -161,8 +161,20 @@ function main(): void {
 main();
 
 import fs from "fs";
+
+function SitemapUrlToXmlMapping(url: SitemapUrl) {
+  const loc = `<loc>${url.loc}</loc>`
+  const lastmod = url.lastmod ? `<lastmod>${url.lastmod}</lastmod>` : ""
+  const changefreq = url.changefreq ? `<changefreq>${url.changefreq}</changefreq>` : ""
+  const priority = url.priority ? `<priority>${url.priority}</priority>` : ""
+  return `  <url>\n    ${[loc, lastmod, changefreq, priority].filter(Boolean).join("\n  ")}\n  </url>`
+}
+
+// Future:
+// Add images, using xmlns:image="http://www.google.com/schemas/sitemap-image/1.1
 function writeSitemapXml(urls: SitemapUrl[]) {
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((url) => `  <url>\n    <loc>${url.loc}</loc>\n    <lastmod>${url.lastmod}</lastmod>\n    <changefreq>${url.changefreq}</changefreq>\n    <priority>${url.priority}</priority>\n  </url>`).join("\n")}\n</urlset>`;
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap.0.9">\n${urls.filter((url) => url.statusCode === 200).map((url) => SitemapUrlToXmlMapping(url)).join("\n")}\n</urlset>`;
+
   fs.writeFileSync("sitemap.xml", xml);
 }
 

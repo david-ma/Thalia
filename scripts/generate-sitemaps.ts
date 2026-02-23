@@ -25,28 +25,35 @@
  * Sitemaps generated using handlebars templates? Based on the sitemap config? So we can get blog info?
  * 
  * 
- * Given 
+ * We should also record the status code for each URL. Try to spot errors, and make a report for the user.
+ * Perhaps another output should be "list of broken pages".
+ * Note that status code might not be enough to determine if a page is broken, so in future we should also check the content of the page.
+ * Let's output this to /tmp/sitemaps/broken-pages.txt for now.
  * 
- * 
- * 
- * 
+ * I want to set up a system of workers, to do the crawling. And allow a delay between requests, so we don't hit rate limits or overload a server that we're crawling.
  * 
  */
 
 
 import path from "path";
 import * as cheerio from "cheerio";
+import { WorkerPool } from "./worker-pool.js";
 
-const workers = 10;
-const delayMs = 100;
+const workerCount = 10;
+const delayMs = 50;
 
 // Default target URL is localhost:1337
 const targetUrl = process.argv[2] || "localhost:1337";
 const baseUrl = "http://localhost:1337";
 const domains = ["universalbearings.com.au", "www.universalbearings.com.au", "universalbearings.david-ma.net"];
 
-const crawledUrls : Record<string, SitemapUrl> = {}; // URL -> SitemapUrl
-const newUrls: string[] = [targetUrl];
+/** Normalised URL key (origin + pathname) -> SitemapUrl. Used to dedupe and avoid re-crawling. */
+const crawledUrls: Record<string, SitemapUrl> = {};
+
+function normaliseKey(loc: string): string {
+  const u = new URL(loc, baseUrl);
+  return u.origin + u.pathname;
+}
 
 class SitemapUrl {
   loc: string;
@@ -61,74 +68,90 @@ class SitemapUrl {
   links: SitemapUrl[];
 
   constructor(loc: string) {
-    this.loc = loc;
+    this.loc = new URL(loc, baseUrl).href;
     this.links = [];
-
     this.url = new URL(this.loc, baseUrl);
 
-    // Category?
-    // Get the first part of the path as the category
-    this.category = this.url.pathname.split("/")[1];
-    if (this.category) {
-      this.category = this.category.charAt(0).toUpperCase() + this.category.slice(1);
-    } else {
-      this.category = "Home";
-    }
+    const seg = this.url.pathname.split("/")[1];
+    this.category = seg ? seg.charAt(0).toUpperCase() + seg.slice(1) : "Home";
     this.priority = 1.0;
   }
 
   isSameDomain(): boolean {
-    const url = new URL(this.loc, baseUrl);
-    return domains.includes(url.hostname);
+    return domains.includes(this.url.hostname);
   }
 
-  isCrawled(): boolean {
-    return crawledUrls[this.loc] !== undefined;
-  }
-
-  crawl() {
+  crawl(): Promise<SitemapUrl> {
     const startTime = Date.now();
-    return fetch(this.loc, { redirect: "follow" }).then((response) => {
-      this.statusCode = response.status;
-      this.timeMs = Date.now() - startTime;
-      return response.text();
-    }).then((html) => {
-      const $ = cheerio.load(html);
-      const hrefs = $("a").map((i, el) => $(el).attr("href")).get();
-      this.links = hrefs.map((href) => new SitemapUrl(href));
-      this.images = $("img").map((i, el) => $(el).attr("src")).get();
-      this.timeMs = Date.now() - startTime;
-      return this
-    });
+    return fetch(this.loc, { redirect: "follow" })
+      .then((response) => {
+        this.statusCode = response.status;
+        this.timeMs = Date.now() - startTime;
+        return response.text();
+      })
+      .then((html) => {
+        const $ = cheerio.load(html);
+        const hrefs = $("a").map((i, el) => $(el).attr("href")).get().filter(Boolean) as string[];
+        this.links = hrefs.map((href) => new SitemapUrl(href));
+        this.images = $("img").map((i, el) => $(el).attr("src")).get().filter(Boolean) as string[];
+        this.timeMs = Date.now() - startTime;
+        return this;
+      });
   }
 }
 
-function popUrlAndCrawl() {
-  const url = newUrls.shift();
-  if (!url) {
-    return;
-  }
-  new SitemapUrl(url).crawl().then((sitemapUrl) => {
-    console.log(sitemapUrl);
+let pool: WorkerPool;
 
-    for (const link of sitemapUrl.links) {
-      if (link.isSameDomain() && !link.isCrawled()) {
-        newUrls.push(link.loc);
-      }
-    }
+function makeCrawlJob(entry: SitemapUrl): () => Promise<void> {
+  return () =>
+    entry
+      .crawl()
+      .then(() => {
+        console.log(entry.loc, entry.statusCode);
+        for (const link of entry.links) {
+          if (!link.isSameDomain()) continue;
+          const k = normaliseKey(link.loc);
+          if (crawledUrls[k]) continue;
+          crawledUrls[k] = link;
+          pool.push(makeCrawlJob(link));
+        }
+      })
+      .catch((e: Error) => {
+        console.warn(entry.loc, e.message);
+      });
+}
+
+function main(): void {
+  pool = new WorkerPool({ workers: workerCount, delayMs });
+
+  const entry = new SitemapUrl(targetUrl);
+  const key = normaliseKey(entry.loc);
+  crawledUrls[key] = entry;
+
+  pool.push(() =>
+    entry
+      .crawl()
+      .then(() => {
+        console.log(entry.loc, entry.statusCode);
+        for (const link of entry.links) {
+          if (!link.isSameDomain()) continue;
+          const k = normaliseKey(link.loc);
+          if (crawledUrls[k]) continue;
+          crawledUrls[k] = link;
+          pool.push(makeCrawlJob(link));
+        }
+      })
+      .catch((e: Error) => {
+        console.warn(entry.loc, e.message);
+      })
+  );
+
+  pool.run().then(() => {
+    console.log("Crawled", Object.keys(crawledUrls).length, "URLs");
   });
 }
 
-
-popUrlAndCrawl()
-
-// Timeout
-setTimeout(() => {
-while (newUrls.length > 0) {
-    popUrlAndCrawl();
-  }
-}, 1000);
-
+main();
 
 
 

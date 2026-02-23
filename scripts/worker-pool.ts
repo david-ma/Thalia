@@ -38,6 +38,10 @@ export class WorkerPool {
     });
   }
 
+  on(event: "finished", callback: () => void): void {
+    this.donePromise.then(callback);
+  }
+
   push(job: Job): void {
     if (this.closed) return;
     if (this.waiters.length > 0) {

@@ -33,9 +33,8 @@
  * I want to set up a system of workers, to do the crawling. And allow a delay between requests, so we don't hit rate limits or overload a server that we're crawling.
  *
  * Rate limiting (e.g. LiteSpeed 403 / 5‑min block):
- * - Worker pool stops after maxConsecutiveFailures or maxFailures. Failed URLs are appended to error-report.txt.
- * - On success, each URL is appended to crawled-urls.txt so we can resume.
- * - Restart after the block window (e.g. 5 min): run the same command again. The script loads crawled-urls.txt (skips those) and error-report.txt (retries those URLs). No need to clear files; re-runs continue from where you left off.
+ * - State is stored in sitemap-halt.csv: columns "url", "status" (200, 403, or null if discovered but not visited).
+ * - On halt/finish we write the full state so the next run can resume without re-discovering: load CSV, skip status 200, queue status null and failures for visit.
  */
 
 
@@ -57,10 +56,12 @@ const outDir = process.env.SITEMAP_OUT || "/tmp/sitemaps";
 const domain = process.argv[2] || "localhost:1337";
 const baseUrl = domain === "localhost:1337" ? "http://localhost:1337" : `https://${domain}`;
 
-/** Normalised URL key (origin + pathname) -> SitemapUrl. Full data for URLs crawled this run. */
+/** Normalised key -> full URL (for CSV output). */
+const urlByKey: Record<string, string> = {};
+/** Normalised key -> status (200, 403, or null if not visited yet). */
+const urlStatus: Record<string, number | null> = {};
+/** Normalised key -> SitemapUrl. Full data for sitemap; stubs for loaded 200s. */
 const crawledUrls: Record<string, SitemapUrl> = {};
-/** URLs we already have (from crawled-urls.txt or crawled this run). Skip re-crawl. */
-const seenKeys = new Set<string>();
 
 function normaliseKey(loc: string): string {
   const u = new URL(loc, baseUrl);
@@ -68,45 +69,66 @@ function normaliseKey(loc: string): string {
 }
 
 function isSeen(key: string): boolean {
-  return seenKeys.has(key) || crawledUrls[key] !== undefined;
+  return crawledUrls[key] !== undefined;
 }
 
-function loadCrawledUrls(): void {
-  const file = path.join(outDir, "crawled-urls.txt");
-  if (!fs.existsSync(file)) return;
-  const lines = fs.readFileSync(file, "utf8").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  for (const line of lines) {
-    const key = normaliseKey(line);
-    seenKeys.add(key);
-    if (!crawledUrls[key]) {
-      const stub = new SitemapUrl(line);
+const HALT_CSV = "sitemap-halt.csv";
+
+function parseCsvRow(line: string): { url: string; status: number | null } | null {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith('"')) {
+    const end = trimmed.indexOf('",');
+    if (end === -1) return null;
+    const url = trimmed.slice(1, end).replace(/""/g, '"');
+    const statusStr = trimmed.slice(end + 2).trim();
+    const status = statusStr === "null" || statusStr === "" ? null : parseInt(statusStr, 10);
+    return { url, status: Number.isNaN(status) ? null : status };
+  }
+  const comma = trimmed.indexOf(",");
+  if (comma === -1) return null;
+  const url = trimmed.slice(0, comma).trim();
+  const statusStr = trimmed.slice(comma + 1).trim();
+  const status = statusStr === "null" || statusStr === "" ? null : parseInt(statusStr, 10);
+  return { url, status: Number.isNaN(status) ? null : status };
+}
+
+/** Load sitemap-halt.csv. Populate urlByKey, urlStatus, crawledUrls (stubs for 200). Return keys to queue (status !== 200). */
+function loadSitemapHalt(): string[] {
+  const file = path.join(outDir, HALT_CSV);
+  if (!fs.existsSync(file)) return [];
+  const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
+  const toQueue: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (i === 0 && lines[i].toLowerCase().startsWith("url")) continue;
+    const row = parseCsvRow(lines[i]);
+    if (!row || !row.url) continue;
+    const key = normaliseKey(row.url);
+    urlByKey[key] = row.url;
+    urlStatus[key] = row.status;
+    if (row.status === 200) {
+      const stub = new SitemapUrl(row.url);
       stub.statusCode = 200;
       crawledUrls[key] = stub;
+    } else {
+      toQueue.push(key);
     }
   }
+  return toQueue;
 }
 
-/** Returns list of URLs to retry (from error-report.txt). */
-function loadErrorReport(): string[] {
-  const file = path.join(outDir, "error-report.txt");
-  if (!fs.existsSync(file)) return [];
-  const lines = fs.readFileSync(file, "utf8").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const urls: string[] = [];
-  for (const line of lines) {
-    const first = line.split(/\s+/)[0];
-    if (first && first.startsWith("http")) urls.push(first);
+/** Write full state to sitemap-halt.csv so next run can resume without re-discovery. */
+function writeSitemapHalt(): void {
+  fs.mkdirSync(outDir, { recursive: true });
+  const out = path.join(outDir, HALT_CSV);
+  const rows: string[] = ['url,status'];
+  for (const key of Object.keys(urlByKey)) {
+    const url = urlByKey[key];
+    const status = urlStatus[key];
+    const safe = url.replace(/"/g, '""');
+    rows.push(`"${safe}",${status ?? "null"}`);
   }
-  return urls;
-}
-
-function appendCrawledUrl(url: string): void {
-  fs.mkdirSync(outDir, { recursive: true });
-  fs.appendFileSync(path.join(outDir, "crawled-urls.txt"), url + "\n");
-}
-
-function appendErrorReport(url: string, statusCode: number): void {
-  fs.mkdirSync(outDir, { recursive: true });
-  fs.appendFileSync(path.join(outDir, "error-report.txt"), `${url} ${statusCode}\n`);
+  fs.writeFileSync(out, rows.join("\n") + "\n");
 }
 
 class SitemapUrl {
@@ -165,30 +187,34 @@ function makeCrawlJob(entry: SitemapUrl): () => Promise<void> {
       .crawl()
       .then(() => {
         const key = normaliseKey(entry.loc);
-        seenKeys.add(key);
+        urlByKey[key] = entry.loc;
+        urlStatus[key] = entry.statusCode ?? 200;
         crawledUrls[key] = entry;
-        appendCrawledUrl(entry.loc);
         console.log(entry.loc, entry.statusCode, "Links:", entry.links.length);
         for (const link of entry.links) {
           if (!link.isSameDomain()) continue;
           const k = normaliseKey(link.loc);
+          if (urlByKey[k] === undefined) {
+            urlByKey[k] = link.loc;
+            urlStatus[k] = null;
+          }
           if (isSeen(k)) continue;
           crawledUrls[k] = link;
           pool.push(makeCrawlJob(link));
         }
       })
       .catch((e: Error) => {
-        const code = entry.statusCode ?? e.message;
-        appendErrorReport(entry.loc, Number(code) || 0);
-        console.warn(entry.loc, code);
+        const key = normaliseKey(entry.loc);
+        urlByKey[key] = entry.loc;
+        urlStatus[key] = entry.statusCode ?? null;
+        console.warn(entry.loc, entry.statusCode ?? e.message);
         return Promise.reject(e);
       });
 }
 
 function main(): void {
   fs.mkdirSync(outDir, { recursive: true });
-  loadCrawledUrls();
-  const retryUrls = loadErrorReport();
+  const toQueue = loadSitemapHalt();
 
   pool = new WorkerPool({
     workers: workerCount,
@@ -199,35 +225,41 @@ function main(): void {
 
   pool.on("finished", () => {
     writeSitemapXml(Object.values(crawledUrls));
-    console.log("Stopped. Crawled", Object.keys(crawledUrls).length, "URLs this run. Seen (incl. previous runs):", seenKeys.size);
+    writeSitemapHalt();
+    console.log("Stopped. Known URLs:", Object.keys(urlByKey).length, "| 200s:", Object.values(urlStatus).filter((s) => s === 200).length);
   });
 
   let pushed = 0;
-  const entry = new SitemapUrl(baseUrl);
-  const key = normaliseKey(entry.loc);
-  if (!isSeen(key)) {
+  const homeKey = normaliseKey(baseUrl);
+  if (urlByKey[homeKey] === undefined) {
+    urlByKey[homeKey] = baseUrl;
+    urlStatus[homeKey] = null;
+  }
+  if (urlStatus[homeKey] !== 200) {
+    const entry = new SitemapUrl(baseUrl);
+    crawledUrls[homeKey] = entry;
+    pool.push(makeCrawlJob(entry));
+    pushed++;
+  }
+
+  for (const key of toQueue) {
+    if (isSeen(key)) continue;
+    const url = urlByKey[key];
+    if (!url) continue;
+    const entry = new SitemapUrl(url);
     crawledUrls[key] = entry;
     pool.push(makeCrawlJob(entry));
     pushed++;
   }
 
-  for (const url of retryUrls) {
-    const k = normaliseKey(url);
-    if (isSeen(k)) continue;
-    const retryEntry = new SitemapUrl(url);
-    crawledUrls[k] = retryEntry;
-    pool.push(makeCrawlJob(retryEntry));
-    pushed++;
-  }
-
   if (pushed === 0) {
     pool.close();
-    console.log("Nothing to crawl (all URLs already in crawled-urls.txt).");
+    console.log("Nothing to crawl (all URLs in sitemap-halt.csv already have status 200 or were skipped).");
   }
 
   pool.run().then(() => {
-    console.log("Done. Crawled", Object.keys(crawledUrls).length, "URLs.");
-    console.log("Sitemaps are at:", path.join(outDir, "sitemap.xml"));
+    console.log("Done. Known URLs:", Object.keys(urlByKey).length);
+    console.log("Output:", path.join(outDir, "sitemap.xml"), path.join(outDir, HALT_CSV));
   });
 }
 

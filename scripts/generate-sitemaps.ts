@@ -35,12 +35,11 @@
  */
 
 
-import path from "path";
 import * as cheerio from "cheerio";
 import { WorkerPool } from "./worker-pool.js";
 
 const workerCount = 20;
-const delayMs = 100;
+const delayMs = 200;
 
 // Default target URL is localhost:1337
 const domain = process.argv[2] || "localhost:1337";

@@ -33,12 +33,15 @@ export class WorkerPool<T> {
   private queue: Job<T>[] = [];
   private waiters: Array<(job: Job<T> | null) => void> = [];
   private closed = false;
+  private halted = false;
   private activeCount = 0;
   private workerCount = 0;
   private failureCount = 0;
   private consecutiveFailures = 0;
   private doneResolve: (() => void) | null = null;
   private readonly donePromise: Promise<void>;
+  private finishedCallback: (() => void) | null = null;
+  private haltedCallback: (() => void) | null = null;
 
   constructor(private readonly options: WorkerPoolOptions) {
     const { workers } = options;
@@ -46,10 +49,18 @@ export class WorkerPool<T> {
     this.donePromise = new Promise((resolve) => {
       this.doneResolve = resolve;
     });
+    this.donePromise.then(() => this.dispatchDone());
   }
 
-  on(event: "finished", callback: () => void): void {
-    this.donePromise.then(callback);
+  /** When pool finishes: if it halted (failure limits) and on("halted") was set, that runs; else if on("finished") was set, that runs. */
+  on(event: "finished" | "halted", callback: () => void): void {
+    if (event === "halted") this.haltedCallback = callback;
+    else this.finishedCallback = callback;
+  }
+
+  private dispatchDone(): void {
+    if (this.halted && this.haltedCallback) this.haltedCallback();
+    else if (this.finishedCallback) this.finishedCallback();
   }
 
   push(job: Job<T>): void {
@@ -121,6 +132,7 @@ export class WorkerPool<T> {
             this.failureCount++;
             this.consecutiveFailures++;
             if (this.shouldStop()) {
+              this.halted = true;
               this.queue.length = 0;
               this.close();
             }

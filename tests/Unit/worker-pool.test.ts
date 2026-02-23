@@ -43,6 +43,56 @@ describe("WorkerPool", () => {
     });
   });
 
+  test('on("halted") runs when pool stops due to failure limits; on("finished") does not', () => {
+    let finished = false;
+    let halted = false;
+    const pool = new WorkerPool({
+      workers: 1,
+      delayMs: 0,
+      maxConsecutiveFailures: 1,
+    });
+    pool.on("finished", () => {
+      finished = true;
+    });
+    pool.on("halted", () => {
+      halted = true;
+    });
+    pool.push(() => Promise.reject(new Error("fail")));
+    return pool.run().then(() => {
+      expect(halted).toBe(true);
+      expect(finished).toBe(false);
+    });
+  });
+
+  test('when halted and on("halted") not provided, on("finished") runs', () => {
+    let finished = false;
+    const pool = new WorkerPool({
+      workers: 1,
+      delayMs: 0,
+      maxConsecutiveFailures: 1,
+    });
+    pool.on("finished", () => {
+      finished = true;
+    });
+    pool.push(() => Promise.reject(new Error("fail")));
+    return pool.run().then(() => {
+      expect(finished).toBe(true);
+    });
+  });
+
+  test('when done normally, on("halted") does not run', () => {
+    let halted = false;
+    const pool = new WorkerPool({ workers: 1, delayMs: 0 });
+    pool.on("halted", () => {
+      halted = true;
+    });
+    pool.push(() => Promise.resolve());
+    pool.close();
+    return pool.run().then(() => {
+      expect(halted).toBe(false);
+    });
+  });
+
   test("stops after maxConsecutiveFailures", () => {
     const ran: number[] = [];
     const pool = new WorkerPool({

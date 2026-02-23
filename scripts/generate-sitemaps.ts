@@ -179,7 +179,7 @@ class SitemapUrl {
   }
 }
 
-let pool: WorkerPool;
+let pool: WorkerPool<void>;
 
 function makeCrawlJob(entry: SitemapUrl): () => Promise<void> {
   return () =>
@@ -223,10 +223,18 @@ function main(): void {
     maxFailures,
   });
 
-  pool.on("finished", () => {
+  function persistState(): void {
     writeSitemapXml(Object.values(crawledUrls));
     writeSitemapHalt();
-    console.log("Stopped. Known URLs:", Object.keys(urlByKey).length, "| 200s:", Object.values(urlStatus).filter((s) => s === 200).length);
+    const known = Object.keys(urlByKey).length;
+    const ok = Object.values(urlStatus).filter((s) => s === 200).length;
+    console.log("Known URLs:", known, "| 200s:", ok, "| Output:", path.join(outDir, "sitemap.xml"), path.join(outDir, HALT_CSV));
+  }
+
+  pool.on("finished", persistState);
+  pool.on("halted", () => {
+    persistState();
+    console.warn("Halted (rate limit?). Re-run in a few minutes to resume.");
   });
 
   let pushed = 0;
@@ -258,8 +266,7 @@ function main(): void {
   }
 
   pool.run().then(() => {
-    console.log("Done. Known URLs:", Object.keys(urlByKey).length);
-    console.log("Output:", path.join(outDir, "sitemap.xml"), path.join(outDir, HALT_CSV));
+    console.log("Done.");
   });
 }
 

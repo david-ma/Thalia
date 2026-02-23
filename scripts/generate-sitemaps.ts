@@ -31,26 +31,82 @@
  * Let's output this to /tmp/sitemaps/broken-pages.txt for now.
  * 
  * I want to set up a system of workers, to do the crawling. And allow a delay between requests, so we don't hit rate limits or overload a server that we're crawling.
- * 
+ *
+ * Rate limiting (e.g. LiteSpeed 403 / 5‑min block):
+ * - Worker pool stops after maxConsecutiveFailures or maxFailures. Failed URLs are appended to error-report.txt.
+ * - On success, each URL is appended to crawled-urls.txt so we can resume.
+ * - Restart after the block window (e.g. 5 min): run the same command again. The script loads crawled-urls.txt (skips those) and error-report.txt (retries those URLs). No need to clear files; re-runs continue from where you left off.
  */
 
 
+import fs from "fs";
+import path from "path";
 import * as cheerio from "cheerio";
 import { WorkerPool } from "./worker-pool.js";
 
 const workerCount = 20;
 const delayMs = 200;
+/** Stop after this many consecutive failures (e.g. 403). Then wait ~5 min and re-run the script. */
+const maxConsecutiveFailures = 5;
+/** Optional: stop after this many total failures across all workers. */
+const maxFailures = 20;
+
+const outDir = process.env.SITEMAP_OUT || "/tmp/sitemaps";
 
 // Default target URL is localhost:1337
 const domain = process.argv[2] || "localhost:1337";
 const baseUrl = domain === "localhost:1337" ? "http://localhost:1337" : `https://${domain}`;
 
-/** Normalised URL key (origin + pathname) -> SitemapUrl. Used to dedupe and avoid re-crawling. */
+/** Normalised URL key (origin + pathname) -> SitemapUrl. Full data for URLs crawled this run. */
 const crawledUrls: Record<string, SitemapUrl> = {};
+/** URLs we already have (from crawled-urls.txt or crawled this run). Skip re-crawl. */
+const seenKeys = new Set<string>();
 
 function normaliseKey(loc: string): string {
   const u = new URL(loc, baseUrl);
   return u.origin + u.pathname;
+}
+
+function isSeen(key: string): boolean {
+  return seenKeys.has(key) || crawledUrls[key] !== undefined;
+}
+
+function loadCrawledUrls(): void {
+  const file = path.join(outDir, "crawled-urls.txt");
+  if (!fs.existsSync(file)) return;
+  const lines = fs.readFileSync(file, "utf8").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  for (const line of lines) {
+    const key = normaliseKey(line);
+    seenKeys.add(key);
+    if (!crawledUrls[key]) {
+      const stub = new SitemapUrl(line);
+      stub.statusCode = 200;
+      crawledUrls[key] = stub;
+    }
+  }
+}
+
+/** Returns list of URLs to retry (from error-report.txt). */
+function loadErrorReport(): string[] {
+  const file = path.join(outDir, "error-report.txt");
+  if (!fs.existsSync(file)) return [];
+  const lines = fs.readFileSync(file, "utf8").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const urls: string[] = [];
+  for (const line of lines) {
+    const first = line.split(/\s+/)[0];
+    if (first && first.startsWith("http")) urls.push(first);
+  }
+  return urls;
+}
+
+function appendCrawledUrl(url: string): void {
+  fs.mkdirSync(outDir, { recursive: true });
+  fs.appendFileSync(path.join(outDir, "crawled-urls.txt"), url + "\n");
+}
+
+function appendErrorReport(url: string, statusCode: number): void {
+  fs.mkdirSync(outDir, { recursive: true });
+  fs.appendFileSync(path.join(outDir, "error-report.txt"), `${url} ${statusCode}\n`);
 }
 
 class SitemapUrl {
@@ -87,6 +143,7 @@ class SitemapUrl {
       .then((response) => {
         this.statusCode = response.status;
         this.timeMs = Date.now() - startTime;
+        if (!response.ok) return Promise.reject(new Error(String(response.status)));
         return response.text();
       })
       .then((html) => {
@@ -107,77 +164,84 @@ function makeCrawlJob(entry: SitemapUrl): () => Promise<void> {
     entry
       .crawl()
       .then(() => {
-        console.log(entry.loc, entry.statusCode);
-        console.log("Links:", entry.links.length);
+        const key = normaliseKey(entry.loc);
+        seenKeys.add(key);
+        crawledUrls[key] = entry;
+        appendCrawledUrl(entry.loc);
+        console.log(entry.loc, entry.statusCode, "Links:", entry.links.length);
         for (const link of entry.links) {
           if (!link.isSameDomain()) continue;
           const k = normaliseKey(link.loc);
-          if (crawledUrls[k]) continue;
+          if (isSeen(k)) continue;
           crawledUrls[k] = link;
           pool.push(makeCrawlJob(link));
         }
       })
       .catch((e: Error) => {
-        console.warn(entry.loc, e.message);
+        const code = entry.statusCode ?? e.message;
+        appendErrorReport(entry.loc, Number(code) || 0);
+        console.warn(entry.loc, code);
+        return Promise.reject(e);
       });
 }
 
 function main(): void {
-  pool = new WorkerPool({ workers: workerCount, delayMs });
+  fs.mkdirSync(outDir, { recursive: true });
+  loadCrawledUrls();
+  const retryUrls = loadErrorReport();
+
+  pool = new WorkerPool({
+    workers: workerCount,
+    delayMs,
+    maxConsecutiveFailures,
+    maxFailures,
+  });
 
   pool.on("finished", () => {
     writeSitemapXml(Object.values(crawledUrls));
-    writeErrorReport(Object.values(crawledUrls));
+    console.log("Stopped. Crawled", Object.keys(crawledUrls).length, "URLs this run. Seen (incl. previous runs):", seenKeys.size);
   });
 
+  let pushed = 0;
   const entry = new SitemapUrl(baseUrl);
   const key = normaliseKey(entry.loc);
-  crawledUrls[key] = entry;
+  if (!isSeen(key)) {
+    crawledUrls[key] = entry;
+    pool.push(makeCrawlJob(entry));
+    pushed++;
+  }
 
-  pool.push(() =>
-    entry
-      .crawl()
-      .then(() => {
-        console.log(entry.loc, entry.statusCode);
-        for (const link of entry.links) {
-          if (!link.isSameDomain()) continue;
-          const k = normaliseKey(link.loc);
-          if (crawledUrls[k]) continue;
-          crawledUrls[k] = link;
-          pool.push(makeCrawlJob(link));
-        }
-      })
-      .catch((e: Error) => {
-        console.warn(entry.loc, e.message);
-      })
-  );
+  for (const url of retryUrls) {
+    const k = normaliseKey(url);
+    if (isSeen(k)) continue;
+    const retryEntry = new SitemapUrl(url);
+    crawledUrls[k] = retryEntry;
+    pool.push(makeCrawlJob(retryEntry));
+    pushed++;
+  }
+
+  if (pushed === 0) {
+    pool.close();
+    console.log("Nothing to crawl (all URLs already in crawled-urls.txt).");
+  }
 
   pool.run().then(() => {
-    console.log("Crawled", Object.keys(crawledUrls).length, "URLs");
+    console.log("Done. Crawled", Object.keys(crawledUrls).length, "URLs.");
+    console.log("Sitemaps are at:", path.join(outDir, "sitemap.xml"));
   });
 }
 
 main();
 
-import fs from "fs";
-
 function SitemapUrlToXmlMapping(url: SitemapUrl) {
-  const loc = `<loc>${url.loc}</loc>`
-  const lastmod = url.lastmod ? `<lastmod>${url.lastmod}</lastmod>` : ""
-  const changefreq = url.changefreq ? `<changefreq>${url.changefreq}</changefreq>` : ""
-  const priority = url.priority ? `<priority>${url.priority}</priority>` : ""
-  return `  <url>\n    ${[loc, lastmod, changefreq, priority].filter(Boolean).join("\n  ")}\n  </url>`
+  const loc = `<loc>${url.loc}</loc>`;
+  const lastmod = url.lastmod ? `<lastmod>${url.lastmod}</lastmod>` : "";
+  const changefreq = url.changefreq ? `<changefreq>${url.changefreq}</changefreq>` : "";
+  const priority = url.priority ? `<priority>${url.priority}</priority>` : "";
+  return `  <url>\n    ${[loc, lastmod, changefreq, priority].filter(Boolean).join("\n  ")}\n  </url>`;
 }
 
-// Future:
-// Add images, using xmlns:image="http://www.google.com/schemas/sitemap-image/1.1
 function writeSitemapXml(urls: SitemapUrl[]) {
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap.0.9">\n${urls.filter((url) => url.statusCode === 200).map((url) => SitemapUrlToXmlMapping(url)).join("\n")}\n</urlset>`;
-
-  fs.writeFileSync("sitemap.xml", xml);
-}
-
-function writeErrorReport(urls: SitemapUrl[]) {
-  const report = urls.filter((url) => url.statusCode !== 200).map((url) => `${url.loc} ${url.statusCode}`).join("\n");
-  fs.writeFileSync("error-report.txt", report);
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.filter((u) => u.statusCode === 200).map((u) => SitemapUrlToXmlMapping(u)).join("\n")}\n</urlset>`;
+  fs.writeFileSync(path.join(outDir, "sitemap.xml"), xml);
 }

@@ -3,8 +3,11 @@
  * wait a configurable delay, then take the next job. No job runs until the delay
  * after the previous one (per worker).
  *
+ * Jobs that reject are counted as failures. After maxConsecutiveFailures or
+ * maxFailures, the pool closes so workers drain and run() resolves.
+ *
  * Use when you have async work that can be parallelised and you want to limit
- * concurrency and/or rate (e.g. crawling with a delay between requests).
+ * concurrency, rate, and stop after repeated failures (e.g. rate limiting).
  */
 
 export type Job = () => Promise<void>;
@@ -14,12 +17,17 @@ export interface WorkerPoolOptions {
   workers: number;
   /** Delay in ms after each job completes, before the worker takes the next. */
   delayMs: number;
+  /** Stop after this many consecutive job failures (rejections). Omit = no limit. */
+  maxConsecutiveFailures?: number;
+  /** Stop after this many total job failures. Omit = no limit. */
+  maxFailures?: number;
 }
 
 /**
- * Worker pool. Push jobs with push(); call close() when no more jobs will be
- * added so workers can exit. run() returns a Promise that resolves when all
- * workers have finished (after close and queue is drained).
+ * Worker pool. Push jobs with push(); use pushDelayed() to queue a job after a delay.
+ * Call close() when no more jobs will be added so workers can exit.
+ * run() returns a Promise that resolves when all workers have finished
+ * (after close and queue is drained, or after failure limits are hit).
  */
 export class WorkerPool {
   private queue: Job[] = [];
@@ -27,6 +35,8 @@ export class WorkerPool {
   private closed = false;
   private activeCount = 0;
   private workerCount = 0;
+  private failureCount = 0;
+  private consecutiveFailures = 0;
   private doneResolve: (() => void) | null = null;
   private readonly donePromise: Promise<void>;
 
@@ -52,6 +62,12 @@ export class WorkerPool {
     }
   }
 
+  /** Queue a job to run after `ms` milliseconds. No-op if pool already closed. */
+  pushDelayed(job: Job, ms: number): void {
+    if (this.closed) return;
+    setTimeout(() => this.push(job), ms);
+  }
+
   close(): void {
     this.closed = true;
     this.maybeWakeWaiters();
@@ -63,6 +79,13 @@ export class WorkerPool {
     while (this.waiters.length > 0) {
       this.waiters.shift()!(null);
     }
+  }
+
+  private shouldStop(): boolean {
+    const { maxConsecutiveFailures, maxFailures } = this.options;
+    if (maxConsecutiveFailures !== undefined && this.consecutiveFailures >= maxConsecutiveFailures) return true;
+    if (maxFailures !== undefined && this.failureCount >= maxFailures) return true;
+    return false;
   }
 
   private getNext(): Promise<Job | null> {
@@ -87,6 +110,7 @@ export class WorkerPool {
         this.activeCount++;
         job()
           .then(() => {
+            this.consecutiveFailures = 0;
             this.activeCount--;
             if (this.queue.length === 0 && this.activeCount === 0) {
               this.closed = true;
@@ -94,6 +118,9 @@ export class WorkerPool {
             }
           })
           .catch(() => {
+            this.failureCount++;
+            this.consecutiveFailures++;
+            if (this.shouldStop()) this.close();
             this.activeCount--;
             if (this.queue.length === 0 && this.activeCount === 0) {
               this.closed = true;

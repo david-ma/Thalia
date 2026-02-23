@@ -43,7 +43,7 @@ import path from "path";
 import * as cheerio from "cheerio";
 import { WorkerPool } from "./worker-pool.js";
 
-const workerCount = 20;
+const workerCount = 10;
 const delayMs = 200;
 /** Stop after this many consecutive failures (e.g. 403). Then wait ~5 min and re-run the script. */
 const maxConsecutiveFailures = 5;

@@ -55,7 +55,11 @@ if (!fs.existsSync(path.join(rootPath, 'websites'))) {
       standalone: false,
     })
   } else {
-    // No project name provided? Ask for it
+    // No project name provided? Ask for it (only works with a TTY)
+    if (!process.stdin.isTTY) {
+      console.error('Project name required when not a TTY. Usage: bun dev <project_name>')
+      process.exit(1)
+    }
     console.log('Available projects:')
     console.log(listOfProjects.map((project, index) => `${index + 1}. ${project}`).join('\n'))
 
@@ -125,6 +129,8 @@ function startServer({
   // Use the flag 'a' if we want to append to the file, 'w' if we want to overwrite it.
   const logStream = fs.createWriteStream(logPath, { flags: 'w' })
   const errStream = fs.createWriteStream(errPath, { flags: 'w' })
+  logStream.on('error', (err) => console.error('Log file error:', err))
+  errStream.on('error', (err) => console.error('Log file error:', err))
   console.log(`Logs: ${logPath} (stdout), ${errPath} (stderr)`)
 
   const env: NodeJS.ProcessEnv = {
@@ -195,6 +201,16 @@ function startServer({
 
     const line = spinner('Shutting down...')
 
+    const closeLogStreams = () =>
+      new Promise<void>((resolve) => {
+        let pending = 2
+        const done = () => {
+          if (--pending === 0) resolve()
+        }
+        logStream.end(done)
+        errStream.end(done)
+      })
+
     Promise.all([
       ...processes.map((p) => {
         if (p && !p.killed) {
@@ -209,6 +225,7 @@ function startServer({
       }),
       bs.cleanup(),
       bs.exit(),
+      closeLogStreams(),
     ]).then(() => {
       line()
       console.log("Done!")

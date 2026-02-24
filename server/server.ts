@@ -65,7 +65,11 @@ export class Server extends EventEmitter {
 
     const pathname = urlObject.pathname ?? '/'
     const parts = pathname.split('/')
-    const controller = parts[1] ?? ''
+    // Added this for smgumug 2026-02-25 to handle the homepage controller
+    // See line 255 in website.ts
+    // This might break older websites that use '' as the homepage controller
+    // Needs testing
+    const controller = (pathname === '/' || pathname === '') ? 'homepage' : (parts[1] ?? '')
     const action = parts[2] ?? ''
     const slug = parts.pop() ?? ''
     const cookies = this.parseCookies(req)

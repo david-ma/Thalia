@@ -249,6 +249,15 @@ export class Website {
             this.controllers[name] = this.validateController(controller)
           }
 
+          // We should make 'homepage' an alias for ''
+          // Older websites might use '' so we don't want to break them
+          // But in future, we want to use 'homepage' as a more natural name for the homepage
+          if (this.controllers[''] && !this.controllers['homepage']) {
+            this.controllers['homepage'] = this.controllers['']
+          } else if (!this.controllers[''] && this.controllers['homepage']) {
+            this.controllers[''] = this.controllers['homepage']
+          }
+
           this.websockets = this.config.websockets
 
           resolve(this)

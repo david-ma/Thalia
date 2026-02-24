@@ -2,13 +2,19 @@ import { mysqlTable, text, int, varchar } from 'drizzle-orm/mysql-core'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import { vc, baseTableConfig } from './util'
 
-// Album Model
+// Album Model. Keys/URLs match SmugMug API: albumKey (e.g. jHhcL7), uri (API path), webUri (public gallery URL).
 export const albums: MySqlTableWithColumns<any> = mysqlTable('albums', {
   ...baseTableConfig,
+  albumKey: vc('album_key'),
   description: text('description'),
   name: vc('name'),
   privacy: vc('privacy'),
   url: vc('url'),
+  urlName: vc('url_name'),
+  uri: vc('uri'),
+  webUri: vc('web_uri'),
+  dateAdded: vc('date_added'),
+  dateModified: vc('date_modified'),
   password: vc('password')
 })
 
@@ -18,6 +24,7 @@ export type NewAlbum = typeof albums.$inferInsert
 // Image Model
 export const images: MySqlTableWithColumns<any> = mysqlTable('images', {
   ...baseTableConfig,
+  albumKey: vc('album_key'),
   caption: text('caption'),
   albumId: int('album_id').references(() => albums.id),
   filename: vc('filename'),

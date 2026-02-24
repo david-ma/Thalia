@@ -1,5 +1,8 @@
 <div class="box">
   <h2>New User</h2>
+  {{#if error}}
+  <p class="error">{{error}}</p>
+  {{/if}}
   <form action="/createNewUser" method="post">
     {{> input field="Name" required=true helpText="Your name"}}
     {{> input field="Email" required=true type="email" helpText="Your email"}}

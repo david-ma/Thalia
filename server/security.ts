@@ -360,6 +360,54 @@ export class ThaliaSecurity implements Machine {
     // console.log('Setup controller')
   }
 
+  private createNewUserController(res: ServerResponse, req: IncomingMessage, website: Website, _requestInfo: RequestInfo): void {
+    if (req.method !== 'POST') {
+      res.writeHead(302, { Location: '/newUser' })
+      res.end()
+      return
+    }
+    parseForm(res, req).then((form) => {
+      const name = (form.fields?.Name ?? '').trim()
+      const email = (form.fields?.Email ?? '').trim().toLowerCase()
+      const password = form.fields?.Password ?? ''
+      if (!name || !email || !password) {
+        res.end(website.getContentHtml('newUser')({ error: 'Name, email and password are required.' }))
+        return
+      }
+      if (password.length < 6) {
+        res.end(website.getContentHtml('newUser')({ error: 'Password must be at least 6 characters.' }))
+        return
+      }
+      ThaliaSecurity.hashPassword(password).then((hashedPassword) => {
+        return website.db.drizzle
+          .insert(users)
+          .values({
+            name,
+            email,
+            password: hashedPassword,
+            role: 'user',
+            locked: false,
+            verified: false,
+          })
+          .$returningId()
+      })
+        .then((id) => {
+          if (id != null) {
+            res.writeHead(302, { Location: '/logon' })
+            res.end()
+          } else {
+            res.end(website.getContentHtml('newUser')({ error: 'An error occurred. That email may already be in use.' }))
+          }
+        })
+        .catch((err) => {
+          console.error('createNewUser error:', err)
+          res.end(website.getContentHtml('newUser')({ error: 'An error occurred. That email may already be in use.' }))
+        })
+    }).catch(() => {
+      res.end(website.getContentHtml('newUser')({ error: 'Invalid request.' }))
+    })
+  }
+
   public securityConfig(): RawWebsiteConfig {
     return {
       database: {
@@ -391,6 +439,7 @@ export class ThaliaSecurity implements Machine {
         newUser: (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
           res.end(website.getContentHtml('newUser')({}))
         },
+        createNewUser: this.createNewUserController.bind(this),
         logout: (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
           // set cookie to expire in 1970
           res.setHeader(

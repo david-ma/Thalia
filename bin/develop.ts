@@ -1,14 +1,15 @@
 #!/usr/bin/env bun
 
-console.log('Starting development server...')
-
 import { spawn, ChildProcess } from 'child_process'
 import path from 'path'
+import * as os from 'os'
 import browserSync from 'browser-sync'
 import fs from 'fs'
 import readline from 'readline'
 import { getPort } from 'get-port-please'
 import { spinner } from '../server/util.js'
+
+console.log(`Starting Thalia development server using develop.ts at ${new Date().toISOString()}`)
 
 // Get a port using get-port-please
 const preferredPort = process.env.PORT ? parseInt(process.env.PORT) : 1337
@@ -83,6 +84,16 @@ if (!fs.existsSync(path.join(rootPath, 'websites'))) {
   }
 }
 
+/** Tee a child's stdout/stderr to terminal and log files. Call after spawn with stdio: ['inherit','pipe','pipe']. */
+function teeChildOutput(
+  child: ChildProcess,
+  logStream: fs.WriteStream,
+  errStream: fs.WriteStream
+) {
+  if (child.stdout) child.stdout.on('data', (chunk) => { process.stdout.write(chunk); logStream.write(chunk) })
+  if (child.stderr) child.stderr.on('data', (chunk) => { process.stderr.write(chunk); errStream.write(chunk) })
+}
+
 function startServer({
   projectName,
   projectRoot,
@@ -94,6 +105,28 @@ function startServer({
   thaliaDirectory: string
   standalone: boolean
 }) {
+  let logDir: string
+  if (process.env.LOG_DIR) {
+    logDir = process.env.LOG_DIR
+  } else {
+    try {
+      if (fs.existsSync('/tmp') && fs.statSync('/tmp').isDirectory()) {
+        fs.accessSync('/tmp', fs.constants.W_OK)
+        logDir = '/tmp'
+      } else {
+        logDir = os.tmpdir()
+      }
+    } catch {
+      logDir = os.tmpdir()
+    }
+  }
+  const logPath = path.join(logDir, `thalia-${projectName}.log`)
+  const errPath = path.join(logDir, `thalia-${projectName}.err`)
+  // Use the flag 'a' if we want to append to the file, 'w' if we want to overwrite it.
+  const logStream = fs.createWriteStream(logPath, { flags: 'w' })
+  const errStream = fs.createWriteStream(errPath, { flags: 'w' })
+  console.log(`Logs: ${logPath} (stdout), ${errPath} (stderr)`)
+
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     PORT: port.toString(),
@@ -103,34 +136,32 @@ function startServer({
   let server: ChildProcess
 
   if (standalone) {
-    // Start Bun server with --hot (soft reload on file changes; excludes node_modules)
     server = spawn('bun', ['--hot', 'thalia'], {
       env,
-      stdio: 'inherit',
+      stdio: ['inherit', 'pipe', 'pipe'],
       cwd: projectRoot,
     })
   } else {
-    // Start Bun server with --hot (soft reload on file changes; excludes node_modules)
-    server = spawn('bun', ['--hot', 'server/cli.ts', `--project=${projectName}`], {
+    server = spawn('bun', ['--hot', path.join('server', 'cli.ts'), `--project=${projectName}`], {
       env,
-      stdio: 'inherit',
+      stdio: ['inherit', 'pipe', 'pipe'],
       cwd: thaliaDirectory,
     })
   }
+  teeChildOutput(server, logStream, errStream)
 
   const processes: ChildProcess[] = [server]
 
-  // Start webpack if config exists
-  if (fs.existsSync(`${projectRoot}/webpack.config.cjs`) || fs.existsSync(`${projectRoot}/webpack.config.js`)) {
-    const webpackConfig = fs.existsSync(`${projectRoot}/webpack.config.cjs`)
-      ? 'webpack.config.cjs'
-      : 'webpack.config.js'
-
+  const webpackCjs = path.join(projectRoot, 'webpack.config.cjs')
+  const webpackJs = path.join(projectRoot, 'webpack.config.js')
+  if (fs.existsSync(webpackCjs) || fs.existsSync(webpackJs)) {
+    const webpackConfig = fs.existsSync(webpackCjs) ? 'webpack.config.cjs' : 'webpack.config.js'
     const webpack = spawn('npx', ['webpack', '--watch', '--config', webpackConfig], {
       env,
-      stdio: 'inherit',
+      stdio: ['inherit', 'pipe', 'pipe'],
       cwd: projectRoot,
     })
+    teeChildOutput(webpack, logStream, errStream)
     processes.push(webpack)
   }
 
@@ -144,7 +175,11 @@ function startServer({
       open: false,
       notify: false,
       reloadDelay: 1000,
-      files: [`${projectRoot}/**/*`, `${thaliaDirectory}/server/**/*`, `${thaliaDirectory}/src/**/*.hbs`],
+      files: [
+        path.join(projectRoot, '**', '*'),
+        path.join(thaliaDirectory, 'server', '**', '*'),
+        path.join(thaliaDirectory, 'src', '**', '*.hbs'),
+      ],
       watchOptions: {
         ignored: '**/node_modules/**',
       },

@@ -110,6 +110,9 @@ function startServer({
   standalone: boolean
 }) {
   let logDir: string
+  // Use LOG_DIR if provided
+  // Otherwise try to use /tmp
+  // If /tmp is not writable because we're on Windows or something, use os.tmpdir()
   if (process.env.LOG_DIR) {
     logDir = process.env.LOG_DIR
   } else {

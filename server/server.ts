@@ -51,7 +51,12 @@ export class Server extends EventEmitter {
   }
 
   private logRequest(req: IncomingMessage): RequestInfo {
-    const host: string = (req.headers['x-host'] as string) ?? req.headers.host ?? 'unknown-host'
+    // Prefer X-Forwarded-Host when behind nginx/proxy so route guard sees the original host (e.g. mistral.david-ma.net)
+    const host: string =
+      (req.headers['x-forwarded-host'] as string) ??
+      (req.headers['x-host'] as string) ??
+      req.headers.host ??
+      'unknown-host'
     const domain: string = host.split(':')[0] ?? 'unknown-domain'
     const urlObject: url.UrlWithParsedQuery = url.parse(req.url ?? '', true)
     const ip: string =

@@ -385,7 +385,8 @@ export class ThaliaSecurity implements Machine {
             name,
             email,
             password: hashedPassword,
-            role: 'user',
+            // role: 'user',
+            role: 'admin', // Just for the mistral hackathon, 2026-03-01
             locked: false,
             verified: false,
           })

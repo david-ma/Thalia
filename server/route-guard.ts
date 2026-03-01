@@ -55,15 +55,24 @@ export class BasicRouteGuard extends RouteGuard {
     const pathname = requestInfo.pathname
     const fullpath = host + pathname
 
-    return (
-      Object.entries(this.routes)
-        .sort((a, b) => (b[1].path?.length ?? 0) - (a[1].path?.length ?? 0))
-        .find(([route, rule]) => {
-          if (fullpath.startsWith(route)) {
-            return [route, rule]
-          }
-        })?.[1] ?? {}
-    )
+    const matched = Object.entries(this.routes)
+      .sort((a, b) => (b[1].path?.length ?? 0) - (a[1].path?.length ?? 0))
+      .find(([route, rule]) => {
+        if (fullpath.startsWith(route)) {
+          return [route, rule]
+        }
+      })
+    const rule = matched?.[1] ?? {}
+    if (Object.keys(rule).length === 0) {
+      console.debug(
+        `[route-guard] No matching route: host=${JSON.stringify(host)} pathname=${JSON.stringify(pathname)} fullpath=${JSON.stringify(fullpath)}`
+      )
+    } else {
+      console.debug(
+        `[route-guard] Matched route: fullpath=${JSON.stringify(fullpath)} -> path=${(rule as RouteRule).path}`
+      )
+    }
+    return rule
   }
 
   public handleRequestChain(request: RequestHandler): Promise<RequestHandler> {
@@ -386,7 +395,9 @@ export class RoleRouteGuard extends BasicRouteGuard {
             return next(request)
           } else {
             if (request.requestInfo.userAuth?.role === 'guest') {
-              console.debug('Guest user, sending login page')
+              console.debug(
+                `[route-guard] 401 guest: host=${JSON.stringify(request.requestInfo.host)} pathname=${JSON.stringify(request.pathname)} action=${action} permissions=${JSON.stringify(request.requestInfo.permissions)} (no matching route or route has no guest permission for this action)`
+              )
               // // please log in
               // const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
               //   route: request.pathname,
@@ -401,7 +412,9 @@ export class RoleRouteGuard extends BasicRouteGuard {
               request.res.end(login_html)
               return finish('User is not logged in, so we sent the login page')
             } else {
-              console.debug('User has no permissions, sending access denied')
+              console.debug(
+                `[route-guard] 403: host=${JSON.stringify(request.requestInfo.host)} pathname=${JSON.stringify(request.pathname)} role=${request.requestInfo.userAuth?.role} action=${action}`
+              )
               // access denied
               // request.res.writeHead(403, { 'Content-Type': 'text/html' })
               request.res.end('Access denied')

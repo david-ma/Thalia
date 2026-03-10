@@ -13,7 +13,9 @@ export const users: MySqlTableWithColumns<any> = mysqlTable('users', {
   photo: text('photo'),
   role: vc('role').notNull().default('user'),
   locked: boolean('locked').notNull().default(false),
-  verified: boolean('verified').notNull().default(false)
+  verified: boolean('verified').notNull().default(false),
+  passwordResetToken: vc('password_reset_token', 255),
+  passwordResetExpires: timestamp('password_reset_expires'),
 })
 
 export type User = typeof users.$inferSelect

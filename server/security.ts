@@ -115,7 +115,7 @@ const default_routes: RoleRouteRule[] = [
 
 import { RequestInfo } from './server'
 import { parseForm } from './controllers'
-import { eq, Table } from 'drizzle-orm'
+import { and, eq, gt, update, Table } from 'drizzle-orm'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 // import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 
@@ -192,7 +192,12 @@ export class ThaliaSecurity implements Machine {
 
     const method = requestInfo.method
     if (method === 'GET') {
-      res.end(website.getContentHtml('userLogin')({}))
+      const message = requestInfo.query?.message
+      res.end(
+        website.getContentHtml('userLogin')(
+          message ? { message: typeof message === 'string' ? decodeURIComponent(message.replace(/\+/g, ' ')) : '' } : {},
+        ),
+      )
     } else if (method === 'POST') {
       parseForm(res, req).then((form) => {
         console.debug('Login attempt:', form)
@@ -282,53 +287,208 @@ export class ThaliaSecurity implements Machine {
       res.end(website.getContentHtml('forgotPassword')({}))
     } else if (method === 'POST') {
       parseForm(res, req).then((form) => {
-        console.debug('We have a post!')
-        console.debug('Form', form)
-        // Send an email to the user with a link to reset their password
-
         if (!form.fields.email) {
           res.end(website.getContentHtml('forgotPassword')({ error: 'Email is required' }))
           return
         }
 
         const mailService = website.db.machines.mail as MailService
-
         if (!mailService) {
           res.end(website.getContentHtml('forgotPassword')({ error: 'Mail service not found' }))
           return
         }
-        console.debug('Mail service', mailService)
 
-        mailService.sendEmail({
-          to: form.fields.email,
-          subject: 'Reset your password',
-          text: 'Reset your password',
-          html: 'Reset your password',
-        })
+        const usersTable = website.db.machines.users.table
+        const db = website.db.drizzle
+        const email = String(form.fields.email).trim().toLowerCase()
 
-        const user = website.db.machines.users.table
-        const drizzle = website.db.drizzle
+        db.select()
+          .from(usersTable)
+          .where(eq(usersTable.email, email))
+          .then((rows: User[]) => {
+            const user = rows[0]
+            if (user) {
+              const token = crypto.randomBytes(32).toString('hex')
+              const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+              const protocol =
+                (req.headers['x-forwarded-proto'] as string) ||
+                (website.env === 'production' ? 'https' : 'http')
+              const resetUrl = `${protocol}://${requestInfo.host}/resetPassword?token=${token}`
 
-        drizzle
-          .select()
-          .from(user)
-          .where(eq(user.email, form.fields.email))
-          .then(([user]: [User | undefined]) => {
-            if (!user) {
-              // Don't tell the user that the email is not found, just say it's been sent
-              res.end(website.getContentHtml('forgotPassword')({ error: 'Email sent' }))
-              return
+              return db
+                .update(usersTable)
+                .set({
+                  passwordResetToken: token,
+                  passwordResetExpires: expires,
+                })
+                .where(eq(usersTable.id, user.id))
+                .then(() => {
+                  const partialTemplate = website.handlebars.partials['passwordResetEmail']
+                  const html = partialTemplate
+                    ? website.handlebars.compile(partialTemplate)({
+                        resetUrl,
+                        siteName: website.name,
+                        email: user.email,
+                      })
+                    : `<p>Reset your password: <a href="${resetUrl}">${resetUrl}</a></p>`
+                  const text = `Reset your password: ${resetUrl}`
+
+                  mailService.sendEmail({
+                    to: user.email,
+                    subject: 'Reset your password',
+                    text,
+                    html,
+                  })
+                })
             }
-
-            // Send an email to the user with a link to reset their password
-            // TODO: Implement this
-            console.debug('Sending email to', user.email)
-            res.end(website.getContentHtml('forgotPassword')({ error: 'Email sent' }))
+          })
+          .then(() => {
+            // Always show the same message (no user enumeration)
+            res.end(
+              website.getContentHtml('forgotPassword')({
+                message:
+                  "If that email is registered, we've sent a link to reset your password. Check your inbox and spam folder.",
+              }),
+            )
+          })
+          .catch((err) => {
+            console.error('forgotPassword error:', err)
+            res.end(
+              website.getContentHtml('forgotPassword')({ error: 'Something went wrong. Please try again.' }),
+            )
           })
       })
     } else {
       res.end('Method not allowed')
     }
+  }
+
+  private resetPasswordController(
+    res: ServerResponse,
+    req: IncomingMessage,
+    website: Website,
+    requestInfo: RequestInfo,
+  ): void {
+    const method = requestInfo.method
+    const token = (requestInfo.query?.token as string) ?? ''
+    const usersTable = website.db.machines.users.table
+    const db = website.db.drizzle
+
+    if (method === 'GET') {
+      if (!token) {
+        res.end(
+          website.getContentHtml('resetPassword')({
+            error: 'Invalid or expired reset link. Please request a new one.',
+            forgotPasswordUrl: '/forgotPassword',
+          }),
+        )
+        return
+      }
+      db.select()
+        .from(usersTable)
+        .where(and(eq(usersTable.passwordResetToken, token), gt(usersTable.passwordResetExpires, new Date())))
+        .then((rows: User[]) => {
+          if (rows.length === 0) {
+            res.end(
+              website.getContentHtml('resetPassword')({
+                error: 'Invalid or expired reset link. Please request a new one.',
+                forgotPasswordUrl: '/forgotPassword',
+              }),
+            )
+            return
+          }
+          res.end(website.getContentHtml('resetPassword')({ token }))
+        })
+        .catch((err) => {
+          console.error('resetPassword GET error:', err)
+          res.end(
+            website.getContentHtml('resetPassword')({
+              error: 'Something went wrong. Please try again.',
+              forgotPasswordUrl: '/forgotPassword',
+            }),
+          )
+        })
+      return
+    }
+
+    if (method === 'POST') {
+      parseForm(res, req).then((form) => {
+        const resetToken = (form.fields?.token ?? requestInfo.query?.token ?? '').toString().trim()
+        const password = form.fields?.password ?? form.fields?.Password ?? ''
+        const confirmPassword = form.fields?.confirmPassword ?? form.fields?.ConfirmPassword ?? ''
+
+        if (!resetToken) {
+          res.end(
+            website.getContentHtml('resetPassword')({
+              error: 'Invalid or expired reset link. Please request a new one.',
+              forgotPasswordUrl: '/forgotPassword',
+            }),
+          )
+          return
+        }
+        if (!password || password.length < 6) {
+          res.end(
+            website.getContentHtml('resetPassword')({
+              token: resetToken,
+              error: 'Password must be at least 6 characters.',
+            }),
+          )
+          return
+        }
+        if (password !== confirmPassword) {
+          res.end(
+            website.getContentHtml('resetPassword')({
+              token: resetToken,
+              error: 'Passwords do not match.',
+            }),
+          )
+          return
+        }
+
+        db.select()
+          .from(usersTable)
+          .where(and(eq(usersTable.passwordResetToken, resetToken), gt(usersTable.passwordResetExpires, new Date())))
+          .then((rows: User[]) => {
+            const user = rows[0]
+            if (!user) {
+              res.end(
+                website.getContentHtml('resetPassword')({
+                  error: 'Invalid or expired reset link. Please request a new one.',
+                  forgotPasswordUrl: '/forgotPassword',
+                }),
+              )
+              return
+            }
+            return ThaliaSecurity.hashPassword(password)
+              .then((hashedPassword) =>
+                db
+                  .update(usersTable)
+                  .set({
+                    password: hashedPassword,
+                    passwordResetToken: null,
+                    passwordResetExpires: null,
+                  })
+                  .where(eq(usersTable.id, user.id)),
+              )
+              .then(() => {
+                res.writeHead(302, { Location: '/logon?message=Password+reset.+You+can+log+in+now.' })
+                res.end()
+              })
+          })
+          .catch((err) => {
+            console.error('resetPassword POST error:', err)
+            res.end(
+              website.getContentHtml('resetPassword')({
+                error: 'Something went wrong. Please try again.',
+                forgotPasswordUrl: '/forgotPassword',
+              }),
+            )
+          })
+      })
+      return
+    }
+
+    res.end('Method not allowed')
   }
 
   private setupController(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void {
@@ -437,6 +597,7 @@ export class ThaliaSecurity implements Machine {
         mail: this.mailService.controller.bind(this.mailService),
         logon: this.logonController.bind(this),
         forgotPassword: this.forgotPasswordController.bind(this),
+        resetPassword: this.resetPasswordController.bind(this),
         newUser: (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
           res.end(website.getContentHtml('newUser')({}))
         },

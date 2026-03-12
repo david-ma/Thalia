@@ -12,6 +12,7 @@ import { dirname } from 'path'
 import fs from 'fs'
 import * as sass from 'sass'
 import zlib from 'zlib'
+import { marked } from 'marked'
 
 const GZIP_SIZE_THRESHOLD = 10 * 1024 // 10kb
 
@@ -60,6 +61,7 @@ export class RequestHandler {
       .then(RequestHandler.tryScss)
       .then(RequestHandler.tryTypescript)
       .then(RequestHandler.tryHandlebars)
+      .then(RequestHandler.tryMarkdown)
       .then((rh) => RequestHandler.tryStaticFile('public', rh))
       .then((rh) => RequestHandler.tryStaticFile('docs', rh))
       .then((rh) => RequestHandler.tryStaticFile('data', rh))
@@ -75,7 +77,7 @@ export class RequestHandler {
   }
 
   private renderError(error: Error): void {
-    console.log('Trying to render error', error)
+    console.error('Trying to render error', error)
     this.website.renderError(this.res, error)
   }
 
@@ -222,27 +224,38 @@ export class RequestHandler {
    *
    * In future, we could serve anything with .hbs after it, e.g. data.json.hbs or test.js.hbs
    * But this is not required yet so we have not implemented it.
+   * 
+   * Note that because we put partials under src, it is possible to visit /views/partials/input.hbs and it will be served as html.
+   * This might not be desirable, but it probably isn't a security risk or problem.
+   * To fix this, we could move the partials to a separate folder, and only put handlebars files that we want to be served as full views in a folder called views.
+   * But this would overcomplicate the system and give the developer too many folders to manage.
+   * So we will leave it as is for now.
+   * 
+   * All .hbs files in the src folder can be served as html. And all .hbs files are loaded as partials.
+   * The folder names are just to help with the mental model of the website.
    */
   private static tryHandlebars(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
       let pathname = requestHandler.pathname
 
-      // If pathname is a directory, try index.html
-      if (!pathname.endsWith('.html')) {
-        if (pathname.endsWith('/')) {
-          pathname = pathname + 'index.html'
-        } else {
-          pathname = pathname + '/index.html'
-        }
+      // If pathname is a directory, try <directory>/index.html
+      if (fs.existsSync(path.join(requestHandler.rootPath, 'src', pathname, 'index.hbs'))) {
+        pathname = path.join(pathname, 'index.html')
+      } else if (
+        // Or try and see if there is a <pathname>.hbs file
+        fs.existsSync(path.join(requestHandler.rootPath, 'src', pathname + '.hbs'))
+      ) {
+        pathname = pathname + '.html'
       }
 
+      // Serve hbs file in src as if it were html
       const handlebarsPath = path.join(requestHandler.rootPath, 'src', pathname.replace('.html', '.hbs'))
       const thaliaHandlebarsPath = path.join(requestHandler.thaliaRoot, 'src', pathname.replace('.html', '.hbs'))
       let target: string | null = null
 
-      if (fs.existsSync(handlebarsPath)) {
+      if (fs.existsSync(handlebarsPath) && fs.statSync(handlebarsPath).isFile()) {
         target = handlebarsPath
-      } else if (fs.existsSync(thaliaHandlebarsPath)) {
+      } else if (fs.existsSync(thaliaHandlebarsPath) && fs.statSync(thaliaHandlebarsPath).isFile()) {
         target = thaliaHandlebarsPath
       }
 
@@ -266,6 +279,73 @@ export class RequestHandler {
   }
 
   /**
+   * Similar to tryHandlebars. We should try markdown files in the same way.
+   * I.e. the file in src/pathname.md should be served if /pathname.html or /pathname is requested.
+   * The file src/pathname/index.md should also be served if /pathname is requested.
+   *
+   * Use Marked to parse the markdown file.
+   * And use the handlebars template 'wrapper' to wrap the markdown file.
+   */
+  private static tryMarkdown(requestHandler: RequestHandler): Promise<RequestHandler> {
+    return new Promise((next, finish) => {
+      // check how long this takes to render.
+      let pathname = requestHandler.pathname
+
+      if (fs.existsSync(path.join(requestHandler.rootPath, 'src', pathname, 'index.md'))) {
+        pathname = path.join(pathname, 'index.html')
+      } else if (
+        fs.existsSync(path.join(requestHandler.rootPath, 'src', pathname + '.md'))
+      ) {
+        pathname = pathname + '.html'
+      }
+
+      const mdPathname = pathname.replace('.html', '.md')
+      const projectMdPath = path.join(requestHandler.rootPath, 'src', mdPathname)
+      const thaliaMdPath = path.join(requestHandler.thaliaRoot, 'src', mdPathname)
+      let target: string | null = null
+
+      if (fs.existsSync(projectMdPath) && fs.statSync(projectMdPath).isFile()) {
+        target = projectMdPath
+      } else if (fs.existsSync(thaliaMdPath) && fs.statSync(thaliaMdPath).isFile()) {
+        target = thaliaMdPath
+      }
+
+      if (!target) {
+        return next(requestHandler)
+      }
+
+      fs.promises
+        .readFile(target, 'utf8')
+        .then((content) => {
+          const contentHtml = marked.parse(content, { async: false }) as string
+          if (requestHandler.website.env === 'development') {
+            requestHandler.website.loadPartials()
+          }
+          requestHandler.website.handlebars.registerPartial('content', contentHtml)
+          let wrapperTemplate = requestHandler.website.handlebars.partials['wrapper'] ?? ''
+          if (requestHandler.website.env === 'development') {
+            wrapperTemplate = wrapperTemplate.replace('</body>', '{{> browsersync }}\n</body>')
+          }
+          const template = requestHandler.website.handlebars.compile(wrapperTemplate)
+          const data = {
+            requestInfo: requestHandler.requestInfo,
+            version: requestHandler.website.version,
+          }
+          const html = template(data)
+          requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
+          requestHandler.res.end(html)
+          return finish(`Successfully rendered markdown ${requestHandler.pathname}`)
+        })
+        .catch((err) => {
+          console.error('Error serving markdown file:', err)
+          requestHandler.res.writeHead(500)
+          requestHandler.res.end('Internal Server Error')
+          return finish('Error serving markdown file')
+        })
+    })
+  }
+
+  /**
    * If we have a typescript file, we try to compile it to javascript.
    * Sideeffect: This will create the javascript file in /dist
    * We could create the javsacript file in /tmp instead
@@ -280,6 +360,8 @@ export class RequestHandler {
 
       const tsPath = requestHandler.projectSourcePath.replace('.js', '.ts')
       if (fs.existsSync(tsPath)) {
+        // create dist folder if it doesn't exist
+        fs.mkdirSync(requestHandler.projectDistPath, { recursive: true })
         Bun.build({
           entrypoints: [tsPath],
           target: 'browser',

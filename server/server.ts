@@ -68,7 +68,7 @@ export class Server extends EventEmitter {
 
     console.log(`${new Date().toISOString()} ${ip} ${method} ${host}${urlObject.href ?? 'unknown-url'}`)
 
-    const pathname = urlObject.pathname ?? '/'
+    const pathname = urlObject.pathname?.replace(/\/$/, '') ?? '/'
     const parts = pathname.split('/')
     // Added this for smgumug 2026-02-25 to handle the homepage controller
     // See line 255 in website.ts

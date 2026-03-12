@@ -9,8 +9,7 @@
   "dependencies": {
     "drizzle-kit": "^0.31.7",
     "drizzle-orm": "^0.44.7",
-    "mysql2": "^3.14.1",
-    "thalia": "file:../../"
+    "mysql2": "^3.14.1"
   },
   "devDependencies": {
     "typescript": "^4.9.5",

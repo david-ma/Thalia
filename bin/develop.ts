@@ -13,7 +13,7 @@ console.log(`Starting Thalia development server using develop.ts at ${new Date()
 
 // Get a port using get-port-please
 const preferredPort = process.env.PORT ? parseInt(process.env.PORT) : 1337
-const port = await getPort({ port: preferredPort })
+const port = await getPort({ port: preferredPort, ports: [1337, 1338, 1339, 1340, 1341, 1342] })
 
 // This develop script can be run in two modes:
 // 1. From a project directory, with a websites directory

@@ -232,6 +232,19 @@ describe('Request-handler: example-src (Handlebars, TypeScript, controller)', ()
     }
   })
 
+  test('Nested controller: GET /api/create-blog returns 200 and runs nested controller', async () => {
+    const response = await fetchFromServer('/api/create-blog', port)
+    expect(response.status).toBe(200)
+    const body = await response.text()
+    expect(body).toBe('create-blog')
+    expect(response.headers.get('x-nested-controller')).toBe('create-blog')
+  })
+
+  test('Nested controller: GET /api (only segment; node is object) falls through to 404', async () => {
+    const response = await fetchFromServer('/api', port)
+    expect(response.status).toBe(404)
+  })
+
   test('tryMarkdown: /path serves src/path.md when path.md exists (file-style)', async () => {
     const response = await fetchFromServer('/about', port)
     expect(response.status).toBe(200)

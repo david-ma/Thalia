@@ -378,6 +378,7 @@ export class ThaliaSecurity implements Machine {
       if (!token) {
         res.end(
           website.getContentHtml('resetPassword')({
+            title: 'Reset Password',
             error: 'Invalid or expired reset link. Please request a new one.',
             forgotPasswordUrl: '/forgotPassword',
           }),
@@ -391,18 +392,20 @@ export class ThaliaSecurity implements Machine {
           if (rows.length === 0) {
             res.end(
               website.getContentHtml('resetPassword')({
+                title: 'Reset Password',
                 error: 'Invalid or expired reset link. Please request a new one.',
                 forgotPasswordUrl: '/forgotPassword',
               }),
             )
             return
           }
-          res.end(website.getContentHtml('resetPassword')({ token }))
+          res.end(website.getContentHtml('resetPassword')({ title: 'Reset Password', token }))
         })
         .catch((err) => {
           console.error('resetPassword GET error:', err)
           res.end(
             website.getContentHtml('resetPassword')({
+              title: 'Reset Password',
               error: 'Something went wrong. Please try again.',
               forgotPasswordUrl: '/forgotPassword',
             }),
@@ -420,6 +423,7 @@ export class ThaliaSecurity implements Machine {
         if (!resetToken) {
           res.end(
             website.getContentHtml('resetPassword')({
+              title: 'Reset Password',
               error: 'Invalid or expired reset link. Please request a new one.',
               forgotPasswordUrl: '/forgotPassword',
             }),
@@ -429,6 +433,7 @@ export class ThaliaSecurity implements Machine {
         if (!password || password.length < 6) {
           res.end(
             website.getContentHtml('resetPassword')({
+              title: 'Reset Password',
               token: resetToken,
               error: 'Password must be at least 6 characters.',
             }),
@@ -438,6 +443,7 @@ export class ThaliaSecurity implements Machine {
         if (password !== confirmPassword) {
           res.end(
             website.getContentHtml('resetPassword')({
+              title: 'Reset Password',
               token: resetToken,
               error: 'Passwords do not match.',
             }),
@@ -453,6 +459,7 @@ export class ThaliaSecurity implements Machine {
             if (!user) {
               res.end(
                 website.getContentHtml('resetPassword')({
+                  title: 'Reset Password',
                   error: 'Invalid or expired reset link. Please request a new one.',
                   forgotPasswordUrl: '/forgotPassword',
                 }),
@@ -479,6 +486,7 @@ export class ThaliaSecurity implements Machine {
             console.error('resetPassword POST error:', err)
             res.end(
               website.getContentHtml('resetPassword')({
+                title: 'Reset Password',
                 error: 'Something went wrong. Please try again.',
                 forgotPasswordUrl: '/forgotPassword',
               }),

@@ -17,7 +17,15 @@ export const config: RawWebsiteConfig = {
       }
       const html = website.getContentHtml(shortname)({});
       res.end(html);
-    }
-  }
+    },
+    api: {
+      'create-blog': (res: ServerResponse) => {
+        res.statusCode = 200
+        res.setHeader('Content-Type', 'text/plain')
+        res.setHeader('X-Nested-Controller', 'create-blog')
+        res.end('create-blog')
+      },
+    },
+  },
 }
 

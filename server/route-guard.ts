@@ -52,8 +52,8 @@ export class BasicRouteGuard extends RouteGuard {
   protected getMatchingRoute(request: RequestHandler): RouteRule {
     const requestInfo = request.requestInfo
     const host = requestInfo.host
-    const pathname = requestInfo.pathname
-    const fullpath = host + pathname
+    const pathname = requestInfo.pathname ?? ''
+    const fullpath = host + (pathname === '' ? '/' : pathname)
 
     const matched = Object.entries(this.routes)
       .sort((a, b) => (b[1].path?.length ?? 0) - (a[1].path?.length ?? 0))

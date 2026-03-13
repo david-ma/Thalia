@@ -5,7 +5,7 @@
  */
 
 import { IncomingMessage, request, ServerResponse } from 'http'
-import { Website } from './website'
+import { Website, type NestedControllerMap } from './website'
 import { RequestInfo } from './server'
 import path from 'path'
 import { dirname } from 'path'
@@ -234,9 +234,16 @@ export class RequestHandler {
    * All .hbs files in the src folder can be served as html. And all .hbs files are loaded as partials.
    * The folder names are just to help with the mental model of the website.
    */
+  /** Extensions that should never be served as Handlebars (static assets). */
+  private static readonly STATIC_EXTENSIONS = /\.(ico|png|jpe?g|gif|svg|webp|woff2?|ttf|eot|otf|pdf|zip|webmanifest)$/i
+
   private static tryHandlebars(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
       let pathname = requestHandler.pathname
+
+      if (RequestHandler.STATIC_EXTENSIONS.test(pathname)) {
+        return next(requestHandler)
+      }
 
       // If pathname is a directory, try <directory>/index.html
       if (fs.existsSync(path.join(requestHandler.rootPath, 'src', pathname, 'index.hbs'))) {
@@ -423,16 +430,29 @@ export class RequestHandler {
 
   private static tryController(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
-      // console.debug(`Trying to execute controller '${requestHandler.requestInfo.controller}'`)
+      const pathname = requestHandler.pathname ?? ''
+      let segments = pathname.split('/').filter(Boolean)
+      if (segments.length === 0) {
+        segments = [requestHandler.requestInfo.controller]
+      }
 
-      const controllerSlug = requestHandler.requestInfo.controller
-      const controller = requestHandler.website.controllers[controllerSlug]
-      if (!controller) {
-        return next(requestHandler)
-      } else {
-        controller(requestHandler.res, requestHandler.req, requestHandler.website, requestHandler.requestInfo)
+      let node: NestedControllerMap = requestHandler.website.controllers
+      for (const segment of segments) {
+        if (typeof node === 'function') {
+          node(requestHandler.res, requestHandler.req, requestHandler.website, requestHandler.requestInfo)
+          return finish(`Successfully executed controller ${requestHandler.requestInfo.controller}`)
+        }
+        if (node === null || typeof node !== 'object' || !(segment in node)) {
+          return next(requestHandler)
+        }
+        node = (node as Record<string, NestedControllerMap>)[segment]
+      }
+
+      if (typeof node === 'function') {
+        node(requestHandler.res, requestHandler.req, requestHandler.website, requestHandler.requestInfo)
         return finish(`Successfully executed controller ${requestHandler.requestInfo.controller}`)
       }
+      return next(requestHandler)
     })
   }
 

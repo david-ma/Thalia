@@ -52,6 +52,9 @@ export interface Controller {
   (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void
 }
 
+/** Controller config can be a single Controller (function) or a nested map of path segments to Controller | map. */
+export type NestedControllerMap = Controller | { [key: string]: NestedControllerMap }
+
 export class Website {
   public readonly name: string
   public readonly rootPath: string
@@ -61,7 +64,7 @@ export class Website {
   public config!: WebsiteConfig
   public handlebars = Handlebars.create()
   public domains: string[] = []
-  public controllers: Record<string, Controller> = {}
+  public controllers: Record<string, NestedControllerMap> = {}
   private websockets!: WebsocketConfig
   public routes: { [key: string]: RouteRule } = {}
   public routeGuard!: RouteGuard
@@ -243,10 +246,10 @@ export class Website {
           this.domains.push(`${this.name}.org`)
           this.domains.push(`${this.name}.com.au`)
 
-          // Load and validate controllers
+          // Load and validate controllers (flat or nested by path segment)
           const rawControllers = this.config.controllers || {}
-          for (const [name, controller] of Object.entries(rawControllers)) {
-            this.controllers[name] = this.validateController(controller)
+          for (const [name, value] of Object.entries(rawControllers)) {
+            this.controllers[name] = this.validateControllerNode(value)
           }
 
           // We should make 'homepage' an alias for ''
@@ -279,6 +282,22 @@ export class Website {
     // But this might not be needed, many end points don't need the requestInfo or website.
     // Some of them we're just happy to log some info and respond with a simple 200.
     return controller
+  }
+
+  private validateControllerNode(node: NestedControllerMap): NestedControllerMap {
+    if (typeof node === 'function') {
+      return this.validateController(node)
+    }
+    if (node !== null && typeof node === 'object' && !Array.isArray(node)) {
+      const out: Record<string, NestedControllerMap> = {}
+      for (const [k, v] of Object.entries(node)) {
+        out[k] = this.validateControllerNode(v)
+      }
+      return out
+    }
+    throw new ConfigurationError(`Controller must be a function or nested object of controllers`, {
+      website: this.name,
+    })
   }
 
   /**

@@ -1,4 +1,4 @@
-import { Controller, Website } from './website'
+import { Controller, NestedControllerMap, Website } from './website'
 import { Socket } from 'socket.io'
 
 // Server Types
@@ -117,7 +117,7 @@ export type SitemapUrl = {
 
 export interface RawWebsiteConfig {
   domains?: string[]
-  controllers?: Record<string, Controller>
+  controllers?: Record<string, NestedControllerMap>
   routes?: RouteRule[] | RoleRouteRule[]
   websockets?: RawWebsocketConfig
   database?: DatabaseConfig
@@ -130,7 +130,7 @@ export interface WebsiteConfig extends BasicWebsiteConfig, RawWebsiteConfig {
   name: string
   rootPath: string
   domains: string[]
-  controllers: Record<string, Controller>
+  controllers: Record<string, NestedControllerMap>
   routes: RouteRule[]
   websockets: WebsocketConfig
 }

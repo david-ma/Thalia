@@ -57,6 +57,20 @@ bun drizzle-kit push
 
 That pushes the full schema (including users, sessions, audits) from `models/drizzle-schema.ts`.
 
+## Drizzle and CJS
+
+`drizzle-kit` loads `drizzle.config.ts` and the schema file as **CommonJS**. Two things to watch for:
+
+1. **Config: no `import.meta`**  
+   In CJS, `import.meta` is not available, so using it in the config causes “import.meta is not available with the cjs output format”. Use `__dirname` when it exists (CJS), and only use `import.meta` in an ESM fallback, e.g.  
+   `const projectRoot = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));`
+
+2. **Schema: don’t rely on Thalia’s package exports**  
+   Under `require()`, Node resolves `thalia/models` via Thalia’s `package.json` exports, which can lead to `ERR_PACKAGE_PATH_NOT_EXPORTED`. Import from the installed package on disk instead:  
+   `from '../node_modules/thalia/models'` and `from '../node_modules/thalia/server/mail'` (and `../node_modules/thalia/models/util` in local model files). Use `'./fruit'` (no `.js`) for local schema files so the loader can resolve `.ts`.
+
+Same pattern is used in `websites/smugmug`.
+
 ## SQLite instead of MySQL?
 
 Using SQLite would avoid Docker and YAML, but Thalia’s **database layer and security models are currently MySQL-only** (`server/database.ts`, `models/security-models.ts`). Switching example-auth to SQLite would require either (a) adding SQLite support and SQLite variants of users/sessions/audits in the framework, or (b) a separate minimal example that doesn’t use ThaliaSecurity. The **integration tests** only assert HTTP behaviour (route guard runs, 200/401, etc.); they don’t care whether the backend is MySQL or SQLite, so using SQLite for this example wouldn’t invalidate those tests—but it would need the framework changes above first.

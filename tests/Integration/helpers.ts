@@ -37,8 +37,11 @@ export async function startTestServer(
     testPort = await getPort({ port: basePort, portRange: [basePort, basePort + 100] })
   }
   
-  const thaliaRoot = process.cwd()
-  // Use standalone mode for tests - only load the specific project
+  // Resolve Thalia repo root from this file (tests/Integration/helpers.ts) so tests
+  // work the same whether run from repo root or from a website dir (e.g. websites/kras).
+  // Otherwise process.cwd() when run from websites/kras would yield rootPath
+  // websites/kras/websites/kras and tryScss would write dist/css/main.css there.
+  const thaliaRoot = path.resolve(import.meta.dirname, '../..')
   const rootPath = path.join(thaliaRoot, 'websites', project)
 
   const options: ServerOptions = {

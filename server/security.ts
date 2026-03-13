@@ -570,6 +570,10 @@ export class ThaliaSecurity implements Machine {
         })
         .catch((err) => {
           console.error('createNewUser error:', err)
+          if (!res.headersSent) {
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'text/html')
+          }
           res.end(website.getContentHtml('newUser')({ error: 'An error occurred. That email may already be in use.' }))
         })
     }).catch(() => {

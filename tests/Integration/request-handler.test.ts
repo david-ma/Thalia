@@ -551,7 +551,7 @@ describe('Request-handler: example-auth guest (no session)', () => {
 test('auth flow: password reset via MailCatcher works end-to-end (example-auth)', async () => {
   if (!serverStarted) return
 
-  const TEST_EMAIL = 'reset-user@example-auth.test'
+  const TEST_EMAIL = `reset-user-${Date.now()}@example-auth.test`
   const OLD_PASSWORD = 'old-password-1'
   const NEW_PASSWORD = 'new-password-2'
 

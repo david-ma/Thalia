@@ -78,43 +78,39 @@ export class MailService implements Machine {
   }
 
   async sendEmail(sendMailOptions: SendMailOptions): Promise<string> {
-    // log the email to the database
-    return this.website.db.drizzle
-      .insert(this.table)
-      .values({
-        from: sendMailOptions.from,
-        to: sendMailOptions.to,
-        subject: sendMailOptions.subject,
-        text: sendMailOptions.text,
-        html: sendMailOptions.html,
-      })
-      .catch((error: unknown) => {
-        console.error('Error logging email to database', error)
-        throw error
-      })
-      .then(() => {
-        if (!this.transporter || !this.isInitialized) {
-          console.error('No transporter found or not initialized')
-          return 'No transporter found or not initialized'
-        }
-
-        const mailOptions: SendMailOptions = recursiveObjectMerge(this.defaultSendMailOptions, sendMailOptions)
-
+    const doSend = () => {
+      if (!this.transporter || !this.isInitialized) {
+        console.error('No transporter found or not initialized')
+        return Promise.resolve('No transporter found or not initialized')
+      }
+      const mailOptions: SendMailOptions = recursiveObjectMerge(this.defaultSendMailOptions, sendMailOptions)
+      return new Promise<string>((resolve) => {
         this.transporter.sendMail(mailOptions, (error, info) => {
           if (error) {
-            console.trace("Error", error)
-            return "We had an error sending mail, mailserver probably offline"
-            // throw error
+            console.trace('Error', error)
+            resolve('We had an error sending mail, mailserver probably offline')
           } else {
             console.debug('Email sent', info)
-            return 'Email sent'
+            resolve('Email sent')
           }
         })
       })
-      .catch((error: unknown) => {
-        console.error('Error sending email', error)
-        return error
-      })
+    }
+
+    if (this.website?.db?.drizzle) {
+      try {
+        await this.website.db.drizzle.insert(this.table).values({
+          from: sendMailOptions.from,
+          to: sendMailOptions.to,
+          subject: sendMailOptions.subject,
+          text: sendMailOptions.text,
+          html: sendMailOptions.html,
+        })
+      } catch (error) {
+        console.error('Error logging email to database', error)
+      }
+    }
+    return doSend()
   }
 
   /**

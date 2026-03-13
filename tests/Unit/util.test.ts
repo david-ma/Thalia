@@ -52,6 +52,18 @@ describe('recursiveObjectMerge', () => {
     expect(obj2).toEqual({ b: 3, c: 4 })
     expect(result).toEqual({ a: 1, b: 3, c: 4 })
   })
+
+  // Config-style: routes array concatenation (default_routes + project routes)
+  test('should concatenate routes arrays (config merge)', () => {
+    const base : any = { routes: [{ path: '/' }, { path: '/admin' }] }
+    const extra : any = { routes: [{ path: '/fruit' }] }
+    const result = recursiveObjectMerge(base, extra)
+    expect(Array.isArray(result.routes)).toBe(true)
+    expect(result.routes).toHaveLength(3)
+    expect(result.routes[0]).toEqual({ path: '/' })
+    expect(result.routes[1]).toEqual({ path: '/admin' })
+    expect(result.routes[2]).toEqual({ path: '/fruit' })
+  })
 })
 
 

@@ -145,6 +145,14 @@ describe('Request-handler: example-src (Handlebars, TypeScript, controller)', ()
     expect(html).toContain('Guide index page')
   })
 
+  test('/css/test.css serves compiled src/css/test.scss (tryScss)', async () => {
+    const response = await fetchFromServer('/css/test.css', port)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('text/css')
+    const css = await response.text()
+    expect(css).toMatch(/336699|color/)
+  })
+
   test('/js/test.js serves compiled src/js/test.ts (tryTypescript)', async () => {
     const response = await fetchFromServer('/js/test.js', port)
     expect(response.status).toBe(200)

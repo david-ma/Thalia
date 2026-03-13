@@ -234,9 +234,6 @@ export class RequestHandler {
    * All .hbs files in the src folder can be served as html. And all .hbs files are loaded as partials.
    * The folder names are just to help with the mental model of the website.
    */
-  /** Extensions that should never be served as Handlebars (static assets). */
-  private static readonly STATIC_EXTENSIONS = /\.(ico|png|jpe?g|gif|svg|webp|woff2?|ttf|eot|otf|pdf|zip|webmanifest)$/i
-
   private static tryHandlebars(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
       let pathname = requestHandler.pathname

@@ -115,7 +115,7 @@ const default_routes: RoleRouteRule[] = [
 
 import { RequestInfo } from './server'
 import { parseForm } from './controllers'
-import { and, eq, gt, update, Table } from 'drizzle-orm'
+import { and, eq, gt, Update, Table } from 'drizzle-orm'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 // import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 
@@ -351,7 +351,7 @@ export class ThaliaSecurity implements Machine {
               }),
             )
           })
-          .catch((err) => {
+          .catch((err: unknown) => {
             console.error('forgotPassword error:', err)
             res.end(
               website.getContentHtml('forgotPassword')({ error: 'Something went wrong. Please try again.' }),
@@ -401,7 +401,7 @@ export class ThaliaSecurity implements Machine {
           }
           res.end(website.getContentHtml('resetPassword')({ title: 'Reset Password', token }))
         })
-        .catch((err) => {
+        .catch((err: unknown) => {
           console.error('resetPassword GET error:', err)
           res.end(
             website.getContentHtml('resetPassword')({
@@ -482,7 +482,7 @@ export class ThaliaSecurity implements Machine {
                 res.end()
               })
           })
-          .catch((err) => {
+          .catch((err: unknown) => {
             console.error('resetPassword POST error:', err)
             res.end(
               website.getContentHtml('resetPassword')({

@@ -1,3 +1,10 @@
-<h1>Admin</h1>
-
-<p>Request Info: {{{ requestInfo }}}</p>
+<div class="admin box">
+  <h1>Admin</h1>
+  <p>You are viewing this page as an administrator.</p>
+  {{#if requestInfoJson}}
+  <details>
+    <summary>Request info (debug)</summary>
+    <pre>{{requestInfoJson}}</pre>
+  </details>
+  {{/if}}
+</div>

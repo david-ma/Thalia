@@ -1,25 +1,21 @@
-<div class="login">
-  <h2>Login</h2>
-  <form action="/logon" method="post">
-
-
-    {{> input field="Email" helpText="Your email"}}
-    {{> input field="Password" type="password" helpText="Your password"}}
-
-    <input id="Redirect" name="Redirect" type="hidden" style="display:none;" />
-
-    <input id="loginButton" type="submit" value="Login" />
-  </form>
-  <ul>
-    <li><a href="/newUser">Create New Account</a></li>
-    <li><a href="/forgotPassword">Forgot password</a></li>
-  </ul>
+<div class="login box">
+  <h2>Log in</h2>
   {{#if message}}
   <p class="message">{{message}}</p>
   {{/if}}
   {{#if error}}
-  <p class="error">{{error}}</p>
+  <p class="error" role="alert">{{error}}</p>
   {{/if}}
+  <form action="/logon" method="post">
+    {{> input field="Email" helpText="Your email" type="email"}}
+    {{> input field="Password" type="password" helpText="Your password"}}
+    <input id="Redirect" name="Redirect" type="hidden" style="display:none;" />
+    <input id="loginButton" type="submit" value="Log in" />
+  </form>
+  <ul>
+    <li><a href="/newUser">Create new account</a></li>
+    <li><a href="/forgotPassword">Forgot password?</a></li>
+  </ul>
 </div>
 
 <script>

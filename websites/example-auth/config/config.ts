@@ -136,6 +136,12 @@ function profileController(
 
 const roleBasedSecurityConfig = recursiveObjectMerge(recursiveObjectMerge(security.securityConfig(), fruitConfig), {
     routes: [
+        { path: '/logon', permissions: { guest: ['read', 'create'], user: ['read', 'create'], admin: ['read', 'create'] } },
+        { path: '/logout', permissions: { guest: ['read'], user: ['read'], admin: ['read'] } },
+        { path: '/newUser', permissions: { guest: ['read'], user: ['read'], admin: ['read'] } },
+        { path: '/createNewUser', permissions: { guest: ['create'], user: ['create'], admin: ['create'] } },
+        { path: '/forgotPassword', permissions: { guest: ['read', 'create'], user: ['read', 'create'], admin: ['read', 'create'] } },
+        { path: '/resetPassword', permissions: { guest: ['read', 'create'], user: ['read', 'create'], admin: ['read', 'create'] } },
         {
             path: '/fruit',
             permissions: {

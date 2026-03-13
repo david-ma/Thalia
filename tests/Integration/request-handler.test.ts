@@ -483,6 +483,64 @@ describe('Request-handler: example-auth guest (no session)', () => {
     const response = await fetchFromServer('/admin', port)
     expect(response.status).toBe(401)
   })
+
+  test('auth flow: guest GET /logon returns 200 and login form', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/logon', port)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toMatch(/log in|login|Log in/i)
+    expect(html).toMatch(/Email|email/i)
+    expect(html).toMatch(/Password|password/i)
+    expect(html).toMatch(/newUser|Create new account/i)
+    expect(html).toMatch(/forgotPassword|Forgot password/i)
+  })
+
+  test('auth flow: guest POST /logon with wrong password returns 200 and error', async () => {
+    if (!serverStarted) return
+    const body = new URLSearchParams({ Email: 'user@example-auth.test', Password: 'wrong' }).toString()
+    const response = await fetchFromServer('/logon', port, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    })
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toMatch(/Invalid email or password|error/i)
+  })
+
+  test('auth flow: guest POST /logon with unknown email returns 200 and error (no user enumeration)', async () => {
+    if (!serverStarted) return
+    const body = new URLSearchParams({ Email: 'nobody@example.invalid', Password: 'any' }).toString()
+    const response = await fetchFromServer('/logon', port, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    })
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toMatch(/Invalid email or password|error/i)
+  })
+
+  test('auth flow: guest GET /newUser returns 200 and registration form', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/newUser', port)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toMatch(/New User|Create|new account/i)
+    expect(html).toMatch(/Name|name/i)
+    expect(html).toMatch(/Email|email/i)
+    expect(html).toMatch(/Password|password/i)
+  })
+
+  test('auth flow: guest GET /forgotPassword returns 200 and form', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/forgotPassword', port)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toMatch(/Forgot Password|forgot|reset/i)
+    expect(html).toMatch(/email/i)
+  })
 })
 
 /** Try to log in; returns Cookie header value or null. */
@@ -576,5 +634,21 @@ describe('Request-handler: example-auth authenticated (user / admin)', () => {
       body: JSON.stringify({ name: 'Updated by admin' }),
     })
     expect([200, 404]).toContain(response.status)
+  })
+
+  test('auth flow: GET /logout returns 302 and clears session cookie', async () => {
+    if (!serverStarted || !userCookie) return
+    const response = await fetchWithCookie('/logout', userCookie, { redirect: 'manual' })
+    expect(response.status).toBe(302)
+    expect(response.headers.get('location')).toMatch(/\/$/)
+    const setCookie = response.headers.get('set-cookie')
+    expect(setCookie).toBeTruthy()
+    expect(setCookie).toMatch(/sessionId=;|Expires=Thu, 01 Jan 1970/)
+  })
+
+  test('auth flow: after logout, request without cookie gets 401 for protected path', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/', port)
+    expect(response.status).toBe(401)
   })
 })

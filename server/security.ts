@@ -224,7 +224,7 @@ export class ThaliaSecurity implements Machine {
                 return null
               }
 
-              if (user.isActive === false) {
+              if (user.locked) {
                 res.end(website.getContentHtml('userLogin')({ error: 'Account is locked' }))
                 return null
               }
@@ -599,7 +599,12 @@ export class ThaliaSecurity implements Machine {
         sessions: SessionMachine.controller.bind(SessionMachine),
         audits: AuditMachine.controller.bind(AuditMachine),
         admin: (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
-          res.end(website.getContentHtml('admin')({ requestInfo }))
+          res.end(
+            website.getContentHtml('admin')({
+              requestInfo: requestInfo,
+              requestInfoJson: JSON.stringify(requestInfo, null, 2),
+            }),
+          )
         },
         setup: this.setupController.bind(this),
         mail: this.mailService.controller.bind(this.mailService),

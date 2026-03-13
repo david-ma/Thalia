@@ -3,10 +3,10 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 
-// Resolve paths from this config file's directory (works when run from Thalia root or example-auth)
+// Drizzle-kit loads this file as CJS, where import.meta is not available. Use __dirname when present (CJS), else ESM.
 const projectRoot =
-  typeof (import.meta as any).dir !== "undefined"
-    ? (import.meta as any).dir
+  typeof __dirname !== "undefined"
+    ? __dirname
     : path.dirname(fileURLToPath(import.meta.url));
 
 function getDbUrl(): string {

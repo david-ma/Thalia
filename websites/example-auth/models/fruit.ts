@@ -1,5 +1,5 @@
 
-import { baseTableConfig } from '../node_modules/thalia/models/util.js'
+import { baseTableConfig } from '../node_modules/thalia/models/util'
 import { mysqlTable, text } from "drizzle-orm/mysql-core";
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 

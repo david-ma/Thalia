@@ -241,6 +241,12 @@ export class RequestHandler {
     return new Promise((next, finish) => {
       let pathname = requestHandler.pathname
 
+      // If the request is for a template in a partial folder, do not render it
+      // Partials should not be rendered directly like this.
+      if (pathname.includes('/partials/')) {
+        return next(requestHandler)
+      }
+
       // If pathname is a directory, try <directory>/index.html
       if (fs.existsSync(path.join(requestHandler.rootPath, 'src', pathname, 'index.hbs'))) {
         pathname = path.join(pathname, 'index.html')

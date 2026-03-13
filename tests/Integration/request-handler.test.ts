@@ -145,6 +145,12 @@ describe('Request-handler: example-src (Handlebars, TypeScript, controller)', ()
     expect(html).toContain('Guide index page')
   })
 
+  test('tryHandlebars: paths containing /partials/ are not served as top-level templates (no HTML render)', async () => {
+    // This would previously render the input partial as a full page; now it should fall through and 404.
+    const response = await fetchFromServer('/views/partials/input.html', port)
+    expect(response.status).toBe(404)
+  })
+
   test('/css/test.css serves compiled src/css/test.scss (tryScss)', async () => {
     const response = await fetchFromServer('/css/test.css', port)
     expect(response.status).toBe(200)

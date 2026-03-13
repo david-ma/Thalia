@@ -241,10 +241,6 @@ export class RequestHandler {
     return new Promise((next, finish) => {
       let pathname = requestHandler.pathname
 
-      if (RequestHandler.STATIC_EXTENSIONS.test(pathname)) {
-        return next(requestHandler)
-      }
-
       // If pathname is a directory, try <directory>/index.html
       if (fs.existsSync(path.join(requestHandler.rootPath, 'src', pathname, 'index.hbs'))) {
         pathname = path.join(pathname, 'index.html')
@@ -253,6 +249,10 @@ export class RequestHandler {
         fs.existsSync(path.join(requestHandler.rootPath, 'src', pathname + '.hbs'))
       ) {
         pathname = pathname + '.html'
+      }
+
+      if (!pathname.endsWith('.html')) {
+        return next(requestHandler)
       }
 
       // Serve hbs file in src as if it were html
@@ -266,7 +266,7 @@ export class RequestHandler {
         target = thaliaHandlebarsPath
       }
 
-      if (target) {
+      if (target && target.endsWith('.hbs') && fs.statSync(target).isFile()) {
         requestHandler.website
           .asyncServeHandlebarsTemplate({
             res: requestHandler.res,
@@ -306,6 +306,10 @@ export class RequestHandler {
         pathname = pathname + '.html'
       }
 
+      if (!pathname.endsWith('.html')) {
+        return next(requestHandler)
+      }
+
       const mdPathname = pathname.replace('.html', '.md')
       const projectMdPath = path.join(requestHandler.rootPath, 'src', mdPathname)
       const thaliaMdPath = path.join(requestHandler.thaliaRoot, 'src', mdPathname)
@@ -317,38 +321,38 @@ export class RequestHandler {
         target = thaliaMdPath
       }
 
-      if (!target) {
+      if (target && target.endsWith('.md') && fs.statSync(target).isFile()) {
+        fs.promises
+          .readFile(target, 'utf8')
+          .then((content) => {
+            const contentHtml = marked.parse(content, { async: false }) as string
+            if (requestHandler.website.env === 'development') {
+              requestHandler.website.loadPartials()
+            }
+            requestHandler.website.handlebars.registerPartial('content', contentHtml)
+            let wrapperTemplate = requestHandler.website.handlebars.partials['wrapper'] ?? ''
+            if (requestHandler.website.env === 'development') {
+              wrapperTemplate = wrapperTemplate.replace('</body>', '{{> browsersync }}\n</body>')
+            }
+            const template = requestHandler.website.handlebars.compile(wrapperTemplate)
+            const data = {
+              requestInfo: requestHandler.requestInfo,
+              version: requestHandler.website.version,
+            }
+            const html = template(data)
+            requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
+            requestHandler.res.end(html)
+            return finish(`Successfully rendered markdown ${requestHandler.pathname}`)
+          })
+          .catch((err) => {
+            console.error(`Error serving markdown file, target ${target}, pathname ${requestHandler.pathname}:`, err)
+            requestHandler.res.writeHead(500)
+            requestHandler.res.end('Internal Server Error')
+            return finish('Error serving markdown file')
+          })
+      } else {
         return next(requestHandler)
       }
-
-      fs.promises
-        .readFile(target, 'utf8')
-        .then((content) => {
-          const contentHtml = marked.parse(content, { async: false }) as string
-          if (requestHandler.website.env === 'development') {
-            requestHandler.website.loadPartials()
-          }
-          requestHandler.website.handlebars.registerPartial('content', contentHtml)
-          let wrapperTemplate = requestHandler.website.handlebars.partials['wrapper'] ?? ''
-          if (requestHandler.website.env === 'development') {
-            wrapperTemplate = wrapperTemplate.replace('</body>', '{{> browsersync }}\n</body>')
-          }
-          const template = requestHandler.website.handlebars.compile(wrapperTemplate)
-          const data = {
-            requestInfo: requestHandler.requestInfo,
-            version: requestHandler.website.version,
-          }
-          const html = template(data)
-          requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
-          requestHandler.res.end(html)
-          return finish(`Successfully rendered markdown ${requestHandler.pathname}`)
-        })
-        .catch((err) => {
-          console.error('Error serving markdown file:', err)
-          requestHandler.res.writeHead(500)
-          requestHandler.res.end('Internal Server Error')
-          return finish('Error serving markdown file')
-        })
     })
   }
 

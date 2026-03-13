@@ -548,28 +548,37 @@ describe('Request-handler: example-auth guest (no session)', () => {
     expect(html).toMatch(/email/i)
   })
 
+const MAILCATCHER_URL = 'http://127.0.0.1:1080'
+const SKIP_MAILCATCHER_ENV = 'SKIP_MAILCATCHER_TESTS'
+
 test('auth flow: password reset via MailCatcher works end-to-end (example-auth)', async () => {
   if (!serverStarted) return
+
+  if (process.env[SKIP_MAILCATCHER_ENV] === '1') {
+    expect(true).toBe(true)
+    return
+  }
 
   const TEST_EMAIL = `reset-user-${Date.now()}@example-auth.test`
   const OLD_PASSWORD = 'old-password-1'
   const NEW_PASSWORD = 'new-password-2'
 
-  // Helper: clear MailCatcher messages (best-effort; skip test if not available)
+  // Helper: clear MailCatcher messages; fail if MailCatcher not reachable
   async function clearMailcatcher(): Promise<boolean> {
     try {
-      const res = await fetch('http://127.0.0.1:1080/messages', { method: 'DELETE' })
+      const res = await fetch(`${MAILCATCHER_URL}/messages`, { method: 'DELETE' })
       return res.ok
     } catch (err) {
-      console.warn('MailCatcher not reachable, skipping password reset flow test:', (err as Error).message)
-      return false
+      throw new Error(
+        `MailCatcher is not running at ${MAILCATCHER_URL}. Start it (e.g. mailcatcher) or set SKIP_MAILCATCHER_TESTS=1 to skip. ${(err as Error).message}`
+      )
     }
   }
 
   // Helper: get latest message body for our test email (HTML or plain)
   async function getLatestResetEmailBody(): Promise<string | null> {
     try {
-      const res = await fetch('http://127.0.0.1:1080/messages')
+      const res = await fetch(`${MAILCATCHER_URL}/messages`)
       if (!res.ok) return null
       const messages: any[] = await res.json()
       if (!Array.isArray(messages) || messages.length === 0) return null
@@ -581,23 +590,21 @@ test('auth flow: password reset via MailCatcher works end-to-end (example-auth)'
       if (!match) return null
 
       const id = match.id
-      const htmlRes = await fetch(`http://127.0.0.1:1080/messages/${id}.html`)
+      const htmlRes = await fetch(`${MAILCATCHER_URL}/messages/${id}.html`)
       if (htmlRes.ok) return await htmlRes.text()
-      const textRes = await fetch(`http://127.0.0.1:1080/messages/${id}.plain`)
+      const textRes = await fetch(`${MAILCATCHER_URL}/messages/${id}.plain`)
       if (textRes.ok) return await textRes.text()
       return null
     } catch (err) {
-      console.warn('MailCatcher fetch failed, skipping password reset flow test:', (err as Error).message)
-      return null
+      throw new Error(
+        `MailCatcher not reachable at ${MAILCATCHER_URL}: ${(err as Error).message}`
+      )
     }
   }
 
-  // 0. Clear MailCatcher
+  // 0. Clear MailCatcher (fails loudly if MailCatcher is off)
   const cleared = await clearMailcatcher()
-  if (!cleared) {
-    expect(true).toBe(true)
-    return
-  }
+  expect(cleared).toBe(true)
 
   // 1. Create user via /createNewUser
   const createBody = new URLSearchParams({
@@ -631,9 +638,7 @@ test('auth flow: password reset via MailCatcher works end-to-end (example-auth)'
     await new Promise((r) => setTimeout(r, 500))
   }
   if (!emailBody) {
-    console.warn('No reset email found in MailCatcher for', TEST_EMAIL)
-    expect(true).toBe(true)
-    return
+    throw new Error(`No reset email found in MailCatcher for ${TEST_EMAIL} after polling. Check that MailCatcher is running and the app sent the email.`)
   }
 
   // 4. Extract token from reset link in email body (handle '=' or HTML-escaped '&#x3D;')

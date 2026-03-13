@@ -275,7 +275,9 @@ export class Website {
       })
     }
 
-    // Check that controller accepts up to 4 parameters (res, req, website, requestInfo)
+    // Perhaps we should check that controller accepts up to 4 parameters (res, req, website, requestInfo)
+    // But this might not be needed, many end points don't need the requestInfo or website.
+    // Some of them we're just happy to log some info and respond with a simple 200.
     return controller
   }
 

@@ -166,6 +166,72 @@ describe('Request-handler: example-src (Handlebars, TypeScript, controller)', ()
     expect([200, 301, 302]).toContain(response.status)
   })
 
+  test('CRUD: GET /fruit returns 200 (list) or 301/302 (redirect); no 500', async () => {
+    const response = await fetchFromServer('/fruit', port)
+    expect([200, 301, 302]).toContain(response.status)
+    const html = await response.text()
+    expect(html.length).toBeGreaterThan(0)
+    // If we got list HTML (not a redirect-followed page), body should look like list view
+    if (response.status === 200 && html.length > 200) {
+      expect(html).toMatch(/fruit|list|table|html/i)
+    }
+  })
+
+  test('CRUD: GET /fruit/list returns 200 and list view', async () => {
+    const response = await fetchFromServer('/fruit/list', port)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html.length).toBeGreaterThan(0)
+    expect(html).toMatch(/fruit|list|table|html/i)
+  })
+
+  test('CRUD: GET /fruit/new returns 200 and new form', async () => {
+    const response = await fetchFromServer('/fruit/new', port)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html.length).toBeGreaterThan(0)
+    expect(html).toMatch(/fruit|Create|form|html/i)
+  })
+
+  test('CRUD: GET /fruit/1 returns 200 (show) or 404 (record not found)', async () => {
+    const response = await fetchFromServer('/fruit/1', port)
+    expect([200, 404]).toContain(response.status)
+    if (response.status === 200) {
+      const html = await response.text()
+      expect(html.length).toBeGreaterThan(0)
+      expect(html).toMatch(/fruit|Show|record|html/i)
+    }
+  })
+
+  test('CRUD: GET /fruit/nonexistent-id returns 404 or 200', async () => {
+    const response = await fetchFromServer('/fruit/999999', port)
+    expect([200, 404]).toContain(response.status)
+  })
+
+  test('CRUD: GET /fruit/columns returns 200 (DataTables columns)', async () => {
+    const response = await fetchFromServer('/fruit/columns', port)
+    expect(response.status).toBe(200)
+    const body = await response.text()
+    expect(body.length).toBeGreaterThan(0)
+  })
+
+  test('CRUD: GET /fruit/json returns 200 (DataTables data)', async () => {
+    const response = await fetchFromServer('/fruit/json', port)
+    expect(response.status).toBe(200)
+    const body = await response.text()
+    expect(body.length).toBeGreaterThan(0)
+  })
+
+  test('CRUD: GET /fruit/edit/1 returns 200 (edit form) or 404 (record not found)', async () => {
+    const response = await fetchFromServer('/fruit/edit/1', port)
+    expect([200, 404]).toContain(response.status)
+    if (response.status === 200) {
+      const html = await response.text()
+      expect(html.length).toBeGreaterThan(0)
+      expect(html).toMatch(/fruit|edit|form|html/i)
+    }
+  })
+
   test('tryMarkdown: /path serves src/path.md when path.md exists (file-style)', async () => {
     const response = await fetchFromServer('/about', port)
     expect(response.status).toBe(200)
@@ -337,6 +403,26 @@ describe('Request-handler: example-auth (route guard, controller)', () => {
     if (!serverStarted) return
     const response = await fetchFromServer('/fruit', port)
     expect([200, 301, 302, 401]).toContain(response.status)
+  })
+
+  test('CRUD: GET /fruit/list returns 200 or 401 (list action)', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/fruit/list', port)
+    expect([200, 301, 302, 401]).toContain(response.status)
+    if (response.status === 200) {
+      const html = await response.text()
+      expect(html).toMatch(/fruit|list|table|html/i)
+    }
+  })
+
+  test('CRUD: GET /fruit/new returns 200 or 401 (new form action)', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/fruit/new', port)
+    expect([200, 301, 302, 401]).toContain(response.status)
+    if (response.status === 200) {
+      const html = await response.text()
+      expect(html).toMatch(/fruit|new|form|html/i)
+    }
   })
 })
 

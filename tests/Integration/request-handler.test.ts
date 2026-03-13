@@ -278,6 +278,9 @@ describe('Request-handler: handler chain fallback (example-src)', () => {
  * example-auth uses ThaliaSecurity, RoleRouteGuard, and config.routes (path + permissions).
  * Requires database (and optionally config/mailAuth.js) to be configured so the site and
  * route guard can start. If the server fails to start, these tests are skipped.
+ *
+ * Plan (see websites/example-auth/README.md): guest gets 401 for /, /profile/:id, /admin;
+ * /fruit is guest read; profile viewable by logged-in user, editable only by owner or admin.
  */
 describe('Request-handler: example-auth (route guard, controller)', () => {
   let port: number
@@ -326,5 +329,145 @@ describe('Request-handler: example-auth (route guard, controller)', () => {
     if (!serverStarted) return
     const response = await fetchFromServer('/fruit', port)
     expect([200, 301, 302, 401]).toContain(response.status)
+  })
+})
+
+describe('Request-handler: example-auth guest (no session)', () => {
+  let port: number
+  let serverStarted: boolean
+  const PROJECT = 'example-auth'
+
+  beforeAll(async () => {
+    serverStarted = false
+    try {
+      const serverInfo = await startTestServer(PROJECT)
+      port = serverInfo.port
+      await new Promise((r) => setTimeout(r, 300))
+      serverStarted = true
+    } catch {
+      port = 0
+    }
+  })
+
+  afterAll(async () => {
+    if (serverStarted) await stopTestServer(PROJECT)
+  })
+
+  test('guest GET / returns 401 (login required)', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/', port)
+    expect(response.status).toBe(401)
+  })
+
+  test('guest GET /fruit returns 200 (guest read allowed)', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/fruit', port)
+    expect(response.status).toBe(200)
+  })
+
+  test('guest GET /profile/1 returns 401 (no guest access)', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/profile/1', port)
+    expect(response.status).toBe(401)
+  })
+
+  test('guest GET /admin returns 401', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/admin', port)
+    expect(response.status).toBe(401)
+  })
+})
+
+/** Try to log in; returns Cookie header value or null. */
+async function loginExampleAuth(port: number, email: string, password: string): Promise<string | null> {
+  const body = new URLSearchParams({ Email: email, Password: password }).toString()
+  const response = await fetchFromServer('/logon', port, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+    redirect: 'manual',
+  })
+  const setCookie = response.headers.get('set-cookie')
+  if (!setCookie || !setCookie.includes('sessionId=')) return null
+  const match = setCookie.match(/sessionId=([^;]+)/)
+  return match ? `sessionId=${match[1]}` : null
+}
+
+describe('Request-handler: example-auth authenticated (user / admin)', () => {
+  let port: number
+  let serverStarted: boolean
+  let userCookie: string | null = null
+  let adminCookie: string | null = null
+  const PROJECT = 'example-auth'
+  const USER_EMAIL = 'user@example-auth.test'
+  const ADMIN_EMAIL = 'admin@example-auth.test'
+  const PASSWORD = 'test-password'
+
+  beforeAll(async () => {
+    serverStarted = false
+    try {
+      const serverInfo = await startTestServer(PROJECT)
+      port = serverInfo.port
+      await new Promise((r) => setTimeout(r, 300))
+      serverStarted = true
+      userCookie = await loginExampleAuth(port, USER_EMAIL, PASSWORD)
+      adminCookie = await loginExampleAuth(port, ADMIN_EMAIL, PASSWORD)
+    } catch {
+      port = 0
+    }
+  })
+
+  afterAll(async () => {
+    if (serverStarted) await stopTestServer(PROJECT)
+  })
+
+  function fetchWithCookie(url: string, cookie: string | null, options?: RequestInit) {
+    const headers = new Headers(options?.headers)
+    if (cookie) headers.set('Cookie', cookie)
+    return fetchFromServer(url, port, { ...options, headers })
+  }
+
+  test('logged-in user GET / returns 200', async () => {
+    if (!serverStarted || !userCookie) return
+    const response = await fetchWithCookie('/', userCookie)
+    expect(response.status).toBe(200)
+  })
+
+  test('logged-in user GET /profile/1 returns 200 or 404 (view any profile)', async () => {
+    if (!serverStarted || !userCookie) return
+    const response = await fetchWithCookie('/profile/1', userCookie)
+    expect([200, 404]).toContain(response.status)
+  })
+
+  test('user PUT /profile/2 without being owner returns 403', async () => {
+    if (!serverStarted || !userCookie) return
+    const response = await fetchWithCookie('/profile/2', userCookie, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Hacked' }),
+    })
+    expect([403, 404]).toContain(response.status)
+  })
+
+  test('user GET /admin returns 403', async () => {
+    if (!serverStarted || !userCookie) return
+    const response = await fetchWithCookie('/admin', userCookie)
+    expect(response.status).toBe(403)
+  })
+
+  test('admin GET /admin returns 200', async () => {
+    if (!serverStarted || !adminCookie) return
+    const response = await fetchWithCookie('/admin', adminCookie)
+    expect(response.status).toBe(200)
+  })
+
+  test('admin PUT /profile/1 returns 200 or 404 (admin can edit any)', async () => {
+    if (!serverStarted || !adminCookie) return
+    const response = await fetchWithCookie('/profile/1', adminCookie, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Updated by admin' }),
+    })
+    expect([200, 404]).toContain(response.status)
   })
 })

@@ -75,6 +75,38 @@ Same pattern is used in `websites/smugmug`.
 
 Using SQLite would avoid Docker and YAML, but Thalia’s **database layer and security models are currently MySQL-only** (`server/database.ts`, `models/security-models.ts`). Switching example-auth to SQLite would require either (a) adding SQLite support and SQLite variants of users/sessions/audits in the framework, or (b) a separate minimal example that doesn’t use ThaliaSecurity. The **integration tests** only assert HTTP behaviour (route guard runs, 200/401, etc.); they don’t care whether the backend is MySQL or SQLite, so using SQLite for this example wouldn’t invalidate those tests—but it would need the framework changes above first.
 
+## Plan: guest / user / admin and user profiles
+
+This section describes the intended behaviour and test coverage. Some features may not be implemented yet; tests document the contract and can fail until the feature exists.
+
+### Route and permission matrix
+
+| Path            | Guest     | User (logged in) | Admin   |
+|-----------------|-----------|------------------|--------|
+| `/`             | 401 login | 200              | 200    |
+| `/fruit`        | 200 read  | 200 read         | 200 CRUD |
+| `/profile/:id`  | 401       | 200 view any     | 200 view/edit any |
+| `/profile/:id` (edit) | —  | 200 only if owner | 200    |
+| `/admin`        | 401       | 403              | 200    |
+
+- **User profiles**: Viewable by any logged-in user. Editable only by the profile owner or an admin. The route guard enforces "user can read /profile"; the **profile controller** enforces "edit only if `requestInfo.userAuth.userId === :id` or `userAuth.role === 'admin'`".
+
+### Implementation phases
+
+1. **Routes** — Expand `config.routes` so that: `/` requires at least user (guest gets 401); `/fruit` stays as today; `/profile` allows user read and admin full; `/admin` remains admin-only.
+
+2. **Profile controller** — `GET /profile/:id` shows profile (allowed if logged in). `POST/PUT /profile/:id` updates only if `userAuth.userId === id` or `userAuth.role === 'admin'`; otherwise 403.
+
+3. **Tests** — Guest: `GET /` → 401, `GET /fruit` → 200, `GET /profile/1` → 401, `GET /admin` → 401. User: view any profile, edit only own; `PUT /profile/2` → 403. Admin: full access. Use `POST /logon` to get session cookie for authenticated tests; skip if DB/login unavailable.
+
+4. **Not yet built** — Owner-based edit enforcement in profile controller; optional dedicated profile table.
+
+### Running the tests
+
+From Thalia root: `bun test tests/Integration/request-handler.test.ts`. For full coverage, set up the DB and optionally seed a user.
+
+---
+
 ## Tests
 
 Integration tests in `tests/Integration/request-handler.test.ts` start example-auth and assert route guard + controller behaviour. If the DB isn’t available, the suite still passes and those tests no-op.

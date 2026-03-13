@@ -11,6 +11,8 @@
  *   For request /path: first check src/path/index.hbs, else src/path.hbs; then serve that template.
  * tryMarkdown: same logic for src/path/index.md and src/path.md.
  *
+ * Fail cases: non-existent paths, folders with no index file, and missing assets all return 404.
+ *
  * - example-minimal: static files (public/), 404, path exploit
  * - example-src: Handlebars (path.hbs + path/index.hbs), Markdown, TypeScript, controller (fruit)
  * - example-auth: route guard, controller (skipped by default; remove .skip when DB/auth configured)
@@ -71,6 +73,26 @@ describe('Request-handler: example-minimal (static, 404, path exploit)', () => {
 
   test('non-existent path returns 404 (fileNotFound)', async () => {
     const response = await fetchFromServer('/nonexistent.html', port)
+    expect(response.status).toBe(404)
+  })
+
+  test('fail: non-existent file path returns 404', async () => {
+    const response = await fetchFromServer('/does-not-exist', port)
+    expect(response.status).toBe(404)
+  })
+
+  test('fail: non-existent asset path returns 404', async () => {
+    const response = await fetchFromServer('/css/missing.css', port)
+    expect(response.status).toBe(404)
+  })
+
+  test('fail: non-existent folder path (no index) returns 404', async () => {
+    const response = await fetchFromServer('/no-such-folder', port)
+    expect(response.status).toBe(404)
+  })
+
+  test('fail: folder with trailing slash but no index returns 404', async () => {
+    const response = await fetchFromServer('/no-such-folder/', port)
     expect(response.status).toBe(404)
   })
 })
@@ -157,6 +179,31 @@ describe('Request-handler: example-src (Handlebars, TypeScript, controller)', ()
   test('path with .. returns 400 or 404 (checkPathExploit vs client normalization)', async () => {
     const response = await fetchFromServer('/views/../config/config.ts', port)
     expect([400, 404]).toContain(response.status)
+  })
+
+  test('fail: path to folder that has no index.hbs or index.md returns 404', async () => {
+    const response = await fetchFromServer('/views', port)
+    expect(response.status).toBe(404)
+  })
+
+  test('fail: path to folder with trailing slash, no index file returns 404', async () => {
+    const response = await fetchFromServer('/views/', port)
+    expect(response.status).toBe(404)
+  })
+
+  test('fail: non-existent .hbs path returns 404', async () => {
+    const response = await fetchFromServer('/views/nonexistent-page', port)
+    expect(response.status).toBe(404)
+  })
+
+  test('fail: non-existent .md path returns 404', async () => {
+    const response = await fetchFromServer('/no-such-markdown-page', port)
+    expect(response.status).toBe(404)
+  })
+
+  test('fail: request for .js with no corresponding .ts and no static file returns 404', async () => {
+    const response = await fetchFromServer('/js/nonexistent-script.js', port)
+    expect(response.status).toBe(404)
   })
 })
 

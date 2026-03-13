@@ -118,20 +118,22 @@ export class MailService implements Machine {
   }
 
   /**
-   * Import a file, but if it doesn't exist, reject
+   * Import a file; if it doesn't exist or fails to load, return {} so MailService can still init.
    * @param path - The path to the file to import
-   * @returns The imported file or an error
+   * @returns The imported module or {} on error (avoids unhandled rejection when mailAuth.js is missing)
    */
   private async safeImport(path: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      try {
-        const data = import(path)
-        resolve(data)
-      } catch (e) {
-        console.error(`Error importing ${path}:`, e)
-        reject(e)
-      }
-    })
+    try {
+      const mod = await import(path)
+      return mod ?? {}
+    } catch (e) {
+      console.warn(
+        'Mail auth file not found or invalid (mail will not be ready):',
+        path,
+        e instanceof Error ? e.message : String(e),
+      )
+      return {}
+    }
   }
 
   /**

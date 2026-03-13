@@ -151,6 +151,14 @@ export class CrudFactory implements Machine {
 
         // console.log("Found", records.length, "records in", this.name)
       })
+      .catch((err: unknown) => {
+        console.warn(
+          'CrudFactory',
+          this.name,
+          'init query failed (schema drift? run drizzle-kit push):',
+          err instanceof Error ? err.message : String(err),
+        )
+      })
   }
 
   public static getAction(requestInfo: RequestInfo): Permission {

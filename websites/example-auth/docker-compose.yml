@@ -8,7 +8,7 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     ports:
-      - "3346:3306"
+      - "3377:3306"
     environment:
       MYSQL_DATABASE: example_auth
       MYSQL_USER: not_root

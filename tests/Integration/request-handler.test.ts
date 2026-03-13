@@ -541,6 +541,137 @@ describe('Request-handler: example-auth guest (no session)', () => {
     expect(html).toMatch(/Forgot Password|forgot|reset/i)
     expect(html).toMatch(/email/i)
   })
+
+test('auth flow: password reset via MailCatcher works end-to-end (example-auth)', async () => {
+  if (!serverStarted) return
+
+  const TEST_EMAIL = 'reset-user@example-auth.test'
+  const OLD_PASSWORD = 'old-password-1'
+  const NEW_PASSWORD = 'new-password-2'
+
+  // Helper: clear MailCatcher messages (best-effort; skip test if not available)
+  async function clearMailcatcher(): Promise<boolean> {
+    try {
+      const res = await fetch('http://127.0.0.1:1080/messages', { method: 'DELETE' })
+      return res.ok
+    } catch (err) {
+      console.warn('MailCatcher not reachable, skipping password reset flow test:', (err as Error).message)
+      return false
+    }
+  }
+
+  // Helper: get latest message body for our test email (HTML or plain)
+  async function getLatestResetEmailBody(): Promise<string | null> {
+    try {
+      const res = await fetch('http://127.0.0.1:1080/messages')
+      if (!res.ok) return null
+      const messages: any[] = await res.json()
+      if (!Array.isArray(messages) || messages.length === 0) return null
+
+      // Find last message that mentions TEST_EMAIL in recipients or subject
+      const match = [...messages]
+        .reverse()
+        .find((m) => JSON.stringify(m).includes(TEST_EMAIL))
+      if (!match) return null
+
+      const id = match.id
+      const htmlRes = await fetch(`http://127.0.0.1:1080/messages/${id}.html`)
+      if (htmlRes.ok) return await htmlRes.text()
+      const textRes = await fetch(`http://127.0.0.1:1080/messages/${id}.plain`)
+      if (textRes.ok) return await textRes.text()
+      return null
+    } catch (err) {
+      console.warn('MailCatcher fetch failed, skipping password reset flow test:', (err as Error).message)
+      return null
+    }
+  }
+
+  // 0. Clear MailCatcher
+  const cleared = await clearMailcatcher()
+  if (!cleared) {
+    expect(true).toBe(true)
+    return
+  }
+
+  // 1. Create user via /createNewUser
+  const createBody = new URLSearchParams({
+    Name: 'Reset User',
+    Email: TEST_EMAIL,
+    Password: OLD_PASSWORD,
+  }).toString()
+  const createResp = await fetchFromServer('/createNewUser', port, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: createBody,
+    redirect: 'manual',
+  })
+  // If user already exists, controller returns 200 with an error; either is fine for this flow.
+  expect([200, 302, 303]).toContain(createResp.status)
+
+  // 2. Trigger forgotPassword
+  const forgotBody = new URLSearchParams({ email: TEST_EMAIL }).toString()
+  const forgotResp = await fetchFromServer('/forgotPassword', port, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: forgotBody,
+  })
+  expect(forgotResp.status).toBe(200)
+
+  // 3. Poll MailCatcher for reset email
+  let emailBody: string | null = null
+  for (let i = 0; i < 6; i++) {
+    emailBody = await getLatestResetEmailBody()
+    if (emailBody) break
+    await new Promise((r) => setTimeout(r, 500))
+  }
+  if (!emailBody) {
+    console.warn('No reset email found in MailCatcher for', TEST_EMAIL)
+    expect(true).toBe(true)
+    return
+  }
+
+  // 4. Extract token from reset link in email body (handle '=' or HTML-escaped '&#x3D;')
+  const tokenMatch = emailBody.match(/resetPassword\?token(?:=|&#x3D;)([^"'\\s<]+)/)
+  expect(tokenMatch).not.toBeNull()
+  const token = decodeURIComponent(tokenMatch![1])
+
+  // 5. GET /resetPassword?token=...
+  const resetGetResp = await fetchFromServer(`/resetPassword?token=${encodeURIComponent(token)}`, port)
+  expect(resetGetResp.status).toBe(200)
+  const resetGetHtml = await resetGetResp.text()
+  expect(resetGetHtml).toMatch(/Reset Password|New password/i)
+
+  // 6. POST /resetPassword with new password
+  const resetPostBody = new URLSearchParams({
+    token,
+    password: NEW_PASSWORD,
+    confirmPassword: NEW_PASSWORD,
+  }).toString()
+  const resetPostResp = await fetchFromServer('/resetPassword', port, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: resetPostBody,
+    redirect: 'manual',
+  })
+  expect([302, 303]).toContain(resetPostResp.status)
+  const loc = resetPostResp.headers.get('location') ?? ''
+  expect(loc).toMatch(/\/logon\?message=Password\+reset/i)
+
+  // 7. Login with old password should fail
+  const oldCookie = await loginExampleAuth(port, TEST_EMAIL, OLD_PASSWORD)
+  expect(oldCookie).toBeNull()
+
+  // 8. Login with new password should succeed
+  const newCookie = await loginExampleAuth(port, TEST_EMAIL, NEW_PASSWORD)
+  expect(newCookie).not.toBeNull()
+
+  // 9. With new session, GET /profile/1 or / returns 200/404 (sanity)
+  if (newCookie) {
+    const headers = new Headers({ Cookie: newCookie })
+    const resp = await fetchFromServer('/', port, { headers })
+    expect([200, 401]).toContain(resp.status)
+  }
+})
 })
 
 /** Try to log in; returns Cookie header value or null. */

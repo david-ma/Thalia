@@ -388,11 +388,10 @@ export class RequestHandler {
           requestHandler.res.end(jsText)
           return finish(`Successfully compiled typescript file ${requestHandler.pathname}`)
         }).catch((error) => {
-          // Note: We could just log this error and try next(requestHandler)
-          console.error('Error compiling typescript file:', error)
-          requestHandler.res.writeHead(500)
-          requestHandler.res.end('Internal Server Error')
-          return finish('Error compiling typescript file')
+          // Fall back to next handler so pre-built assets (e.g. public/js/*.js)
+          // can be served when Bun.build fails (e.g. three/examples/jsm).
+          console.error('TypeScript compile failed, falling back:', requestHandler.pathname, error)
+          return next(requestHandler)
         })
       } else {
         return next(requestHandler)

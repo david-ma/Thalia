@@ -1,0 +1,101 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`markdown pipeline parseMarkdown + wrapMarkdownCodeBlocks + Handlebars renders example-src markdown.md to stable HTML 1`] = `
+"<p>Here is a markdown file.</p>
+<h2>Code Blocks</h2>
+<div class="code-card" data-language=""><div class="code-card__header"><span class="code-card__lang">plaintext</span></div><div class="code-card__body"><pre><code class="hljs">This is a plaintext code block.
+</code></pre></div></div><h2>SQL</h2>
+<div class="code-card" data-language="sql"><div class="code-card__header"><span class="code-card__lang">sql</span></div><div class="code-card__body"><pre><code class="hljs language-sql"><span class="hljs-comment">-- This is a SQL code block.</span>
+<span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> users;
+</code></pre></div></div><h2>TypeScript</h2>
+<div class="code-card" data-language="typescript"><div class="code-card__header"><span class="code-card__lang">typescript</span></div><div class="code-card__body"><pre><code class="hljs language-typescript"><span class="hljs-comment">// This is a TypeScript code block.</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&quot;Hello, world!&quot;</span>);
+</code></pre></div></div><h2>Mermaid</h2>
+<p>The next one is a Mermaid diagram.</p>
+<div class="code-card code-card--mermaid" data-language="mermaid">
+  <div class="code-card__header">
+    <span class="code-card__lang">mermaid</span>
+    <div class="code-card__tabs" role="tablist">
+      <button type="button" class="code-card__tab code-card__tab--active" role="tab" aria-selected="true" data-tab="diagram">Diagram</button>
+      <button type="button" class="code-card__tab" role="tab" aria-selected="false" data-tab="source">Source</button>
+    </div>
+  </div>
+  <div class="code-card__body">
+    <div class="code-card__panel code-card__panel--active" data-tab="diagram" role="tabpanel"><pre class="mermaid">graph TD
+    A[Start] --> B[Stop]</pre></div>
+    <div class="code-card__panel" data-tab="source" role="tabpanel" hidden><pre class="hljs"><code>graph TD
+    A[Start] --> B[Stop]</code></pre></div>
+  </div>
+</div>
+<h1>Markdown syntax guide</h1>
+<p>This sample markdown file is from <a href="https://markdownlivepreview.com/">https://markdownlivepreview.com/</a></p>
+<h2>Headers</h2>
+<h1>This is a Heading h1</h1>
+<h2>This is a Heading h2</h2>
+<h6>This is a Heading h6</h6>
+<h2>Emphasis</h2>
+<p><em>This text will be italic</em><br><em>This will also be italic</em></p>
+<p><strong>This text will be bold</strong><br><strong>This will also be bold</strong></p>
+<p><em>You <strong>can</strong> combine them</em></p>
+<h2>Lists</h2>
+<h3>Unordered</h3>
+<ul>
+<li>Item 1</li>
+<li>Item 2</li>
+<li>Item 2a</li>
+<li>Item 2b<ul>
+<li>Item 3a</li>
+<li>Item 3b</li>
+</ul>
+</li>
+</ul>
+<h3>Ordered</h3>
+<ol>
+<li>Item 1</li>
+<li>Item 2</li>
+<li>Item 3<ol>
+<li>Item 3a</li>
+<li>Item 3b</li>
+</ol>
+</li>
+</ol>
+<h2>Images</h2>
+<p><img src="/images/loading.gif" alt="This is an alt text." title="This is a sample image."></p>
+<p>This is an image of a loading spinner.</p>
+<h2>Links</h2>
+<p>You may be using <a href="https://markdownlivepreview.com/">Markdown Live Preview</a>.</p>
+<h2>Blockquotes</h2>
+<blockquote>
+<p>Markdown is a lightweight markup language with plain-text-formatting syntax, created in 2004 by John Gruber with Aaron Swartz.</p>
+<blockquote>
+<p>Markdown is often used to format readme files, for writing messages in online discussion forums, and to create rich text using a plain text editor.</p>
+</blockquote>
+</blockquote>
+<h2>Tables</h2>
+<table>
+<thead>
+<tr>
+<th>Left columns</th>
+<th align="center">Right columns</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>left foo</td>
+<td align="center">right foo</td>
+</tr>
+<tr>
+<td>left bar</td>
+<td align="center">right bar</td>
+</tr>
+<tr>
+<td>left baz</td>
+<td align="center">right baz</td>
+</tr>
+</tbody></table>
+<h2>Blocks of code</h2>
+<div class="code-card" data-language=""><div class="code-card__header"><span class="code-card__lang">plaintext</span></div><div class="code-card__body"><pre><code class="hljs">let message = &#x27;Hello world&#x27;;
+alert(message);
+</code></pre></div></div><h2>Inline code</h2>
+<p>This web site is using <code>markedjs/marked</code>.</p>
+"
+`;

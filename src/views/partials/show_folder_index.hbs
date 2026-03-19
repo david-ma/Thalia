@@ -8,7 +8,7 @@
     </button>
   </div>
   <nav class="folder-index__breadcrumb" aria-label="Breadcrumb">
-    <a href="/">Home</a>{{#if pathname}}{{#if parentPath}} / <a href="/{{parentPath}}">{{parentPath}}</a>{{/if}} / <span>{{pathname}}</span>{{/if}}
+    <a href="/">Home</a>{{#if pathname}}{{#if parentPath}} / <a href="{{parentPath}}">{{parentPath}}</a>{{/if}} / <span>{{pathname}}</span>{{/if}}
   </nav>
   <table class="folder-index__table">
     <thead>
@@ -22,9 +22,9 @@
       <tr>
         <td>
           {{#if isDirectory}}
-          <a href="/{{../basePath}}{{name}}/">📁 {{name}}/</a>
+          <a href="{{../basePath}}{{name}}/">📁 {{name}}/</a>
           {{else}}
-          <a href="/{{../basePath}}{{name}}">{{name}}</a>
+          <a href="{{../basePath}}{{name}}">{{name}}</a>
           {{/if}}
         </td>
         <td>{{#if isDirectory}}Directory{{else}}File{{/if}}</td>

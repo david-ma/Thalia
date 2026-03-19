@@ -192,6 +192,17 @@ main code {
   font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
   background-color: #dddd;
   color: #333;
+  user-select: all;
+  &:hover {
+    background-color: #fff;
+    color: #000;
+    border-color: #000;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+    z-index: 1;
+  }
 }
 
 // This is SCSS, so we should nest things a bit.

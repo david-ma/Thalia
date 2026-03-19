@@ -11,10 +11,8 @@
     </tr>
   </thead>
   <tbody>
-    {{basePath}}
     {{#each entries}}
     <tr>
-      <td></td>{{basePath}}</td>
       <td>
         {{#if isDirectory}}
         <a href="{{../basePath}}{{name}}/">📁 {{name}}/</a>
@@ -28,4 +26,18 @@
   </tbody>
 </table>
 
-basepath: {{basePath}}
+<style>
+  {{!-- Write SCSS here to style the folder index --}}
+  .folder-index-breadcrumb {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  .folder-index-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .folder-index-table th, .folder-index-table td {
+    border: 1px solid #ddd;
+  }
+</style>

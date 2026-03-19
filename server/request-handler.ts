@@ -295,6 +295,7 @@ export class RequestHandler {
    */
   private static showFolderIndex(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
+      // In future, add a feature flag to allow production websites to selectively enable this on demand.
       if (process.env.NODE_ENV !== 'development') {
         return next(requestHandler)
       }
@@ -306,7 +307,6 @@ export class RequestHandler {
 
       const pathname = requestHandler.pathname.replace(/\/$/, '') || ''
       const basePath = pathname ? pathname + '/' : ''
-      console.log('basePath', basePath)
 
       let names: string[]
       try {
@@ -362,83 +362,57 @@ export class RequestHandler {
     })
   }
 
-  /**
-   * Similar to tryHandlebars. We should try markdown files in the same way.
-   * I.e. the file in src/pathname.md should be served if /pathname.html or /pathname is requested.
-   * The file src/pathname/index.md should also be served if /pathname is requested.
-   *
-   * Use Marked to parse the markdown file.
-   * And use the handlebars template 'wrapper' to wrap the markdown file.
-   */
+  /** Serve src/path.md or src/path/index.md via wrapper (same path rules as tryHandlebars). */
   private static tryMarkdown(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
-      // check how long this takes to render.
-      let pathname = requestHandler.pathname
+      const target = RequestHandler.resolveMarkdownPath(requestHandler)
+      if (!target) return next(requestHandler)
 
-      if (fs.existsSync(path.join(requestHandler.rootPath, 'src', pathname, 'index.md'))) {
-        pathname = path.join(pathname, 'index.html')
-      } else if (
-        fs.existsSync(path.join(requestHandler.rootPath, 'src', pathname + '.md'))
-      ) {
-        pathname = pathname + '.html'
-      } else if (
-        fs.existsSync(path.join(requestHandler.rootPath, 'src', pathname ))
-        && pathname.endsWith('.md')
-      ) {
-        pathname = pathname.replace('.md', '.html')
-      } 
+      fs.promises
+        .readFile(target, 'utf8')
+        .then((content) => {
+          const mermaidSources: string[] = []
+          const contentHtml = wrapMarkdownCodeBlocks(parseMarkdown(content), mermaidSources)
+          registerMarkdownHelpers(requestHandler.website.handlebars)
+          const html = RequestHandler.renderMarkdownWrapper(requestHandler, contentHtml, mermaidSources)
+          requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
+          requestHandler.res.end(html)
+          finish(`Successfully rendered markdown ${requestHandler.pathname}`)
+        })
+        .catch((err) => {
+          console.error(`Error serving markdown ${requestHandler.pathname}:`, err)
+          requestHandler.res.writeHead(500)
+          requestHandler.res.end('Internal Server Error')
+          finish('Error serving markdown file')
+        })
+    })
+  }
 
-      const mdPathname = pathname.replace('.html', '.md')
-      const projectMdPath = path.join(requestHandler.rootPath, 'src', mdPathname)
-      const thaliaMdPath = path.join(requestHandler.thaliaRoot, 'src', mdPathname)
-      let target: string | null = null
+  private static resolveMarkdownPath(rh: RequestHandler): string | null {
+    const p = rh.pathname
+    const mdCandidates = [
+      path.join(p, 'index.md'),
+      p.endsWith('.md') ? p : p + '.md',
+    ]
+    for (const mdPath of mdCandidates) {
+      const project = path.join(rh.rootPath, 'src', mdPath)
+      const thalia = path.join(rh.thaliaRoot, 'src', mdPath)
+      if (fs.existsSync(project) && fs.statSync(project).isFile()) return project
+      if (fs.existsSync(thalia) && fs.statSync(thalia).isFile()) return thalia
+    }
+    return null
+  }
 
-      if (fs.existsSync(projectMdPath) && fs.statSync(projectMdPath).isFile()) {
-        target = projectMdPath
-      } else if (fs.existsSync(thaliaMdPath) && fs.statSync(thaliaMdPath).isFile()) {
-        target = thaliaMdPath
-      }
-
-      if (target && target.endsWith('.md') && fs.statSync(target).isFile()) {
-        fs.promises
-          .readFile(target, 'utf8')
-          .then((content) => {
-            let contentHtml = parseMarkdown(content)
-            const mermaidSources: string[] = []
-            contentHtml = wrapMarkdownCodeBlocks(contentHtml, mermaidSources)
-            if (requestHandler.website.env === 'development') {
-              requestHandler.website.loadPartials()
-            }
-            registerMarkdownHelpers(requestHandler.website.handlebars)
-            requestHandler.website.handlebars.registerPartial('content', contentHtml)
-            let wrapperTemplate = requestHandler.website.handlebars.partials['wrapper'] ?? ''
-            if (requestHandler.website.env === 'development') {
-              wrapperTemplate = wrapperTemplate.replace('</body>', '{{> browsersync }}\n</body>')
-            }
-
-            // Add highlight.js and Mermaid JS for markdown pages
-            wrapperTemplate = wrapperTemplate.replace('</body>', '{{> markdown_processing }}\n</body>')
-
-            const template = requestHandler.website.handlebars.compile(wrapperTemplate)
-            const data = {
-              requestInfo: requestHandler.requestInfo,
-              version: requestHandler.website.version,
-              mermaidSources,
-            }
-            const html = template(data)
-            requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
-            requestHandler.res.end(html)
-            return finish(`Successfully rendered markdown ${requestHandler.pathname}`)
-          })
-          .catch((err) => {
-            console.error(`Error serving markdown file, target ${target}, pathname ${requestHandler.pathname}:`, err)
-            requestHandler.res.writeHead(500)
-            requestHandler.res.end('Internal Server Error')
-            return finish('Error serving markdown file')
-          })
-      } else {
-        return next(requestHandler)
-      }
+  private static renderMarkdownWrapper(rh: RequestHandler, contentHtml: string, mermaidSources: string[]): string {
+    if (rh.website.env === 'development') rh.website.loadPartials()
+    rh.website.handlebars.registerPartial('content', contentHtml)
+    let wrapper = rh.website.handlebars.partials['wrapper'] ?? ''
+    if (rh.website.env === 'development') wrapper = wrapper.replace('</body>', '{{> browsersync }}\n</body>')
+    wrapper = wrapper.replace('</body>', '{{> markdown_processing }}\n</body>')
+    return rh.website.handlebars.compile(wrapper)({
+      requestInfo: rh.requestInfo,
+      version: rh.website.version,
+      mermaidSources,
     })
   }
 

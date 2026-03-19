@@ -183,6 +183,17 @@ table.hljs-ln tr td.hljs-ln-code {
   display: none !important;
 }
 
+// This is for Thalia markdown pages, we should add a class to make it more specific.
+main code {
+  border: 1px solid #ccc;
+  padding: 1px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
+  background-color: #dddd;
+  color: #333;
+}
+
 // This is SCSS, so we should nest things a bit.
 // Don't go overboard with nesting. Just keep things tody and easy to follow
 .folder-index {

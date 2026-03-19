@@ -292,7 +292,7 @@ export class RequestHandler {
   /** When no index is found and path is a directory under src/, render folder listing (development only). */
   private static showFolderIndex(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
-      if (process.env.NODE_ENV !== 'development') return next(requestHandler)
+      if (requestHandler.requestInfo.node_env !== 'development') return next(requestHandler)
 
       const data = RequestHandler.resolveFolderIndexData(requestHandler)
       if (!data) return next(requestHandler)

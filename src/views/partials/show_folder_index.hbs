@@ -1,9 +1,14 @@
 {{!-- Rendered when a directory under src/ has no index (development only). --}}
-{{!-- Switch design: change wrapper class to | folder-index--design-2 |and comment out the other two <style> blocks below. --}}
-<div class="folder-index dark-mode">
-  <h1 class="folder-index__title">Index of /{{pathname}}</h1>
+<link rel="stylesheet" href="/css/markdown.css">
+<div class="folder-index" id="folder-index-root">
+  <div class="folder-index__header">
+    <h1 class="folder-index__title">Index of /{{pathname}}</h1>
+    <button type="button" class="folder-index__theme-toggle" id="folder-index-theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <span class="folder-index__theme-icon" aria-hidden="true">🌙</span>
+    </button>
+  </div>
   <nav class="folder-index__breadcrumb" aria-label="Breadcrumb">
-    <a href="/">Home</a>{{#if pathname}}{{#if parentPath}} / <a href="{{parentPath}}">{{parentPath}}</a>{{/if}} / <span>{{pathname}}</span>{{/if}}
+    <a href="/">Home</a>{{#if pathname}}{{#if parentPath}} / <a href="/{{parentPath}}">{{parentPath}}</a>{{/if}} / <span>{{pathname}}</span>{{/if}}
   </nav>
   <table class="folder-index__table">
     <thead>
@@ -17,9 +22,9 @@
       <tr>
         <td>
           {{#if isDirectory}}
-          <a href="{{../basePath}}{{name}}/">📁 {{name}}/</a>
+          <a href="/{{../basePath}}{{name}}/">📁 {{name}}/</a>
           {{else}}
-          <a href="{{../basePath}}{{name}}">{{name}}</a>
+          <a href="/{{../basePath}}{{name}}">{{name}}</a>
           {{/if}}
         </td>
         <td>{{#if isDirectory}}Directory{{else}}File{{/if}}</td>
@@ -29,41 +34,40 @@
   </table>
 </div>
 
+<script>
+(function () {
+  var STORAGE_KEY = 'folder-index-theme';
+  var root = document.getElementById('folder-index-root');
+  var btn = document.getElementById('folder-index-theme-toggle');
+  if (!root || !btn) return;
 
-<style>
-  .folder-index {
-   .folder-index__title { font-size: 1.5rem; margin-bottom: 0.5rem; color: #333; }
-   .folder-index__breadcrumb { margin-bottom: 1rem; color: #666; font-size: 0.95rem; }
-   .folder-index__breadcrumb a { color: #0066cc; text-decoration: none; }
-   .folder-index__breadcrumb a:hover { text-decoration: underline; }
-   .folder-index__table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
-   .folder-index__table th,
-   .folder-index__table td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid #e0e0e0; }
-   .folder-index__table th { background: #f5f5f5; font-weight: 600; color: #555; }
-   .folder-index__table tbody tr:nth-child(even) { background: #fafafa; }
-   .folder-index__table a { color: #0066cc; text-decoration: none; }
-   .folder-index__table a:hover { text-decoration: underline; }
-
-    &.dark-mode {
-      background: #1e1e2e;
-      color: #cdd6f4;
-      padding: 1.25rem;
-      border-radius: 8px;
-      font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
-      font-size: 0.9rem;
-      .folder-index__title { font-size: 1.1rem; margin-bottom: 0.5rem; color: #89b4fa; font-weight: 600; }
-      .folder-index__breadcrumb { margin-bottom: 1rem; color: #a6adc8; font-size: 0.85rem; }
-      .folder-index__breadcrumb a { color: #89b4fa; text-decoration: none; }
-      .folder-index__breadcrumb a:hover { color: #b4befe; text-decoration: underline; }
-      .folder-index__table { width: 100%; border-collapse: collapse; }
-      .folder-index__table tbody tr:nth-child(even) { background: #2e2e3e; }
-      .folder-index__table th,
-      .folder-index__table td { padding: 0.35rem 0.75rem; text-align: left; border-bottom: 1px solid #313244; }
-      .folder-index__table th { background: #2e2e3e; border-bottom: 3px solid #a6e3a1; color: #6c7086; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
-      .folder-index__table tbody tr:hover { background: #313244; }
-      .folder-index__table a { color: #a6e3a1; text-decoration: none; }
-      .folder-index__table a:hover { color: #94e2d5; text-decoration: underline; }
-      .folder-index__table td:last-child { color: #6c7086; font-size: 0.8rem; }
-    }
+  function getPreferred() {
+    var saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === 'dark' || saved === 'light') return saved;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
-</style>
+
+  function apply(theme) {
+    root.classList.toggle('dark-mode', theme === 'dark');
+    btn.querySelector('.folder-index__theme-icon').textContent = theme === 'dark' ? '☀️' : '🌙';
+    btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Toggle dark mode');
+  }
+
+  var theme = getPreferred();
+  apply(theme);
+
+  btn.addEventListener('click', function () {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(STORAGE_KEY, theme);
+    apply(theme);
+  });
+
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
+      if (localStorage.getItem(STORAGE_KEY)) return;
+      theme = e.matches ? 'dark' : 'light';
+      apply(theme);
+    });
+  }
+})();
+</script>

@@ -38,6 +38,7 @@ export class Server extends EventEmitter {
   private socketServer!: SocketServer
   private port: number
   private mode: ServerMode
+  private nodeEnv: string
   public router: Router
   private project: string
 
@@ -45,6 +46,7 @@ export class Server extends EventEmitter {
     super()
     this.port = options.port || 3000
     this.mode = options.mode || 'development'
+    this.nodeEnv = options.node_env || 'development'
     this.project = options.project || 'default'
 
     this.router = new Router(websites)
@@ -90,7 +92,7 @@ export class Server extends EventEmitter {
       action,
       slug,
       cookies,
-      node_env: process.env.NODE_ENV ?? 'development',
+      node_env: this.nodeEnv,
       query: urlObject.query as Record<string, string>,
     }
   }

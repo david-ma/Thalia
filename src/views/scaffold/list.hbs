@@ -7,8 +7,6 @@
 <button onclick="window.location.href='/{{controllerName}}/new'">Create New {{title}}</button>
 
 <script>
-  console.log("hey, we're in list.hbs")
-
   $.ajax('/{{controllerName}}/columns')
     .then(function (columns) {
 
@@ -49,8 +47,9 @@
 
     if (column.data === '{{ primaryKey }}') {
       column.render = function (data, type, row, meta) {
-        return `<a href="/{{controllerName}}/${data}">${data}</a>
-        <span style="float:right"><a href="/{{controllerName}}/edit/${data}">📝</a></span>`
+        const id = encodeURIComponent(String(data))
+        return `<a href="/{{controllerName}}/show/${id}">${id}</a>
+        <span style="float:right"><a href="/{{controllerName}}/edit/${id}" aria-label="Edit ${id}">📝</a></span>`
       }
     }
 

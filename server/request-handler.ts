@@ -66,6 +66,7 @@ export class RequestHandler {
       .then((rh) => RequestHandler.tryStaticFile('docs', rh))
       .then((rh) => RequestHandler.tryStaticFile('data', rh))
       .then((rh) => RequestHandler.tryStaticFile('public', rh, true)) // Serve assets from the thalia root
+      .then(RequestHandler.showFolderIndex)
       .then(RequestHandler.fileNotFound)
       .catch((message) => {
         if (typeof message === typeof Error) {
@@ -289,6 +290,79 @@ export class RequestHandler {
   }
 
   /**
+   * When no index file is found and the path is a directory under src/, render a folder index
+   * (development only). Lists entries with links; directories first, then files.
+   */
+  private static showFolderIndex(requestHandler: RequestHandler): Promise<RequestHandler> {
+    return new Promise((next, finish) => {
+      if (process.env.NODE_ENV !== 'development') {
+        return next(requestHandler)
+      }
+
+      const dirPath = path.join(requestHandler.rootPath, 'src', requestHandler.pathname)
+      if (!fs.existsSync(dirPath) || !fs.statSync(dirPath).isDirectory()) {
+        return next(requestHandler)
+      }
+
+      const pathname = requestHandler.pathname.replace(/\/$/, '') || ''
+      const basePath = pathname ? pathname + '/' : ''
+      console.log('basePath', basePath)
+
+      let names: string[]
+      try {
+        names = fs.readdirSync(dirPath).filter((name) => name !== '.DS_Store')
+      } catch {
+        return next(requestHandler)
+      }
+
+      const entries = names
+        .map((name) => {
+          const fullPath = path.join(dirPath, name)
+          const isDirectory = fs.statSync(fullPath).isDirectory()
+          return { name, isDirectory }
+        })
+        .sort((a, b) => {
+          if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1
+          return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+        })
+
+      const partialPath = path.join(requestHandler.thaliaRoot, 'src', 'views', 'partials', 'show_folder_index.hbs')
+      if (!fs.existsSync(partialPath)) {
+        return next(requestHandler)
+      }
+
+      const parentPath = pathname.includes('/') ? pathname.replace(/\/[^/]*$/, '') : ''
+      const contentTemplate = requestHandler.website.handlebars.compile(
+        fs.readFileSync(partialPath, 'utf8'),
+      )
+      const contentHtml = contentTemplate({ pathname, basePath, entries, parentPath })
+
+      if (requestHandler.website.env === 'development') {
+        requestHandler.website.loadPartials()
+      }
+      requestHandler.website.handlebars.registerPartial('content', contentHtml)
+      let wrapperTemplate = requestHandler.website.handlebars.partials['wrapper'] ?? ''
+      if (requestHandler.website.env === 'development') {
+        wrapperTemplate = wrapperTemplate.replace('</body>', '{{> browsersync }}\n</body>')
+      }
+      const template = requestHandler.website.handlebars.compile(wrapperTemplate)
+      const data = {
+        pathname,
+        basePath,
+        entries,
+        parentPath,
+        requestInfo: requestHandler.requestInfo,
+        version: requestHandler.website.version,
+        title: pathname ? `Index of /${pathname}` : 'Index of /',
+      }
+      const html = template(data)
+      requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
+      requestHandler.res.end(html)
+      return finish(`Successfully rendered folder index ${requestHandler.pathname}`)
+    })
+  }
+
+  /**
    * Similar to tryHandlebars. We should try markdown files in the same way.
    * I.e. the file in src/pathname.md should be served if /pathname.html or /pathname is requested.
    * The file src/pathname/index.md should also be served if /pathname is requested.
@@ -307,11 +381,12 @@ export class RequestHandler {
         fs.existsSync(path.join(requestHandler.rootPath, 'src', pathname + '.md'))
       ) {
         pathname = pathname + '.html'
-      }
-
-      if (!pathname.endsWith('.html')) {
-        return next(requestHandler)
-      }
+      } else if (
+        fs.existsSync(path.join(requestHandler.rootPath, 'src', pathname ))
+        && pathname.endsWith('.md')
+      ) {
+        pathname = pathname.replace('.md', '.html')
+      } 
 
       const mdPathname = pathname.replace('.html', '.md')
       const projectMdPath = path.join(requestHandler.rootPath, 'src', mdPathname)

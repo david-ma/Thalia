@@ -1,0 +1,31 @@
+{{!-- Rendered as content when a directory under src/ is requested and no index was found (development only). --}}
+<h1>Index of /{{pathname}}</h1>
+<p class="folder-index-breadcrumb">
+  <a href="/">Home</a>{{#if pathname}}{{#if parentPath}} / <a href="/{{parentPath}}">{{parentPath}}</a>{{/if}} / <span>{{pathname}}</span>{{/if}}
+</p>
+<table class="table table-striped folder-index-table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{basePath}}
+    {{#each entries}}
+    <tr>
+      <td></td>{{basePath}}</td>
+      <td>
+        {{#if isDirectory}}
+        <a href="{{../basePath}}{{name}}/">📁 {{name}}/</a>
+        {{else}}
+        <a href="{{../basePath}}{{name}}">{{name}}</a>
+        {{/if}}
+      </td>
+      <td>{{#if isDirectory}}Directory{{else}}File{{/if}}</td>
+    </tr>
+    {{/each}}
+  </tbody>
+</table>
+
+basepath: {{basePath}}

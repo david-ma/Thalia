@@ -11,22 +11,25 @@
 <script>
   var data = {{{ json }}} || {}
 
-  d3.select("table")
+  const rows = d3.select("table")
     .selectAll("tr")
     .data(Object.entries(data))
     .enter()
     .append("tr")
-    .html(function ([key, value]) {
 
-      if (typeof value === 'object') {
-        value = JSON.stringify(value)
-      }
+  rows.append("td").text(function ([key]) { return String(key) })
 
-      if (value && value !== 'null' && (key === 'image' || key === 'photo')) {
-        value = `<img src="${value}" />`
-      }
-
-      return `<td>${key}</td><td>${value}</td>`
-    })
+  rows.append("td").each(function ([key, value]) {
+    const cell = d3.select(this)
+    if (value && (key === 'image' || key === 'photo')) {
+      cell.append('img').attr('src', String(value))
+      return
+    }
+    if (typeof value === 'object') {
+      cell.text(JSON.stringify(value))
+      return
+    }
+    cell.text(value == null ? '' : String(value))
+  })
 
 </script>

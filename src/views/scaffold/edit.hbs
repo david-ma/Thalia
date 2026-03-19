@@ -24,25 +24,29 @@
 <script>
   var data = {{{ json }}} || {}
 
-  d3.select("table")
+  const rows = d3.select("table")
     .selectAll("tr")
     .data(Object.entries(data))
     .enter()
     .append("tr")
-    .html(function ([key, value]) {
 
-      if (typeof value === 'object') {
-        value = JSON.stringify(value)
-      }
+  rows.append("td").text(function ([key]) { return String(key) })
 
-      if (value && value !== 'null' && (key === 'image' || key === 'photo')) {
-        value = `<img src="${value}" />`
-      }
+  rows.append("td").each(function ([key, value]) {
+    const cell = d3.select(this)
+    if (value && (key === 'image' || key === 'photo')) {
+      cell.append('img').attr('src', String(value))
+    }
+    const input = cell.append('input')
+      .attr('name', String(key))
+      .attr('type', 'text')
 
-      return `<td>${key}</td><td>
-      <input name="${key}" type="text" value="${value}" />
-      </td>`
-    })
+    if (typeof value === 'object') {
+      input.attr('value', JSON.stringify(value))
+      return
+    }
+    input.attr('value', value == null ? '' : String(value))
+  })
 
   function delete_this_item(id) {
     if (confirm('Are you sure you want to delete this?')) {

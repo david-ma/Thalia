@@ -289,77 +289,50 @@ export class RequestHandler {
     })
   }
 
-  /**
-   * When no index file is found and the path is a directory under src/, render a folder index
-   * (development only). Lists entries with links; directories first, then files.
-   */
+  /** When no index is found and path is a directory under src/, render folder listing (development only). */
   private static showFolderIndex(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
-      // In future, add a feature flag to allow production websites to selectively enable this on demand.
-      if (process.env.NODE_ENV !== 'development') {
-        return next(requestHandler)
-      }
+      if (process.env.NODE_ENV !== 'development') return next(requestHandler)
 
-      const dirPath = path.join(requestHandler.rootPath, 'src', requestHandler.pathname)
-      if (!fs.existsSync(dirPath) || !fs.statSync(dirPath).isDirectory()) {
-        return next(requestHandler)
-      }
-
-      const pathname = requestHandler.pathname.replace(/\/$/, '') || ''
-      const basePath = pathname ? pathname + '/' : ''
-
-      let names: string[]
-      try {
-        names = fs.readdirSync(dirPath).filter((name) => name !== '.DS_Store')
-      } catch {
-        return next(requestHandler)
-      }
-
-      const entries = names
-        .map((name) => {
-          const fullPath = path.join(dirPath, name)
-          const isDirectory = fs.statSync(fullPath).isDirectory()
-          return { name, isDirectory }
-        })
-        .sort((a, b) => {
-          if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1
-          return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
-        })
+      const data = RequestHandler.resolveFolderIndexData(requestHandler)
+      if (!data) return next(requestHandler)
 
       const partialPath = path.join(requestHandler.thaliaRoot, 'src', 'views', 'partials', 'show_folder_index.hbs')
-      if (!fs.existsSync(partialPath)) {
-        return next(requestHandler)
-      }
+      if (!fs.existsSync(partialPath)) return next(requestHandler)
 
-      const parentPath = pathname.includes('/') ? pathname.replace(/\/[^/]*$/, '') : ''
-      const contentTemplate = requestHandler.website.handlebars.compile(
-        fs.readFileSync(partialPath, 'utf8'),
-      )
-      const contentHtml = contentTemplate({ pathname, basePath, entries, parentPath })
-
-      if (requestHandler.website.env === 'development') {
-        requestHandler.website.loadPartials()
-      }
-      requestHandler.website.handlebars.registerPartial('content', contentHtml)
-      let wrapperTemplate = requestHandler.website.handlebars.partials['wrapper'] ?? ''
-      if (requestHandler.website.env === 'development') {
-        wrapperTemplate = wrapperTemplate.replace('</body>', '{{> browsersync }}\n</body>')
-      }
-      const template = requestHandler.website.handlebars.compile(wrapperTemplate)
-      const data = {
-        pathname,
-        basePath,
-        entries,
-        parentPath,
-        requestInfo: requestHandler.requestInfo,
-        version: requestHandler.website.version,
-        title: pathname ? `Index of /${pathname}` : 'Index of /',
-      }
-      const html = template(data)
+      const contentHtml = requestHandler.website.handlebars.compile(fs.readFileSync(partialPath, 'utf8'))(data)
+      const html = RequestHandler.renderFolderIndexWrapper(requestHandler, contentHtml, data.title)
       requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
       requestHandler.res.end(html)
-      return finish(`Successfully rendered folder index ${requestHandler.pathname}`)
+      finish(`Successfully rendered folder index ${requestHandler.pathname}`)
     })
+  }
+
+  private static resolveFolderIndexData(rh: RequestHandler): { pathname: string; basePath: string; entries: { name: string; isDirectory: boolean }[]; parentPath: string; title: string } | null {
+    const dirPath = path.join(rh.rootPath, 'src', rh.pathname)
+    if (!fs.existsSync(dirPath) || !fs.statSync(dirPath).isDirectory()) return null
+    let names: string[]
+    try {
+      names = fs.readdirSync(dirPath).filter((n) => n !== '.DS_Store')
+    } catch {
+      return null
+    }
+    const pathname = rh.pathname.replace(/\/$/, '') || ''
+    const basePath = pathname ? pathname + '/' : ''
+    const entries = names
+      .map((name) => ({ name, isDirectory: fs.statSync(path.join(dirPath, name)).isDirectory() }))
+      .sort((a, b) => (a.isDirectory !== b.isDirectory ? (a.isDirectory ? -1 : 1) : a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })))
+    const parentPath = pathname.includes('/') ? pathname.replace(/\/[^/]*$/, '') : ''
+    const title = pathname ? `Index of /${pathname}` : 'Index of /'
+    return { pathname, basePath, entries, parentPath, title }
+  }
+
+  private static renderFolderIndexWrapper(rh: RequestHandler, contentHtml: string, title: string): string {
+    if (rh.website.env === 'development') rh.website.loadPartials()
+    rh.website.handlebars.registerPartial('content', contentHtml)
+    let wrapper = rh.website.handlebars.partials['wrapper'] ?? ''
+    if (rh.website.env === 'development') wrapper = wrapper.replace('</body>', '{{> browsersync }}\n</body>')
+    return rh.website.handlebars.compile(wrapper)({ requestInfo: rh.requestInfo, version: rh.website.version, title })
   }
 
   /** Serve src/path.md or src/path/index.md via wrapper (same path rules as tryHandlebars). */

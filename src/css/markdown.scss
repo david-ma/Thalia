@@ -1,0 +1,107 @@
+// Markdown page styles: highlight.js theme (atom-one-dark) + line numbers + code block layout.
+// Theme based on highlight.js atom-one-dark (Daniel Gamage; MIT).
+// Kept in-repo for supply-chain safety; update periodically from highlight.js if desired.
+
+/* --- Atom One Dark (highlight.js) --- */
+pre code.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 1em;
+}
+code.hljs {
+  padding: 3px 5px;
+}
+.hljs {
+  color: #abb2bf;
+  background: #282c34;
+}
+.hljs-comment,
+.hljs-quote {
+  color: #5c6370;
+  font-style: italic;
+}
+.hljs-doctag,
+.hljs-keyword,
+.hljs-formula {
+  color: #c678dd;
+}
+.hljs-section,
+.hljs-name,
+.hljs-selector-tag,
+.hljs-deletion,
+.hljs-subst {
+  color: #e06c75;
+}
+.hljs-literal {
+  color: #56b6c2;
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-attribute,
+.hljs-meta .hljs-string {
+  color: #98c379;
+}
+.hljs-attr,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-type,
+.hljs-selector-class,
+.hljs-selector-attr,
+.hljs-selector-pseudo,
+.hljs-number {
+  color: #d19a66;
+}
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link,
+.hljs-meta,
+.hljs-selector-id,
+.hljs-title {
+  color: #61aeee;
+}
+.hljs-built_in,
+.hljs-title.class_,
+.hljs-class .hljs-title {
+  color: #e6c07b;
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: bold;
+}
+.hljs-link {
+  text-decoration: underline;
+}
+
+/* --- Code block layout (exclude mermaid) --- */
+pre:not(.mermaid) {
+  background: #282c34;
+  padding: 1em;
+  border-radius: 5px;
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* --- highlight.js-line-numbers plugin --- */
+.hljs-ln-numbers {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  text-align: center;
+  color: #ccc;
+  border-right: 1px solid #ccc;
+  vertical-align: top;
+  padding-right: 15px;
+}
+table.hljs-ln tr td.hljs-ln-numbers {
+  padding-right: 0.5em;
+  text-align: right;
+}
+table.hljs-ln tr td.hljs-ln-code {
+  padding-left: 0.5em;
+}

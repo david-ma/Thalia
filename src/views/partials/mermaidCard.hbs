@@ -1,0 +1,15 @@
+{{#with (lookup mermaidSources index)}}
+<div class="code-card code-card--mermaid" data-language="mermaid">
+  <div class="code-card__header">
+    <span class="code-card__lang">mermaid</span>
+    <div class="code-card__tabs" role="tablist">
+      <button type="button" class="code-card__tab code-card__tab--active" role="tab" aria-selected="true" data-tab="diagram">Diagram</button>
+      <button type="button" class="code-card__tab" role="tab" aria-selected="false" data-tab="source">Source</button>
+    </div>
+  </div>
+  <div class="code-card__body">
+    <div class="code-card__panel code-card__panel--active" data-tab="diagram" role="tabpanel"><pre class="mermaid">{{{this}}}</pre></div>
+    <div class="code-card__panel" data-tab="source" role="tabpanel" hidden><pre class="hljs"><code>{{{this}}}</code></pre></div>
+  </div>
+</div>
+{{/with}}

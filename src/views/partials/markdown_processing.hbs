@@ -1,6 +1,4 @@
-{{!-- Markdown pages: highlight.js line numbers + Mermaid.js. --}}
-{{!-- Syntax highlighting is done server-side (marked-highlight); theme + line-number styles in markdown.scss. --}}
-{{!-- Client-side highlight.js is only used by the line-numbers plugin (same major version as server). --}}
+{{!-- Markdown pages: code cards (language labels), mermaid Diagram/Source tabs, Mermaid.js. --}}
 
 <link rel="stylesheet" href="/css/markdown.css">
 <script src="/js/vendor/highlight.11.7.0min.js"></script>
@@ -8,9 +6,26 @@
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 <script>
   (function() {
-    if (typeof hljs !== 'undefined' && hljs.initLineNumbersOnLoad) {
-      hljs.initLineNumbersOnLoad();
-    }
+    // Mermaid Diagram/Source tab switching
+    document.querySelectorAll('.code-card--mermaid').forEach(function(card) {
+      var tabs = card.querySelectorAll('.code-card__tab');
+      var panels = card.querySelectorAll('.code-card__panel');
+      tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+          var tabName = tab.getAttribute('data-tab');
+          tabs.forEach(function(t) {
+            t.classList.toggle('code-card__tab--active', t === tab);
+            t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
+          });
+          panels.forEach(function(panel) {
+            var show = panel.getAttribute('data-tab') === tabName;
+            panel.classList.toggle('code-card__panel--active', show);
+            panel.hidden = !show;
+          });
+        });
+      });
+    });
+
     if (typeof mermaid !== 'undefined') {
       mermaid.initialize({ startOnLoad: true });
     }

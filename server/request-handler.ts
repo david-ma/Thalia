@@ -33,6 +33,66 @@ const marked = new Marked(
 
 const GZIP_SIZE_THRESHOLD = 10 * 1024 // 10kb
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+function decodeHtml(s: string): string {
+  return s
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+}
+
+/**
+ * Wrap markdown code blocks in cards. Mermaid blocks are replaced with
+ * {{> mermaidCard index=N }} and sources are pushed into mermaidSources for
+ * Handlebars to render raw via {{{ }}}.
+ */
+function wrapMarkdownCodeBlocks(html: string, mermaidSources: string[]): string {
+  // 1. Mermaid: replace with partial invocation; source is passed via template data
+  let out = html.replace(
+    /<pre><code class="[^"]*language-mermaid[^"]*">([\s\S]*?)<\/code><\/pre>/gi,
+    (_, source: string) => {
+      const i = mermaidSources.length
+      mermaidSources.push(decodeHtml(source.trim()))
+      return `{{> mermaidCard index=${i} }}`
+    },
+  )
+  // 2. Highlighted blocks with language
+  out = out.replace(
+    /<pre><code class="hljs language-([^"]+)">([\s\S]*?)<\/code><\/pre>/g,
+    (_, lang: string, inner: string) =>
+      '<div class="code-card" data-language="' +
+      escapeHtml(lang) +
+      '">' +
+      '<div class="code-card__header"><span class="code-card__lang">' +
+      escapeHtml(lang) +
+      '</span></div>' +
+      '<div class="code-card__body"><pre><code class="hljs language-' +
+      escapeHtml(lang) +
+      '">' +
+      inner +
+      '</code></pre></div></div>',
+  )
+  // 3. Highlighted blocks without language
+  out = out.replace(
+    /<pre><code class="hljs">([\s\S]*?)<\/code><\/pre>/g,
+    (_, inner: string) =>
+      '<div class="code-card" data-language="">' +
+      '<div class="code-card__header"><span class="code-card__lang">plaintext</span></div>' +
+      '<div class="code-card__body"><pre><code class="hljs">' +
+      inner +
+      '</code></pre></div></div>',
+  )
+  return out
+}
+
 export class RequestHandler {
   constructor(public website: Website) {
     this.rootPath = this.website.rootPath
@@ -346,14 +406,16 @@ export class RequestHandler {
           .readFile(target, 'utf8')
           .then((content) => {
             let contentHtml = marked.parse(content, { async: false }) as string
-            // Convert mermaid code blocks to <pre class="mermaid"> for mermaid.run()
-            contentHtml = contentHtml.replace(
-              /<pre><code class="[^"]*language-mermaid[^"]*">([\s\S]*?)<\/code><\/pre>/gi,
-              '<pre class="mermaid">$1</pre>',
-            )
+            const mermaidSources: string[] = []
+            contentHtml = wrapMarkdownCodeBlocks(contentHtml, mermaidSources)
             if (requestHandler.website.env === 'development') {
               requestHandler.website.loadPartials()
             }
+            requestHandler.website.handlebars.registerHelper('lookup', function (obj: unknown, key: string | number) {
+              if (obj == null || (typeof obj !== 'object' && typeof obj !== 'function')) return undefined
+              const k = String(key)
+              return Object.prototype.hasOwnProperty.call(obj, k) ? (obj as Record<string, unknown>)[k] : undefined
+            })
             requestHandler.website.handlebars.registerPartial('content', contentHtml)
             let wrapperTemplate = requestHandler.website.handlebars.partials['wrapper'] ?? ''
             if (requestHandler.website.env === 'development') {
@@ -363,11 +425,11 @@ export class RequestHandler {
             // Add highlight.js and Mermaid JS for markdown pages
             wrapperTemplate = wrapperTemplate.replace('</body>', '{{> markdown_processing }}\n</body>')
 
-
             const template = requestHandler.website.handlebars.compile(wrapperTemplate)
             const data = {
               requestInfo: requestHandler.requestInfo,
               version: requestHandler.website.version,
+              mermaidSources,
             }
             const html = template(data)
             requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })

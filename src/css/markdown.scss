@@ -83,6 +83,13 @@ pre:not(.mermaid) {
   overflow-x: auto;
   width: 100%;
 }
+pre.mermaid {
+  background: #eee;
+  padding: 0;
+  border-radius: 0;
+  overflow-x: auto;
+  width: 100%;
+}
 
 /* --- highlight.js-line-numbers plugin --- */
 .hljs-ln-numbers {
@@ -104,4 +111,74 @@ table.hljs-ln tr td.hljs-ln-numbers {
 }
 table.hljs-ln tr td.hljs-ln-code {
   padding-left: 0.5em;
+}
+
+/* --- Code cards (all code blocks) --- */
+.code-card {
+  margin: 1rem 0;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #282c34;
+}
+
+.code-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid #dee2e6;
+}
+
+.code-card__lang {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #abb2bf;
+  text-transform: lowercase;
+}
+
+.code-card__tabs {
+  display: flex;
+  gap: 0;
+}
+
+.code-card__tab {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  color: #abb2bf;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.code-card__tab:hover {
+  color: #e06c75;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.code-card__tab--active {
+  color: #61aeee;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.code-card__body {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.code-card__body pre {
+  margin: 0;
+  border-radius: 0;
+}
+
+.code-card__panel {
+  display: block;
+}
+
+.code-card__panel[hidden] {
+  display: none !important;
 }

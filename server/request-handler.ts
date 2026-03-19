@@ -12,86 +12,9 @@ import { dirname } from 'path'
 import fs from 'fs'
 import * as sass from 'sass'
 import zlib from 'zlib'
-import { Marked } from 'marked'
-import { markedHighlight } from 'marked-highlight'
-import hljs from 'highlight.js'
-
-const marked = new Marked(
-  markedHighlight({
-    langPrefix: 'hljs language-',
-    emptyLangClass: 'hljs',
-    highlight(code: string, lang: string) {
-      // Leave mermaid blocks as raw text for client-side mermaid.run()
-      if (lang === 'mermaid') {
-        return code
-      }
-      const language = hljs.getLanguage(lang) ? lang : 'plaintext'
-      return hljs.highlight(code, { language }).value
-    },
-  }),
-)
+import { parseMarkdown, wrapMarkdownCodeBlocks, registerMarkdownHelpers } from './markdown'
 
 const GZIP_SIZE_THRESHOLD = 10 * 1024 // 10kb
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
-
-function decodeHtml(s: string): string {
-  return s
-    .replace(/&quot;/g, '"')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&')
-}
-
-/**
- * Wrap markdown code blocks in cards. Mermaid blocks are replaced with
- * {{> mermaidCard index=N }} and sources are pushed into mermaidSources for
- * Handlebars to render raw via {{{ }}}.
- */
-function wrapMarkdownCodeBlocks(html: string, mermaidSources: string[]): string {
-  // 1. Mermaid: replace with partial invocation; source is passed via template data
-  let out = html.replace(
-    /<pre><code class="[^"]*language-mermaid[^"]*">([\s\S]*?)<\/code><\/pre>/gi,
-    (_, source: string) => {
-      const i = mermaidSources.length
-      mermaidSources.push(decodeHtml(source.trim()))
-      return `{{> mermaidCard index=${i} }}`
-    },
-  )
-  // 2. Highlighted blocks with language
-  out = out.replace(
-    /<pre><code class="hljs language-([^"]+)">([\s\S]*?)<\/code><\/pre>/g,
-    (_, lang: string, inner: string) =>
-      '<div class="code-card" data-language="' +
-      escapeHtml(lang) +
-      '">' +
-      '<div class="code-card__header"><span class="code-card__lang">' +
-      escapeHtml(lang) +
-      '</span></div>' +
-      '<div class="code-card__body"><pre><code class="hljs language-' +
-      escapeHtml(lang) +
-      '">' +
-      inner +
-      '</code></pre></div></div>',
-  )
-  // 3. Highlighted blocks without language
-  out = out.replace(
-    /<pre><code class="hljs">([\s\S]*?)<\/code><\/pre>/g,
-    (_, inner: string) =>
-      '<div class="code-card" data-language="">' +
-      '<div class="code-card__header"><span class="code-card__lang">plaintext</span></div>' +
-      '<div class="code-card__body"><pre><code class="hljs">' +
-      inner +
-      '</code></pre></div></div>',
-  )
-  return out
-}
 
 export class RequestHandler {
   constructor(public website: Website) {
@@ -405,17 +328,13 @@ export class RequestHandler {
         fs.promises
           .readFile(target, 'utf8')
           .then((content) => {
-            let contentHtml = marked.parse(content, { async: false }) as string
+            let contentHtml = parseMarkdown(content)
             const mermaidSources: string[] = []
             contentHtml = wrapMarkdownCodeBlocks(contentHtml, mermaidSources)
             if (requestHandler.website.env === 'development') {
               requestHandler.website.loadPartials()
             }
-            requestHandler.website.handlebars.registerHelper('lookup', function (obj: unknown, key: string | number) {
-              if (obj == null || (typeof obj !== 'object' && typeof obj !== 'function')) return undefined
-              const k = String(key)
-              return Object.prototype.hasOwnProperty.call(obj, k) ? (obj as Record<string, unknown>)[k] : undefined
-            })
+            registerMarkdownHelpers(requestHandler.website.handlebars)
             requestHandler.website.handlebars.registerPartial('content', contentHtml)
             let wrapperTemplate = requestHandler.website.handlebars.partials['wrapper'] ?? ''
             if (requestHandler.website.env === 'development') {

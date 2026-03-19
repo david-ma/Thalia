@@ -12,7 +12,24 @@ import { dirname } from 'path'
 import fs from 'fs'
 import * as sass from 'sass'
 import zlib from 'zlib'
-import { marked } from 'marked'
+import { Marked } from 'marked'
+import { markedHighlight } from 'marked-highlight'
+import hljs from 'highlight.js'
+
+const marked = new Marked(
+  markedHighlight({
+    langPrefix: 'hljs language-',
+    emptyLangClass: 'hljs',
+    highlight(code: string, lang: string) {
+      // Leave mermaid blocks as raw text for client-side mermaid.run()
+      if (lang === 'mermaid') {
+        return code
+      }
+      const language = hljs.getLanguage(lang) ? lang : 'plaintext'
+      return hljs.highlight(code, { language }).value
+    },
+  }),
+)
 
 const GZIP_SIZE_THRESHOLD = 10 * 1024 // 10kb
 
@@ -328,7 +345,12 @@ export class RequestHandler {
         fs.promises
           .readFile(target, 'utf8')
           .then((content) => {
-            const contentHtml = marked.parse(content, { async: false }) as string
+            let contentHtml = marked.parse(content, { async: false }) as string
+            // Convert mermaid code blocks to <pre class="mermaid"> for mermaid.run()
+            contentHtml = contentHtml.replace(
+              /<pre><code class="[^"]*language-mermaid[^"]*">([\s\S]*?)<\/code><\/pre>/gi,
+              '<pre class="mermaid">$1</pre>',
+            )
             if (requestHandler.website.env === 'development') {
               requestHandler.website.loadPartials()
             }
@@ -337,6 +359,11 @@ export class RequestHandler {
             if (requestHandler.website.env === 'development') {
               wrapperTemplate = wrapperTemplate.replace('</body>', '{{> browsersync }}\n</body>')
             }
+
+            // Add highlight.js and Mermaid JS for markdown pages
+            wrapperTemplate = wrapperTemplate.replace('</body>', '{{> markdown_processing }}\n</body>')
+
+
             const template = requestHandler.website.handlebars.compile(wrapperTemplate)
             const data = {
               requestInfo: requestHandler.requestInfo,

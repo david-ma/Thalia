@@ -1,0 +1,56 @@
+{{!-- Helper partial for markdown pages: highlight.js (line numbers) + Mermaid.js --}}
+{{!-- Code highlighting is done server-side via marked-highlight; this adds styles and line numbers. --}}
+
+<style>
+  @font-face {
+    font-family: "m6x11";
+    src: url("/fonts/m6x11.ttf") format("truetype");
+  }
+
+  pre:not(.mermaid) {
+    background: #282c34;
+    padding: 1em;
+    border-radius: 5px;
+    overflow-x: auto;
+    width: 100%;
+  }
+
+  .hljs-ln-numbers {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    text-align: center;
+    color: #ccc;
+    border-right: 1px solid #ccc;
+    vertical-align: top;
+    padding-right: 15px;
+  }
+
+  table.hljs-ln tr td.hljs-ln-numbers {
+    padding-right: 0.5em;
+    text-align: right;
+  }
+
+  table.hljs-ln tr td.hljs-ln-code {
+    padding-left: 0.5em;
+  }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/atom-one-dark.min.css">
+<script src="/js/vendor/highlight.11.7.0min.js"></script>
+<script src="/js/vendor/highlight.js-line-numbers.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  (function() {
+    // Line numbers for code blocks (server-side highlighted)
+    if (typeof hljs !== 'undefined' && hljs.initLineNumbersOnLoad) {
+      hljs.initLineNumbersOnLoad();
+    }
+    // Mermaid diagrams
+    if (typeof mermaid !== 'undefined') {
+      mermaid.initialize({ startOnLoad: true });
+    }
+  })();
+</script>

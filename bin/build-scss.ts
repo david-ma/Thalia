@@ -1,4 +1,12 @@
 #!/usr/bin/env bun
+/**
+ * Usage:
+ * From Thalia root directory, run:
+ * bun bin/build-scss.ts <project-name>
+ * 
+ * This will build the SCSS files from /src/css/*.scss to /dist/css/*.css
+ */
+
 
 import fs from 'fs'
 import path from 'path'
@@ -13,16 +21,15 @@ if (!projectName) {
 
 const projectRoot = path.join(process.cwd(), 'websites', projectName)
 const srcDir = path.join(projectRoot, 'src')
-const publicDir = path.join(projectRoot, 'public')
-
+const distDir = path.join(projectRoot, 'dist')
 if (!fs.existsSync(srcDir)) {
   console.error(`No src directory found in ${projectName}`)
   process.exit(1)
 }
 
-// Create public directory if it doesn't exist
-if (!fs.existsSync(publicDir)) {
-  fs.mkdirSync(publicDir, { recursive: true })
+// Create dist directory if it doesn't exist
+if (!fs.existsSync(distDir)) {
+  fs.mkdirSync(distDir, { recursive: true })
 }
 
 // Find all .scss files recursively
@@ -52,7 +59,7 @@ let errors = 0
 for (const scssFile of scssFiles) {
   try {
     const relativePath = path.relative(srcDir, scssFile)
-    const cssPath = path.join(publicDir, relativePath.replace('.scss', '.css'))
+    const cssPath = path.join(distDir, relativePath.replace('.scss', '.css'))
     
     // Create directory structure in public
     const cssDir = path.dirname(cssPath)

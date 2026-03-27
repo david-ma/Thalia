@@ -292,6 +292,8 @@ export class RequestHandler {
   /** When no index is found and path is a directory under src/, render folder listing (development only). */
   private static showFolderIndex(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
+      console.log("showFolderIndex: We are at this path: ", requestHandler.pathname)
+
       if (requestHandler.requestInfo.node_env !== 'development') return next(requestHandler)
 
       const data = RequestHandler.resolveFolderIndexData(requestHandler)
@@ -335,6 +337,7 @@ export class RequestHandler {
     return rh.website.handlebars.compile(wrapper)({ requestInfo: rh.requestInfo, version: rh.website.version, title })
   }
 
+  // TODO: index.html should try index.md
   /** Serve src/path.md or src/path/index.md via wrapper (same path rules as tryHandlebars). */
   private static tryMarkdown(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {

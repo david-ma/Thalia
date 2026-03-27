@@ -184,11 +184,12 @@ table.hljs-ln tr td.hljs-ln-code {
 }
 
 // This is for Thalia markdown pages, we should add a class to make it more specific.
-main code {
+// Don't overwrite pre.hljs code
+code {
   border: 1px solid #ccc;
   padding: 1px;
   border-radius: 3px;
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
   background-color: #dddd;
   color: #333;

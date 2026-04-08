@@ -14,7 +14,8 @@
  * Fail cases: non-existent paths, folders with no index file, and missing assets all return 404.
  *
  * - example-minimal: static files (public/), 404, path exploit
- * - example-src: Handlebars (path.hbs + path/index.hbs), Markdown, TypeScript, controller (fruit)
+ * - example-src: Handlebars (path.hbs + path/index.hbs), Markdown, TypeScript, controller (fruit);
+ *   encoding fixtures under src/encoding (URL-encoded paths, CJK in .md and .hbs)
  * - example-auth: route guard, controller (skipped by default; remove .skip when DB/auth configured)
  *
  * Run from Thalia root: bun test tests/Integration/request-handler.test.ts
@@ -111,14 +112,14 @@ describe('Request-handler: example-src (Handlebars, TypeScript, controller)', ()
     await stopTestServer(PROJECT)
   })
 
-  test('/ or /index.html returns HTML (dist or tryHandlebars)', async () => {
+  test('/ or /index.html returns HTML (dist, public, or handlebars fallback)', async () => {
     const response = await fetchFromServer('/', port)
     expect(response.status).toBe(200)
     expect(response.headers.get('content-type')).toContain('text/html')
     const html = await response.text()
-    // example-src has both dist/index.html and src/index.hbs; dist is tried first, so we may get either
     expect(html.length).toBeGreaterThan(0)
-    expect(html).toMatch(/Welcome to Test Templates|dist version/)
+    // `/` redirects to index.html; in development dist/*.html may be skipped so public/index.html wins.
+    expect(html).toMatch(/dist version|public\/index\.html/)
   })
 
   test('tryHandlebars: /path serves src/path.hbs when path.hbs exists (file-style)', async () => {
@@ -269,6 +270,39 @@ describe('Request-handler: example-src (Handlebars, TypeScript, controller)', ()
     expect(html).toContain('src/faq/index.md')
   })
 
+  test('tryMarkdown: URL-encoded spaces (%20) in path match on-disk folder names', async () => {
+    const response = await fetchFromServer('/encoding/Has%20Space/note', port)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('text/html')
+    const html = await response.text()
+    expect(html).toContain('RQH_SPACE_URL_OK')
+  })
+
+  test('tryMarkdown: percent-encoded UTF-8 path segments match folder names', async () => {
+    const response = await fetchFromServer('/encoding/%E4%B8%AD%E6%96%87/note', port)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toContain('RQH_UNICODE_SEGMENT_OK')
+  })
+
+  test('tryMarkdown: CJK characters in markdown render in HTML (UTF-8)', async () => {
+    const response = await fetchFromServer('/encoding/cjk', port)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toContain('中文标题')
+    expect(html).toContain('RQH_CJK_MD')
+    expect(html).toContain('你好')
+  })
+
+  test('tryHandlebars: CJK characters in .hbs render in HTML (UTF-8)', async () => {
+    const response = await fetchFromServer('/views/encoding-cjk', port)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('text/html')
+    const html = await response.text()
+    expect(html).toContain('RQH_CJK_HBS')
+    expect(html).toContain('你好')
+  })
+
   test('path with .. returns 400 or 404 (checkPathExploit vs client normalization)', async () => {
     const response = await fetchFromServer('/views/../config/config.ts', port)
     expect([400, 404]).toContain(response.status)
@@ -363,7 +397,7 @@ describe('Request-handler: handler chain fallback (example-src)', () => {
     const response = await fetchFromServer('/', port)
     expect(response.status).toBe(200)
     const html = await response.text()
-    expect(html).toMatch(/Welcome to Test Templates|dist version/)
+    expect(html).toMatch(/dist version|public\/index\.html/)
   })
 })
 

@@ -11,13 +11,13 @@ import type { RequestInfo } from '../../server/server.js'
 import type { IncomingMessage, ServerResponse } from 'http'
 import path from 'path'
 
-type RequestHandlerWithDecode = typeof RequestHandler & {
+/** Narrow shape for testing a private static; do not intersect with typeof RequestHandler (private + public clash → never). */
+type RequestHandlerDecodeStub = {
   decodePathnameForFilesystemLookup(pathname: string): string | null
 }
 
-const decodePathnameForFilesystemLookup = (RequestHandler as RequestHandlerWithDecode)
-  //@ts-ignore
-  .decodePathnameForFilesystemLookup.bind(RequestHandler) 
+const decodePathnameForFilesystemLookup = (RequestHandler as unknown as RequestHandlerDecodeStub)
+  .decodePathnameForFilesystemLookup.bind(RequestHandler)
 
 describe('RequestHandler decodePathnameForFilesystemLookup', () => {
   test('decodes %20 and other escapes per segment', () => {

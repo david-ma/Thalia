@@ -2,6 +2,8 @@
  * A class based interpretation of the logic from website.ts
  *
  * This class will be more easily testable, and more easily extendable.
+ * 
+ * Not using WHATWG URL, but consider in future.
  */
 
 import { IncomingMessage, request, ServerResponse } from 'http'
@@ -137,7 +139,7 @@ export class RequestHandler {
 
     return new Promise((next, finish) => {
       if(process.env.NODE_ENV === 'development' && folder === 'dist') {
-        if(requestHandler.pathname.endsWith('.js') || requestHandler.pathname.endsWith('.css')) {
+        if(requestHandler.pathname.endsWith('.js') || requestHandler.pathname.endsWith('.css') || requestHandler.pathname.endsWith('.html')) {
           console.debug('Development mode: Skipping static file', requestHandler.pathname)
           return next(requestHandler)
         }
@@ -292,7 +294,7 @@ export class RequestHandler {
   /** When no index is found and path is a directory under src/, render folder listing (development only). */
   private static showFolderIndex(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
-      console.log("showFolderIndex: We are at this path: ", requestHandler.pathname)
+      // console.debug("showFolderIndex: We are at this path: ", requestHandler.pathname)
 
       if (requestHandler.requestInfo.node_env !== 'development') return next(requestHandler)
 
@@ -311,7 +313,7 @@ export class RequestHandler {
   }
 
   private static resolveFolderIndexData(rh: RequestHandler): { pathname: string; basePath: string; entries: { name: string; isDirectory: boolean }[]; parentPath: string; title: string } | null {
-    const dirPath = path.join(rh.rootPath, 'src', rh.pathname)
+    const dirPath = path.join(rh.rootPath, 'src', RequestHandler.decodePathnameForFilesystemLookup(rh.pathname) ?? '')
     if (!fs.existsSync(dirPath) || !fs.statSync(dirPath).isDirectory()) return null
     let names: string[]
     try {
@@ -337,7 +339,6 @@ export class RequestHandler {
     return rh.website.handlebars.compile(wrapper)({ requestInfo: rh.requestInfo, version: rh.website.version, title })
   }
 
-  // TODO: index.html should try index.md
   /** Serve src/path.md or src/path/index.md via wrapper (same path rules as tryHandlebars). */
   private static tryMarkdown(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
@@ -364,8 +365,32 @@ export class RequestHandler {
     })
   }
 
+  /**
+   * Decode %XX in each path segment so filesystem paths match real names (e.g. Obsidian folders with spaces).
+   * Per-segment decode avoids %2F becoming an extra path level; reject .. after decode (incl. %2e%2e).
+   */
+  private static decodePathnameForFilesystemLookup(pathname: string): string | null {
+    const normalized = pathname.replace(/\/$/, '') || ''
+    if (!normalized) return ''
+    const segments = normalized.split('/').filter(Boolean)
+    const out: string[] = []
+    for (const seg of segments) {
+      let decoded: string
+      try {
+        decoded = decodeURIComponent(seg)
+      } catch {
+        return null
+      }
+      if (decoded === '..' || decoded === '') return null
+      out.push(decoded)
+    }
+    return out.join('/')
+  }
+
+  // TODO: /index.html should try /index.md
   private static resolveMarkdownPath(rh: RequestHandler): string | null {
-    const p = rh.pathname
+    const p = RequestHandler.decodePathnameForFilesystemLookup(rh.pathname)
+    if (p === null) return null
     const mdCandidates = [
       path.join(p, 'index.md'),
       p.endsWith('.md') ? p : p + '.md',
@@ -495,6 +520,7 @@ export class RequestHandler {
     })
   }
 
+   // This checks if the path contains a .. segment, and if so, it returns a 400 Bad Request.
   private static checkPathExploit(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
       const parts = requestHandler.pathname.split('/')

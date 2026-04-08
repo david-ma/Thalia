@@ -11,6 +11,35 @@ import type { RequestInfo } from '../../server/server.js'
 import type { IncomingMessage, ServerResponse } from 'http'
 import path from 'path'
 
+type RequestHandlerWithDecode = typeof RequestHandler & {
+  decodePathnameForFilesystemLookup(pathname: string): string | null
+}
+
+const decodePathnameForFilesystemLookup = (RequestHandler as RequestHandlerWithDecode)
+  //@ts-ignore
+  .decodePathnameForFilesystemLookup.bind(RequestHandler) 
+
+describe('RequestHandler decodePathnameForFilesystemLookup', () => {
+  test('decodes %20 and other escapes per segment', () => {
+    expect(decodePathnameForFilesystemLookup('/notes/My%20Vault/Page')).toBe('notes/My Vault/Page')
+    expect(decodePathnameForFilesystemLookup('/a%2Bb')).toBe('a+b')
+  })
+
+  test('empty or root becomes empty relative path', () => {
+    expect(decodePathnameForFilesystemLookup('')).toBe('')
+    expect(decodePathnameForFilesystemLookup('/')).toBe('')
+  })
+
+  test('rejects .. after decode (e.g. %2e%2e)', () => {
+    expect(decodePathnameForFilesystemLookup('/safe/%2e%2e/etc')).toBeNull()
+    expect(decodePathnameForFilesystemLookup('/a/b/..')).toBeNull()
+  })
+
+  test('invalid percent-encoding returns null', () => {
+    expect(decodePathnameForFilesystemLookup('/foo%')).toBeNull()
+  })
+})
+
 describe('RequestHandler checkPathExploit', () => {
   test('pathname containing .. returns 400 Bad Request', (done) => {
     const rootPath = path.join(import.meta.dir, '../..', 'websites', 'example-minimal')

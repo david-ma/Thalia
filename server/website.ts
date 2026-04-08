@@ -39,7 +39,7 @@ import { RoleRouteGuard, BasicRouteGuard, RouteGuard } from './route-guard'
 import { Socket } from 'socket.io'
 import { RequestInfo } from './server'
 import { ThaliaDatabase } from './database'
-import { version } from './controllers'
+import { placeholderImage, version } from './controllers'
 import { execSync } from 'child_process'
 import os from 'os'
 import { ConfigurationError, TemplateError, FileSystemError } from './errors'
@@ -193,6 +193,7 @@ export class Website {
       domains: [],
       controllers: {
         version,
+        'placeholder-image': placeholderImage,
       },
       routes: [],
       websockets: {

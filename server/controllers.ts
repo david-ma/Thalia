@@ -83,6 +83,63 @@ export const version = async (res: ServerResponse, _req: IncomingMessage, websit
   }
 }
 
+/**
+ * Dev placeholder image: GET /placeholder-image → 600×400 SVG; GET /placeholder-image/<w>/<h> → sized SVG.
+ * Registered by default in Website (merge); sites can override `controllers['placeholder-image']` if needed.
+ */
+export const PLACEHOLDER_IMAGE_DEFAULT_WIDTH = 600
+export const PLACEHOLDER_IMAGE_DEFAULT_HEIGHT = 400
+export const PLACEHOLDER_IMAGE_MAX_DIMENSION = 4000
+
+export function clampPlaceholderDimension(n: number): number {
+  if (!Number.isFinite(n) || n < 1) return 1
+  return Math.min(PLACEHOLDER_IMAGE_MAX_DIMENSION, Math.floor(n))
+}
+
+/** Normalised pathname: /placeholder-image or /placeholder-image/&lt;w&gt;/&lt;h&gt; */
+export function parsePlaceholderDimensions(pathname: string): { width: number; height: number } {
+  const segs = pathname.split('/').filter(Boolean)
+  if (segs[0] !== 'placeholder-image') {
+    return { width: PLACEHOLDER_IMAGE_DEFAULT_WIDTH, height: PLACEHOLDER_IMAGE_DEFAULT_HEIGHT }
+  }
+  if (segs.length >= 3) {
+    const w = parseInt(segs[1], 10)
+    const h = parseInt(segs[2], 10)
+    if (!Number.isNaN(w) && !Number.isNaN(h)) {
+      return { width: clampPlaceholderDimension(w), height: clampPlaceholderDimension(h) }
+    }
+  }
+  return { width: PLACEHOLDER_IMAGE_DEFAULT_WIDTH, height: PLACEHOLDER_IMAGE_DEFAULT_HEIGHT }
+}
+
+function escapeSvgTextContent(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')
+}
+
+export function buildPlaceholderSvg(width: number, height: number): string {
+  const label = `${width} × ${height}`
+  const fs = Math.min(24, Math.max(12, Math.floor(Math.min(width, height) / 15)))
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">\n  <rect width="100%" height="100%" fill="#d4d4d4"/>\n  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui, sans-serif" font-size="${fs}" fill="#333333">${escapeSvgTextContent(label)}</text>\n</svg>\n`
+}
+
+export const placeholderImage = async (
+  res: ServerResponse,
+  _req: IncomingMessage,
+  _website: Website,
+  requestInfo: RequestInfo,
+) => {
+  try {
+    const { width, height } = parsePlaceholderDimensions(requestInfo.pathname)
+    const svg = buildPlaceholderSvg(width, height)
+    res.writeHead(200, { 'Content-Type': 'image/svg+xml; charset=utf-8' })
+    res.end(svg)
+  } catch (error) {
+    console.error(`placeholderImage: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    res.writeHead(500, { 'Content-Type': 'text/plain' })
+    res.end('Internal Server Error')
+  }
+}
+
 type CrudRelationship = {
   foreignTable: string
   foreignColumn: string

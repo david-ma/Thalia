@@ -7,14 +7,54 @@
  *
  * Defaults: sitemap = /tmp/sitemaps/sitemap.xml, target = SMOKE_TARGET or http://localhost:1337
  *
+ * When `--sitemap` is under `.../websites/<project>/public/sitemap.xml`, a plain-text copy of the
+ * human-readable report is also written to `websites/<project>/tmp/sitemap-report.txt` (UTF-8).
+ * This is an ad hoc Thalia convention, not a standard format (not JUnit/SARIF/etc.).
+ *
  * CI: set SMOKE_TARGET (or SMOKE_BASE_URL) to the base URL when the server is up.
  */
 
 import fs from "fs";
+import path from "path";
+import type { SmokeResult } from "./smoke-sitemap-lib.js";
 import {
+  defaultReportTxtPathForSitemap,
   extractLocsFromSitemapXml,
   runSmoke,
 } from "./smoke-sitemap-lib.js";
+
+function formatHumanReport(
+  sitemapPath: string,
+  targetBase: string,
+  locCount: number,
+  infoLines: string[],
+  result: SmokeResult,
+): string {
+  const lines: string[] = [];
+  lines.push(`Sitemap: ${sitemapPath} | ${locCount} URLs`);
+  lines.push(`Target: ${targetBase}`);
+  lines.push("");
+  lines.push(...infoLines);
+  lines.push("");
+  lines.push("Summary:");
+  lines.push(`  Pages in sitemap: ${result.pageCount}`);
+  lines.push(`  Same-origin assets checked: ${result.assetCount}`);
+  lines.push(`  Failures: ${result.failures.length}`);
+  if (result.failures.length > 0) {
+    lines.push("");
+    for (const f of result.failures) {
+      lines.push(`  [${f.kind}] ${f.url}`);
+      lines.push(`         ${f.reason}`);
+      if (f.kind === "asset" && f.referencedFrom?.length) {
+        lines.push(`         referenced from:`);
+        for (const ref of f.referencedFrom) {
+          lines.push(`           ${ref}`);
+        }
+      }
+    }
+  }
+  return lines.join("\n");
+}
 
 const DEFAULT_SITEMAP = "/tmp/sitemaps/sitemap.xml";
 
@@ -72,6 +112,17 @@ async function main(): Promise<void> {
     logInfo,
   });
 
+  const humanText = formatHumanReport(sitemapPath, targetBase, locs.length, infoLines, result);
+  const reportFile = defaultReportTxtPathForSitemap(sitemapPath);
+  if (reportFile) {
+    fs.mkdirSync(path.dirname(reportFile), { recursive: true });
+    fs.writeFileSync(reportFile, humanText + "\n", "utf8");
+    if (!json) {
+      console.log("");
+      console.log("Report file:", reportFile);
+    }
+  }
+
   if (json) {
     console.log(
       JSON.stringify(
@@ -83,6 +134,7 @@ async function main(): Promise<void> {
           failureCount: result.failures.length,
           failures: result.failures,
           redirectLog: infoLines,
+          reportTxtPath: reportFile ?? null,
         },
         null,
         2,

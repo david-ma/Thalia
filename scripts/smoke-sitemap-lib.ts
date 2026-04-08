@@ -2,9 +2,19 @@
  * Sitemap-driven smoke test: pure helpers + run function (injectable fetch for tests).
  */
 
+import path from "path";
 import * as cheerio from "cheerio";
 
 export const MAX_REDIRECTS = 20;
+
+/** If sitemap lives at `.../websites/<project>/public/sitemap.xml`, default report path under that project. */
+export function defaultReportTxtPathForSitemap(sitemapPath: string): string | null {
+  const resolved = path.resolve(sitemapPath);
+  const norm = resolved.replace(/\\/g, "/");
+  const m = norm.match(/^(.*)\/websites\/([^/]+)\/public\/sitemap\.xml$/i);
+  if (!m) return null;
+  return path.join(m[1], "websites", m[2], "tmp", "sitemap-report.txt");
+}
 
 export interface SmokeFailure {
   kind: "page" | "asset";

@@ -54,7 +54,8 @@
   },
   "bin": {
     "thalia": "./server/cli.ts",
-    "thalia-develop": "./bin/develop.ts"
+    "thalia-develop": "./bin/develop.ts",
+    "thalia-sitemap": "./bin/sitemap.ts"
   },
   "files": [
     "server/**/*",
@@ -72,6 +73,7 @@
     "typecheck": "tsc --noEmit",
     "dev": "bun bin/develop.ts",
     "build:scss": "bun bin/build-scss.ts",
+    "sitemap": "bun bin/sitemap.ts",
     "sitemap:generate": "bun scripts/generate-sitemaps.ts",
     "sitemap:smoke": "bun scripts/smoke-sitemap.ts",
     "test": "bun test tests",

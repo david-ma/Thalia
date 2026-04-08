@@ -1,12 +1,23 @@
 import { describe, expect, test } from "bun:test";
 import {
   collectSameOriginAssetUrls,
+  defaultReportTxtPathForSitemap,
   extractLocsFromSitemapXml,
   fetchWithRedirectLog,
   looksLikeHtml,
   runSmoke,
   targetPageUrl,
 } from "../../scripts/smoke-sitemap-lib.js";
+
+describe("defaultReportTxtPathForSitemap", () => {
+  test("maps project public sitemap to tmp report path", () => {
+    const p = defaultReportTxtPathForSitemap("/usr/local/dev/Thalia/websites/thalia_ubc/public/sitemap.xml");
+    expect(p).toBe("/usr/local/dev/Thalia/websites/thalia_ubc/tmp/sitemap-report.txt");
+  });
+  test("returns null for /tmp sitemap", () => {
+    expect(defaultReportTxtPathForSitemap("/tmp/sitemaps/sitemap.xml")).toBeNull();
+  });
+});
 
 describe("extractLocsFromSitemapXml", () => {
   test("parses loc elements", () => {

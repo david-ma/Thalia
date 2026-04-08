@@ -1,25 +1,17 @@
 /**
- * Generate sitemap and siteindex for a website.
- * 
- * Websites should serve the index at <domain>/sitemaps/index.html which gets served as /sitemaps
- * 
- * Sitemaps can be served from <domain>/sitemaps/sitemap.xml
- * Or grouped by category, e.g.
- * <domain>/sitemaps/products/index.html which gets served as /sitemaps/products
- * 
- * 
- * This script will generate the sitemap and siteindex files.
- * Easy mode for dev:
- * The default --out path is /tmp/sitemaps
- * 
- * Future:
- * Given a Thalia project, we can output it directly to websites/<project>/public/sitemaps
- * 
- * Easy mode:
- * `bun scripts/generate-sitemaps.ts localhost:1337`
- * 
- * This will crawl based on the homepage, recursively discovering same-domain links.
- * It will output a very simple sitemap and siteindex file in the default output path.
+ * Generate sitemap.xml by crawling a site.
+ *
+ * **Legacy (tmp output):**
+ *   `bun scripts/generate-sitemaps.ts`  → crawl http://localhost:1337, write /tmp/sitemaps/sitemap.xml
+ *   `bun scripts/generate-sitemaps.ts example.com`  → crawl https://example.com
+ *
+ * **Project (recommended):**
+ *   `bun scripts/generate-sitemaps.ts --project thalia_ubc`
+ *   Crawl `http://localhost:$PORT` (default 1337), canonical `<loc>` from `config.domains`,
+ *   write `websites/<project>/public/sitemap.xml`.
+ *   Optional: `--crawl-base`, `--out`, `--canonical-origin`.
+ *
+ * Interactive wrapper: `bun run sitemap <project>` (see bin/sitemap.ts).
  * 
  * Future:
  * Sitemaps generated using handlebars templates? Based on the sitemap config? So we can get blog info?
@@ -33,15 +25,17 @@
  * I want to set up a system of workers, to do the crawling. And allow a delay between requests, so we don't hit rate limits or overload a server that we're crawling.
  *
  * Rate limiting (e.g. LiteSpeed 403 / 5‑min block):
- * - State is stored in sitemap-halt.csv: columns "url", "status" (200, 403, or null if discovered but not visited).
+ * - State is stored in sitemap-halt.csv (legacy: next to sitemap; --project: websites/<project>/tmp/sitemap-halt.csv).
  * - On halt/finish we write the full state so the next run can resume without re-discovering: load CSV, skip status 200, queue status null and failures for visit.
  */
 
 
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import * as cheerio from "cheerio";
 import { WorkerPool } from "./worker-pool.js";
+import { loadCanonicalOriginFromProject } from "./sitemap-project-config.js";
 
 const workerCount = 10;
 const delayMs = 200;
@@ -50,11 +44,118 @@ const maxConsecutiveFailures = 5;
 /** Optional: stop after this many total failures across all workers. */
 const maxFailures = 20;
 
-const outDir = process.env.SITEMAP_OUT || "/tmp/sitemaps";
+/** Crawl target (e.g. http://localhost:1337). Set in main() after parse. */
+let crawlBaseUrl = "http://localhost:1337";
+let outDir = process.env.SITEMAP_OUT || "/tmp/sitemaps";
+/** Directory for sitemap-halt.csv (same as outDir for legacy; `websites/<project>/tmp` for --project). */
+let haltCsvDir = outDir;
+/** If set, sitemap <loc> uses this origin (https://prod.example) instead of crawl URLs. */
+let canonicalPublishOrigin = "";
 
-// Default target URL is localhost:1337
-const domain = process.argv[2] || "localhost:1337";
-const baseUrl = domain === "localhost:1337" ? "http://localhost:1337" : `https://${domain}`;
+function crawlHostname(): string {
+  try {
+    return new URL(crawlBaseUrl).hostname;
+  } catch {
+    return "localhost";
+  }
+}
+
+/** First non-flag token that is not a flag value (legacy host argument). */
+function legacyPositionalHost(argv: string[]): string | undefined {
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === "--project" || a === "--crawl-base" || a === "--out" || a === "--canonical-origin") {
+      i++;
+      continue;
+    }
+    if (a.startsWith("-")) continue;
+    return a;
+  }
+  return undefined;
+}
+
+async function parseGenerateArgs(): Promise<{
+  crawlBase: string;
+  outDir: string;
+  haltCsvDir: string;
+  canonicalOrigin: string;
+}> {
+  const argv = process.argv.slice(2);
+  let project: string | undefined;
+  let crawlBase = "";
+  let parsedOut = process.env.SITEMAP_OUT || "/tmp/sitemaps";
+  let outExplicit = false;
+  let canonicalOrigin = "";
+  let explicitCanonical: string | undefined;
+
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === "--project" && argv[i + 1]) {
+      project = argv[++i];
+      continue;
+    }
+    if (a === "--crawl-base" && argv[i + 1]) {
+      crawlBase = argv[++i].replace(/\/$/, "");
+      continue;
+    }
+    if (a === "--out" && argv[i + 1]) {
+      parsedOut = argv[++i];
+      outExplicit = true;
+      continue;
+    }
+    if (a === "--canonical-origin" && argv[i + 1]) {
+      const v = argv[++i];
+      explicitCanonical = v.startsWith("http") ? v.replace(/\/$/, "") : `https://${v.replace(/\/$/, "")}`;
+      continue;
+    }
+  }
+
+  const thaliaRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+  if (project) {
+    const projectRoot = path.join(thaliaRoot, "websites", project);
+    if (!fs.existsSync(projectRoot)) {
+      throw new Error(`Project not found: ${projectRoot}`);
+    }
+    if (!outExplicit) {
+      parsedOut = path.join(projectRoot, "public");
+    }
+    if (!crawlBase) {
+      const port = process.env.PORT || "1337";
+      crawlBase = `http://localhost:${port}`;
+    }
+    if (explicitCanonical) {
+      canonicalOrigin = explicitCanonical;
+    } else {
+      const loaded = await loadCanonicalOriginFromProject(projectRoot);
+      if (loaded) {
+        canonicalOrigin = loaded;
+      } else {
+        console.warn(
+          "Warning: no canonical origin from config.domains; <loc> will use crawl URLs. Pass --canonical-origin or set config.domains.",
+        );
+      }
+    }
+  } else {
+    const positional = legacyPositionalHost(argv);
+    const domain = positional || "localhost:1337";
+    crawlBase =
+      domain === "localhost:1337"
+        ? "http://localhost:1337"
+        : domain.startsWith("http")
+          ? domain.replace(/\/$/, "")
+          : `https://${domain}`;
+    if (explicitCanonical) {
+      canonicalOrigin = explicitCanonical;
+    }
+  }
+
+  const haltCsvDirResolved = project
+    ? path.join(thaliaRoot, "websites", project!, "tmp")
+    : parsedOut;
+
+  return { crawlBase, outDir: parsedOut, haltCsvDir: haltCsvDirResolved, canonicalOrigin };
+}
 
 /** Normalised key -> full URL (for CSV output). */
 const urlByKey: Record<string, string> = {};
@@ -64,7 +165,7 @@ const urlStatus: Record<string, number | null> = {};
 const crawledUrls: Record<string, SitemapUrl> = {};
 
 function normaliseKey(loc: string): string {
-  const u = new URL(loc, baseUrl);
+  const u = new URL(loc, crawlBaseUrl);
   return u.origin + u.pathname;
 }
 
@@ -95,7 +196,7 @@ function parseCsvRow(line: string): { url: string; status: number | null } | nul
 
 /** Load sitemap-halt.csv. Populate urlByKey, urlStatus, crawledUrls (stubs for 200). Return keys to queue (status !== 200). */
 function loadSitemapHalt(): string[] {
-  const file = path.join(outDir, HALT_CSV);
+  const file = path.join(haltCsvDir, HALT_CSV);
   if (!fs.existsSync(file)) return [];
   const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
   const toQueue: string[] = [];
@@ -119,8 +220,8 @@ function loadSitemapHalt(): string[] {
 
 /** Write full state to sitemap-halt.csv so next run can resume without re-discovery. */
 function writeSitemapHalt(): void {
-  fs.mkdirSync(outDir, { recursive: true });
-  const out = path.join(outDir, HALT_CSV);
+  fs.mkdirSync(haltCsvDir, { recursive: true });
+  const out = path.join(haltCsvDir, HALT_CSV);
   const rows: string[] = ['url,status'];
   for (const key of Object.keys(urlByKey)) {
     const url = urlByKey[key];
@@ -144,9 +245,9 @@ class SitemapUrl {
   links: SitemapUrl[];
 
   constructor(loc: string) {
-    this.loc = new URL(loc, baseUrl).href;
+    this.loc = new URL(loc, crawlBaseUrl).href;
     this.links = [];
-    this.url = new URL(this.loc, baseUrl);
+    this.url = new URL(this.loc, crawlBaseUrl);
 
     const seg = this.url.pathname.split("/")[1];
     this.category = seg ? seg.charAt(0).toUpperCase() + seg.slice(1) : "Home";
@@ -154,9 +255,9 @@ class SitemapUrl {
   }
 
   isSameDomain(): boolean {
-    // If we're on localhost, we're on the same domain
-    if (this.url.hostname === "localhost") return true;
-    return this.url.hostname === domain;
+    const h = this.url.hostname;
+    if (h === "localhost" || h === "127.0.0.1") return true;
+    return h === crawlHostname();
   }
 
   crawl(): Promise<SitemapUrl> {
@@ -214,6 +315,7 @@ function makeCrawlJob(entry: SitemapUrl): () => Promise<void> {
 
 function main(): void {
   fs.mkdirSync(outDir, { recursive: true });
+  fs.mkdirSync(haltCsvDir, { recursive: true });
   const toQueue = loadSitemapHalt();
 
   pool = new WorkerPool({
@@ -228,7 +330,16 @@ function main(): void {
     writeSitemapHalt();
     const known = Object.keys(urlByKey).length;
     const ok = Object.values(urlStatus).filter((s) => s === 200).length;
-    console.log("Known URLs:", known, "| 200s:", ok, "| Output:", path.join(outDir, "sitemap.xml"), path.join(outDir, HALT_CSV));
+    console.log(
+      "Known URLs:",
+      known,
+      "| 200s:",
+      ok,
+      "| sitemap:",
+      path.join(outDir, "sitemap.xml"),
+      "| halt:",
+      path.join(haltCsvDir, HALT_CSV),
+    );
   }
 
   pool.on("finished", persistState);
@@ -238,13 +349,13 @@ function main(): void {
   });
 
   let pushed = 0;
-  const homeKey = normaliseKey(baseUrl);
+  const homeKey = normaliseKey(crawlBaseUrl);
   if (urlByKey[homeKey] === undefined) {
-    urlByKey[homeKey] = baseUrl;
+    urlByKey[homeKey] = crawlBaseUrl;
     urlStatus[homeKey] = null;
   }
   if (urlStatus[homeKey] !== 200) {
-    const entry = new SitemapUrl(baseUrl);
+    const entry = new SitemapUrl(crawlBaseUrl);
     crawledUrls[homeKey] = entry;
     pool.push(makeCrawlJob(entry));
     pushed++;
@@ -270,10 +381,36 @@ function main(): void {
   });
 }
 
-main();
+parseGenerateArgs()
+  .then((opts) => {
+    crawlBaseUrl = opts.crawlBase;
+    outDir = opts.outDir;
+    haltCsvDir = opts.haltCsvDir;
+    canonicalPublishOrigin = opts.canonicalOrigin;
+    if (canonicalPublishOrigin) {
+      console.log("Canonical <loc> origin:", canonicalPublishOrigin);
+    }
+    console.log("Crawl base:", crawlBaseUrl);
+    main();
+  })
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+
+function escapeXmlLoc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+}
+
+function publishedLocForXml(url: SitemapUrl): string {
+  if (!canonicalPublishOrigin) return url.loc;
+  const parsed = new URL(url.loc);
+  const base = canonicalPublishOrigin.replace(/\/$/, "");
+  return `${base}${parsed.pathname}${parsed.search}`;
+}
 
 function SitemapUrlToXmlMapping(url: SitemapUrl) {
-  const loc = `<loc>${url.loc}</loc>`;
+  const loc = `<loc>${escapeXmlLoc(publishedLocForXml(url))}</loc>`;
   const lastmod = url.lastmod ? `<lastmod>${url.lastmod}</lastmod>` : "";
   const changefreq = url.changefreq ? `<changefreq>${url.changefreq}</changefreq>` : "";
   const priority = url.priority ? `<priority>${url.priority}</priority>` : "";

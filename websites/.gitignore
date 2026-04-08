@@ -1,0 +1,7 @@
+# Ignore all folders in this level of folder only.
+/*
+
+# Except these:
+!.gitignore
+!example*
+!default

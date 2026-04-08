@@ -326,8 +326,10 @@ export class RequestHandler {
     const entries = names
       .map((name) => ({ name, isDirectory: fs.statSync(path.join(dirPath, name)).isDirectory() }))
       .sort((a, b) => (a.isDirectory !== b.isDirectory ? (a.isDirectory ? -1 : 1) : a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })))
+
+    // Very unix centric. Might have unexpected behaviour on Windows.
     const parentPath = pathname.includes('/') ? pathname.replace(/\/[^/]*$/, '') : ''
-    const title = pathname ? `Index of /${pathname}` : 'Index of /'
+    const title = dirPath.split('/').pop() ?? ''
     return { pathname, basePath, entries, parentPath, title }
   }
 

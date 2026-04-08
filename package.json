@@ -72,6 +72,8 @@
     "typecheck": "tsc --noEmit",
     "dev": "bun bin/develop.ts",
     "build:scss": "bun bin/build-scss.ts",
+    "sitemap:generate": "bun scripts/generate-sitemaps.ts",
+    "sitemap:smoke": "bun scripts/smoke-sitemap.ts",
     "test": "bun test tests",
     "test:unit": "bun test tests/Unit",
     "test:integration": "bun test tests/Integration"

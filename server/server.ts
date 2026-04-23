@@ -62,6 +62,8 @@ export class Server extends EventEmitter {
     const domain: string = host.split(':')[0] ?? 'unknown-domain'
     const urlObject: url.UrlWithParsedQuery = url.parse(req.url ?? '', true)
     const ip: string =
+      (req.headers['true-client-ip'] as string) ??
+      (req.headers['cf-connecting-ip'] as string) ??
       (req.headers['x-real-ip'] as string) ??
       (req.headers['x-forwarded-for'] as string) ??
       req.socket.remoteAddress ??
@@ -125,6 +127,8 @@ export class Server extends EventEmitter {
     const clientInfo: ClientInfo = {
       socketId: socket.id,
       ip:
+        (socket.handshake.headers['true-client-ip'] as string) ??
+        (socket.handshake.headers['cf-connecting-ip'] as string) ??
         (socket.handshake.headers['x-real-ip'] as string) ??
         (socket.handshake.headers['x-forwarded-for'] as string) ??
         socket.handshake.address,

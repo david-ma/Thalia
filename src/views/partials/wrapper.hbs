@@ -36,9 +36,10 @@
     {{> nav }}
     <div class='row'>
       <div class='col-xs-12 default-crud-styles'>
-        {{~> content~}}
         {{#if @partial-block }}
           {{~> @partial-block~}}
+        {{else}}
+          {{~> content~}}
         {{/if}}
       </div>
     </div>

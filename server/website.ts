@@ -146,11 +146,16 @@ export class Website {
         this.version.version = JSON.parse(fs.readFileSync(path.join(this.rootPath, 'package.json'), 'utf8')).version
       }
       if (fs.existsSync(path.join(this.rootPath, '.git'))) {
-        this.version.gitHash = execSync('git rev-parse --short HEAD', {
-          cwd: this.rootPath,
-        })
+        try {
+          this.version.gitHash = execSync('git rev-parse --short HEAD', {
+            cwd: this.rootPath,
+          })
           .toString()
           .trim()
+        }
+        catch (error) {
+          this.version.gitHash = 'unknown'
+        }
       }
     } catch (error) {
       console.error('Error loading version:', error)

@@ -261,3 +261,28 @@ code {
     }
   }
 }
+
+
+.default-crud-styles table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #ddd;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  text-align: left;
+  th, td {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ddd;
+  }
+  th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+  }
+  tr:nth-child(even) {
+    background-color: #f8f9fa;
+  }
+  tr:hover {
+    background-color: #f0f0f0;
+  }
+}

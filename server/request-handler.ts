@@ -408,7 +408,7 @@ export class RequestHandler {
   private static renderMarkdownWrapper(rh: RequestHandler, contentHtml: string, mermaidSources: string[]): string {
     if (rh.website.env === 'development') rh.website.loadPartials()
     rh.website.handlebars.registerPartial('content', contentHtml)
-    let wrapper = rh.website.handlebars.partials['wrapper'] ?? ''
+    let wrapper = rh.website.handlebars.partials['wrapper'] ?? '{{> content }}'
     if (rh.website.env === 'development') wrapper = wrapper.replace('</body>', '{{> browsersync }}\n</body>')
     wrapper = wrapper.replace('</body>', '{{> markdown_processing }}\n</body>')
     return rh.website.handlebars.compile(wrapper)({

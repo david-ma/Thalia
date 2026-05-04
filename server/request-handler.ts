@@ -120,8 +120,9 @@ export class RequestHandler {
 
   private static fileNotFound(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
+      requestHandler.res.setHeader('Content-Type', 'text/plain')
       requestHandler.res.writeHead(404)
-      requestHandler.res.end('404 Not Found')
+      requestHandler.res.end(Buffer.from('404 Not Found', 'utf8'))
       return finish('404 Not Found')
     })
   }
@@ -147,8 +148,6 @@ export class RequestHandler {
 
       const acceptedEncoding = requestHandler.req.headers['accept-encoding'] ?? ''
       const isGzipAccepted = acceptedEncoding.includes('gzip')
-      const isDeflateAccepted = acceptedEncoding.includes('deflate')
-      const isBrotliAccepted = acceptedEncoding.includes('br')
 
       if (!fs.existsSync(targetPath)) {
         if (isGzipAccepted && fs.existsSync(`${targetPath}.gz`)) {

@@ -352,7 +352,16 @@ export class RequestHandler {
           const mermaidSources: string[] = []
           const contentHtml = wrapMarkdownCodeBlocks(parseMarkdown(content), mermaidSources)
           registerMarkdownHelpers(requestHandler.website.handlebars)
-          const html = RequestHandler.renderMarkdownWrapper(requestHandler, contentHtml, mermaidSources)
+          let html: string
+          try {
+            html = RequestHandler.renderMarkdownWrapper(requestHandler, contentHtml, mermaidSources)
+          } catch (error) {
+            console.debug("Error rendering markdown: ", error)
+            console.debug("Replacing {{ and }} with &#123;&#123; and &#125;&#125;")
+            html = RequestHandler.renderMarkdownWrapper(requestHandler,
+              contentHtml.replace(/{{/g, '&#123;&#123;').replace(/}}/g, '&#125;&#125;'), 
+              mermaidSources)
+          }
           requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
           requestHandler.res.end(html)
           finish(`Successfully rendered markdown ${requestHandler.pathname}`)

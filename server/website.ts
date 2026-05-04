@@ -539,14 +539,14 @@ export class Website {
       if (this.env == 'development') {
         this.loadPartials()
       }
-      let templateFile = ''
+      let templateFile = null
       if (templatePath) {
         templateFile = fs.readFileSync(templatePath, 'utf8')
       } else if (template) {
         templateFile = this.templates()[template] ?? this.handlebars.partials[template]
       }
 
-      if (!templateFile) {
+      if (templateFile === null) {
         throw new TemplateError(`Template ${template} not found`, {
           template,
           website: this.name,

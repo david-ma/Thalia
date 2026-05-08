@@ -73,28 +73,60 @@ export const latestlogs = async (res: ServerResponse, _req: IncomingMessage, web
 }
 
 /**
- * This controller serves the latest data from a folder
- * It serves json by default, but can be configured to serve other types of files
- */
-export function latest_data(folder_name: string, type: string = 'json') : Controller {
-  return (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: any) => {
-    const data_folder = path.join(website.rootPath, 'data', folder_name)
-    
-    fs.readdir(data_folder, (err, files) => {
-      if (err) {
-        res.end(JSON.stringify({
-          error: err.message,
-        }))
-        return
-      }
-      files = files.map((file) => file.replace(/\.gz$/, '')) // In Thalia's data folders, we serve .gz files as regular files
-      files = files.filter((file) => file.endsWith(`.${type}`)) // Only serve files with the correct type
-      const latest_file = files.sort().reverse()[0]!
+   * Redirects GET requests to the lexicographically-latest file in `data/<folder>` matching `.<type>`.
+   * Files compressed with `.gz` are matched against their uncompressed name; Thalia's static handler
+   * is expected to serve the `.gz` sibling transparently.
+   * 
+   * The default options are json and sorted by name, so you write logs to /data/<foo>/<timestamp>.json and visiting /data/<foo> will redirect to the latest log.
+   * Using 'lastModified' will sort by last modified time instead, this is slower because it has to read the file stats for each file. But useful if you don't have control over the file names.
+   *
+   * Responds 404 if the folder is missing or contains no matching file.
+   */
+export function latestData(folder: string, options: {
+  type?: string,
+  sort?: 'name' | 'lastModified'
+} = {}): Controller {
+  const { type = 'json', sort = 'name' } = options
+  return (res, _req, website, _requestInfo) => {
+    const dir = path.join(website.rootPath, 'data', folder)
+    fs.promises
+      .readdir(dir, { withFileTypes: true })
+      .then((entries) => {
+        const files = entries
+          .filter((e) => e.isFile())
+          .map(e => e.name)
+        
+        let sortedFiles = files.map((name) => name.replace(/\.gz$/, ''))
+          .filter((name) => name.endsWith(`.${type}`))
+          .sort()
 
-      // Redirect people to the latest file:
-      res.writeHead(302, { Location: `/${folder_name}/${latest_file}` })
-      res.end()
-    })
+        if (sort === 'lastModified') {
+          const fileStats = files.map((name) => {
+            const stats = fs.statSync(path.join(dir, name))
+            return {
+              name: name.replace(/\.gz$/, ''),
+              stats: stats
+            }
+          })
+          sortedFiles = fileStats.sort((a, b) => a.stats.mtime.getTime() - b.stats.mtime.getTime()).map(e => e.name)
+        }
+
+        const latest = sortedFiles.pop()
+        if (!latest) {
+          res.writeHead(404, { 'Content-Type': 'application/json' })
+          console.error(`No .${type} files in data/${folder}`)
+          res.end('404')
+          return
+        }
+        res.writeHead(302, { Location: `/${folder}/${latest}` })
+        res.end()
+      })
+      .catch((err: NodeJS.ErrnoException) => {
+        const status = err.code === 'ENOENT' ? 404 : 500
+        res.writeHead(status, { 'Content-Type': 'text/plain' })
+        console.error(`Error in ${website.name}/latestData: ${err.message}`)
+        res.end('500')
+      })
   }
 }
 
@@ -1378,7 +1410,7 @@ import { albums, images, type Image } from '../models/smugmug'
 const AlbumMachine = new CrudFactory(albums)
 const ImageMachine = new CrudFactory(images)
 
-import { marked } from 'marked'
+import { marked, options } from 'marked'
 
 export class MarkdownViewerFactory {
   constructor(private folder: string) {}

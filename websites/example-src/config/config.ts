@@ -2,6 +2,7 @@
 import { IncomingMessage, ServerResponse } from 'http'
 import { RawWebsiteConfig } from 'thalia/types'
 import { Website } from '../../../server/website'
+import { latestData } from 'thalia/controllers'
 
 export const config: RawWebsiteConfig = {
   // Empty config - just use defaults
@@ -25,6 +26,9 @@ export const config: RawWebsiteConfig = {
         res.setHeader('X-Nested-Controller', 'create-blog')
         res.end('create-blog')
       },
+    },
+    data: {
+      logs: latestData('logs', { type: 'log' }),
     },
   },
 }

@@ -84,7 +84,7 @@ export const latestlogs = async (res: ServerResponse, _req: IncomingMessage, web
    */
 export function latestData(folder: string, options: {
   type?: string,
-  sort?: 'name' | 'lastModified'
+  sort?: 'name' | 'lastModified' | 'dateCreated'
 } = {}): Controller {
   const { type = 'json', sort = 'name' } = options
   return (res, _req, website, _requestInfo) => {
@@ -97,10 +97,9 @@ export function latestData(folder: string, options: {
           .map(e => e.name)
         
         let sortedFiles = files.map((name) => name.replace(/\.gz$/, ''))
-          .filter((name) => name.endsWith(`.${type}`))
           .sort()
 
-        if (sort === 'lastModified') {
+        if (sort === 'lastModified' || sort === 'dateCreated') {
           const fileStats = files.map((name) => {
             const stats = fs.statSync(path.join(dir, name))
             return {
@@ -108,10 +107,14 @@ export function latestData(folder: string, options: {
               stats: stats
             }
           })
-          sortedFiles = fileStats.sort((a, b) => a.stats.mtime.getTime() - b.stats.mtime.getTime()).map(e => e.name)
+          if (sort === 'dateCreated') {
+            sortedFiles = fileStats.sort((a, b) => a.stats.birthtime.getTime() - b.stats.birthtime.getTime()).map(e => e.name)
+          } else if (sort === 'lastModified') {
+            sortedFiles = fileStats.sort((a, b) => a.stats.mtime.getTime() - b.stats.mtime.getTime()).map(e => e.name)
+          }
         }
 
-        const latest = sortedFiles.pop()
+        const latest = sortedFiles.filter((name) => name.endsWith(`.${type}`)).pop()
         if (!latest) {
           res.writeHead(404, { 'Content-Type': 'application/json' })
           console.error(`No .${type} files in data/${folder}`)

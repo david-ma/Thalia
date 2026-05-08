@@ -114,7 +114,7 @@
     "url": "git+https://github.com/david-ma/Thalia.git"
   },
   "author": "David Ma",
-  "license": "ISC",
+  "license": "GPL-3.0-only",
   "bugs": {
     "url": "https://github.com/david-ma/Thalia/issues"
   },

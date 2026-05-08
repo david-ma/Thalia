@@ -1,133 +1,118 @@
 # Thalia
 
-A custom Node.js framework for building web applications with a focus on modularity and organization.
+Thalia is a Bun-first web framework for hosting **one or many websites** from a single repo. It’s optimised for “internal tools + content-rich sites”: Handlebars templates, Markdown pages, on-demand SCSS compilation, and simple controller-based routing.
 
-## Features
+This repository is the framework **and** includes a few example websites under `websites/`.
 
-- Multi-project support with isolated configurations
-- Handlebars templating engine
-- WebSocket support with Socket.IO
-- Proxy support for routing requests
-- Controller-based request handling
-- Service-based API endpoints
-- Static file serving
-- TypeScript support
-- SCSS compilation
+## Status
 
-## Project Structure
+- **Runtime**: Bun (ESM, TypeScript-first)
+- **Templating**: Handlebars (`.hbs`)
+- **Content pages**: Markdown (`.md`) rendered to HTML
+- **Styling**: SCSS compiled on demand (`src/css/*.scss` → `/css/*.css`)
+- **DB layer**: Drizzle ORM (commonly MySQL/MariaDB via `mysql2`)
+- **Auth**: Optional security subsystem (`thalia/security`) used by `websites/example-auth`
+
+Some older/optional pieces (e.g. BrowserSync, webpack watch) still exist but are not required for the framework to run.
+
+## Repo layout (current)
 
 ```
-thalia/
-├── bin/                    # Executable scripts
-│   ├── build.js           # Build script for projects
-│   ├── develop.js         # Development server script
-│   └── thalia.js          # Main server script
-├── server/                 # Server implementation
-│   ├── core/              # Core server components
-│   │   ├── handlers.ts    # Request handlers
-│   │   ├── server.ts      # Server implementation
-│   │   ├── thalia.ts      # Main Thalia class
-│   │   ├── types.ts       # TypeScript type definitions
-│   │   └── website.ts     # Website class
-│   └── index.ts           # Server entry point
-├── websites/              # Project directories
-│   └── example/          # Example project
-│       ├── config.js     # Project configuration
-│       ├── src/          # Source files
-│       └── views/        # Handlebars templates
-├── package.json          # Project configuration
-└── tsconfig.json         # TypeScript configuration
+.
+├── server/                   # Framework runtime (server, routing, request handler chain)
+├── models/                   # Drizzle schemas used by the framework (optional)
+├── bin/                      # Framework helper CLIs (dev, sitemap, SCSS build)
+├── websites/                 # Example / deployed sites (each has its own config + src + public)
+│   ├── example-minimal/
+│   ├── example-src/
+│   └── example-auth/         # Auth + DB-backed example (heavier integration tests)
+├── tests/                    # Unit + integration + E2E tests (Bun)
+└── src/                      # Framework-shipped assets/partials (served as fallback)
 ```
 
-## Getting Started
+Each website typically looks like:
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-2. Build the server:
-   ```bash
-   npm run build:ts
-   ```
-
-3. Start the development server:
-   ```bash
-   npm run dev example
-   ```
-
-4. Build a project:
-   ```bash
-   npm run build example
-   ```
-
-## Project Configuration
-
-Each project in the `websites` directory should have a `config.js` file with the following structure:
-
-```javascript
-module.exports = {
-  config: {
-    // Project name
-    name: 'example',
-
-    // Public directory for static files
-    folder: 'public',
-
-    // Domain names for this project
-    domains: ['example.com'],
-
-    // Proxy configurations
-    proxies: {
-      api: {
-        host: 'api.example.com',
-        port: 8080
-      }
-    },
-
-    // Controller handlers
-    controllers: {
-      '/': async (controller) => {
-        controller.res.end('Hello World')
-      }
-    },
-
-    // Service handlers
-    services: {
-      '/api': async (res, req, db, words) => {
-        res.end(JSON.stringify({ message: 'API response' }))
-      }
-    },
-
-    // WebSocket handlers
-    sockets: {
-      on: [
-        {
-          name: 'message',
-          callback: (socket, data) => {
-            socket.emit('response', { echo: data })
-          }
-        }
-      ],
-      emit: [
-        (socket) => {
-          socket.emit('welcome', { message: 'Connected' })
-        }
-      ]
-    }
-  }
-}
+```
+websites/<site>/
+├── config/config.ts
+├── src/                      # templates, markdown, scss, (optional) TS for browser
+├── public/                   # static assets served directly
+├── dist/                     # optional prebuilt assets (if you precompile)
+└── models/                   # optional site-specific Drizzle tables
 ```
 
-## Development
+## Install
 
-- `npm run dev <project>` - Start development server for a project
-- `npm run build <project>` - Build a project
-- `npm run build:ts` - Build TypeScript files
-- `npm run watch:ts` - Watch TypeScript files for changes
-- `npm run watch:scss` - Watch SCSS files for changes
-- `npm run clean` - Clean build artifacts
+```bash
+bun install
+```
+
+## Run
+
+Thalia can run in two main modes:
+
+- **Standalone (single project)**: run from a website directory that does *not* contain a `websites/` folder.
+- **Multiplex (many projects)**: run from the Thalia root (this repo) and serve projects out of `websites/`.
+
+### Serve all websites (multiplex)
+
+```bash
+bun run start
+```
+
+### Serve one website (from Thalia root)
+
+```bash
+bun server/cli.ts --project=example-src
+```
+
+### Development mode (hot reload + BrowserSync)
+
+```bash
+bun run dev example-src
+```
+
+## Request handling (high level)
+
+Thalia’s request handler is a chain. In broad strokes it tries:
+
+- path exploit checks / route guard
+- controllers
+- `dist/` (optional)
+- SCSS (`src/css`)
+- TypeScript-to-browser-JS (`src/js`)
+- Handlebars templates (`src/**/*.hbs`)
+- Markdown (`src/**/*.md`)
+- `public/`, then `docs/`, then `data/`
+- framework `public/` + directory index + 404
+
+## Tests
+
+```bash
+bun test
+```
+
+Targeted runs:
+
+```bash
+bun run test:unit
+bun run test:integration
+```
+
+### Service-dependent tests (DB / MailCatcher)
+
+The `websites/example-auth` fixture exercises Thalia’s auth + route guard + mail flows and **expects external services** in some scenarios (database; MailCatcher for an end-to-end password-reset test).
+
+For fast, deterministic runs you can skip those:
+
+```bash
+SKIP_EXAMPLE_AUTH_TESTS=1 SKIP_MAILCATCHER_TESTS=1 bun test
+```
+
+## CI
+
+GitHub Actions runs the fast test suite by default (skipping `example-auth` + MailCatcher dependent tests). See `.github/workflows/tests.yml`.
 
 ## License
 
-MIT
+GPLv3 (see `LICENSE`).

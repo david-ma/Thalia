@@ -4,11 +4,11 @@
  * - bun drizzle-kit generate
  * - bun drizzle-kit push
  *
- * Import from '../node_modules/thalia/...' so drizzle-kit (CJS) can resolve
- * without hitting package exports. See SmugMug models/master-schema.ts.
+ * Note: in the Thalia monorepo/dev checkout, we import via package exports
+ * so tests and local server runs don't depend on a `node_modules/thalia` install.
  */
 
-import { models } from '../node_modules/thalia/models';
+import { models } from 'thalia/models';
 import type { MySqlTableWithColumns } from 'drizzle-orm/mysql-core';
 
 const users = models.users;
@@ -17,7 +17,7 @@ const audits = models.audits;
 const albums = models.albums;
 const images = models.images;
 
-import { mailTable } from '../node_modules/thalia/server/mail';
+import { mailTable } from 'thalia/mail';
 const mail = mailTable as MySqlTableWithColumns<any>;
 
 import { fruit } from './fruit';

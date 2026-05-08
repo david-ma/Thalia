@@ -409,7 +409,10 @@ describe('Request-handler: handler chain fallback (example-src)', () => {
  * Plan (see websites/example-auth/README.md): guest gets 401 for /, /profile/:id, /admin;
  * /fruit is guest read; profile viewable by logged-in user, editable only by owner or admin.
  */
-describe('Request-handler: example-auth (route guard, controller)', () => {
+const SKIP_EXAMPLE_AUTH_ENV = 'SKIP_EXAMPLE_AUTH_TESTS'
+const describeExampleAuth = process.env[SKIP_EXAMPLE_AUTH_ENV] === '1' ? describe.skip : describe
+
+describeExampleAuth('Request-handler: example-auth (route guard, controller)', () => {
   let port: number
   let serverStarted: boolean
   const PROJECT = 'example-auth'
@@ -479,7 +482,7 @@ describe('Request-handler: example-auth (route guard, controller)', () => {
   })
 })
 
-describe('Request-handler: example-auth guest (no session)', () => {
+describeExampleAuth('Request-handler: example-auth guest (no session)', () => {
   let port: number
   let serverStarted: boolean
   const PROJECT = 'example-auth'
@@ -734,7 +737,7 @@ async function loginExampleAuth(port: number, email: string, password: string): 
   return match ? `sessionId=${match[1]}` : null
 }
 
-describe('Request-handler: example-auth authenticated (user / admin)', () => {
+describeExampleAuth('Request-handler: example-auth authenticated (user / admin)', () => {
   let port: number
   let serverStarted: boolean
   let userCookie: string | null = null

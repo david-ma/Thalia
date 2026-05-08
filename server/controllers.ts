@@ -72,6 +72,32 @@ export const latestlogs = async (res: ServerResponse, _req: IncomingMessage, web
   }
 }
 
+/**
+ * This controller serves the latest data from a folder
+ * It serves json by default, but can be configured to serve other types of files
+ */
+export function latest_data(folder_name: string, type: string = 'json') : Controller {
+  return (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: any) => {
+    const data_folder = path.join(website.rootPath, 'data', folder_name)
+    
+    fs.readdir(data_folder, (err, files) => {
+      if (err) {
+        res.end(JSON.stringify({
+          error: err.message,
+        }))
+        return
+      }
+      files = files.map((file) => file.replace(/\.gz$/, '')) // In Thalia's data folders, we serve .gz files as regular files
+      files = files.filter((file) => file.endsWith(`.${type}`)) // Only serve files with the correct type
+      const latest_file = files.sort().reverse()[0]!
+
+      // Redirect people to the latest file:
+      res.writeHead(302, { Location: `/${folder_name}/${latest_file}` })
+      res.end()
+    })
+  }
+}
+
 export const version = async (res: ServerResponse, _req: IncomingMessage, website: Website) => {
   try {
     res.writeHead(200, { 'Content-Type': 'application/json' })

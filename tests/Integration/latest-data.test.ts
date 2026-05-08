@@ -31,7 +31,7 @@ describe('latestData controller (example-src /data/logs)', () => {
     logsDir = path.join(thaliaRoot, 'websites', PROJECT, 'data', 'logs')
     knownLogs = fs
       .readdirSync(logsDir)
-      .filter((f) => f.endsWith('.txt'))
+      .filter((f) => f.endsWith('.log'))
 
     await new Promise((r) => setTimeout(r, 200))
   })
@@ -40,7 +40,7 @@ describe('latestData controller (example-src /data/logs)', () => {
     await stopTestServer(PROJECT)
   })
 
-  test('precondition: example-src has at least one .txt log fixture', () => {
+  test('precondition: example-src has at least one .log log fixture', () => {
     expect(knownLogs.length).toBeGreaterThan(0)
   })
 
@@ -51,7 +51,7 @@ describe('latestData controller (example-src /data/logs)', () => {
     const location = response.headers.get('location')
     expect(location).not.toBeNull()
     // Location must look like /logs/<one of the known filenames>
-    expect(location).toMatch(/^\/logs\/.+\.txt$/)
+    expect(location).toMatch(/^\/logs\/.+\.log$/)
     const filename = location!.replace(/^\/logs\//, '')
     expect(knownLogs).toContain(filename)
   })

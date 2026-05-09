@@ -81,13 +81,15 @@ export const latestlogs = async (res: ServerResponse, _req: IncomingMessage, web
    * Using 'lastModified' will sort by last modified time instead, this is slower because it has to read the file stats for each file. But useful if you don't have control over the file names.
    *
    * Responds 404 if the folder is missing or contains no matching file.
+   * 
+   * If the slug is "list", it will return a list of all files in the folder.
    */
 export function latestData(folder: string, options: {
   type?: string,
   sort?: 'name' | 'lastModified' | 'dateCreated'
 } = {}): Controller {
   const { type = 'json', sort = 'name' } = options
-  return (res, _req, website, _requestInfo) => {
+  return (res, _req, website, requestInfo) => {
     const dir = path.join(website.rootPath, 'data', folder)
     fs.promises
       .readdir(dir, { withFileTypes: true })
@@ -114,7 +116,15 @@ export function latestData(folder: string, options: {
           }
         }
 
-        const latest = sortedFiles.filter((name) => name.endsWith(`.${type}`)).pop()
+        const filteredFiles = sortedFiles.filter((name) => name.endsWith(`.${type}`))
+
+        if (requestInfo.slug === "list") {
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify(filteredFiles))
+          return
+        }
+
+        const latest = filteredFiles.pop()
         if (!latest) {
           res.writeHead(404, { 'Content-Type': 'application/json' })
           console.error(`No .${type} files in data/${folder}`)

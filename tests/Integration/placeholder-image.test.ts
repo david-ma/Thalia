@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
-import { startTestServer, stopTestServer, fetchFromServer } from "./helpers.js";
+import { startTestServer, stopTestServer, fetchFromServer, waitForServerHttp } from "./helpers.js";
 
 const PROJECT = "example-minimal";
 
@@ -13,7 +13,7 @@ describe("Placeholder image route", () => {
   beforeAll(async () => {
     const { port: p } = await startTestServer(PROJECT);
     port = p;
-    await new Promise((r) => setTimeout(r, 200));
+    await waitForServerHttp(port);
   });
 
   afterAll(async () => {

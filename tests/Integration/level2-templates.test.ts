@@ -6,7 +6,7 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
-import { startTestServer, stopTestServer, fetchFromServer } from './helpers.js'
+import { startTestServer, stopTestServer, fetchFromServer, waitForServerHttp } from './helpers.js'
 
 const PROJECT = 'example-src'
 
@@ -16,8 +16,7 @@ describe.skip('Level 2: Handlebars Templates (SKIPPED - router issue)', () => {
   beforeAll(async () => {
     const serverInfo = await startTestServer(PROJECT)
     port = serverInfo.port
-    // Give server a moment to start
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await waitForServerHttp(port)
   })
 
   afterAll(async () => {

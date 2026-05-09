@@ -14,7 +14,7 @@
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
 import fs from 'fs'
 import path from 'path'
-import { startTestServer, stopTestServer, fetchFromServer } from './helpers.js'
+import { startTestServer, stopTestServer, fetchFromServer, waitForServerHttp } from './helpers.js'
 
 const PROJECT = 'example-src'
 
@@ -33,7 +33,7 @@ describe('latestData controller (example-src /data/logs)', () => {
       .readdirSync(logsDir)
       .filter((f) => f.endsWith('.log'))
 
-    await new Promise((r) => setTimeout(r, 200))
+    await waitForServerHttp(port)
   })
 
   afterAll(async () => {

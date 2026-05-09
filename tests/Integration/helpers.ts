@@ -55,9 +55,6 @@ export async function startTestServer(
   const thalia = await Thalia.init(options)
   await thalia.start()
 
-  // Wait a bit for server to be fully ready
-  await new Promise(resolve => setTimeout(resolve, 100))
-
   const serverInfo = { thalia, port: testPort }
   testServers.set(project, serverInfo)
 
@@ -92,6 +89,38 @@ export async function fetchFromServer(url: string, port: number, options?: Reque
   const headers = new Headers(options?.headers)
   headers.set('Host', `localhost:${port}`)
   return fetch(fullUrl, { ...options, headers })
+}
+
+const SERVER_READY_DEFAULT_MS = 15_000
+const SERVER_READY_POLL_MS = 50
+
+/**
+ * Poll until the server accepts TCP and returns any normal HTTP status.
+ * Prefer this over fixed `setTimeout` after `startTestServer` so slow CI
+ * does not flake while keeping fast machines responsive.
+ */
+export async function waitForServerHttp(
+  port: number,
+  url = '/',
+  maxWaitMs = SERVER_READY_DEFAULT_MS,
+): Promise<Response> {
+  const deadline = Date.now() + maxWaitMs
+  let lastError: string | undefined
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetchFromServer(url, port)
+      if (res.status >= 100 && res.status < 600) {
+        return res
+      }
+    } catch (e: unknown) {
+      lastError = e instanceof Error ? e.message : String(e)
+    }
+    await new Promise((r) => setTimeout(r, SERVER_READY_POLL_MS))
+  }
+  throw new Error(
+    `Server on port ${port} did not accept HTTP within ${maxWaitMs}ms` +
+      (lastError ? ` (last error: ${lastError})` : ''),
+  )
 }
 
 /**

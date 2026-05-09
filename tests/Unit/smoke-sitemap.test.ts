@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import path from "node:path";
 import {
   collectSameOriginAssetUrls,
   defaultReportTxtPathForSitemap,
@@ -11,11 +12,13 @@ import {
 
 describe("defaultReportTxtPathForSitemap", () => {
   test("maps project public sitemap to tmp report path", () => {
-    const p = defaultReportTxtPathForSitemap("/usr/local/dev/Thalia/websites/thalia_ubc/public/sitemap.xml");
-    expect(p).toBe("/usr/local/dev/Thalia/websites/thalia_ubc/tmp/sitemap-report.txt");
+    const repoRoot = path.resolve(import.meta.dir, "../..");
+    const sitemapPath = path.join(repoRoot, "websites", "thalia_ubc", "public", "sitemap.xml");
+    const expected = path.join(repoRoot, "websites", "thalia_ubc", "tmp", "sitemap-report.txt");
+    expect(defaultReportTxtPathForSitemap(sitemapPath)).toBe(expected);
   });
-  test("returns null for /tmp sitemap", () => {
-    expect(defaultReportTxtPathForSitemap("/tmp/sitemaps/sitemap.xml")).toBeNull();
+  test("returns null when path does not match websites/<project>/public/sitemap.xml", () => {
+    expect(defaultReportTxtPathForSitemap(path.join("var", "tmp", "orphan-sitemap.xml"))).toBeNull();
   });
 });
 

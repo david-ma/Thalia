@@ -10,6 +10,7 @@ import { Server } from '../../server/server'
 import { Website } from '../../server/website'
 import path from 'path'
 import { getPort } from 'get-port-please'
+import { waitForServerHttp } from '../Integration/helpers.js'
 
 const thaliaDirectory = path.resolve(import.meta.dir, '../..')
 
@@ -38,19 +39,22 @@ describe('E2E: Multi-Tenant Routing', () => {
     }, websites)
 
     await server.start()
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await waitForServerHttp(port)
   })
 
   afterAll(async () => {
     await server.stop()
   })
 
-  test('server responds with 200 for root path', async () => {
-    const response = await fetch(`http://localhost:${port}/`)
-    
+  test('multiplex root serves the default site public index (Host localhost)', async () => {
+    const response = await fetch(`http://localhost:${port}/`, {
+      headers: { Host: `localhost:${port}` },
+    })
+
     expect(response.status).toBe(200)
     const html = await response.text()
     expect(html.length).toBeGreaterThan(0)
-    expect(html).toContain('html')
+    // Repo ships one non-example site for multiplex (`websites/default`); assert stable copy, not generic "<html>".
+    expect(html).toContain("Hi this is David's private server")
   })
 })

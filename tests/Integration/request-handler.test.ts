@@ -22,7 +22,7 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
-import { startTestServer, stopTestServer, fetchFromServer } from './helpers.js'
+import { startTestServer, stopTestServer, fetchFromServer, waitForServerHttp } from './helpers.js'
 
 describe('Request-handler: example-minimal (static, 404, path exploit)', () => {
   let port: number
@@ -31,7 +31,7 @@ describe('Request-handler: example-minimal (static, 404, path exploit)', () => {
   beforeAll(async () => {
     const serverInfo = await startTestServer(PROJECT)
     port = serverInfo.port
-    await new Promise((r) => setTimeout(r, 300))
+    await waitForServerHttp(port)
   })
 
   afterAll(async () => {
@@ -105,7 +105,7 @@ describe('Request-handler: example-src (Handlebars, TypeScript, controller)', ()
   beforeAll(async () => {
     const serverInfo = await startTestServer(PROJECT)
     port = serverInfo.port
-    await new Promise((r) => setTimeout(r, 300))
+    await waitForServerHttp(port)
   })
 
   afterAll(async () => {
@@ -341,7 +341,7 @@ describe('Request-handler: handler chain fallback (example-minimal)', () => {
   beforeAll(async () => {
     const serverInfo = await startTestServer(PROJECT)
     port = serverInfo.port
-    await new Promise((r) => setTimeout(r, 300))
+    await waitForServerHttp(port)
   })
 
   afterAll(async () => {
@@ -376,7 +376,7 @@ describe('Request-handler: handler chain fallback (example-src)', () => {
   beforeAll(async () => {
     const serverInfo = await startTestServer(PROJECT)
     port = serverInfo.port
-    await new Promise((r) => setTimeout(r, 300))
+    await waitForServerHttp(port)
   })
 
   afterAll(async () => {
@@ -422,7 +422,7 @@ describeExampleAuth('Request-handler: example-auth (route guard, controller)', (
     try {
       const serverInfo = await startTestServer(PROJECT)
       port = serverInfo.port
-      await new Promise((r) => setTimeout(r, 500))
+      await waitForServerHttp(port)
       serverStarted = true
     } catch (err) {
       console.warn('example-auth server did not start (DB/mailAuth may be required):', (err as Error)?.message)
@@ -492,7 +492,7 @@ describeExampleAuth('Request-handler: example-auth guest (no session)', () => {
     try {
       const serverInfo = await startTestServer(PROJECT)
       port = serverInfo.port
-      await new Promise((r) => setTimeout(r, 300))
+      await waitForServerHttp(port)
       serverStarted = true
     } catch {
       port = 0
@@ -752,7 +752,7 @@ describeExampleAuth('Request-handler: example-auth authenticated (user / admin)'
     try {
       const serverInfo = await startTestServer(PROJECT)
       port = serverInfo.port
-      await new Promise((r) => setTimeout(r, 300))
+      await waitForServerHttp(port)
       serverStarted = true
       userCookie = await loginExampleAuth(port, USER_EMAIL, PASSWORD)
       adminCookie = await loginExampleAuth(port, ADMIN_EMAIL, PASSWORD)

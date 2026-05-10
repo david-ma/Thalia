@@ -8,7 +8,6 @@ import { getPort } from 'get-port-please'
 import path from 'path'
 
 let testServers: Map<string, { thalia: Thalia; port: number }> = new Map()
-let portCounter = 3000 // Start from 3000 and increment to avoid collisions
 
 /**
  * Start a test server for a specific project
@@ -26,15 +25,15 @@ export async function startTestServer(
     return existing
   }
 
-  // Use a unique port for each test to avoid collisions when running in parallel
+  // Use an arbitrary free port per server. Do not derive the base from only the first
+  // character of `project`: names like example-minimal and example-src share 'e' and
+  // used to collide on the same narrow portRange, so parallel describe beforeAll hooks
+  // could bind the wrong site to the port waitForServerHttp() observed (CI flake).
   let testPort: number
   if (port) {
     testPort = port
   } else {
-    // Try to get an available port starting from a base port
-    // Use project name hash to get consistent but different ports per project
-    const basePort = 3000 + (project.charCodeAt(0) % 1000)
-    testPort = await getPort({ port: basePort, portRange: [basePort, basePort + 100] })
+    testPort = await getPort({ random: true })
   }
   
   // Resolve Thalia repo root from this file (tests/Integration/helpers.ts) so tests

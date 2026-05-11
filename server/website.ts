@@ -553,11 +553,6 @@ export class Website {
         })
       }
 
-      if (this.env == 'development') {
-        // insert a {{> browsersync }} before </body>
-        templateFile = templateFile.replace('</body>', '{{> browsersync }}\n</body>')
-      }
-
       data = data ?? {}
 
       const compiledTemplate = this.handlebars.compile(templateFile)

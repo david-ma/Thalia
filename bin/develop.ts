@@ -3,7 +3,6 @@
 import { spawn, ChildProcess } from 'child_process'
 import path from 'path'
 import * as os from 'os'
-import browserSync from 'browser-sync'
 import fs from 'fs'
 import readline from 'readline'
 import { getPort } from 'get-port-please'
@@ -174,27 +173,6 @@ function startServer({
     processes.push(webpack)
   }
 
-  // BrowserSync for live reload
-  const bs = browserSync.create()
-
-  setTimeout(() => {
-    bs.init({
-      proxy: `http://localhost:${port}`,
-      port: 3000,
-      open: false,
-      notify: false,
-      reloadDelay: 1000,
-      files: [
-        path.join(projectRoot, '**', '*'),
-        path.join(thaliaDirectory, 'server', '**', '*'),
-        path.join(thaliaDirectory, 'src', '**', '*.hbs'),
-      ],
-      watchOptions: {
-        ignored: '**/node_modules/**',
-      },
-    })
-  }, 1000)
-
   // Cleanup function
   const cleanup = () => {
     console.log("\nProcesses to quit: ");
@@ -226,8 +204,6 @@ function startServer({
           }, 1500)
         }
       }),
-      bs.cleanup(),
-      bs.exit(),
       closeLogStreams(),
     ]).then(() => {
       line()

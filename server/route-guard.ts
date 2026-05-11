@@ -77,10 +77,6 @@ export class BasicRouteGuard extends RouteGuard {
 
   public handleRequestChain(request: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
-      if (request.website.env === 'development' && request.pathname.startsWith('/browser-sync/')) {
-        return next(request)
-      }
-
       const routeRule = this.getMatchingRoute(request)
       if (Object.keys(routeRule).length === 0) {
         return next(request)
@@ -250,11 +246,7 @@ export class BasicRouteGuard extends RouteGuard {
         const cookies = requestInfo.cookies
         const cookieName = `auth_${website.name}${matchingRoute.path}`
 
-        // if developer mode, and browser-sync
-        if (website.env === 'development' && pathname.startsWith('/browser-sync/')) {
-          // let them through
-          return false
-        } else if (pathname === `${matchingRoute.path}/logout`) {
+        if (pathname === `${matchingRoute.path}/logout`) {
           res.setHeader('Set-Cookie', `${cookieName}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`)
           res.writeHead(302, { Location: '/' })
           res.end()

@@ -5,7 +5,6 @@
 
 import { spawn } from 'child_process'
 import path from 'path'
-import browserSync from 'browser-sync'
 import fs from 'fs'
 import readline from 'readline'
 

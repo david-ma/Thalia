@@ -337,8 +337,7 @@ export class RequestHandler {
   private static renderFolderIndexWrapper(rh: RequestHandler, contentHtml: string, title: string): string {
     if (rh.website.env === 'development') rh.website.loadPartials()
     rh.website.handlebars.registerPartial('content', contentHtml)
-    let wrapper = rh.website.handlebars.partials['wrapper'] ?? ''
-    if (rh.website.env === 'development') wrapper = wrapper.replace('</body>', '{{> browsersync }}\n</body>')
+    const wrapper = rh.website.handlebars.partials['wrapper'] ?? ''
     return rh.website.handlebars.compile(wrapper)({ requestInfo: rh.requestInfo, version: rh.website.version, title })
   }
 
@@ -420,7 +419,6 @@ export class RequestHandler {
     if (rh.website.env === 'development') rh.website.loadPartials()
     rh.website.handlebars.registerPartial('content', contentHtml)
     let wrapper = rh.website.handlebars.partials['wrapper'] ?? '{{> content }}'
-    if (rh.website.env === 'development') wrapper = wrapper.replace('</body>', '{{> browsersync }}\n</body>')
     wrapper = wrapper.replace('</body>', '{{> markdown_processing }}\n</body>')
     return rh.website.handlebars.compile(wrapper)({
       requestInfo: rh.requestInfo,

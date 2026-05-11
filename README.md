@@ -13,7 +13,7 @@ This repository is the framework **and** includes a few example websites under `
 - **DB layer**: Drizzle ORM (commonly MySQL/MariaDB via `mysql2`)
 - **Auth**: Optional security subsystem (`thalia/security`) used by `websites/example-auth`
 
-Some older/optional pieces (e.g. BrowserSync, webpack watch) still exist but are not required for the framework to run.
+Some older/optional pieces (e.g. webpack watch in `bin/develop.ts` when a webpack config exists) are not required for the framework to run.
 
 ## Repo layout (current)
 
@@ -66,7 +66,9 @@ bun run start
 bun server/cli.ts --project=example-src
 ```
 
-### Development mode (hot reload + BrowserSync)
+### Development mode (`thalia-develop`)
+
+Runs the Thalia server with `bun --hot` (and optional webpack watch if the project has a webpack config). Use the app URL printed in the logs (same `PORT` as the child process).
 
 ```bash
 bun run dev example-src

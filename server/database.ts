@@ -97,7 +97,7 @@ export class ThaliaDatabase {
     try {
       /** Drizzle stores the callback mysql2 Pool on `$client`; the ORM session uses `.promise()`. */
       type LegacyPool = { promise?: () => { end: () => Promise<void> } }
-      const pool = (this.drizzle as MySql2Database<any> | undefined)?.['$client'] as LegacyPool | undefined
+      const pool = (this.drizzle as unknown as Record<string, unknown>)['$client'] as LegacyPool | undefined
       if (pool?.promise) {
         await pool.promise().end().catch(() => {})
       } else {

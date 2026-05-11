@@ -166,8 +166,11 @@ describeDatabaseOnline('Integration: database online (example-auth + MySQL)', ()
     expect(Array.isArray(body.data)).toBe(true)
     expect(typeof body.recordsTotal).toBe('number')
     expect(typeof body.recordsFiltered).toBe('number')
-    expect(body.recordsTotal).toBeGreaterThanOrEqual(body.data!.length)
-    expect(body.recordsFiltered).toBe(body.recordsTotal)
+    const total = body.recordsTotal as number
+    const filtered = body.recordsFiltered as number
+    const rows = body.data ?? []
+    expect(total).toBeGreaterThanOrEqual(rows.length)
+    expect(filtered).toBe(total)
   })
 
   test('user session: GET /fruit/json search narrows recordsFiltered vs recordsTotal', async () => {

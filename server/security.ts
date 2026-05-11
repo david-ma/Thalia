@@ -289,7 +289,8 @@ export class ThaliaSecurity implements Machine {
           .select()
           .from(usersTable)
           .where(eq(usersTable.email, form.fields.Email))
-          .then(([user]: [User | undefined]) => {
+          .then((rows) => {
+            const user = rows[0] as User | undefined
             if (!user) {
               sendAuthHtml(res, website, 'userLogin', { error: 'Invalid email or password' })
               return
@@ -376,7 +377,10 @@ export class ThaliaSecurity implements Machine {
   private deleteSessionsForUser(website: Website, userId: number): Promise<void> {
     const sessionsTbl = website.db?.machines?.sessions?.table
     if (!sessionsTbl || !website.db?.drizzle) return Promise.resolve()
-    return website.db.drizzle.delete(sessionsTbl).where(eq(sessionsTbl.userId, userId))
+    return website.db.drizzle
+      .delete(sessionsTbl)
+      .where(eq(sessionsTbl.userId, userId))
+      .then((): void => {})
   }
 
   private firstAdminExists(website: Website): Promise<boolean> {
@@ -385,7 +389,7 @@ export class ThaliaSecurity implements Machine {
       .select()
       .from(usersTable)
       .where(eq(usersTable.role, 'admin'))
-      .then((rows: User[]) => rows.length > 0)
+      .then((rows) => rows.length > 0)
   }
 
   private forgotPasswordController(
@@ -418,8 +422,8 @@ export class ThaliaSecurity implements Machine {
         db.select()
           .from(usersTable)
           .where(eq(usersTable.email, email))
-          .then((rows: User[]) => {
-            const user = rows[0]
+          .then((rows) => {
+            const user = rows[0] as User | undefined
             if (user) {
               const token = crypto.randomBytes(32).toString('hex')
               const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
@@ -497,7 +501,7 @@ export class ThaliaSecurity implements Machine {
       db.select()
         .from(usersTable)
         .where(and(eq(usersTable.passwordResetToken, token), gt(usersTable.passwordResetExpires, new Date())))
-        .then((rows: User[]) => {
+        .then((rows) => {
           if (rows.length === 0) {
             sendAuthHtml(res, website, 'resetPassword', {
               title: 'Reset Password',
@@ -553,8 +557,8 @@ export class ThaliaSecurity implements Machine {
         db.select()
           .from(usersTable)
           .where(and(eq(usersTable.passwordResetToken, resetToken), gt(usersTable.passwordResetExpires, new Date())))
-          .then((rows: User[]) => {
-            const user = rows[0]
+          .then((rows) => {
+            const user = rows[0] as User | undefined
             if (!user || user.id == null) {
               sendAuthHtml(res, website, 'resetPassword', {
                 title: 'Reset Password',

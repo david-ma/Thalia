@@ -819,12 +819,10 @@ export class CrudFactory implements Machine {
 
   /** `COUNT(*)` with optional Drizzle WHERE (omit for full-table count). */
   private crudJsonCountRows(where?: SQL): Promise<number> {
-    let q = this.db
+    const base = this.db
       .select({ count: sql<number>`cast(count(*) as unsigned)`.mapWith(Number) })
       .from(this.table)
-    if (where !== undefined) {
-      q = q.where(where)
-    }
+    const q = where !== undefined ? base.where(where) : base
     return q.then((rows) => rows[0]?.count ?? 0)
   }
 
@@ -845,10 +843,9 @@ export class CrudFactory implements Machine {
       this.crudJsonCountRows(visibilityWhere),
       this.crudJsonCountRows(combinedWhere),
       (() => {
-        let dataQuery = this.db.select().from(this.table)
-        if (combinedWhere !== undefined) {
-          dataQuery = dataQuery.where(combinedWhere)
-        }
+        const base = this.db.select().from(this.table)
+        const dataQuery =
+          combinedWhere !== undefined ? base.where(combinedWhere) : base
         return dataQuery.limit(limit).offset(offset)
       })(),
     ])
@@ -1055,9 +1052,9 @@ export function parseForm(res: ServerResponse, req: IncomingMessage): Promise<Pa
     return Object.entries(fields).reduce(
       (obj, [key, value]) => {
         if (Array.isArray(value)) {
-          obj[key] = value[0] ?? ''
+          obj[key] = String(value[0] ?? '')
         } else {
-          obj[key] = value ?? ''
+          obj[key] = String(value ?? '')
         }
         return obj
       },
@@ -1368,18 +1365,26 @@ export class SmugMugUploader implements Machine {
               })
 
               httpsResponse.on('end', () => {
-                that.saveImage(JSON.parse(data)).then((newImage) => {
-                  drizzle
-                    .select()
-                    .from(images)
-                    .where(eq(images.id, newImage[0].insertId))
-                    .then((imageResults: Image[]) => {
-                      resolve(imageResults[0])
-                    })
-                    .catch((err: unknown) => {
-                      reject(err)
-                    })
-                })
+                that
+                  .saveImage(JSON.parse(data))
+                  .then((insertResult) => {
+                    const insertIdNum = SmugMugUploader.insertIdFromMysqlResult(insertResult)
+                    if (insertIdNum === undefined) {
+                      throw new Error('Image insert returned no insertId')
+                    }
+                    return drizzle.select().from(images).where(eq(images.id, insertIdNum))
+                  })
+                  .then((imageResults) => {
+                    const row = (imageResults as Image[])[0]
+                    if (row === undefined) {
+                      reject(new Error('Image row missing after insert'))
+                      return
+                    }
+                    resolve(row)
+                  })
+                  .catch((err: unknown) => {
+                    reject(err)
+                  })
               })
             })
 
@@ -1400,7 +1405,17 @@ export class SmugMugUploader implements Machine {
       })
   }
 
-  private async saveImage(data: {
+  /** mysql2 `insertId` extraction from Drizzle `insert`/`execute` result shapes. */
+  private static insertIdFromMysqlResult(result: unknown): number | undefined {
+    if (result != null && typeof result === 'object' && 'insertId' in result) {
+      const raw = (result as { insertId: number | bigint | undefined }).insertId
+      if (raw === undefined) return undefined
+      return typeof raw === 'bigint' ? Number(raw) : raw
+    }
+    return undefined
+  }
+
+  private saveImage(data: {
     stat: string
     method: string
     Image: {
@@ -1413,34 +1428,60 @@ export class SmugMugUploader implements Machine {
       AssetComponentUri: string
       AssetUri: string
     }
-  }) {
+  }): Promise<unknown> {
     const AlbumImageUri = data.Image.AlbumImageUri
-    return this.smugmugApiCall(AlbumImageUri)
-      .then((response: any) => {
-        const responseData = JSON.parse(response)
-        const drizzle = this.website.db.drizzle
-        return drizzle.insert(images).values({
-          imageUri: data.Image.ImageUri,
-          albumUri: data.Image.AlbumImageUri,
-          caption: responseData.Response.AlbumImage.Caption,
-          // albumId: responseData.Response.AlbumImage.AlbumKey,
-          filename: responseData.Response.AlbumImage.FileName,
-          url: data.Image.URL,
-          originalSize: responseData.Response.AlbumImage.OriginalSize,
-          originalWidth: responseData.Response.AlbumImage.OriginalWidth,
-          originalHeight: responseData.Response.AlbumImage.OriginalHeight,
-          thumbnailUrl: responseData.Response.AlbumImage.ThumbnailUrl,
-          archivedUri: responseData.Response.AlbumImage.ArchivedUri,
-          archivedSize: responseData.Response.AlbumImage.ArchivedSize,
-          archivedMD5: responseData.Response.AlbumImage.ArchivedMD5,
-          imageKey: responseData.Response.AlbumImage.ImageKey,
-          preferredDisplayFileExtension: responseData.Response.AlbumImage.PreferredDisplayFileExtension,
-          uri: responseData.Response.AlbumImage.Uri,
-        })
+    return this.smugmugApiCall(AlbumImageUri).then((response: any) => {
+      const responseData = JSON.parse(response) as {
+        Response?: { AlbumImage?: Record<string, any> }
+      }
+      const ai = responseData.Response?.AlbumImage
+      const drizzle = this.website.db.drizzle
+
+      const imageKey = ai?.ImageKey
+      if (typeof imageKey !== 'string' || !imageKey) {
+        throw new Error('SmugMug response missing AlbumImage.ImageKey')
+      }
+
+      return drizzle.insert(images).values({
+        albumKey: typeof ai.AlbumKey === 'string' ? ai.AlbumKey : '',
+        caption: typeof ai.Caption === 'string' ? ai.Caption : '',
+        filename: typeof ai.FileName === 'string' ? ai.FileName : '',
+        url: data.Image.URL,
+        originalSize:
+          typeof ai.OriginalSize === 'number'
+            ? ai.OriginalSize
+            : ai.OriginalSize != null
+              ? Number(ai.OriginalSize)
+              : null,
+        originalWidth:
+          typeof ai.OriginalWidth === 'number'
+            ? ai.OriginalWidth
+            : ai.OriginalWidth != null
+              ? Number(ai.OriginalWidth)
+              : null,
+        originalHeight:
+          typeof ai.OriginalHeight === 'number'
+            ? ai.OriginalHeight
+            : ai.OriginalHeight != null
+              ? Number(ai.OriginalHeight)
+              : null,
+        thumbnailUrl: typeof ai.ThumbnailUrl === 'string' ? ai.ThumbnailUrl : '',
+        archivedUri: typeof ai.ArchivedUri === 'string' ? ai.ArchivedUri : '',
+        archivedSize:
+          typeof ai.ArchivedSize === 'number'
+            ? ai.ArchivedSize
+            : ai.ArchivedSize != null
+              ? Number(ai.ArchivedSize)
+              : null,
+        archivedMD5: typeof ai.ArchivedMD5 === 'string' ? ai.ArchivedMD5 : '',
+        imageKey,
+        preferredDisplayFileExtension:
+          typeof ai.PreferredDisplayFileExtension === 'string'
+            ? ai.PreferredDisplayFileExtension
+            : '',
+        uri: typeof ai.Uri === 'string' && ai.Uri ? ai.Uri : data.Image.ImageUri,
       })
-      .catch((err) => {
-        console.error(err)
-      })
+    })
   }
 
   // path=`${path}?_verbosity=1`

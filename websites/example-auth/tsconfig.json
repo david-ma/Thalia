@@ -1,27 +1,30 @@
 {
   "compilerOptions": {
-    "rootDir": ".",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "target": "ES2020",
-    "lib": ["ES2020"],
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "declaration": true,
-    "removeComments": false,
-    "sourceMap": true
+    "noEmit": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["bun-types", "node"],
+    "baseUrl": "../../",
+    "paths": {
+      "thalia": ["server/index.ts"],
+      "thalia/types": ["server/types.ts"],
+      "thalia/server": ["server/server.ts"],
+      "thalia/website": ["server/website.ts"],
+      "thalia/controllers": ["server/controllers.ts"],
+      "thalia/security": ["server/security.ts"],
+      "thalia/models": ["models/index.ts"],
+      "thalia/mail": ["server/mail.ts"],
+      "thalia/util": ["server/util.ts"],
+      "thalia/cli": ["server/cli.ts"],
+      "thalia/security-models": ["models/security-models.ts"]
+    }
   },
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node"
-  },
-  "include": [
-    "config/**/*",
-    "models/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["config/**/*.ts", "models/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

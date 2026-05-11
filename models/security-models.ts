@@ -1,10 +1,9 @@
-import { sql } from 'drizzle-orm'
-import { mysqlTable, text, int, tinyint, boolean, varchar, json, timestamp } from 'drizzle-orm/mysql-core'
-import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
+import { InferInsertModel, InferSelectModel } from 'drizzle-orm'
+import { mysqlTable, text, int, boolean, json, timestamp } from 'drizzle-orm/mysql-core'
 import { vc, baseTableConfig } from './util'
 
 // User Model
-export const users: MySqlTableWithColumns<any> = mysqlTable('users', {
+export const users = mysqlTable('users', {
   ...baseTableConfig,
   name: vc('name').notNull(),
   // email: text('email').notNull().unique(), // Unique causing issues in SQLite3 with DrizzleKit
@@ -18,11 +17,11 @@ export const users: MySqlTableWithColumns<any> = mysqlTable('users', {
   passwordResetExpires: timestamp('password_reset_expires'),
 })
 
-export type User = typeof users.$inferSelect
-export type NewUser = typeof users.$inferInsert
+export type User = InferSelectModel<typeof users>
+export type NewUser = InferInsertModel<typeof users>
 
 // Session Model
-export const sessions: MySqlTableWithColumns<any> = mysqlTable('sessions', {
+export const sessions = mysqlTable('sessions', {
   sid: vc('sid').primaryKey().notNull(),
   expires: timestamp('expires'),
   data: json('data'),
@@ -32,11 +31,11 @@ export const sessions: MySqlTableWithColumns<any> = mysqlTable('sessions', {
   updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow()
 })
 
-export type Session = typeof sessions.$inferSelect
-export type NewSession = typeof sessions.$inferInsert
+export type Session = InferSelectModel<typeof sessions>
+export type NewSession = InferInsertModel<typeof sessions>
 
 // Audit Model
-export const audits: MySqlTableWithColumns<any> = mysqlTable('audits', {
+export const audits = mysqlTable('audits', {
   ...baseTableConfig,
   userId: int('user_id').references(() => users.id),
   ip: vc('ip').notNull(),
@@ -46,8 +45,8 @@ export const audits: MySqlTableWithColumns<any> = mysqlTable('audits', {
   timestamp: timestamp('timestamp').notNull().defaultNow()
 })
 
-export type Audit = typeof audits.$inferSelect
-export type NewAudit = typeof audits.$inferInsert
+export type Audit = InferSelectModel<typeof audits>
+export type NewAudit = InferInsertModel<typeof audits>
 
 // Factory functions
 export function UserFactory(config: typeof baseTableConfig) {

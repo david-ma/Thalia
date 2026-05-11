@@ -1,11 +1,17 @@
-import { fruit } from '../models/fruit.js';
-import { CrudFactory } from 'thalia/controllers';
+import path from 'path';
+import { eq } from 'drizzle-orm';
+import type { ServerResponse, IncomingMessage } from 'http';
+import { CrudFactory, SmugMugUploader } from 'thalia/controllers';
+import type { RequestInfo } from 'thalia/server';
+import type { User } from 'thalia/models';
 import { ThaliaSecurity } from 'thalia/security';
 import { recursiveObjectMerge } from 'thalia/website';
-import type { ServerResponse, IncomingMessage } from 'http';
-import type { RequestInfo } from 'thalia/server';
 import type { Website } from 'thalia/website';
-import { eq } from 'drizzle-orm';
+import { fruit } from '../models/fruit.js';
+import { albums, images } from '../models/drizzle-schema';
+
+/** Public fields returned by the profile GET handler (subset of `User`). */
+type ProfileRow = Pick<User, 'id' | 'name' | 'email' | 'photo' | 'role'>;
 
 const FruitMachine = new CrudFactory(fruit);
 const fruitConfig = {
@@ -21,7 +27,6 @@ const fruitConfig = {
         fruit: FruitMachine.controller.bind(FruitMachine),
     },
 };
-import path from 'path';
 const mailAuthPath = path.join(import.meta.dirname, 'mailAuth.js');
 const security = new ThaliaSecurity({
     mailAuthPath,
@@ -56,7 +61,7 @@ function profileController(
             .from(usersTable)
             .where(eq(usersTable.id, id))
             .limit(1)
-            .then((rows) => {
+            .then((rows: ProfileRow[]) => {
                 const user = rows[0];
                 if (!user) {
                     res.statusCode = 404;
@@ -70,10 +75,11 @@ function profileController(
                     `<h1>Profile</h1><p>ID: ${user.id}</p><p>Name: ${user.name ?? ''}</p><p>Role: ${user.role ?? ''}</p>`,
                 );
             })
-            .catch((err) => {
+            .catch((err: unknown) => {
                 res.statusCode = 500;
                 res.setHeader('Content-Type', 'text/html');
-                res.end('<h1>Error</h1><p>' + (err as Error).message + '</p>');
+                const msg = err instanceof Error ? err.message : String(err);
+                res.end('<h1>Error</h1><p>' + msg + '</p>');
             });
         return;
     }
@@ -104,9 +110,7 @@ function profileController(
                 res.end(JSON.stringify({ error: 'Invalid JSON' }));
                 return;
             }
-            const updates: Record<string, unknown> = {};
-            if (typeof data.name === 'string') updates.name = data.name;
-            if (Object.keys(updates).length === 0) {
+            if (typeof data.name !== 'string') {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({ ok: true, id }));
@@ -114,17 +118,18 @@ function profileController(
             }
             website.db.drizzle
                 .update(usersTable)
-                .set(updates as any)
+                .set({ name: data.name })
                 .where(eq(usersTable.id, id))
                 .then(() => {
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'application/json');
                     res.end(JSON.stringify({ ok: true, id }));
                 })
-                .catch((err) => {
+                .catch((err: unknown) => {
                     res.statusCode = 500;
                     res.setHeader('Content-Type', 'application/json');
-                    res.end(JSON.stringify({ error: (err as Error).message }));
+                    const msg = err instanceof Error ? err.message : String(err);
+                    res.end(JSON.stringify({ error: msg }));
                 });
         });
         return;
@@ -169,11 +174,9 @@ const roleBasedSecurityConfig = recursiveObjectMerge(recursiveObjectMerge(securi
         profile: profileController,
     },
 });
-import { albums, images } from '../models/drizzle-schema'
-import { CrudFactory, SmugMugUploader } from '../../../server/controllers'
 
-const AlbumMachine = new CrudFactory(albums as any)
-const ImageMachine = new CrudFactory(images as any)
+const AlbumMachine = new CrudFactory(albums);
+const ImageMachine = new CrudFactory(images);
 const smugMugUploader = new SmugMugUploader()
 const smugmugConfig = {
     controllers: {
@@ -194,4 +197,3 @@ const smugmugConfig = {
     },
 };
 export const config = recursiveObjectMerge(roleBasedSecurityConfig, smugmugConfig);
-//# sourceMappingURL=config.js.map

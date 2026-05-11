@@ -1,5 +1,16 @@
-<footer class="footer">
+<footer class="footer py-4">
   <div class="container">
-    <p>&copy; {{currentYear}} {{siteName}}</p>
+    <div class="row align-items-center">
+      <div class="col-lg-4 text-lg-start">
+        Copyright © Example Auth {{#if copyrightYear}}{{copyrightYear}}{{else}}2026{{/if}}
+      </div>
+      <div class="col-lg-4 my-3 my-lg-0">
+        <a class="btn btn-dark btn-social mx-2" href="https://github.com/david-ma/Thalia" rel="noopener noreferrer" aria-label="Thalia on GitHub"><i class="fab fa-github" aria-hidden="true"></i></a>
+      </div>
+      <div class="col-lg-4 text-lg-end">
+        <a class="link-dark text-decoration-none me-3" href="https://github.com/david-ma/Thalia">Source</a>
+        <span class="text-muted small">Thalia Framework</span>
+      </div>
+    </div>
   </div>
-</footer> 
+</footer>

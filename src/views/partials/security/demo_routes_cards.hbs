@@ -1,0 +1,38 @@
+{{!-- Highlighted URLs for exercising auth-aware behaviour (#routes). --}}
+<section class="page-section bg-light" id="routes">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="section-heading text-uppercase">Explore the demo</h2>
+      <p class="section-subheading text-muted">Concrete routes wired in <code class="small">websites/example-auth/config/config.ts</code>.</p>
+    </div>
+    <div class="row g-4 justify-content-center">
+      <div class="col-lg-4 col-md-6">
+        <div class="border rounded-4 p-4 h-100 text-center shadow-sm bg-white">
+          <div class="rounded-circle bg-dark text-white d-inline-flex align-items-center justify-content-center mx-auto mb-3"
+            style="width:4rem;height:4rem;"><i class="fas fa-database fa-lg" aria-hidden="true"></i></div>
+          <h4 class="text-uppercase">Fruit CRUD</h4>
+          <p class="text-muted small">Guest-visible list with mutating routes governed by roles.</p>
+          <a class="btn btn-primary text-uppercase" href="/fruit">Open /fruit</a>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <div class="border rounded-4 p-4 h-100 text-center shadow-sm bg-white">
+          <div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center mx-auto mb-3"
+            style="width:4rem;height:4rem;"><i class="fas fa-user fa-lg" aria-hidden="true"></i></div>
+          <h4 class="text-uppercase">Profiles</h4>
+          <p class="text-muted small"><code>/profile/&lt;id&gt;</code> returns 401 for guests.</p>
+          <a class="btn btn-outline-primary text-uppercase" href="/profile/1">Sample profile</a>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <div class="border rounded-4 p-4 h-100 text-center shadow-sm bg-white">
+          <div class="rounded-circle bg-danger-subtle border border-danger d-inline-flex align-items-center justify-content-center mx-auto mb-3 text-danger-emphasis"
+            style="width:4rem;height:4rem;"><i class="fas fa-user-shield fa-lg" aria-hidden="true"></i></div>
+          <h4 class="text-uppercase">Admin</h4>
+          <p class="text-muted small">Restricted until you hold the right role.</p>
+          <a class="btn btn-outline-danger text-uppercase" href="/admin">Open /admin</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

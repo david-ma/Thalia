@@ -167,6 +167,7 @@ const roleBasedSecurityConfig = recursiveObjectMerge(recursiveObjectMerge(securi
             permissions: {
                 admin: ['read'],
                 user: ['read'],
+                guest: ['read'],
             },
         },
     ],

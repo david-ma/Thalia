@@ -1,0 +1,41 @@
+{{!-- Session card + auth entry points (#session). --}}
+<section class="page-section" id="session">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="section-heading text-uppercase">Session &amp; account</h2>
+      <p class="section-subheading text-muted">Current request identity and the usual login flows.</p>
+    </div>
+    <div class="row justify-content-center g-4">
+      <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body p-4">
+            <h3 class="card-title text-uppercase h5 mb-3">Signed-in state</h3>
+            {{#with requestInfo.userAuth}}
+              <p class="mb-2"><strong>{{name}}</strong>{{#if email}} <span class="text-muted small">({{email}})</span>{{/if}}</p>
+              <p class="mb-4"><span class="badge text-bg-dark text-uppercase">{{role}}</span></p>
+              <p class="small text-muted mb-0">
+                Provided by Thalia&apos;s cookies + security stack for this demo site.
+              </p>
+            {{else}}
+              <p class="text-muted mb-0">No authenticated user on this request (guest).</p>
+              <p class="small text-muted mt-3 mb-0">Create an account or sign in to unlock profile editing and guarded admin routes.</p>
+            {{/with}}
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body p-4">
+            <h3 class="card-title text-uppercase h5 mb-3">Flows</h3>
+            <ul class="list-unstyled mb-0">
+              <li class="mb-2"><a href="/logon" class="link-primary fw-semibold">Sign in</a></li>
+              <li class="mb-2"><a href="/newUser" class="link-primary fw-semibold">Create account</a></li>
+              <li class="mb-2"><a href="/forgotPassword" class="link-secondary">Forgot password</a></li>
+              <li><a href="/logout" class="link-secondary">Sign out</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

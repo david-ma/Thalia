@@ -1,0 +1,58 @@
+{{!-- Security-focused accordion for example-auth homepage (#faq). --}}
+<section class="page-section" id="faq">
+  <div class="container">
+    <div class="text-center mb-4">
+      <h2 class="section-heading text-uppercase">Auth notes</h2>
+      <h3 class="section-subheading text-muted">Hints for iterating on secure Thalia builds</h3>
+    </div>
+    <div class="row">
+      <div class="col-lg-8 mx-auto">
+        <div class="accordion" id="authDemoFaq">
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#authDemoFaq-session">
+                How are sessions persisted?
+              </button>
+            </h2>
+            <div id="authDemoFaq-session" class="accordion-collapse collapse show" data-bs-parent="#authDemoFaq">
+              <div class="accordion-body">
+                <p class="mb-2 small">Cookies carry opaque tokens that Thalia verifies per request (<code class="small">requestInfo.userAuth</code>).
+                Inspect <code>/logon</code> + <code>/logout</code> flows in your website config alongside the bundled security subsystem.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#authDemoFaq-guards">
+                Where should I tighten permissions?
+              </button>
+            </h2>
+            <div id="authDemoFaq-guards" class="accordion-collapse collapse" data-bs-parent="#authDemoFaq">
+              <div class="accordion-body">
+                <p class="mb-2 small">
+                  Declare route permissions in website config (<code class="small">routes</code>),
+                  combine with controllers that enforce ownership (for example profiles) and Drizzle-backed checks inside CRUD factories.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#authDemoFaq-ci">
+                How do tests handle this site?
+              </button>
+            </h2>
+            <div id="authDemoFaq-ci" class="accordion-collapse collapse" data-bs-parent="#authDemoFaq">
+              <div class="accordion-body">
+                <p class="mb-0 small">
+                  Fast CI skips database-heavy integrations by setting <code class="small">SKIP_EXAMPLE_AUTH_TESTS=1</code>.
+                  See the root <code class="small">README.md</code> for running the seeded user suite locally.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

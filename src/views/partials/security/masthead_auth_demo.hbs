@@ -1,0 +1,21 @@
+{{!-- Hero for Thalia auth/security demos (`example-auth`). Uses Agency masthead styling. --}}
+<header class="masthead" id="page-top"
+  style="background-image: url('https://startbootstrap.github.io/startbootstrap-agency/assets/img/header-bg.jpg');">
+  <div class="container">
+    <div class="masthead-subheading">Thalia sessions &amp; route guards</div>
+    {{#with requestInfo.userAuth}}
+      <div class="masthead-heading text-uppercase">Hello, {{name}}</div>
+      <p class="text-white-50 mb-0">
+        Signed in{{#if email}} as <strong class="text-white">{{email}}</strong>{{/if}}
+        · role <strong class="text-white text-uppercase">{{role}}</strong>
+      </p>
+      <p class="text-white-50 small mb-0 mt-2">Use the demos below to exercise CRUD, profiles, uploads, and role rules.</p>
+    {{else}}
+      <div class="masthead-heading text-uppercase">Example Auth</div>
+      <p class="text-white-50 mb-0">
+        Cookie sessions, <code class="text-white-75">ThaliaSecurity</code>, Drizzle-backed users, CRUD machinery, and SmugMug-style uploads —
+        sign in to see guarded routes behave differently.</p>
+    {{/with}}
+    <a class="btn btn-primary btn-xl text-uppercase mt-3" href="#session">Session &amp; account</a>
+  </div>
+</header>

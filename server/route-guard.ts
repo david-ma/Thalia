@@ -34,6 +34,14 @@ const ALWAYS_ALLOW_PATHS: string[] = [
   '/manifest.json',
   '/site.webmanifest',
 
+  // Security routes
+  '/logon',
+  '/logout',
+  '/newUser',        // view       Disable by creating a blank "newUser.hbs" partial
+  '/createNewUser',  // controller
+  '/forgotPassword', // view       Disable by creating a blank "forgotPassword.hbs" partial
+  '/resetPassword',  // controller
+
   // static asset prefixes
   '/css',
   '/js',

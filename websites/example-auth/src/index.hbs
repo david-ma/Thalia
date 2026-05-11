@@ -1,67 +1,11 @@
 {{#> wrapper }}
-  <header class="mb-4 pb-3 border-bottom border-secondary-subtle">
-    <h1 class="h2 mb-1">Example Auth</h1>
-    <p class="text-muted mb-0">
-      Thalia demo: sessions, roles, CRUD, profiles, and SmugMug-style photo upload.
-    </p>
-  </header>
-
-  <div class="row g-4">
-    <div class="col-lg-6">
-      <section class="card border-0 shadow-sm h-100" aria-labelledby="session-heading">
-        <div class="card-body">
-          <h2 id="session-heading" class="h5 card-title">Session</h2>
-          {{#with requestInfo.userAuth}}
-            <p class="card-text mb-2">
-              Signed in as <strong>{{name}}</strong>
-              {{#if email}}<span class="text-muted">({{email}})</span>{{/if}}.
-            </p>
-            <dl class="row small mb-0">
-              <dt class="col-sm-3">Role</dt>
-              <dd class="col-sm-9"><span class="badge text-bg-secondary text-uppercase">{{role}}</span></dd>
-            </dl>
-          {{else}}
-            <p class="card-text text-muted mb-0">No user attached to this request.</p>
-          {{/with}}
-          <div class="d-flex flex-wrap gap-2 mt-3">
-            <a class="btn btn-outline-secondary btn-sm" href="/logon">Log in</a>
-            <a class="btn btn-outline-secondary btn-sm" href="/logout">Log out</a>
-            <a class="btn btn-outline-primary btn-sm" href="/newUser">New account</a>
-            <a class="btn btn-outline-primary btn-sm" href="/forgotPassword">Forgot password</a>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <div class="col-lg-6">
-      <section class="card border-0 shadow-sm h-100" aria-labelledby="explore-heading">
-        <div class="card-body">
-          <h2 id="explore-heading" class="h5 card-title">Try it</h2>
-          <ul class="list-unstyled mb-0">
-            <li class="mb-2">
-              <a class="fw-medium" href="/fruit">Fruit CRUD</a>
-              <span class="text-muted small d-block">Guest-readable list; mutating actions follow route rules.</span>
-            </li>
-            <li class="mb-2">
-              <a class="fw-medium" href="/profile/1">Profile sample</a>
-              <span class="text-muted small d-block">Requires a signed-in user (returns 401 for guests).</span>
-            </li>
-            <li>
-              <a class="fw-medium" href="/admin">Admin</a>
-              <span class="text-muted small d-block">Restricted route (401 without the right role).</span>
-            </li>
-          </ul>
-        </div>
-      </section>
-    </div>
-  </div>
-
-  <section class="mt-4 pt-3 border-top border-secondary-subtle" aria-labelledby="upload-heading">
-    <h2 id="upload-heading" class="h5 mb-3">Photo upload (SmugMug)</h2>
-    <p class="text-muted small mb-3">
-      Uses jQuery and <code>/uploadPhoto</code> when configured. Requires a session with upload permission where your
-      route guard allows it.
-    </p>
-    {{> image }}
-  </section>
+  {{> navigation }}
+  {{> masthead_auth_demo }}
+  {{> session_account_section }}
+  {{> demo_routes_cards }}
+  {{> route_guards_overview }}
+  {{> clients }}
+  {{> upload_smugmug_section }}
+  {{> auth_demo_faq }}
+  {{> footer }}
 {{/wrapper}}

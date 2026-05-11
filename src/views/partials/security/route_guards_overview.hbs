@@ -1,0 +1,36 @@
+{{!-- Explain guest / user / admin model at a glance (#guards). --}}
+<section class="page-section" id="guards">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="section-heading text-uppercase">Route guards</h2>
+      <p class="section-subheading text-muted">
+        Matches on path prefixes attach permissions for <strong>guest</strong>, signed-in users, and <strong>admin</strong>.</p>
+    </div>
+    <div class="row justify-content-center g-4">
+      <div class="col-md-4">
+        <div class="timeline-panel border rounded shadow-sm h-100 p-4 bg-light">
+          <h4 class="text-uppercase text-muted small">Guests</h4>
+          <p class="small text-muted mb-0">
+            Readable pages like this home route and curated read-only demos; mutating controllers still apply their own logic.
+          </p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="timeline-panel border rounded shadow-sm h-100 p-4">
+          <h4 class="text-uppercase text-primary small">Users</h4>
+          <p class="small text-muted mb-0">
+            Authenticated identities can reach profile workflows and uploads where your rules allow it.
+          </p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="timeline-panel border rounded shadow-sm h-100 p-4 border-danger-subtle bg-danger-subtle">
+          <h4 class="text-uppercase small text-danger-emphasis">Administrators</h4>
+          <p class="small text-muted mb-0">
+            Higher privilege for CRUD changes and guarded surfaces such as generated admin scaffolding.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

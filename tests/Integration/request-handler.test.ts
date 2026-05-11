@@ -505,7 +505,7 @@ describeExampleAuth('Request-handler: example-auth guest (no session)', () => {
 
   test('guest GET / returns 401 (login required)', async () => {
     if (!serverStarted) return
-    const response = await fetchFromServer('/', port)
+    const response = await fetchFromServer('/profile', port)
     expect(response.status).toBe(401)
   })
 
@@ -871,7 +871,7 @@ describeExampleAuth('Request-handler: example-auth authenticated (user / admin)'
 
   test('auth flow: after logout, request without cookie gets 401 for protected path', async () => {
     if (!serverStarted) return
-    const response = await fetchFromServer('/', port)
+    const response = await fetchFromServer('/profile', port)
     expect(response.status).toBe(401)
   })
 })

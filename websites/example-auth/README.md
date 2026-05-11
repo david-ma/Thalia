@@ -124,6 +124,19 @@ To run example-auth integration tests locally:
 
 Logins in tests read **`Set-Cookie`** via **`getSetCookie()`** where available so `sessionId` is not dropped.
 
+### Database-online tests (`database-online.test.ts`)
+
+These hit **real HTTP + Drizzle + MySQL** (Crud **`/json`** totals, **`/fruit`**, seeded **`PUT /profile`** flows). They run **only** when **`SKIP_DATABASE_TESTS`** is exactly **`0`** — anything else (**unset**, **`1`**, …) treats the whole file as **`describe.skip`** in Bun.
+
+From Thalia root (after DB is up and schema is pushed):
+
+```bash
+bun run example-auth:seed-test-users
+bun run test:integration:database
+```
+
+Or: **`SKIP_DATABASE_TESTS=0 bun test tests/Integration/database-online.test.ts`**.
+
 ### SQLite instead of MySQL?
 
 Thalia’s **`ThaliaDatabase`** and security CRUD use **`drizzle-orm/mysql2`** and **`mysql-core`** table builders (`server/database.ts`). Moving example-auth to SQLite would mean a second driver path, schema dialect differences (e.g. `varchar`, autoincrement), and retesting security—not “swap the URL”. Bun’s built-in SQLite does **not** remove that work. **MariaDB in Docker + the seed script above** is the supported path for integration tests without redesigning the framework.

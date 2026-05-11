@@ -114,6 +114,15 @@ To **fail** if the example-auth server starts but logins return no cookies (catc
 REQUIRE_EXAMPLE_AUTH_LOGIN=1 bun run test:integration:example-auth
 ```
 
+**Database “online” integration** (`tests/Integration/database-online.test.ts`) exercises example-auth against a **live MySQL/MariaDB** (Crud **`/json`** counts, seeded logins, profile updates). The suite runs **only** when **`SKIP_DATABASE_TESTS=0`**; the default **`bun run test`** sets **`SKIP_DATABASE_TESTS=1`** so CI and laptop runs stay green without a database. From Thalia root:
+
+```bash
+bun run example-auth:seed-test-users   # upserts test users (see websites/example-auth/README.md)
+bun run test:integration:database      # same as SKIP_DATABASE_TESTS=0 bun test tests/Integration/database-online.test.ts
+```
+
+If MySQL is down or seed users are missing, those tests **fail** (they do not pass by skipping).
+
 ### Service-dependent tests (DB / MailCatcher)
 
 The `websites/example-auth` fixture exercises Thalia’s auth + route guard + mail flows and **expects external services** in some scenarios (database; MailCatcher for an end-to-end password-reset test).

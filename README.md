@@ -123,6 +123,24 @@ bun run test:integration:database      # same as SKIP_DATABASE_TESTS=0 bun test 
 
 If MySQL is down or seed users are missing, those tests **fail** (they do not pass by skipping).
 
+### SmugMug (fixtures + optional live READ)
+
+Golden OAuth/signing fixtures live under **`tests/fixtures/smugmug/`**; unit coverage is in **`tests/Unit/smugmug-*.test.ts`**. Use **`tests/helpers/smugmug-fixtures.ts`** (`sampleSmugImageInsertRow()`) when seeding local MariaDB rows from the sample upload + AlbumImage payloads.
+
+Optional **signed GET smoke** against a sandbox account (**no uploads**, no writes via this path):
+
+```bash
+# Never set SMUGMUG_WRITE in CI — it is intentionally ignored here; uploads stay out of default automation.
+SMUGMUG_READ_CI=1 \
+SMUGMUG_CONSUMER_KEY="…" \
+SMUGMUG_CONSUMER_SECRET="…" \
+SMUGMUG_OAUTH_TOKEN="…" \
+SMUGMUG_OAUTH_TOKEN_SECRET="…" \
+bun test tests/Integration/smugmug-read-live.test.ts
+```
+
+The default **`bun test`** / GitHub Actions job does **not** set **`SMUGMUG_READ_CI`** (see `.github/workflows/tests.yml`).
+
 ### Service-dependent tests (DB / MailCatcher)
 
 The `websites/example-auth` fixture exercises Thalia’s auth + route guard + mail flows and **expects external services** in some scenarios (database; MailCatcher for an end-to-end password-reset test).

@@ -19,6 +19,7 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # Omit SMUGMUG_READ_CI / sandbox credentials: default CI stays read-only-local (fixtures only).
       - name: Run test suite (unit + non-DB integration)
         env:
           NODE_ENV: test

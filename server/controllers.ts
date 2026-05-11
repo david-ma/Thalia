@@ -19,6 +19,7 @@ import { ParsedUrlQuery } from 'querystring'
 import crypto from 'crypto'
 import https from 'https'
 import { SmugMugClient, type SmugMugTokenSet } from './smugmug/smugmug-client.js'
+import { buildSmugMugNewImageInsert } from './smugmug/save-image-map.js'
 import {
   smugmugB64HmacSha1,
   smugmugBundleAuthorization,
@@ -1523,51 +1524,8 @@ export class SmugMugUploader implements Machine {
       }
       const ai = responseData.Response?.AlbumImage
       const drizzle = this.website.db.drizzle
-
-      const imageKey = ai?.ImageKey
-      if (typeof imageKey !== 'string' || !imageKey) {
-        throw new Error('SmugMug response missing AlbumImage.ImageKey')
-      }
-
-      return drizzle.insert(images).values({
-        albumKey: typeof ai.AlbumKey === 'string' ? ai.AlbumKey : '',
-        caption: typeof ai.Caption === 'string' ? ai.Caption : '',
-        filename: typeof ai.FileName === 'string' ? ai.FileName : '',
-        url: data.Image.URL,
-        originalSize:
-          typeof ai.OriginalSize === 'number'
-            ? ai.OriginalSize
-            : ai.OriginalSize != null
-              ? Number(ai.OriginalSize)
-              : null,
-        originalWidth:
-          typeof ai.OriginalWidth === 'number'
-            ? ai.OriginalWidth
-            : ai.OriginalWidth != null
-              ? Number(ai.OriginalWidth)
-              : null,
-        originalHeight:
-          typeof ai.OriginalHeight === 'number'
-            ? ai.OriginalHeight
-            : ai.OriginalHeight != null
-              ? Number(ai.OriginalHeight)
-              : null,
-        thumbnailUrl: typeof ai.ThumbnailUrl === 'string' ? ai.ThumbnailUrl : '',
-        archivedUri: typeof ai.ArchivedUri === 'string' ? ai.ArchivedUri : '',
-        archivedSize:
-          typeof ai.ArchivedSize === 'number'
-            ? ai.ArchivedSize
-            : ai.ArchivedSize != null
-              ? Number(ai.ArchivedSize)
-              : null,
-        archivedMD5: typeof ai.ArchivedMD5 === 'string' ? ai.ArchivedMD5 : '',
-        imageKey,
-        preferredDisplayFileExtension:
-          typeof ai.PreferredDisplayFileExtension === 'string'
-            ? ai.PreferredDisplayFileExtension
-            : '',
-        uri: typeof ai.Uri === 'string' && ai.Uri ? ai.Uri : data.Image.ImageUri,
-      })
+      const values = buildSmugMugNewImageInsert(data, ai)
+      return drizzle.insert(images).values(values)
     })
   }
 

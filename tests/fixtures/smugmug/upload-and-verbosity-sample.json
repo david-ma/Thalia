@@ -1,0 +1,31 @@
+{
+  "uploadAck": {
+    "stat": "ok",
+    "method": "upload",
+    "Image": {
+      "StatusImageReplaceUri": "/api/v2/image/dummy-replace",
+      "ImageUri": "/api/v2/image/dummy-image-uri",
+      "AlbumImageUri": "/api/v2/album/dummy!/image/dummy!",
+      "URL": "https://example.smugmug.com/Photos/dummy/"
+    },
+    "Asset": {
+      "AssetComponentUri": "/api/v2/asset/comp",
+      "AssetUri": "/api/v2/asset/a"
+    }
+  },
+  "albumImageFromVerbosityApi": {
+    "ImageKey": "fixture-img-key",
+    "AlbumKey": "fixtureAlbum",
+    "Caption": "Test caption",
+    "FileName": "photo.jpg",
+    "OriginalSize": 4096,
+    "OriginalWidth": 800,
+    "OriginalHeight": 600,
+    "ThumbnailUrl": "https://thumb.example/",
+    "ArchivedUri": "https://archive.example/",
+    "ArchivedSize": 2048,
+    "ArchivedMD5": "fixture-md5",
+    "PreferredDisplayFileExtension": "jpg",
+    "Uri": "/api/v2/album/x!/image/fixture-img-key!"
+  }
+}

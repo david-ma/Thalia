@@ -1,0 +1,17 @@
+{
+  "_comment": "Golden OAuth 1.0a base string + HMAC for SmugMugClient.signRequest. mockRandom=0 yields a base64 signature without +/ so signRequest does not recurse on the legacy retry path.",
+  "method": "GET",
+  "targetUrl": "https://api.smugmug.com/api/v2/album/AbCd?_verbosity=1",
+  "tokens": {
+    "consumer_key": "test_consumer_key",
+    "consumer_secret": "test_consumer_secret",
+    "oauth_token": "fixture_oauth_token",
+    "oauth_token_secret": "fixture_token_secret"
+  },
+  "mockRandom": 0,
+  "mockDateNowMs": 1700000000000,
+  "expectedNonce": "0",
+  "expectedTimestamp": "1700000000",
+  "signatureBaseString": "GET&https%3A%2F%2Fapi.smugmug.com%2Fapi%2Fv2%2Falbum%2FAbCd&_verbosity%3D1%26oauth_consumer_key%3Dtest_consumer_key%26oauth_nonce%3D0%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1700000000%26oauth_token%3Dfixture_oauth_token%26oauth_version%3D1.0",
+  "expectedOAuthSignature": "BkQBGTLtpbxKljPhbx5HcUzo3sY="
+}

@@ -5,7 +5,7 @@ function test() {
 }
 
 
-cosnole.log("hello");
+console.log('hello');
 
 test();
 

@@ -1,12 +1,15 @@
-<div class="box">
-  <h2>New User</h2>
+<div class="login">
+  <h2 class="h4 mb-1">Create account</h2>
+  <p class="text-muted small mb-3">Choose a name, email, and password (at least 6 characters).</p>
   {{#if error}}
-  <p class="error">{{error}}</p>
+    <p class="error" role="alert">{{error}}</p>
   {{/if}}
-  <form action="/createNewUser" method="post">
-    {{> input field="Name" required=true helpText="Your name"}}
-    {{> input field="Email" required=true type="email" helpText="Your email"}}
-    {{> input field="Password" required=true type="password" helpText="Your password"}}
+  <form action="/createNewUser" method="post" autocomplete="off">
+    {{> input field="Name" required=true helpText="Display name"}}
+    {{> input field="Email" required=true type="email" helpText="You will sign in with this email"}}
+    {{> input field="Password" required=true type="password" helpText="Minimum 6 characters"}}
 
-    <input type="submit" value="Create" />
+    <button type="submit" class="btn btn-primary w-100">Create account</button>
   </form>
+  <p class="small mt-3 mb-0"><a href="/logon">Already have an account? Sign in</a></p>
+</div>

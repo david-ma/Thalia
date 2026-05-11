@@ -163,7 +163,8 @@ div.default-crud-styles {
     }
   }
 
-  div.login {
+  div.login,
+  div.box {
     width: min(100%, 26rem);
     margin: 2rem auto;
     padding: 1.5rem 1.75rem;
@@ -171,6 +172,12 @@ div.default-crud-styles {
     border: 1px solid $crud-border;
     border-radius: $crud-radius;
     box-shadow: 0 2px 12px color-mix(in srgb, $crud-text 6%, transparent);
+
+    h2,
+    h3 {
+      margin-top: 0;
+      color: $crud-text;
+    }
 
     form {
       display: flex;
@@ -185,6 +192,26 @@ div.default-crud-styles {
       }
     }
   }
+
+  ul.auth-links {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0;
+
+    li {
+      margin: 0.35rem 0;
+    }
+
+    a {
+      font-weight: 500;
+    }
+  }
+}
+
+p.message {
+  color: color-mix(in srgb, #1a7f37 85%, $crud-text);
+  font-weight: 500;
+  margin: 0.5rem 0;
 }
 
 p.error {

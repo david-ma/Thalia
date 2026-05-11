@@ -1,7 +1,16 @@
-<label for="{{field}}">{{field}}:</label>
-<input
-{{#if disabled}}disabled{{/if}}
-{{#if required}}required{{/if}}
- type="{{#if type}}{{type}}{{else}}text{{/if}}" id="{{field}}" name="{{field}}" value="{{getValue field}}" />
-{{#if helpText}}<sub>{{helpText}}</sub>{{/if}}
-<br />
+<div class="mb-3">
+  <label class="form-label" for="{{field}}">{{field}}</label>
+  <input
+    class="form-control"
+    id="{{field}}"
+    name="{{field}}"
+    value="{{getValue field}}"
+    {{#if disabled}}disabled{{/if}}
+    {{#if required}}required{{/if}}
+    type="{{#if type}}{{type}}{{else}}text{{/if}}"
+    {{#if helpText}}aria-describedby="{{field}}-help"{{/if}}
+  />
+  {{#if helpText}}
+    <small id="{{field}}-help" class="form-text text-muted">{{helpText}}</small>
+  {{/if}}
+</div>

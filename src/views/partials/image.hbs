@@ -5,7 +5,7 @@
   }
 
   #uploadImageLabel:hover {
-    pointer: cursor;
+    cursor: pointer;
   }
 
   #imageHelpText {
@@ -53,7 +53,6 @@
   const dropZone = document.getElementById('dropZone');
   const fileInput = document.getElementById('fileToUpload');
   const imageHelpText = document.getElementById('imageHelpText');
-  const imagePreview = document.getElementById('image_preview');
 
   // Prevent default drag behaviors
   ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {

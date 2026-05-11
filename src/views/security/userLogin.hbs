@@ -1,42 +1,33 @@
-<div class="login box">
-  <h2>Log in</h2>
+<div class="login">
+  <h2 class="h4 mb-1">Log in</h2>
+  <p class="text-muted small mb-3">Sign in with your account email and password. New users can register below.</p>
+
   {{#if message}}
-  <p class="message">{{message}}</p>
+    <p class="message" role="status">{{message}}</p>
   {{/if}}
   {{#if error}}
-  <p class="error" role="alert">{{error}}</p>
+    <p class="error" role="alert">{{error}}</p>
   {{/if}}
-  <form action="/logon" method="post">
-    {{> input field="Email" helpText="Your email" type="email"}}
+
+  <form action="/logon" method="post" autocomplete="on">
+    {{> input field="Email" helpText="Account email" type="email"}}
     {{> input field="Password" type="password" helpText="Your password"}}
-    <input id="Redirect" name="Redirect" type="hidden" style="display:none;" />
-    <input id="loginButton" type="submit" value="Log in" />
+    <input id="Redirect" name="Redirect" type="hidden" />
+    <button id="loginButton" type="submit" class="btn btn-primary w-100">Sign in</button>
   </form>
-  <ul>
-    <li><a href="/newUser">Create new account</a></li>
+
+  <ul class="auth-links small">
+    <li><a href="/newUser">Create an account</a></li>
     <li><a href="/forgotPassword">Forgot password?</a></li>
   </ul>
 </div>
 
 <script>
-  //check document is ready
-  document.addEventListener("DOMContentLoaded", function (e) {
-    // Check for a redirect
-    if (window.location.search) {
-      var params = window.location.search.split('?')[1]
-        .split('&')
-        .reduce((acc, p) => {
-          const param = p.split('=');
-          acc[param[0]] = param[1];
-          return acc;
-        }, {});
-
-      // Set the redirect value
-      if (params.redirect) {
-        document.getElementById('Redirect').value = params.redirect;
-      }
-    }
-
-  });
-
+  document.addEventListener('DOMContentLoaded', function () {
+    var redirect = document.getElementById('Redirect')
+    if (!redirect || !window.location.search) return
+    var params = new URLSearchParams(window.location.search)
+    var r = params.get('redirect')
+    if (r) redirect.value = r
+  })
 </script>

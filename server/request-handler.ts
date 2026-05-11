@@ -274,6 +274,9 @@ export class RequestHandler {
       }
 
       if (target && target.endsWith('.hbs') && fs.statSync(target).isFile()) {
+        const siteName = requestHandler.website.name
+        const title =
+          path.basename(target) === 'index.hbs' ? `${siteName} – Home` : siteName
         requestHandler.website
           .asyncServeHandlebarsTemplate({
             res: requestHandler.res,
@@ -281,7 +284,8 @@ export class RequestHandler {
             data: {
               requestInfo: requestHandler.requestInfo,
               version: requestHandler.website.version,
-            }, // Or send an empty object?
+              title,
+            },
           })
           .then(() => {
             finish(`Successfully rendered handlebars template ${requestHandler.pathname}`)

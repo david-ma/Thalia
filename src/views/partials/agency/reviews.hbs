@@ -1,0 +1,16 @@
+{{!-- Pass reviews array for use with review partial. --}}
+<section class="page-section" id="reviews">
+  <div class="container">
+    <div class="text-center">
+      <h2 class="section-heading text-uppercase">{{#if reviewsHeading}}{{reviewsHeading}}{{else}}Reviews{{/if}}</h2>
+      {{#if reviewsSubheadingHtml}}
+        <div class="section-subheading text-muted">{{{reviewsSubheadingHtml}}}</div>
+      {{/if}}
+    </div>
+    <div class="row">
+      {{#each reviews}}
+        {{> review }}
+      {{/each}}
+    </div>
+  </div>
+</section>

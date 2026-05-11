@@ -1,0 +1,18 @@
+{{!-- Contact block without a form (hours, email links, social copy). --}}
+<section class="page-section" id="contact">
+  <div class="container">
+    <div class="text-center">
+      <h2 class="section-heading text-uppercase">{{#if contactHeading}}{{contactHeading}}{{else}}Contact{{/if}}</h2>
+      {{#if contactSubheadingHtml}}
+        <h3 class="section-subheading text-muted">{{{contactSubheadingHtml}}}</h3>
+      {{else}}
+        <h3 class="section-subheading text-muted">
+          Use <code>contactSubheadingHtml</code> or replace this partial for your site’s details.
+        </h3>
+      {{/if}}
+      {{#if contactBodyHtml}}
+        <div class="col-lg-10 mx-auto text-start">{{{contactBodyHtml}}}</div>
+      {{/if}}
+    </div>
+  </div>
+</section>

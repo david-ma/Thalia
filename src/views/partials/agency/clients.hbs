@@ -1,0 +1,85 @@
+{{!--
+================================================================================
+  CLIENTS (Agency logo strip) — `{{> clients }}`
+
+  Renders a grey strip of partner / client logos (Start Bootstrap “Agency”
+  pattern). Pass data on your Handlebars context from `getContentHtml`, a
+  controller, or route payload.
+
+  Omit `clients`, or set it to `[]`: the bundled Start Bootstrap SVG logos
+  (Microsoft, Google, Facebook, IBM) show so local previews work with no data.
+
+------------------------------------------------------------------------------
+  CONTEXT FIELDS
+
+  clientsSectionClass  (optional)  Extra classes on the outer wrapper.
+                                  Default: `py-5` (only this class if unset).
+
+  clients              (optional)  Array of logo links. Each item:
+
+      href         string   Link target; use `#!` or `/` if non-navigating
+      src          string   Image URL (site `public/` path or absolute URL)
+      alt          string   Short description for the image (required for a11y)
+      ariaLabel    string   Optional; sets `aria-label` on the `<a>` when the
+                            visible text is only the logo graphic
+
+------------------------------------------------------------------------------
+  EXAMPLE (conceptual shape for a TypeScript controller)
+
+    const clients = [
+      {
+        href: 'https://example.com/partner',
+        src: '/assets/logos/partner-a.svg',
+        alt: 'Partner A',
+        ariaLabel: 'Partner A home',
+      },
+      { href: '#!', src: '/assets/logos/partner-b.svg', alt: 'Partner B' },
+    ]
+
+    website.getContentHtml('landing')( {
+      title: 'Home',
+      clients,
+    } )
+
+------------------------------------------------------------------------------
+  LAYOUT
+
+  • Each item is `col-md-3 col-sm-6 my-3` (four across on medium+ screens).
+  • Add or remove array entries to change the count; the grid wraps naturally.
+================================================================================
+--}}
+<div class="{{#if clientsSectionClass}}{{clientsSectionClass}}{{else}}py-5{{/if}}">
+  <div class="container">
+    <div class="row align-items-center">
+      {{#each clients}}
+        <div class="col-md-3 col-sm-6 my-3">
+          <a href="{{#if href}}{{href}}{{else}}#!{{/if}}">
+            <img class="img-fluid img-brand d-block mx-auto" src="{{src}}" alt="{{alt}}"
+              {{#if ariaLabel}}aria-label="{{ariaLabel}}"{{/if}} />
+          </a>
+        </div>
+      {{else}}
+        <div class="col-md-3 col-sm-6 my-3">
+          <a href="#!"><img class="img-fluid img-brand d-block mx-auto"
+              src="https://startbootstrap.github.io/startbootstrap-agency/assets/img/logos/microsoft.svg" alt="Microsoft logo"
+              aria-label="Microsoft Logo" /></a>
+        </div>
+        <div class="col-md-3 col-sm-6 my-3">
+          <a href="#!"><img class="img-fluid img-brand d-block mx-auto"
+              src="https://startbootstrap.github.io/startbootstrap-agency/assets/img/logos/google.svg" alt="Google logo"
+              aria-label="Google Logo" /></a>
+        </div>
+        <div class="col-md-3 col-sm-6 my-3">
+          <a href="#!"><img class="img-fluid img-brand d-block mx-auto"
+              src="https://startbootstrap.github.io/startbootstrap-agency/assets/img/logos/facebook.svg" alt="Facebook logo"
+              aria-label="Facebook Logo" /></a>
+        </div>
+        <div class="col-md-3 col-sm-6 my-3">
+          <a href="#!"><img class="img-fluid img-brand d-block mx-auto"
+              src="https://startbootstrap.github.io/startbootstrap-agency/assets/img/logos/ibm.svg" alt="IBM logo"
+              aria-label="IBM Logo" /></a>
+        </div>
+      {{/each}}
+    </div>
+  </div>
+</div>

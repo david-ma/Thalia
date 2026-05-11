@@ -1,0 +1,25 @@
+{{!-- Two-column “values / who we help” style section. Pass valuesBlocks or body HTML fields. --}}
+<section class="page-section" id="values">
+  <div class="container">
+    <div class="row text-center">
+      <div class="col-lg-8 offset-lg-2">
+        <div class="text-center">
+          <h2 class="section-heading text-uppercase">{{#if valuesPrimaryHeading}}{{valuesPrimaryHeading}}{{else}}What we do{{/if}}</h2>
+          {{#if valuesPrimaryHtml}}
+            {{{valuesPrimaryHtml}}}
+          {{else}}
+            <p>Use <code>valuesPrimaryHtml</code> (or replace this partial) for your introductory copy.</p>
+          {{/if}}
+        </div>
+      </div>
+      <div class="col-lg-8 offset-lg-2">
+        <h2 class="section-heading text-uppercase">{{#if valuesSecondaryHeading}}{{valuesSecondaryHeading}}{{else}}Who we help{{/if}}</h2>
+        {{#if valuesSecondaryHtml}}
+          {{{valuesSecondaryHtml}}}
+        {{else}}
+          <p>Second column body — set <code>valuesSecondaryHtml</code> from your controller or override this partial.</p>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+</section>

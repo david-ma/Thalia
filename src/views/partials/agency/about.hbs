@@ -1,0 +1,205 @@
+{{!--
+================================================================================
+  ABOUT (Agency timeline) — `{{> about }}`
+
+  Pass fields on your Handlebars context (typically from `getContentHtml`, a
+  controller, or route data).
+
+  Omit `aboutTimelineItems`, or leave it empty (`[]`): the bundled Start Bootstrap
+  placeholder rows render so previews work without wiring data yet.
+
+------------------------------------------------------------------------------
+  CONTEXT FIELDS
+
+  aboutSectionId   (optional)  `<section id="…">`; default `"about"`
+
+  aboutHeading     (optional)  Main `<h2>` text; default `"About"`
+
+  aboutSubheading  (optional)  Muted subtitle under heading; Agency lorem-style
+                             default used when unset
+
+  aboutTimelineItems (optional) Array of milestones. Each object is EITHER:
+
+      • NORMAL ROW (photo + narrative)
+          inverted     boolean  When true, adds `timeline-inverted` on `<li>`
+          imageSrc     string   URL/path to round image (recommended)
+          imageAlt     string   Alt text (empty string OK)
+          heading      string   First `<h4>` (e.g. date range “2009–2011”)
+          subheading   string   Second `<h4 class="subheading">`
+          body         string   Paragraph body (HTML-escaped in `{{body}}`)
+
+      • FINALE ROW ( centred copy inside the coloured circle — no panels )
+          finale       truthy    Must be set for this branch
+          inverted     optional  Usually true in the theme (`timeline-inverted`)
+          finaleLines  string[]  Lines split with `<br />` (optional; default:
+                                 “Be Part / Of Our / Story!” as three strings)
+
+------------------------------------------------------------------------------
+  EXAMPLES (conceptual shapes for TypeScript controllers)
+
+    const timeline = [
+      {
+        inverted: false,
+        imageSrc: 'https://cdn.example/about/launch.jpg',
+        imageAlt: 'Team at launch day',
+        heading: '2021',
+        subheading: 'We opened the studio',
+        body: 'Copy for this milestone — plain text escapes safely.',
+      },
+      {
+        finale: true,
+        inverted: true,
+        finaleLines: ['Say hello', 'Work with us', 'Today'],
+      },
+    ]
+
+    website.getContentHtml('myPage')( {
+      title: 'Home',
+      aboutHeading: 'Our story',
+      aboutSubheading: 'How we got here',
+      aboutTimelineItems: timeline,
+    } )
+
+------------------------------------------------------------------------------
+  NOTES
+
+  • Field names mirror common JSON — no extra escaping beyond normal JSON.
+  • `body` stays in `{{body}}`; use `{ body: '…<em>trusted</em>…' }` only for
+    content you fully trust or build server-side — otherwise helpers / partials
+    for selective HTML are safer.
+================================================================================
+--}}
+<section class="page-section" id="{{#if aboutSectionId}}{{aboutSectionId}}{{else}}about{{/if}}">
+  <div class="container">
+    <div class="text-center">
+      <h2 class="section-heading text-uppercase">{{#if aboutHeading}}{{aboutHeading}}{{else}}About{{/if}}</h2>
+      <h3 class="section-subheading text-muted">
+        {{#if aboutSubheading}}{{aboutSubheading}}{{else}}Lorem ipsum dolor sit amet consectetur.{{/if}}
+      </h3>
+    </div>
+    <ul class="timeline">
+      {{#each aboutTimelineItems}}
+        <li{{#if inverted}} class="timeline-inverted"{{/if}}>
+          {{#if finale}}
+            <div class="timeline-image">
+              <h4>
+                {{#if finaleLines}}
+                  {{#each finaleLines}}{{this}}{{#unless @last}}<br />{{/unless}}{{/each}}
+                {{else}}
+                  Be Part
+                  <br />
+                  Of Our
+                  <br />
+                  Story!
+                {{/if}}
+              </h4>
+            </div>
+          {{else}}
+            <div class="timeline-image">
+              {{#if imageSrc}}
+                <img class="rounded-circle img-fluid" src="{{imageSrc}}" alt="{{imageAlt}}" />
+              {{/if}}
+            </div>
+            <div class="timeline-panel">
+              <div class="timeline-heading">
+                <h4>{{heading}}</h4>
+                <h4 class="subheading">{{subheading}}</h4>
+              </div>
+              <div class="timeline-body">
+                <p class="text-muted">{{body}}</p>
+              </div>
+            </div>
+          {{/if}}
+        </li>
+      {{else}}
+        <li>
+          <div class="timeline-image">
+            <img class="rounded-circle img-fluid" src="https://startbootstrap.github.io/startbootstrap-agency/assets/img/about/1.jpg" alt="" />
+          </div>
+          <div class="timeline-panel">
+            <div class="timeline-heading">
+              <h4>2009-2011</h4>
+              <h4 class="subheading">Our Humble Beginnings</h4>
+            </div>
+            <div class="timeline-body">
+              <p class="text-muted">
+                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sunt
+                ut voluptatum eius sapiente, totam reiciendis temporibus qui
+                quibusdam, recusandae sit vero unde, sed, incidunt et ea quo
+                dolore laudantium consectetur!
+              </p>
+            </div>
+          </div>
+        </li>
+        <li class="timeline-inverted">
+          <div class="timeline-image">
+            <img class="rounded-circle img-fluid" src="https://startbootstrap.github.io/startbootstrap-agency/assets/img/about/2.jpg" alt="" />
+          </div>
+          <div class="timeline-panel">
+            <div class="timeline-heading">
+              <h4>March 2011</h4>
+              <h4 class="subheading">An Agency is Born</h4>
+            </div>
+            <div class="timeline-body">
+              <p class="text-muted">
+                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sunt
+                ut voluptatum eius sapiente, totam reiciendis temporibus qui
+                quibusdam, recusandae sit vero unde, sed, incidunt et ea quo
+                dolore laudantium consectetur!
+              </p>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="timeline-image">
+            <img class="rounded-circle img-fluid" src="https://startbootstrap.github.io/startbootstrap-agency/assets/img/about/3.jpg" alt="" />
+          </div>
+          <div class="timeline-panel">
+            <div class="timeline-heading">
+              <h4>December 2015</h4>
+              <h4 class="subheading">Transition to Full Service</h4>
+            </div>
+            <div class="timeline-body">
+              <p class="text-muted">
+                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sunt
+                ut voluptatum eius sapiente, totam reiciendis temporibus qui
+                quibusdam, recusandae sit vero unde, sed, incidunt et ea quo
+                dolore laudantium consectetur!
+              </p>
+            </div>
+          </div>
+        </li>
+        <li class="timeline-inverted">
+          <div class="timeline-image">
+            <img class="rounded-circle img-fluid" src="https://startbootstrap.github.io/startbootstrap-agency/assets/img/about/4.jpg" alt="" />
+          </div>
+          <div class="timeline-panel">
+            <div class="timeline-heading">
+              <h4>July 2020</h4>
+              <h4 class="subheading">Phase Two Expansion</h4>
+            </div>
+            <div class="timeline-body">
+              <p class="text-muted">
+                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sunt
+                ut voluptatum eius sapiente, totam reiciendis temporibus qui
+                quibusdam, recusandae sit vero unde, sed, incidunt et ea quo
+                dolore laudantium consectetur!
+              </p>
+            </div>
+          </div>
+        </li>
+        <li class="timeline-inverted">
+          <div class="timeline-image">
+            <h4>
+              Be Part
+              <br />
+              Of Our
+              <br />
+              Story!
+            </h4>
+          </div>
+        </li>
+      {{/each}}
+    </ul>
+  </div>
+</section>

@@ -1,0 +1,21 @@
+{{!-- Hero / masthead (Agency theme). Pass mastheadEyebrow, mastheadHeading, mastheadButtonText, mastheadButtonHref. --}}
+<header class="masthead" style="background-image: url('{{#if mastheadBackgroundImage}}{{mastheadBackgroundImage}}{{else}}https://startbootstrap.github.io/startbootstrap-agency/assets/img/header-bg.jpg{{/if}}');">
+  <div class="container">
+    {{#if mastheadSubheadingHtml}}
+      <div class="masthead-subheading">{{{mastheadSubheadingHtml}}}</div>
+    {{else}}
+      {{#if mastheadEyebrow}}
+        <div class="masthead-subheading">{{mastheadEyebrow}}</div>
+      {{else}}
+        <div class="masthead-subheading">Welcome to our studio</div>
+      {{/if}}
+    {{/if}}
+    {{#if mastheadHeadingHtml}}
+      <div class="masthead-heading text-uppercase">{{{mastheadHeadingHtml}}}</div>
+    {{else}}
+      <div class="masthead-heading text-uppercase">{{#if mastheadHeading}}{{mastheadHeading}}{{else}}It's nice to meet you{{/if}}</div>
+    {{/if}}
+    <a class="btn btn-primary btn-xl text-uppercase"
+      href="{{#if mastheadButtonHref}}{{mastheadButtonHref}}{{else}}#services{{/if}}">{{#if mastheadButtonText}}{{mastheadButtonText}}{{else}}Tell me more{{/if}}</a>
+  </div>
+</header>

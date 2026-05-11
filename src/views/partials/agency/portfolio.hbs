@@ -1,0 +1,174 @@
+{{!--
+================================================================================
+  PORTFOLIO / SERVICES GRID (`{{> portfolio }}`)
+
+  Supplies the Agency “portfolio” section (`#portfolio`): responsive carousel
+  on small screens, three-up grid + modals from `md` up.
+
+------------------------------------------------------------------------------
+  WHY `services` (not `portfolioItems`)
+
+  Older Space For Your Mind builds pass an array named `services`; keep that
+  name so existing controllers keep working.
+
+------------------------------------------------------------------------------
+  DATA: `services` — array of:
+
+      id           string   Unique per page; becomes `#modal-{{id}}` (use
+                            `"1"` … `"6"` or slug strings like `"consulting"`).
+      title        string   Card title / modal heading
+      subheading   string   Muted subtitle
+      image        string   Image URL (`/assets/…` or absolute CDN)
+      description  string   Modal body HTML (rendered as `{{{description}}}`);
+                            **trusted markup only**, same rules as FAQ answers.
+
+      Optional per item:
+      modalPrimaryHref, modalPrimaryLabel — see `portfolio-modal.hbs`
+
+  If `services` is **missing** or **[]**, three Start Bootstrap placeholder
+  projects render so the section still matches Agency CSS without config.
+
+------------------------------------------------------------------------------
+  STYLING NOTE
+
+  Theme CSS under `/css/agency.css` targets `#portfolio .portfolio-item` and
+  expects `.portfolio-link` > `.portfolio-hover` + **direct** `img.img-fluid`
+  (not a `.ratio` wrapper), otherwise the hover overlay can collapse.
+
+------------------------------------------------------------------------------
+  EXAMPLE (TypeScript / config)
+
+    const bootstrapAgency =
+      'https://startbootstrap.github.io/startbootstrap-agency/assets/img'
+
+    const services = [
+      {
+        id: '1',
+        title: 'Threads',
+        subheading: 'Illustration',
+        image: `${bootstrapAgency}/portfolio/1.jpg`,
+        description: '<p class="mb-0">Longer HTML-safe copy for the modal.</p>',
+      },
+      // …
+    ]
+
+    website.serveHandlebarsTemplate({
+      res,
+      templatePath: '…/index.hbs',
+      data: { services, portfolioHeading: 'Portfolio', portfolioSubheading: '…' },
+    })
+================================================================================
+--}}
+<section class="page-section bg-light" id="portfolio">
+  <div class="container">
+    <div class="text-center">
+      <h2 class="section-heading text-uppercase">{{#if portfolioHeading}}{{portfolioHeading}}{{else}}Portfolio{{/if}}</h2>
+      <h3 class="section-subheading text-muted">{{#if portfolioSubheading}}{{portfolioSubheading}}{{else}}Lorem ipsum dolor sit amet consectetur.{{/if}}</h3>
+    </div>
+
+    <div id="portfolioServicesCarousel" class="carousel slide d-block d-md-none" data-bs-ride="false">
+      <div class="carousel-inner">
+        {{#each services}}
+          <div class="carousel-item {{#if @first}}active{{/if}}">
+            <a class="d-block" data-bs-toggle="modal" href="#modal-{{id}}">
+              <div class="ratio ratio-1x1">
+                <img class="img-fluid object-fit-cover" src="{{image}}" alt="{{title}}">
+              </div>
+            </a>
+            <div class="mt-2 text-center">
+              <h5 class="mb-1">{{title}}</h5>
+              <p class="text-muted mb-0">{{subheading}}</p>
+            </div>
+          </div>
+        {{else}}
+          <div class="carousel-item active">
+            <a class="d-block" data-bs-toggle="modal" href="#modal-1">
+              <div class="ratio ratio-1x1">
+                <img class="img-fluid object-fit-cover"
+                  src="https://startbootstrap.github.io/startbootstrap-agency/assets/img/portfolio/1.jpg" alt="Threads">
+              </div>
+            </a>
+            <div class="mt-2 text-center">
+              <h5 class="mb-1">Threads</h5>
+              <p class="text-muted mb-0">Illustration</p>
+            </div>
+          </div>
+          <div class="carousel-item">
+            <a class="d-block" data-bs-toggle="modal" href="#modal-2">
+              <div class="ratio ratio-1x1">
+                <img class="img-fluid object-fit-cover"
+                  src="https://startbootstrap.github.io/startbootstrap-agency/assets/img/portfolio/2.jpg" alt="Explore">
+              </div>
+            </a>
+            <div class="mt-2 text-center">
+              <h5 class="mb-1">Explore</h5>
+              <p class="text-muted mb-0">Graphic Design</p>
+            </div>
+          </div>
+          <div class="carousel-item">
+            <a class="d-block" data-bs-toggle="modal" href="#modal-3">
+              <div class="ratio ratio-1x1">
+                <img class="img-fluid object-fit-cover"
+                  src="https://startbootstrap.github.io/startbootstrap-agency/assets/img/portfolio/3.jpg" alt="Finish">
+              </div>
+            </a>
+            <div class="mt-2 text-center">
+              <h5 class="mb-1">Finish</h5>
+              <p class="text-muted mb-0">Identity</p>
+            </div>
+          </div>
+        {{/each}}
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-center align-items-center gap-3 mt-2 d-block d-md-none">
+      <button class="btn btn-outline-secondary" type="button" data-bs-target="#portfolioServicesCarousel" data-bs-slide="prev"
+        aria-label="Previous">‹</button>
+      <a id="portfolioMobileDetailsLink" class="btn btn-outline-primary" href="#" data-bs-toggle="modal">Details</a>
+      <button class="btn btn-outline-secondary" type="button" data-bs-target="#portfolioServicesCarousel" data-bs-slide="next"
+        aria-label="Next">›</button>
+    </div>
+
+    <script>
+      (function () {
+        const carousel = document.getElementById('portfolioServicesCarousel')
+        const details = document.getElementById('portfolioMobileDetailsLink')
+        if (!carousel || !details) return
+        const updateLink = () => {
+          const active = carousel.querySelector('.carousel-item.active a[data-bs-toggle="modal"]')
+          if (!active) return
+          details.setAttribute('href', active.getAttribute('href'))
+        }
+        carousel.addEventListener('slid.bs.carousel', updateLink)
+        updateLink()
+      })()
+    </script>
+
+    <div class="row portfolio-grid d-none d-md-flex">
+      {{#each services}}
+        {{> portfolio-item }}
+      {{else}}
+        {{> portfolio-item id="1" title="Threads" subheading="Illustration"
+          image="https://startbootstrap.github.io/startbootstrap-agency/assets/img/portfolio/1.jpg" }}
+        {{> portfolio-item id="2" title="Explore" subheading="Graphic Design"
+          image="https://startbootstrap.github.io/startbootstrap-agency/assets/img/portfolio/2.jpg" }}
+        {{> portfolio-item id="3" title="Finish" subheading="Identity"
+          image="https://startbootstrap.github.io/startbootstrap-agency/assets/img/portfolio/3.jpg" }}
+      {{/each}}
+    </div>
+
+    {{#each services}}
+      {{> portfolio-modal }}
+    {{else}}
+      {{> portfolio-modal id="1" title="Threads" subheading="Illustration"
+        image="https://startbootstrap.github.io/startbootstrap-agency/assets/img/portfolio/1.jpg"
+        description="<p class=\"mb-0\">Demo item — pass a <code>services</code> array from your route or <code>config.ts</code> to replace this grid.</p>" }}
+      {{> portfolio-modal id="2" title="Explore" subheading="Graphic Design"
+        image="https://startbootstrap.github.io/startbootstrap-agency/assets/img/portfolio/2.jpg"
+        description="<p class=\"mb-0\">Each entry needs a stable <code>id</code> for Bootstrap modals.</p>" }}
+      {{> portfolio-modal id="3" title="Finish" subheading="Identity"
+        image="https://startbootstrap.github.io/startbootstrap-agency/assets/img/portfolio/3.jpg"
+        description="<p class=\"mb-0\">Use CDN URLs while prototyping, then switch to assets under <code>public/</code>.</p>" }}
+    {{/each}}
+  </div>
+</section>

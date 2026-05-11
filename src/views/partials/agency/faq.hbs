@@ -1,0 +1,164 @@
+{{!--
+================================================================================
+  FAQ (Agency accordion) — `{{> faq }}`
+
+  Bootstrap 5 accordion: one item can be expanded at a time within this block
+  (`data-bs-parent` points at `faqAccordionId`).
+
+  Omit `faqItems`, or pass `[]`: three generic placeholder rows render so the
+  section is visible without wiring a controller yet.
+
+------------------------------------------------------------------------------
+  CONTEXT FIELDS
+
+  faqSectionId       (optional)  `<section id="…">`; default `"faq"`
+
+  faqSectionClass    (optional)  Classes on `<section>` (spacing / background).
+                                Default: `page-section bg-light`
+
+  faqHeading         (optional)  Main `<h2>`; default `"Frequently Asked Questions"`
+
+  faqSubheading      (optional)  Muted `<h3>` under the heading; default
+                                `"Everything you need to know"`
+
+  faqAccordionId     (optional)  `id` on the `.accordion` root; also used as
+                                `data-bs-parent`. Default: `faqAccordion`.
+                                Change if you mount **more than one** FAQ on the
+                                same page (each needs a distinct id).
+
+  faqItemIdPrefix    (optional)  Prefix for each panel’s `id` / `data-bs-target`.
+                                Default: `faq` → targets look like `#faq-pricing`.
+                                Combine with a unique `faqAccordionId` when you
+                                duplicate this partial.
+
+  faqItems           (optional)  Array of items. Each item:
+
+      idSuffix     string   **Must be unique in the HTML document** (for this
+                            prefix), e.g. `"service-area"`, `"pricing"`.
+                            Used in `id="…-idSuffix"` and collapse targets.
+
+      question     string   Button label (plain text; escape is automatic).
+
+      answer       string   Panel body. Rendered with `{{{answer}}}` — use only
+                            **trusted** HTML from your own CMS or server; for
+                            untrusted input, store plain text and use `{{answer}}`
+                            in a forked partial instead.
+
+      expanded     optional When truthy, this row starts open (`show`); only
+                            one item should be expanded by default for clarity.
+
+------------------------------------------------------------------------------
+  EXAMPLE (conceptual shape for a TypeScript controller)
+
+    const faqItems = [
+      {
+        idSuffix: 'area',
+        expanded: true,
+        question: 'What is your service area?',
+        answer:
+          '<p>We travel to inner suburbs and the peninsula. A travel fee may apply outside that zone.</p>',
+      },
+      {
+        idSuffix: 'booking',
+        question: 'How far ahead should I book?',
+        answer: '<p>Most clients book <strong>4–6 weeks</strong> ahead.</p>',
+      },
+    ]
+
+    website.getContentHtml('landing')( {
+      title: 'Home',
+      faqHeading: 'FAQ',
+      faqSubheading: 'Common questions',
+      faqItems,
+    } )
+
+------------------------------------------------------------------------------
+  ACCESSIBILITY
+
+  • Each question is a real `<button>` inside `.accordion-header` (Bootstrap).
+  • Give `idSuffix` stable, readable values; they appear in fragment targets.
+================================================================================
+--}}
+<section class="{{#if faqSectionClass}}{{faqSectionClass}}{{else}}page-section bg-light{{/if}}"
+  id="{{#if faqSectionId}}{{faqSectionId}}{{else}}faq{{/if}}">
+  <div class="container">
+    <div class="text-center">
+      <h2 class="section-heading text-uppercase">{{#if faqHeading}}{{faqHeading}}{{else}}Frequently Asked Questions{{/if}}</h2>
+      <h3 class="section-subheading text-muted">{{#if faqSubheading}}{{faqSubheading}}{{else}}Everything you need to know{{/if}}</h3>
+    </div>
+    <div class="row">
+      <div class="col-lg-8 mx-auto">
+        <div class="accordion" id="{{#if faqAccordionId}}{{faqAccordionId}}{{else}}faqAccordion{{/if}}">
+          {{#each faqItems}}
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button{{#unless expanded}} collapsed{{/unless}}" type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#{{#if ../faqItemIdPrefix}}{{../faqItemIdPrefix}}{{else}}faq{{/if}}-{{idSuffix}}">
+                  {{question}}
+                </button>
+              </h2>
+              <div id="{{#if ../faqItemIdPrefix}}{{../faqItemIdPrefix}}{{else}}faq{{/if}}-{{idSuffix}}"
+                class="accordion-collapse collapse{{#if expanded}} show{{/if}}"
+                data-bs-parent="#{{#if ../faqAccordionId}}{{../faqAccordionId}}{{else}}faqAccordion{{/if}}">
+                <div class="accordion-body">
+                  {{{answer}}}
+                </div>
+              </div>
+            </div>
+          {{else}}
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#{{#if faqItemIdPrefix}}{{faqItemIdPrefix}}{{else}}faq{{/if}}-sample-1">
+                  What services do you offer?
+                </button>
+              </h2>
+              <div id="{{#if faqItemIdPrefix}}{{faqItemIdPrefix}}{{else}}faq{{/if}}-sample-1"
+                class="accordion-collapse collapse show"
+                data-bs-parent="#{{#if faqAccordionId}}{{faqAccordionId}}{{else}}faqAccordion{{/if}}">
+                <div class="accordion-body">
+                  <p class="mb-0">Replace this copy by passing <code>faqItems</code> from your route or controller. Each
+                    item needs a unique <code>idSuffix</code> and can include short HTML in <code>answer</code> when you
+                    trust the source.</p>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#{{#if faqItemIdPrefix}}{{faqItemIdPrefix}}{{else}}faq{{/if}}-sample-2">
+                  How do I get a quote?
+                </button>
+              </h2>
+              <div id="{{#if faqItemIdPrefix}}{{faqItemIdPrefix}}{{else}}faq{{/if}}-sample-2"
+                class="accordion-collapse collapse"
+                data-bs-parent="#{{#if faqAccordionId}}{{faqAccordionId}}{{else}}faqAccordion{{/if}}">
+                <div class="accordion-body">
+                  <p class="mb-0">Use the contact section or your preferred booking flow. This row demonstrates a
+                    collapsed second panel.</p>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#{{#if faqItemIdPrefix}}{{faqItemIdPrefix}}{{else}}faq{{/if}}-sample-3">
+                  Where are you based?
+                </button>
+              </h2>
+              <div id="{{#if faqItemIdPrefix}}{{faqItemIdPrefix}}{{else}}faq{{/if}}-sample-3"
+                class="accordion-collapse collapse"
+                data-bs-parent="#{{#if faqAccordionId}}{{faqAccordionId}}{{else}}faqAccordion{{/if}}">
+                <div class="accordion-body">
+                  <p class="mb-0">Third placeholder item — omit <code>faqItems</code> or pass an empty array to keep
+                    these demos during layout work.</p>
+                </div>
+              </div>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

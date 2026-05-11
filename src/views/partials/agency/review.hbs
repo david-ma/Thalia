@@ -1,0 +1,16 @@
+<div class="col-md-6 col-lg-4">
+  <div class="review">
+    <div class="review-header">
+      <h3>{{name}}</h3>
+      <img class="stars" src="{{#if starsImageSrc}}{{starsImageSrc}}{{else}}/assets/stars-5.svg{{/if}}" alt="{{#if starsAlt}}{{starsAlt}}{{else}}5 stars{{/if}}" />
+      <h4>{{title}}</h4>
+    </div>
+    <p>{{review}}</p>
+    {{#if date}}
+      <p><b>Date of experience:</b> {{date}}</p>
+    {{/if}}
+    {{#if link}}
+      <a href="{{link}}" {{#if linkTargetBlank}}target="_blank" rel="noopener noreferrer"{{/if}}>{{#if linkLabel}}{{linkLabel}}{{else}}Read more{{/if}}</a>
+    {{/if}}
+  </div>
+</div>

@@ -1,0 +1,24 @@
+<footer class="footer py-4">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-4 text-lg-start">
+        Copyright &copy; {{#if siteName}}{{siteName}}{{else}}Your Website{{/if}} {{#if copyrightYear}}{{copyrightYear}}{{else}}2024{{/if}}
+      </div>
+      <div class="col-lg-4 my-3 my-lg-0">
+        {{#if socialLinks}}
+          {{#each socialLinks}}
+            <a class="btn btn-dark btn-social mx-2" href="{{href}}" aria-label="{{label}}"><i class="{{iconClass}}"></i></a>
+          {{/each}}
+        {{else}}
+          <a class="btn btn-dark btn-social mx-2" href="#!" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+          <a class="btn btn-dark btn-social mx-2" href="#!" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+          <a class="btn btn-dark btn-social mx-2" href="#!" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+        {{/if}}
+      </div>
+      <div class="col-lg-4 text-lg-end">
+        <a class="link-dark text-decoration-none me-3" href="{{#if privacyHref}}{{privacyHref}}{{else}}#!{{/if}}">Privacy Policy</a>
+        <a class="link-dark text-decoration-none" href="{{#if termsHref}}{{termsHref}}{{else}}#!{{/if}}">Terms of Use</a>
+      </div>
+    </div>
+  </div>
+</footer>

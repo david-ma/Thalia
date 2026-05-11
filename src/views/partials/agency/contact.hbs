@@ -1,0 +1,56 @@
+{{!-- Contact section with Bootstrap form. Set contactFormAction (POST target), contactHeading, contactIntroHtml (optional). --}}
+<section class="page-section" id="contact">
+  <div class="container">
+    <div class="text-center">
+      <h2 class="section-heading text-uppercase">{{#if contactHeading}}{{contactHeading}}{{else}}Contact Us{{/if}}</h2>
+      {{#if contactSubheadingHtml}}
+        <h3 class="section-subheading text-muted">{{{contactSubheadingHtml}}}</h3>
+      {{else}}
+        <h3 class="section-subheading text-muted">Lorem ipsum dolor sit amet consectetur.</h3>
+      {{/if}}
+      {{#if contactIntroHtml}}
+        <div class="col-lg-10 mx-auto mb-4 text-start">{{{contactIntroHtml}}}</div>
+      {{/if}}
+    </div>
+
+    <form id="{{#if contactFormId}}{{contactFormId}}{{else}}contactForm{{/if}}"
+      action="{{#if contactFormAction}}{{contactFormAction}}{{else}}#{{/if}}"
+      method="{{#if contactFormMethod}}{{contactFormMethod}}{{else}}POST{{/if}}"
+      {{#if contactFormEnctype}}enctype="{{contactFormEnctype}}"{{/if}}>
+      <div class="row align-items-stretch mb-5">
+        <div class="col-md-6">
+          <div class="form-group mb-3">
+            <input class="form-control" id="contact-name" name="name" type="text" placeholder="Your Name *" required />
+          </div>
+          <div class="form-group mb-3">
+            <input class="form-control" id="contact-email" name="email" type="email" placeholder="Your Email *"
+              autocomplete="email"
+              pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$" required />
+          </div>
+          <div class="form-group mb-3">
+            <input class="form-control" id="contact-phone" name="phone" type="tel" placeholder="Your Phone" />
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group form-group-textarea mb-md-0">
+            <textarea class="form-control" id="contact-message" name="message" placeholder="Your Message *" required></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="text-center">
+        <button class="btn btn-primary btn-xl text-uppercase" type="submit">
+          {{#if contactSubmitLabel}}{{contactSubmitLabel}}{{else}}Send Message{{/if}}
+        </button>
+      </div>
+    </form>
+
+    {{#if showContactAlerts}}
+      <div id="contactSuccessMessage" class="alert alert-success mt-3 d-none" role="alert">
+        Thank you for your message — we will get back to you soon.
+      </div>
+      <div id="contactErrorMessage" class="alert alert-danger mt-3 d-none" role="alert">
+        Something went wrong. Please try again later.
+      </div>
+    {{/if}}
+  </div>
+</section>

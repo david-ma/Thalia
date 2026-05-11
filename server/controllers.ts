@@ -18,6 +18,14 @@ import url from 'url'
 import { ParsedUrlQuery } from 'querystring'
 import crypto from 'crypto'
 import https from 'https'
+import { SmugMugClient, type SmugMugTokenSet } from './smugmug/smugmug-client.js'
+import {
+  smugmugB64HmacSha1,
+  smugmugBundleAuthorization,
+  smugmugExpandParams,
+  smugmugOauthEscape,
+  smugmugSortParams,
+} from './smugmug/smugmug-oauth.js'
 
 /**
  * Read the latest 10 logs from the log directory
@@ -1067,62 +1075,81 @@ export class SmugMugUploader implements Machine {
   private website!: Website
   public name!: string
   public table!: MySqlTableWithColumns<any>
-  private album!: string
-  private tokens!: {
-    consumer_key: string
-    consumer_secret: string
-    oauth_token: string
-    oauth_token_secret: string
-  }
-  private BASE_URL = 'https://api.smugmug.com'
-  private REQUEST_TOKEN_URL = `${this.BASE_URL}/services/oauth/1.0a/getRequestToken`
-  private ACCESS_TOKEN_URL = `${this.BASE_URL}/services/oauth/1.0a/getAccessToken`
-  private AUTHORIZE_URL = `${this.BASE_URL}/services/oauth/1.0a/authorize`
+  /** Target album key; secrets `album` overrides env/config. */
+  private album = ''
+  private tokens: SmugMugTokenSet | null = null
+  private client: SmugMugClient | null = null
 
-  // This should be a reachable domain?
-  // Try using ngrok?
-  private callbackUrl = 'http://localhost:3000/oauthCallback'
+  /** Resolved from `SMUGMUG_OAUTH_CALLBACK_URL`, `config.smugmug.oauthCallbackUrl`, or localhost default. */
+  private oauthCallbackResolved = 'http://localhost:3000/oauthCallback'
 
   constructor() {}
 
-  public async init(website: Website, name: string) {
+  public init(website: Website, name: string): void {
     this.website = website
     this.name = name
+    this.table = images
 
-    import(path.join(this.website.rootPath, 'config', 'secrets.js'))
-      .then(({ smugmug }) => {
-        this.tokens = smugmug
-        this.album = smugmug.album
+    const cfg = website.config.smugmug
+    this.oauthCallbackResolved =
+      process.env.SMUGMUG_OAUTH_CALLBACK_URL?.trim() ||
+      cfg?.oauthCallbackUrl?.trim() ||
+      this.oauthCallbackResolved
 
-        return smugmug
-      })
-      .then((smugmug) => {
-        if (!smugmug.consumer_key || !smugmug.consumer_secret) {
-          throw new Error('Consumer key and secret are required, expected in config/secrets.js')
+    const envAlbum = process.env.SMUGMUG_ALBUM?.trim()
+    const cfgAlbum = cfg?.album?.trim()
+    this.album = envAlbum || cfgAlbum || ''
+
+    const secretsPath = path.join(this.website.rootPath, 'config', 'secrets.js')
+
+    void import(secretsPath)
+      .then((mod: { smugmug?: Partial<SmugMugTokenSet> & { album?: string } }) => {
+        const smug = mod.smugmug
+        if (!smug) {
+          console.warn(`[${website.name}] SmugMug: config/secrets.js has no smugmug export; uploads disabled.`)
+          return
         }
 
-        if (smugmug.oauth_token && smugmug.oauth_token_secret) {
-          // console.log('OAuth token and secret are already set')
-          return smugmug
+        this.tokens = {
+          consumer_key: String(smug.consumer_key ?? ''),
+          consumer_secret: String(smug.consumer_secret ?? ''),
+          oauth_token: String(smug.oauth_token ?? ''),
+          oauth_token_secret: String(smug.oauth_token_secret ?? ''),
         }
 
-        // console.log('Getting a request token')
+        const secretAlbum = typeof smug.album === 'string' ? smug.album.trim() : ''
+        if (secretAlbum) {
+          this.album = secretAlbum
+        }
 
-        // Get the request token
-        const requestParams: any = {
+        if (!this.tokens.consumer_key || !this.tokens.consumer_secret) {
+          console.warn(
+            `[${website.name}] SmugMug: consumer_key/consumer_secret missing; uploads disabled.`,
+          )
+          this.client = null
+          return
+        }
+
+        this.client = new SmugMugClient(this.tokens)
+
+        if (this.tokens.oauth_token && this.tokens.oauth_token_secret) {
+          return
+        }
+
+        const requestParams: Record<string, string> = {
           oauth_callback: 'oob',
           oauth_consumer_key: this.tokens.consumer_key,
           oauth_nonce: Math.random().toString().replace('0.', ''),
           oauth_signature_method: 'HMAC-SHA1',
-          oauth_timestamp: Math.floor(Date.now() / 1000),
+          oauth_timestamp: String(Math.floor(Date.now() / 1000)),
           oauth_version: '1.0',
         }
 
-        const sortedParams = SmugMugUploader.sortParams(requestParams)
-        const escapedParams = SmugMugUploader.oauthEscape(SmugMugUploader.expandParams(sortedParams))
-        const signatureBaseString = `GET&${SmugMugUploader.oauthEscape(this.REQUEST_TOKEN_URL)}&${escapedParams}`
+        const sortedParams = smugmugSortParams(requestParams)
+        const escapedParams = smugmugOauthEscape(smugmugExpandParams(sortedParams))
+        const signatureBaseString = `GET&${smugmugOauthEscape(this.client.requestTokenUrl)}&${escapedParams}`
 
-        requestParams.oauth_signature = SmugMugUploader.b64_hmac_sha1(
+        requestParams.oauth_signature = smugmugB64HmacSha1(
           `${this.tokens.consumer_secret}&`,
           signatureBaseString,
         )
@@ -1138,8 +1165,6 @@ export class SmugMugUploader implements Machine {
         }
 
         const req = https.request(requestOptions, (res: any) => {
-          // console.log('Request Token Response Status:', res.statusCode)
-
           let data = ''
           res.on('data', (chunk: any) => {
             data += chunk
@@ -1156,53 +1181,101 @@ export class SmugMugUploader implements Machine {
             )
 
             if (response && response.oauth_callback_confirmed == 'true') {
-              this.tokens.oauth_token = response.oauth_token
-              this.tokens.oauth_token_secret = response.oauth_token_secret
-
-              // console.log("Request token is", this.tokens.oauth_token)
-              // console.log("Request token secret is", this.tokens.oauth_token_secret)
-
-              // Now we can get the authorization URL
-              const authorizationUrl =
-                this.AUTHORIZE_URL +
-                '?' +
-                new URLSearchParams({
-                  oauth_token: this.tokens.oauth_token,
-                  oauth_callback: this.callbackUrl,
-                }).toString()
-
-              // console.log('Authorization URL is', authorizationUrl)
+              this.tokens!.oauth_token = response.oauth_token
+              this.tokens!.oauth_token_secret = response.oauth_token_secret
+              // Browser step: `${this.client.authorizeUrl}?oauth_token=…&oauth_callback=${this.oauthCallbackResolved}`
             } else {
-              console.error('Request token failed')
+              console.error(`[${website.name}] SmugMug: request token failed (see SmugMug response).`)
             }
           })
         })
 
-        req.on('error', (e: any) => {
-          console.error('Request Token Error:', e)
+        req.on('error', (e: unknown) => {
+          console.error(`[${website.name}] SmugMug: request token HTTP error:`, e)
         })
 
         req.end()
       })
-
-      .catch((error) => {
-        console.error('Error loading secrets:', error)
+      .catch((error: unknown) => {
+        if (SmugMugUploader.isMissingSecretsModule(error)) {
+          console.warn(
+            `[${website.name}] SmugMug: config/secrets.js not found or unreadable; uploads disabled.`,
+          )
+          return
+        }
+        console.error(`[${website.name}] SmugMug: error loading secrets:`, error)
       })
+  }
+
+  private static isMissingSecretsModule(error: unknown): boolean {
+    const msg = error instanceof Error ? error.message : String(error)
+    const code =
+      typeof error === 'object' && error !== null && 'code' in error
+        ? String((error as NodeJS.ErrnoException).code)
+        : ''
+    return (
+      code === 'ERR_MODULE_NOT_FOUND' ||
+      code === 'ENOENT' ||
+      msg.includes('Cannot find module') ||
+      msg.includes('Module not found')
+    )
+  }
+
+  private smugRespondJson(res: ServerResponse, statusCode: number, payload: Record<string, string>): void {
+    res.statusCode = statusCode
+    res.setHeader('Content-Type', 'application/json; charset=utf-8')
+    res.end(JSON.stringify(payload))
+  }
+
+  /** Non-null upload path requires consumer OAuth, access token, album key, and a loaded client. */
+  private uploadNotReadyReason(): string | null {
+    if (!this.client || !this.tokens) {
+      return 'SmugMug is not configured (secrets missing or incomplete).'
+    }
+    const t = this.tokens
+    if (!t.consumer_key || !t.consumer_secret) {
+      return 'SmugMug consumer credentials are missing.'
+    }
+    if (!t.oauth_token || !t.oauth_token_secret) {
+      return 'SmugMug OAuth is incomplete (access token not stored); finish pairing in config/secrets.js.'
+    }
+    if (!this.album.trim()) {
+      return 'SmugMug album is not set (secrets smugmug.album, SMUGMUG_ALBUM, or config.smugmug.album).'
+    }
+    return null
   }
 
   // https://oauth1.wp-api.org/docs/basics/Auth-Flow.html
   public oauthCallback(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    const query = requestInfo.query
-    const tokenExchangeParams: any = {
-      oauth_consumer_key: this.tokens.consumer_key,
-      oauth_token: query.oauth_token,
-      oauth_signature_method: 'HMAC-SHA1',
-      oauth_timestamp: Date.now(),
-      oauth_nonce: Math.random().toString().replace('0.', ''),
-      oauth_verifier: query.oauth_verifier,
+    if (!this.client || !this.tokens?.consumer_secret || !this.tokens?.oauth_token_secret) {
+      this.smugRespondJson(res, 503, {
+        error: 'SmugMug OAuth is not configured (missing secrets or request-token secret).',
+      })
+      return
     }
 
-    const sorted = SmugMugUploader.sortParams(tokenExchangeParams)
+    const persistTokens = this.tokens
+    const smugClient = this.client
+
+    const query = requestInfo.query
+    const oauthVerifier = Array.isArray(query.oauth_verifier) ? query.oauth_verifier[0] : query.oauth_verifier
+    const oauthTokenQuery = Array.isArray(query.oauth_token) ? query.oauth_token[0] : query.oauth_token
+
+    if (typeof oauthVerifier !== 'string' || !oauthVerifier || typeof oauthTokenQuery !== 'string' || !oauthTokenQuery) {
+      this.smugRespondJson(res, 400, { error: 'SmugMug OAuth callback missing oauth_verifier or oauth_token.' })
+      return
+    }
+
+    const tokenExchangeParams: Record<string, string> = {
+      oauth_consumer_key: persistTokens.consumer_key,
+      oauth_token: oauthTokenQuery,
+      oauth_signature_method: 'HMAC-SHA1',
+      oauth_timestamp: String(Date.now()),
+      oauth_nonce: Math.random().toString().replace('0.', ''),
+      oauth_verifier: oauthVerifier,
+    }
+
+    const sorted = smugmugSortParams(tokenExchangeParams)
 
     const normalized = encodeURIComponent(
       Object.entries(sorted)
@@ -1211,13 +1284,12 @@ export class SmugMugUploader implements Machine {
     )
     const method = 'POST'
 
-    tokenExchangeParams.oauth_signature = SmugMugUploader.b64_hmac_sha1(
-      `${this.tokens.consumer_secret}&${this.tokens.oauth_token_secret}`,
-      `${method}&${encodeURIComponent(this.ACCESS_TOKEN_URL)}&${normalized}`,
+    tokenExchangeParams.oauth_signature = smugmugB64HmacSha1(
+      `${persistTokens.consumer_secret}&${persistTokens.oauth_token_secret}`,
+      `${method}&${encodeURIComponent(smugClient.accessTokenUrl)}&${normalized}`,
     )
 
-    const url = this.ACCESS_TOKEN_URL + '?' + new URLSearchParams(tokenExchangeParams).toString()
-    // console.log('Token exchange url is', url)
+    // console.log('Token exchange url is', smugClient.accessTokenUrl + '?' + new URLSearchParams(tokenExchangeParams))
 
     const options = {
       host: 'api.smugmug.com',
@@ -1255,8 +1327,8 @@ export class SmugMugUploader implements Machine {
 
         // console.log('Response is', response)
 
-        this.tokens.oauth_token = response.oauth_token
-        this.tokens.oauth_token_secret = response.oauth_token_secret
+        persistTokens.oauth_token = response.oauth_token
+        persistTokens.oauth_token_secret = response.oauth_token_secret
 
         res.end(JSON.stringify(response))
       })
@@ -1275,6 +1347,12 @@ export class SmugMugUploader implements Machine {
 
     if (method != 'POST') {
       res.end('This should be a post')
+      return
+    }
+
+    const reason = this.uploadNotReadyReason()
+    if (reason) {
+      this.smugRespondJson(res, 503, { error: reason })
       return
     }
 
@@ -1303,9 +1381,13 @@ export class SmugMugUploader implements Machine {
     const that = this
     const file = form.files.fileToUpload?.[0]
     const drizzle = this.website.db.drizzle
+    const client = this.client
 
     if (!file) {
       return Promise.reject(new Error('No file provided'))
+    }
+    if (!client) {
+      return Promise.reject(new Error('SmugMug client not initialised'))
     }
 
     const md5sum = crypto.createHash('md5').update(fs.readFileSync(file.filepath)).digest('hex')
@@ -1330,12 +1412,12 @@ export class SmugMugUploader implements Machine {
             const method = 'POST'
 
             // Sign the request (same OAuth process)
-            const params = this.signRequest(method, targetUrl)
+            const params = client.signRequest(method, targetUrl)
 
             // https://forum.uipath.com/t/unable-to-pass-binary-image-data-inside-http-request-body/849190/8
             // Create the multipart form data
             const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substr(2, 8)
-            const formData = SmugMugUploader.createMultipartFormData(file, boundary)
+            const formData = SmugMugClient.createMultipartFormData(file, boundary)
 
             const options = {
               host: host,
@@ -1343,7 +1425,7 @@ export class SmugMugUploader implements Machine {
               path: path,
               method: method,
               headers: {
-                Authorization: SmugMugUploader.bundleAuthorization(targetUrl, params),
+                Authorization: smugmugBundleAuthorization(targetUrl, params),
                 'Content-Type': `multipart/form-data; boundary=${boundary}`,
                 'Content-Length': formData.length,
                 'X-Smug-AlbumUri': `/api/v2/album/${this.album}`,
@@ -1430,7 +1512,12 @@ export class SmugMugUploader implements Machine {
     }
   }): Promise<unknown> {
     const AlbumImageUri = data.Image.AlbumImageUri
-    return this.smugmugApiCall(AlbumImageUri).then((response: any) => {
+    const client = this.client
+    if (!client) {
+      return Promise.reject(new Error('SmugMug client not initialised'))
+    }
+
+    return client.smugmugApiCall(AlbumImageUri).then((response: string) => {
       const responseData = JSON.parse(response) as {
         Response?: { AlbumImage?: Record<string, any> }
       }
@@ -1482,149 +1569,6 @@ export class SmugMugUploader implements Machine {
         uri: typeof ai.Uri === 'string' && ai.Uri ? ai.Uri : data.Image.ImageUri,
       })
     })
-  }
-
-  // path=`${path}?_verbosity=1`
-  private async smugmugApiCall(path: string, method: string = 'GET') {
-    return new Promise((resolve, reject) => {
-      // Add verbosity as a query parameter to the URL
-      const urlWithVerbosity = `${path}?_verbosity=1`
-      const targetUrl = `${this.BASE_URL}${urlWithVerbosity}`
-      const params = this.signRequest(method, targetUrl)
-      const options = {
-        host: 'api.smugmug.com',
-        port: 443,
-        path: urlWithVerbosity,
-        method,
-        headers: {
-          Authorization: SmugMugUploader.bundleAuthorization(targetUrl, params),
-          Accept: 'application/json',
-          'X-Smug-ResponseType': 'JSON',
-        },
-      }
-
-      const httpsRequest = https.request(options, (httpsResponse: IncomingMessage) => {
-        let data = ''
-        httpsResponse.on('data', (chunk: any) => {
-          data += chunk
-        })
-
-        httpsResponse.on('end', () => {
-          resolve(data)
-        })
-      })
-
-      httpsRequest.on('error', (e: any) => {
-        reject(e)
-      })
-
-      httpsRequest.end()
-    })
-  }
-
-  private signRequest(method: string, targetUrl: string): Record<string, string> {
-    // Parse the URL to extract base URL and query parameters
-    const urlObj = new URL(targetUrl)
-    const baseUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`
-
-    // Get query parameters from URL
-    const queryParams: any = {}
-    urlObj.searchParams.forEach((value, key) => {
-      queryParams[key] = value
-    })
-
-    const params: any = {
-      oauth_consumer_key: this.tokens.consumer_key,
-      oauth_nonce: Math.random().toString().replace('0.', ''),
-      oauth_signature_method: 'HMAC-SHA1',
-      oauth_timestamp: Math.floor(Date.now() / 1000),
-      oauth_token: this.tokens.oauth_token,
-      oauth_version: '1.0',
-      ...queryParams, // Include query parameters in OAuth signature
-    }
-
-    const sortedParams = SmugMugUploader.sortParams(params)
-    const escapedParams = SmugMugUploader.oauthEscape(SmugMugUploader.expandParams(sortedParams))
-
-    params.oauth_signature = SmugMugUploader.b64_hmac_sha1(
-      `${this.tokens.consumer_secret}&${this.tokens.oauth_token_secret}`,
-      `${method}&${SmugMugUploader.oauthEscape(baseUrl)}&${escapedParams}`,
-    )
-
-    // It seems like smugmug doesn't like the + in the signature,
-    // and I don't know how to escape it properly, so I'm just
-    // going to regenerate the signature if it contains a + or /
-
-    return params.oauth_signature.match(/[\+\/]/) ? this.signRequest(method, targetUrl) : params
-  }
-
-  private static b64_hmac_sha1(key: string, data: string) {
-    return crypto.createHmac('sha1', key).update(data).digest('base64')
-  }
-
-  private static expandParams(params: any) {
-    return Object.keys(params)
-      .map((key) => `${key}=${params[key]}`)
-      .join('&')
-  }
-
-  private static sortParams(object: Record<string, string>): Record<string, string> {
-    const keys = Object.keys(object).sort()
-    const result: Record<string, string> = {}
-    keys.forEach(function (key) {
-      result[key] = object[key]
-    })
-    return result
-  }
-
-  private static oauthEscape(string: string) {
-    if (string === undefined) {
-      return ''
-    }
-    if ((string as any) instanceof Array) {
-      throw new Error('Array passed to _oauthEscape')
-    }
-    return encodeURIComponent(string)
-      .replace(/\!/g, '%21')
-      .replace(/\*/g, '%2A')
-      .replace(/'/g, '%27')
-      .replace(/\(/g, '%28')
-      .replace(/\)/g, '%29')
-  }
-
-  private static bundleAuthorization(url: string, params: Record<string, string>): string {
-    const keys = Object.keys(params)
-
-    // const authorization = `OAuth realm="${url}",${keys.map(key => `${key}="${encodeURIComponent(params[key])}"`).join(',')}`
-
-    // const authorization = `OAuth realm="${url}",${keys.map((key) => `${key}="${params[key]}"`).join(',')}`
-
-    const authorization = `OAuth realm="${url}",${keys
-      .map((key) => {
-        let value: string = params[key]
-        // Double-encode the oauth_signature specifically
-        if (key === 'oauth_signature') {
-          value = encodeURIComponent(value)
-        }
-        return `${key}="${value}"`
-      })
-      .join(',')}`
-
-    return authorization
-  }
-
-  private static createMultipartFormData(file: any, boundary: string): Buffer {
-    const parts = [
-      `--${boundary}`,
-      'Content-Disposition: form-data; name="file"; filename="' + file.originalFilename + '"',
-      'Content-Type: ' + file.mimetype,
-      '',
-      fs.readFileSync(file.filepath),
-      '', // Add empty line after file data
-      `--${boundary}--`,
-    ]
-
-    return Buffer.concat(parts.map((part) => (typeof part === 'string' ? Buffer.from(part + '\r\n') : part)))
   }
 
   public smugmugConfig(): RawWebsiteConfig {

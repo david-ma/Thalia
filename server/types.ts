@@ -123,6 +123,19 @@ export type ThaliaAuthOptions = {
   sessionMaxAgeSeconds?: number
 }
 
+/**
+ * Optional SmugMug machine settings (`SmugMugUploader`).
+ * Precedence: `config/secrets.js` `smugmug` fields override these when set.
+ *
+ * For local OAuth, the callback URL must match what SmugMug redirects to; use a tunnel
+ * (e.g. **ngrok**, Cloudflare Tunnel) and set `oauthCallbackUrl` or `SMUGMUG_OAUTH_CALLBACK_URL`.
+ */
+export type SmugMugSiteOptions = {
+  oauthCallbackUrl?: string
+  /** Album key for `X-Smug-AlbumUri` when not set in secrets. */
+  album?: string
+}
+
 export interface RawWebsiteConfig {
   domains?: string[]
   controllers?: Record<string, NestedControllerMap>
@@ -134,6 +147,8 @@ export interface RawWebsiteConfig {
   thaliaAuth?: ThaliaAuthOptions
   handlebarsHelpers?: Record<string, (...args: any[]) => any>
   sitemap?: SitemapConfig
+  /** SmugMug upload OAuth: callback URL + default album (secrets still win where present). */
+  smugmug?: SmugMugSiteOptions
 }
 
 export interface WebsiteConfig extends BasicWebsiteConfig, RawWebsiteConfig {

@@ -410,7 +410,7 @@ export class RequestHandler {
       path.join(p, 'index.md'),
       p.endsWith('.md') ? p : p + '.md',
     ]
-    if (rh.pathname === 'index.html') {
+    if (p === 'index.html') {
       mdCandidates.push('index.md')
     }
 

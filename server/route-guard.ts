@@ -40,6 +40,7 @@ const ALWAYS_ALLOW_PATHS: string[] = [
   '/images',
   '/img',
   '/fonts',
+  '/assets',
 ]
 const ALWAYS_ALLOW_PERMISSIONS: Record<Role, Permission[]> = {
   guest: ['read'],

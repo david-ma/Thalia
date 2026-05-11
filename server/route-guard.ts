@@ -17,6 +17,11 @@ export function routeFullpathMatchesMappedKey(fullpath: string, routeKey: string
 }
 
 const ALWAYS_ALLOW_PATHS: string[] = ['/robots.txt', '/favicon.ico']
+const ALWAYS_ALLOW_PERMISSIONS: Record<Role, Permission[]> = {
+  guest: ['read'],
+  user: ['read'],
+  admin: ['read'],
+}
 
 function normalizeRoutePath(p: string | undefined | null): string {
   const raw = (p ?? '').trim()
@@ -222,7 +227,12 @@ export class BasicRouteGuard extends RouteGuard {
   }
 
   private loadRoutes() {
-    const baseRoutes: RouteRule[] = ALWAYS_ALLOW_PATHS.map((p) => ({ path: p }))
+    // These should be reachable without login even when RoleRouteGuard is enabled.
+    // If they match a route but have no permissions, the RoleRouteGuard will 401.
+    const baseRoutes: RouteRule[] = ALWAYS_ALLOW_PATHS.map((p) => ({
+      path: p,
+      permissions: ALWAYS_ALLOW_PERMISSIONS,
+    }))
     const routes = baseRoutes.concat(this.website.config.routes || [])
     routes.forEach((route) => {
       // Ensure required fields

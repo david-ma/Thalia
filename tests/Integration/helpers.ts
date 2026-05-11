@@ -82,7 +82,8 @@ export async function startTestServer(
  * @param project Website project name under websites/
  * @param opts Must match the `node_env` used when starting (default `'test'`).
  */
-const STOP_TEST_SERVER_MS = 12_000
+// Bun's hook timeout is 5s by default; keep teardown below that so afterAll doesn't time out.
+const STOP_TEST_SERVER_MS = 4_000
 
 export async function stopTestServer(project: string, opts?: Pick<StartTestServerOpts, 'node_env'>): Promise<void> {
   const node_env = opts?.node_env ?? 'test'

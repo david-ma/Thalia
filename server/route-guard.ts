@@ -8,6 +8,25 @@ import { RequestHandler } from './request-handler'
 import { eq } from 'drizzle-orm'
 
 /**
+ * True when `fullpath` is exactly this route key, or when it continues with another path segment
+ * under that key. Avoids treating the root map key (`host/`) as a match for `host/fruit`, which
+ * would otherwise require fragile "longest path first" ordering.
+ */
+export function routeFullpathMatchesMappedKey(fullpath: string, routeKey: string): boolean {
+  return fullpath === routeKey || fullpath.startsWith(`${routeKey}/`)
+}
+
+const ALWAYS_ALLOW_PATHS: string[] = ['/robots.txt', '/favicon.ico']
+
+function normalizeRoutePath(p: string | undefined | null): string {
+  const raw = (p ?? '').trim()
+  if (!raw) return '/'
+  const withSlash = raw.startsWith('/') ? raw : `/${raw}`
+  if (withSlash.length > 1) return withSlash.replace(/\/+$/, '')
+  return '/'
+}
+
+/**
  * The RouteGuard class provides an alternative "handleRequest" method, which checks for an authentication cookie.
  * If the cookie is present, the request is allowed to proceed.
  * If there is no cookie or the cookie is incorrect, the request is redirected to the login page.
@@ -52,17 +71,21 @@ export class BasicRouteGuard extends RouteGuard {
   protected getMatchingRoute(request: RequestHandler): RouteRule {
     const requestInfo = request.requestInfo
     const host = requestInfo.host
+    // Use the original request pathname for route-guard decisions.
+    // RequestHandler internally re-enters the handler chain for directory -> index.html resolution,
+    // and `request.pathname` may be an override like "/index.html". Permissions should be based on
+    // the user-facing path (e.g. "/"), not the internal lookup path.
     const pathname = requestInfo.pathname ?? ''
     const fullpath = host + (pathname === '' ? '/' : pathname)
 
-    const matched = Object.entries(this.routes)
-      .sort((a, b) => (b[1].path?.length ?? 0) - (a[1].path?.length ?? 0))
-      .find(([route, rule]) => {
-        if (fullpath.startsWith(route)) {
-          return [route, rule]
-        }
-      })
-    const rule = matched?.[1] ?? {}
+    let best: [string, RouteRule] | undefined
+    for (const [routeKey, rule] of Object.entries(this.routes)) {
+      if (!routeFullpathMatchesMappedKey(fullpath, routeKey)) continue
+      if (!best || routeKey.length > best[0].length) {
+        best = [routeKey, rule]
+      }
+    }
+    const rule = best?.[1] ?? {}
     if (Object.keys(rule).length === 0) {
       console.debug(
         `[route-guard] No matching route: host=${JSON.stringify(host)} pathname=${JSON.stringify(pathname)} fullpath=${JSON.stringify(fullpath)}`
@@ -127,7 +150,7 @@ export class BasicRouteGuard extends RouteGuard {
               return finish('Invalid password')
             }
           })
-          return finish('Form submitted')
+          return
         } else {
           const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
             route: request.pathname,
@@ -199,12 +222,11 @@ export class BasicRouteGuard extends RouteGuard {
   }
 
   private loadRoutes() {
-    const routes = this.website.config.routes || []
+    const baseRoutes: RouteRule[] = ALWAYS_ALLOW_PATHS.map((p) => ({ path: p }))
+    const routes = baseRoutes.concat(this.website.config.routes || [])
     routes.forEach((route) => {
       // Ensure required fields
-      if (!route.path) {
-        route.path = '/'
-      }
+      route.path = normalizeRoutePath(route.path)
 
       const domains = route.domains || this.website.domains
 
@@ -407,8 +429,7 @@ export class RoleRouteGuard extends BasicRouteGuard {
               console.debug(
                 `[route-guard] 403: host=${JSON.stringify(request.requestInfo.host)} pathname=${JSON.stringify(request.pathname)} role=${request.requestInfo.userAuth?.role} action=${action}`
               )
-              // access denied
-              // request.res.writeHead(403, { 'Content-Type': 'text/html' })
+              request.res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' })
               request.res.end('Access denied')
               return finish('Access denied')
             }

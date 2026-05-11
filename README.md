@@ -101,11 +101,24 @@ bun run test:unit
 bun run test:integration
 ```
 
+The default `bun run test` script sets **`SKIP_EXAMPLE_AUTH_TESTS=1`** so the suite passes without MySQL and seeded users (same idea as CI). To run **only** the request-handler integration file with example-auth enabled (needs DB + schema push + **`bun run example-auth:seed-test-users`** — see `websites/example-auth/README.md`):
+
+```bash
+bun run example-auth:seed-test-users
+bun run test:integration:example-auth
+```
+
+To **fail** if the example-auth server starts but logins return no cookies (catch silent no-ops in CI that does run example-auth):
+
+```bash
+REQUIRE_EXAMPLE_AUTH_LOGIN=1 bun run test:integration:example-auth
+```
+
 ### Service-dependent tests (DB / MailCatcher)
 
 The `websites/example-auth` fixture exercises Thalia’s auth + route guard + mail flows and **expects external services** in some scenarios (database; MailCatcher for an end-to-end password-reset test).
 
-For fast, deterministic runs you can skip those:
+For fast, deterministic runs you can skip those (also the default for `bun run test`):
 
 ```bash
 SKIP_EXAMPLE_AUTH_TESTS=1 SKIP_MAILCATCHER_TESTS=1 bun test

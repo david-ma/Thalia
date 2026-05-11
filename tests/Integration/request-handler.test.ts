@@ -788,12 +788,9 @@ describeExampleAuth('Request-handler: example-auth authenticated (user / admin)'
     }
   })
 
-  afterAll(
-    async () => {
-      if (serverStarted) await stopTestServer(PROJECT)
-    },
-    { timeout: 15_000 },
-  )
+  afterAll(async () => {
+    if (serverStarted) await stopTestServer(PROJECT)
+  })
 
   function fetchWithCookie(url: string, cookie: string | null, options?: RequestInit) {
     const headers = new Headers(options?.headers)

@@ -80,12 +80,6 @@ const ALL_ROLES: Role[] = ['admin', 'user', 'guest']
 
 const default_routes: RoleRouteRule[] = [
   {
-    path: '/',
-    permissions: {
-      guest: ALL_PERMISSIONS,
-    },
-  },
-  {
     path: '/admin',
     permissions: {
       admin: ALL_PERMISSIONS,

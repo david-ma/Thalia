@@ -406,6 +406,10 @@ export class RequestHandler {
       path.join(p, 'index.md'),
       p.endsWith('.md') ? p : p + '.md',
     ]
+    if (rh.pathname === 'index.html') {
+      mdCandidates.push('index.md')
+    }
+
     for (const mdPath of mdCandidates) {
       const project = path.join(rh.rootPath, 'src', mdPath)
       const thalia = path.join(rh.thaliaRoot, 'src', mdPath)

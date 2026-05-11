@@ -1,7 +1,7 @@
 // Minimal config for example-src website
 import { IncomingMessage, ServerResponse } from 'http'
 import { RawWebsiteConfig } from 'thalia/types'
-import { Website } from '../../../server/website'
+import { Website } from 'thalia/website'
 import { latestData } from 'thalia/controllers'
 
 export const config: RawWebsiteConfig = {

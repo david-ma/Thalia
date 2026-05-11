@@ -10,9 +10,20 @@ import {
   CRUD_DATATABLES_DEFAULT_START,
   CRUD_DATATABLES_MAX_LENGTH,
   crudFirstQueryValue,
+  escapeCrudDataTablesLikeTerm,
   normaliseCrudDataTablesPaging,
   parseCrudDataTablesQuery,
 } from '../../server/controllers.js'
+
+describe('escapeCrudDataTablesLikeTerm', () => {
+  test('escapes LIKE metacharacters', () => {
+    expect(escapeCrudDataTablesLikeTerm('100%_off')).toBe('100\\%\\_off')
+  })
+
+  test('escapes backslashes first', () => {
+    expect(escapeCrudDataTablesLikeTerm('a\\b')).toBe('a\\\\b')
+  })
+})
 
 describe('crudFirstQueryValue', () => {
   test('returns first entry for arrays', () => {

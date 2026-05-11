@@ -156,9 +156,50 @@ describeDatabaseOnline('Integration: database online (example-auth + MySQL)', ()
     const cookie = (await loginExampleAuth(port, USER_EMAIL, PASSWORD))!
     const response = await authFetch('/fruit/json', cookie)
     expect(response.status).toBe(200)
-    const body = (await response.json()) as { draw?: string; data?: unknown[] }
+    const body = (await response.json()) as {
+      draw?: string
+      data?: unknown[]
+      recordsTotal?: number
+      recordsFiltered?: number
+    }
     expect(body.draw).toBe('1')
     expect(Array.isArray(body.data)).toBe(true)
+    expect(typeof body.recordsTotal).toBe('number')
+    expect(typeof body.recordsFiltered).toBe('number')
+    expect(body.recordsTotal).toBeGreaterThanOrEqual(body.data!.length)
+    expect(body.recordsFiltered).toBe(body.recordsTotal)
+  })
+
+  test('user session: GET /fruit/json search narrows recordsFiltered vs recordsTotal', async () => {
+    const cookie = (await loginExampleAuth(port, USER_EMAIL, PASSWORD))!
+    const base = await authFetch('/fruit/json', cookie)
+    expect(base.status).toBe(200)
+    const full = (await base.json()) as { recordsTotal: number; recordsFiltered: number }
+    expect(full.recordsFiltered).toBe(full.recordsTotal)
+
+    const narrow = await authFetch(
+      '/fruit/json?' + new URLSearchParams({ 'search[value]': '___no_such_fruit_row___' }).toString(),
+      cookie,
+    )
+    expect(narrow.status).toBe(200)
+    const subset = (await narrow.json()) as { recordsTotal: number; recordsFiltered: number; data: unknown[] }
+    expect(subset.recordsTotal).toBe(full.recordsTotal)
+    expect(subset.recordsFiltered).toBe(0)
+    expect(subset.data).toHaveLength(0)
+  })
+
+  test('user session: GET /users/json returns full counts and page slice', async () => {
+    const cookie = (await loginExampleAuth(port, USER_EMAIL, PASSWORD))!
+    const response = await authFetch('/users/json?draw=1&start=0&length=50', cookie)
+    expect(response.status).toBe(200)
+    const body = (await response.json()) as {
+      recordsTotal: number
+      recordsFiltered: number
+      data: unknown[]
+    }
+    expect(body.recordsFiltered).toBe(body.recordsTotal)
+    expect(body.recordsTotal).toBeGreaterThanOrEqual(body.data.length)
+    expect(body.data.length).toBeLessThanOrEqual(50)
   })
 
   test('admin session: GET /sessions/list returns 200', async () => {

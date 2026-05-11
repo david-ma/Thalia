@@ -12,7 +12,7 @@ import { IncomingMessage, ServerResponse } from 'http'
 import { Website, type Controller } from './website'
 import fs from 'fs'
 import path from 'path'
-import { eq, isNull } from 'drizzle-orm'
+import { and, eq, isNull, like, or, sql, type SQL } from 'drizzle-orm'
 import { RequestInfo } from './server'
 import url from 'url'
 import { ParsedUrlQuery } from 'querystring'
@@ -309,6 +309,11 @@ export function normaliseCrudDataTablesPaging(parsed: CrudParsedDataTablesQuery)
   return { draw, offset, limit }
 }
 
+/** Escape `%`, `_`, and `\` for safe inclusion inside a MySQL `LIKE` pattern literal. */
+export function escapeCrudDataTablesLikeTerm(term: string): string {
+  return term.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
+}
+
 // import { type LibSQLDatabase } from 'drizzle-orm/libsql'
 import { Permission } from './route-guard'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
@@ -347,6 +352,17 @@ export class CrudFactory implements Machine {
   // private db!: LibSQLDatabase<Record<string, never>>
   // private sqlite!: libsql.Client
   private static blacklist = ['createdAt', 'updatedAt', 'deletedAt'] // Filter 'id' as well?
+  /** Column `Attribute.type` / Drizzle `columnType` values eligible for global `LIKE` search. */
+  private static globalLikeSearchTypes = new Set<string>([
+    'string',
+    'MySqlVarChar',
+    'MySqlChar',
+    'MySqlText',
+    'MySqlTinyText',
+    'MySqlMediumText',
+    'MySqlLongText',
+    'MySqlEnum',
+  ])
   private wrapperTemplate = 'crud_wrapper'
 
   constructor(table: MySqlTableWithColumns<any>, options?: CrudOptions | any) {
@@ -716,6 +732,59 @@ export class CrudFactory implements Machine {
     res.end(html)
   }
 
+  /** Rows visible to the list scaffold (exclude soft-deleted when `deletedAt` exists). */
+  private crudJsonVisibilityWhere(): SQL | undefined {
+    if (this.table.deletedAt) {
+      return isNull(this.table.deletedAt)
+    }
+    return undefined
+  }
+
+  /** True if this column participates in `/json` global `search[value]` matching. */
+  private attributeSupportsCrudGlobalLikeSearch(attribute: Attribute): boolean {
+    return CrudFactory.globalLikeSearchTypes.has(attribute.type)
+  }
+
+  /**
+   * DataTables global `search[value]` as SQL `LIKE '%term%'` across textual columns.
+   * Regex mode from the client is ignored — server-side substring match only.
+   */
+  private crudJsonGlobalSearchWhere(search: CrudParsedDataTablesSearch): SQL | undefined {
+    const term = search.value?.trim()
+    if (!term) return undefined
+
+    const pattern = `%${escapeCrudDataTablesLikeTerm(term)}%`
+    const predicates: SQL[] = []
+    for (const attribute of this.filteredAttributes()) {
+      if (!this.attributeSupportsCrudGlobalLikeSearch(attribute)) continue
+      const column = (this.table as Record<string, unknown>)[attribute.name]
+      if (column == null) continue
+      predicates.push(like(column as Parameters<typeof like>[0], pattern))
+    }
+    if (predicates.length === 0) return undefined
+    if (predicates.length === 1) return predicates[0]
+    return or(...predicates)
+  }
+
+  /** Visibility predicate plus optional DataTables global search. */
+  private crudJsonCombinedWhere(parsed: CrudParsedDataTablesQuery): SQL | undefined {
+    const visibility = this.crudJsonVisibilityWhere()
+    const searchSql = this.crudJsonGlobalSearchWhere(parsed.search)
+    if (visibility && searchSql) return and(visibility, searchSql)
+    return visibility ?? searchSql
+  }
+
+  /** `COUNT(*)` with optional Drizzle WHERE (omit for full-table count). */
+  private crudJsonCountRows(where?: SQL): Promise<number> {
+    let q = this.db
+      .select({ count: sql<number>`cast(count(*) as unsigned)`.mapWith(Number) })
+      .from(this.table)
+    if (where !== undefined) {
+      q = q.where(where)
+    }
+    return q.then((rows) => rows[0]?.count ?? 0)
+  }
+
   /**
    * Serve the data in DataTables.net json format
    * The frontend uses /columns to get the columns, and then asks for /json to get the data.
@@ -726,29 +795,34 @@ export class CrudFactory implements Machine {
     const parsedQuery = parseCrudDataTablesQuery(query)
     const { draw, offset, limit } = normaliseCrudDataTablesPaging(parsedQuery)
 
-    // const columns = this.filteredAttributes().map(this.mapColumns)
+    const visibilityWhere = this.crudJsonVisibilityWhere()
+    const combinedWhere = this.crudJsonCombinedWhere(parsedQuery)
 
-    const drizzleQuery = this.db.select().from(this.table)
-
-    if (this.table.deletedAt) {
-      drizzleQuery.where(isNull(this.table.deletedAt))
-    }
-
-    drizzleQuery
-      .limit(limit)
-      .offset(offset)
-      .then((records: any[]) => {
-        // console.log("Found", records.length, "records in", this.name)
-
+    Promise.all([
+      this.crudJsonCountRows(visibilityWhere),
+      this.crudJsonCountRows(combinedWhere),
+      (() => {
+        let dataQuery = this.db.select().from(this.table)
+        if (combinedWhere !== undefined) {
+          dataQuery = dataQuery.where(combinedWhere)
+        }
+        return dataQuery.limit(limit).offset(offset)
+      })(),
+    ])
+      .then(([recordsTotal, recordsFiltered, records]) => {
         const blob = {
           draw,
-          recordsTotal: records.length,
-          recordsFiltered: records.length,
+          recordsTotal,
+          recordsFiltered,
           data: records,
-          // columns: columns,
         }
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify(blob))
+      })
+      .catch((err: unknown) => {
+        console.error('CrudFactory json:', this.name, err)
+        res.writeHead(500, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: 'Unable to load table data.' }))
       })
   }
 

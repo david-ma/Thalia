@@ -1,13 +1,12 @@
-import { type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
-import { type SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
+import type { MySql2Database } from 'drizzle-orm/mysql2'
+import type { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import { users, sessions, audits } from './security-models'
 import { albums, images } from './smugmug'
 
+/** DB + schema tables (Thalia sites use Drizzle + mysql2). */
 export interface SeqObject {
-  db: BetterSQLite3Database
-  models: {
-    [key: string]: SQLiteTableWithColumns<any>
-  }
+  db: MySql2Database<any>
+  models: Record<string, MySqlTableWithColumns<any>>
 }
 
 export interface SecurityObject extends SeqObject {

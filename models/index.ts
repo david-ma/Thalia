@@ -12,6 +12,7 @@ import { albums, images, type Album, type NewAlbum, type Image, type NewImage } 
 // Export types
 export type { User, NewUser, Session, NewSession, Audit, NewAudit }
 export type { Album, NewAlbum, Image, NewImage }
+export type { SeqObject, SecurityObject, SmugmugObject } from './types'
 
 // Export model tables
 export const models = {
@@ -19,15 +20,15 @@ export const models = {
   sessions,
   audits,
   albums,
-  images
+  images,
 }
+
+export type ModelsRegistry = typeof models
 
 // Export factory functions
 export { UserFactory, SessionFactory, AuditFactory } from './security-models'
 export { AlbumFactory, ImageFactory } from './smugmug'
 
-// Export all from security
-// export * from './security'
 import * as security from './security-models'
 export { security }
 

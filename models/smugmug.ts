@@ -1,9 +1,9 @@
-import { mysqlTable, text, int, varchar } from 'drizzle-orm/mysql-core'
-import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
+import { InferInsertModel, InferSelectModel } from 'drizzle-orm'
+import { mysqlTable, text, int } from 'drizzle-orm/mysql-core'
 import { vc, baseTableConfig } from './util'
 
 // Album Model. Keys/URLs match SmugMug API: albumKey (e.g. jHhcL7), uri (API path), webUri (public gallery URL).
-export const albums: MySqlTableWithColumns<any> = mysqlTable('albums', {
+export const albums = mysqlTable('albums', {
   ...baseTableConfig,
   albumKey: vc('album_key'),
   description: text('description'),
@@ -18,11 +18,11 @@ export const albums: MySqlTableWithColumns<any> = mysqlTable('albums', {
   password: vc('password')
 })
 
-export type Album = typeof albums.$inferSelect
-export type NewAlbum = typeof albums.$inferInsert
+export type Album = InferSelectModel<typeof albums>
+export type NewAlbum = InferInsertModel<typeof albums>
 
 // Image Model
-export const images: MySqlTableWithColumns<any> = mysqlTable('images', {
+export const images = mysqlTable('images', {
   ...baseTableConfig,
   albumKey: vc('album_key'),
   caption: text('caption'),
@@ -41,14 +41,14 @@ export const images: MySqlTableWithColumns<any> = mysqlTable('images', {
   uri: vc('uri')
 })
 
-export type Image = typeof images.$inferSelect
-export type NewImage = typeof images.$inferInsert
+export type Image = InferSelectModel<typeof images>
+export type NewImage = InferInsertModel<typeof images>
 
-// Factory functions
-export function AlbumFactory(config: typeof baseTableConfig) {
+// Factory functions (reserved for per-site table config; currently returns shared schema tables.)
+export function AlbumFactory(_config: typeof baseTableConfig) {
   return albums
 }
 
-export function ImageFactory(config: typeof baseTableConfig) {
+export function ImageFactory(_config: typeof baseTableConfig) {
   return images
 }

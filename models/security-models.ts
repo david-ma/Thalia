@@ -48,15 +48,15 @@ export const audits = mysqlTable('audits', {
 export type Audit = InferSelectModel<typeof audits>
 export type NewAudit = InferInsertModel<typeof audits>
 
-// Factory functions
-export function UserFactory(config: typeof baseTableConfig) {
+// Factory functions (reserved for per-site table config; currently returns shared schema tables.)
+export function UserFactory(_config: typeof baseTableConfig) {
   return users
 }
 
-export function SessionFactory(config: typeof baseTableConfig) {
+export function SessionFactory(_config: typeof baseTableConfig) {
   return sessions
 }
 
-export function AuditFactory(config: typeof baseTableConfig) {
+export function AuditFactory(_config: typeof baseTableConfig) {
   return audits
 }

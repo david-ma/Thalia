@@ -1,9 +1,10 @@
 import { int, MySqlIntBuilderInitial, MySqlTimestampBuilderInitial, timestamp, varchar, MySqlColumnBuilder } from 'drizzle-orm/mysql-core'
 import { sql } from 'drizzle-orm'
 
-// varchar helper, defaulting to 255 characters
+/** varchar helper, default length 255 (MySQL). */
 export const vc = (name: string, length: number = 255) => varchar(name, { length })
 
+/** Shape of the standard Thalia base columns merged into `mysqlTable` definitions. */
 export type ThaliaTableConfig = {
   id: MySqlIntBuilderInitial<'id'>
   createdAt: MySqlTimestampBuilderInitial<'created_at'>
@@ -11,7 +12,7 @@ export type ThaliaTableConfig = {
   deletedAt: MySqlTimestampBuilderInitial<'deleted_at'>
 } & Record<string, MySqlColumnBuilder<any>>
 
-// Base table configuration for MySQL
+/** Primary key + timestamps + soft-delete column for MySQL tables. */
 export const baseTableConfig: ThaliaTableConfig = {
   id: int('id').primaryKey().autoincrement(),
   createdAt: timestamp('created_at').notNull().defaultNow(),

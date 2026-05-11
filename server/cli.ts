@@ -66,14 +66,35 @@ async function main() {
     .then((thalia) => {
       thalia.start()
 
+      let shuttingDown = false
+
+      async function shutdown(signal: string): Promise<void> {
+        if (shuttingDown) return
+        shuttingDown = true
+
+        console.log(`Received ${signal}. Stopping Thalia...`)
+
+        const timeoutMs = 10_000
+        const timeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`Shutdown timeout after ${timeoutMs}ms`)), timeoutMs),
+        )
+
+        try {
+          await Promise.race([thalia.stop(), timeout])
+          console.log('Thalia stopped')
+          process.exit(0)
+        } catch (error) {
+          console.error('Error stopping Thalia:', error)
+          process.exit(1)
+        }
+      }
+
       process.on('SIGINT', () => {
-        thalia.stop()
-        process.exit(0)
+        void shutdown('SIGINT')
       })
 
       process.on('SIGTERM', () => {
-        thalia.stop()
-        process.exit(0)
+        void shutdown('SIGTERM')
       })
     })
     .catch((error) => {

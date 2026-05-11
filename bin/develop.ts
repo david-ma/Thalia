@@ -161,7 +161,10 @@ function startServer({
   const processes: ChildProcess[] = [server]
 
   // Cleanup function
+  let cleaningUp = false
   const cleanup = () => {
+    if (cleaningUp) return
+    cleaningUp = true
     console.log("\nProcesses to quit: ");
     processes.forEach((process)=>{
       console.log(`${process.pid} ${process.spawnargs.join(" ")}`)
@@ -179,17 +182,35 @@ function startServer({
         errStream.end(done)
       })
 
+    function waitForExit(p: ChildProcess, timeoutMs: number): Promise<void> {
+      return new Promise((resolve) => {
+        if (p.exitCode !== null) return resolve()
+        const onExit = () => resolve()
+        p.once('exit', onExit)
+        setTimeout(() => {
+          p.off('exit', onExit)
+          resolve()
+        }, timeoutMs)
+      })
+    }
+
+    const shutdownMs = 10_000
+
     Promise.all([
-      ...processes.map((p) => {
-        if (p && !p.killed) {
-          p.kill('SIGTERM')
-          // Force kill after 2 seconds if still alive
-          setTimeout(() => {
-            if (p && !p.killed) {
-              p.kill('SIGKILL')
-            }
-          }, 1500)
-        }
+      ...processes.map(async (p) => {
+        if (!p) return
+
+        // Prefer SIGTERM so server/cli.ts can gracefully stop.
+        try {
+          if (!p.killed) p.kill('SIGTERM')
+        } catch {}
+
+        await waitForExit(p, shutdownMs)
+
+        // If still running, force kill.
+        try {
+          if (p.exitCode === null && !p.killed) p.kill('SIGKILL')
+        } catch {}
       }),
       closeLogStreams(),
     ]).then(() => {
@@ -202,15 +223,6 @@ function startServer({
   // Handle all exit signals
   process.on('SIGINT', cleanup)
   process.on('SIGTERM', cleanup)
-  process.on('SIGQUIT', cleanup)
-  process.on('SIGBREAK', cleanup)
-  process.on('SIGABRT', cleanup)
-  process.on('SIGSEGV', cleanup)
-  process.on('SIGILL', cleanup)
-  process.on('SIGFPE', cleanup)
-  process.on('SIGBUS', cleanup)
-  process.on('SIGPIPE', cleanup)
-  process.on('SIGALRM', cleanup)
 
   // Handle uncaught errors
   process.on('uncaughtException', (err) => {

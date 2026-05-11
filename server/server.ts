@@ -36,6 +36,8 @@ export type RequestInfo = {
 export class Server extends EventEmitter {
   private httpServer!: HttpServer
   private socketServer!: SocketServer
+  /** Track open TCP sockets so we can force-close them on stop() (keep-alive can otherwise hang httpServer.close). */
+  private httpSockets: Set<import('net').Socket> = new Set()
   private port: number
   private mode: ServerMode
   private nodeEnv: string
@@ -168,6 +170,14 @@ export class Server extends EventEmitter {
       this.httpServer = createServer(this.handleRequest.bind(this))
       this.socketServer = Server.createSocketServer(this.httpServer, this.handleSocketConnection.bind(this))
 
+      // Track sockets to make shutdown deterministic in tests.
+      this.httpServer.on('connection', (socket) => {
+        this.httpSockets.add(socket)
+        socket.on('close', () => {
+          this.httpSockets.delete(socket)
+        })
+      })
+
       this.httpServer.listen(this.port, () => {
         console.log(`Server running at http://localhost:${this.port}`)
         this.emit('started')
@@ -184,12 +194,27 @@ export class Server extends EventEmitter {
       }
 
       if (this.socketServer && typeof this.socketServer.close === 'function') {
-        this.socketServer.close()
+        // Close Socket.IO first (best effort; callback-style).
+        try {
+          this.socketServer.close()
+        } catch {
+          /* ignore */
+        }
       }
       
       const httpServer = this.httpServer
       this.socketServer = {} as SocketServer
       this.httpServer = {} as HttpServer
+
+      // Force-close keep-alive sockets so httpServer.close() doesn't hang.
+      for (const socket of this.httpSockets) {
+        try {
+          socket.destroy()
+        } catch {
+          /* ignore */
+        }
+      }
+      this.httpSockets.clear()
       
       httpServer.close((err) => {
         if (err) {

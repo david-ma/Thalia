@@ -1,80 +1,182 @@
-$background: #dce0e8;
-
-// dark mode:
-// #1f1d2e
-// #191824
+// CRUD / admin shell — lavender surface on a dark frame (Catppuccin-adjacent).
+$crud-frame: #191824;
+$crud-surface: #dce0e8;
+$crud-surface-2: #e6e9ef;
+$crud-text: #1f1d2e;
+$crud-text-muted: #575279;
+$crud-border: color-mix(in srgb, $crud-text 14%, transparent);
+$crud-border-strong: color-mix(in srgb, $crud-text 22%, transparent);
+$crud-accent: #8839ef;
+$crud-accent-soft: color-mix(in srgb, $crud-accent 14%, transparent);
+$crud-danger: #d20f39;
+$crud-radius: 0.65rem;
+$crud-shadow: 0 4px 24px color-mix(in srgb, #000 18%, transparent);
 
 body {
-  background: #191824;
+  background: $crud-frame;
+  color: $crud-surface;
+  font-size: 18px;
 }
 
 div.page {
-  background: $background;
+  background: $crud-surface;
+  color: $crud-text;
   min-height: 100vh;
+  border-radius: $crud-radius;
+  box-shadow: $crud-shadow;
+  border: 1px solid $crud-border;
 }
 
 nav {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
-  background: $background;
-  padding: 10px;
-  margin-bottom: 10px;
+  gap: 0.5rem 1rem;
+  background: $crud-surface-2;
+  padding: 0.65rem 1rem;
+  margin-bottom: 1rem;
   width: 100%;
+  border-radius: calc($crud-radius - 0.15rem);
+  border: 1px solid $crud-border;
+
+  a {
+    color: $crud-text;
+    text-decoration: none;
+    font-weight: 500;
+    border-radius: 0.35rem;
+    padding: 0.25rem 0.4rem;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background: $crud-accent-soft;
+      color: $crud-text;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $crud-accent;
+      outline-offset: 2px;
+    }
+  }
 }
 
 div.default-crud-styles {
+  h1 {
+    text-transform: capitalize;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    color: $crud-text;
+    margin-bottom: 0.75rem;
+  }
+
   div.datatables-table-container {
     width: 100%;
     overflow-x: auto;
-    margin-bottom: 10px;
+    margin-bottom: 1rem;
+    border-radius: $crud-radius;
+    border: 1px solid $crud-border;
+    background: color-mix(in srgb, $crud-surface 92%, #fff);
 
     .dt-layout-cell {
-      padding: 0.5em;
+      padding: 0.5rem 0.75rem;
     }
-    label[for="dt-length-0"] {
-      margin: 10px;
-      border: 1px dotted #b6b2d3;
-      padding: 0.2em;
+
+    label[for='dt-length-0'] {
+      margin: 0.25rem 0.5rem 0.25rem 0;
+      padding: 0.35rem 0.55rem;
+      border-radius: 0.35rem;
+      background: $crud-surface-2;
+      border: 1px solid $crud-border;
+      font-size: 0.9rem;
+      color: $crud-text-muted;
     }
   }
 
   p.blob {
-    line-break: anywhere;
-  }
-  h1 {
-    text-transform: capitalize;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    font-size: 0.9rem;
+    color: $crud-text-muted;
+    background: color-mix(in srgb, $crud-surface-2 80%, transparent);
+    padding: 0.75rem 1rem;
+    border-radius: 0.4rem;
+    border: 1px solid $crud-border;
   }
 
   table {
     width: 100%;
-    border-collapse: collapse;
-    margin: 15px 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 1rem 0;
+    border: 1px solid $crud-border;
+    border-radius: $crud-radius;
+    overflow: hidden;
+    background: $crud-surface;
+
     th {
       text-align: left;
-      padding-right: 10px;
+      padding: 0.55rem 0.75rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: $crud-text;
+      background: $crud-surface-2;
+      border-bottom: 1px solid $crud-border-strong;
     }
 
-    td:first-child {
-      font-weight: bold;
-    }
     td {
       text-align: left;
-      padding: 0.2em 0.5em;
-      border: 1px solid #e0def4;
-      input {
-        width: 100%;
+      padding: 0.45rem 0.75rem;
+      border-bottom: 1px solid $crud-border;
+      vertical-align: middle;
+
+      &:first-child {
+        font-weight: 600;
       }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 0.35rem;
+        border: 1px solid $crud-border-strong;
+        padding: 0.35rem 0.5rem;
+        font: inherit;
+        color: $crud-text;
+        background: #fff;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+        &:focus-visible {
+          outline: none;
+          border-color: $crud-accent;
+          box-shadow: 0 0 0 3px $crud-accent-soft;
+        }
+      }
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover td {
+      background: $crud-accent-soft;
     }
   }
 
   div.login {
-    width: 50%;
-    margin: auto;
+    width: min(100%, 26rem);
+    margin: 2rem auto;
+    padding: 1.5rem 1.75rem;
+    background: color-mix(in srgb, $crud-surface 88%, #fff);
+    border: 1px solid $crud-border;
+    border-radius: $crud-radius;
+    box-shadow: 0 2px 12px color-mix(in srgb, $crud-text 6%, transparent);
 
     form {
       display: flex;
       flex-flow: column;
-      margin: auto;
+      gap: 0.75rem;
+      margin: 0;
 
       sub {
         vertical-align: sub;
@@ -86,8 +188,13 @@ div.default-crud-styles {
 }
 
 p.error {
-  color: red;
+  color: $crud-danger;
+  font-weight: 600;
+  margin: 0.5rem 0;
 }
+
 label {
   text-transform: capitalize;
+  font-weight: 500;
+  color: $crud-text-muted;
 }

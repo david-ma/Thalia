@@ -1,14 +1,49 @@
-<div class="login">
-  <h2 class="h4 mb-1">First-time setup</h2>
+<div class="login mx-auto" style="max-width:28rem;">
+  <h2 class="h4 mb-1">Welcome — first administrator</h2>
   {{#if error}}
-    <p class="error" role="alert">{{error}}</p>
+    <p class="alert alert-{{#if setupClosed}}secondary{{else}}danger{{/if}}" role="alert">{{error}}</p>
   {{/if}}
-  <p class="text-muted small mb-3">
-    No administrator exists yet. Create the first account — on this demo site, the first registration is assigned the
-    <strong>admin</strong> role.
-  </p>
-  <p class="mb-0">
-    <a class="btn btn-primary w-100" href="/newUser">Create administrator</a>
-  </p>
-  <p class="small mt-3 mb-0"><a href="/logon">Already registered? Log in</a></p>
+
+  {{#if setupClosed}}
+    <p class="mb-3"><a class="btn btn-outline-primary w-100" href="/logon">Go to sign in</a></p>
+  {{else}}
+
+    {{#unless error}}
+      <p class="text-muted small mb-3">
+        No <strong>admin</strong> user exists in the database yet. Create the bootstrap account once, then sign in.
+        Afterwards, <code>/setup</code> closes automatically.
+      </p>
+    {{/unless}}
+
+    <form method="post" action="/setup" class="d-grid gap-2">
+      <div>
+        <label class="form-label" for="setup-name">Name</label>
+        <input id="setup-name" class="form-control" name="Name" type="text" autocomplete="name" required />
+      </div>
+      <div>
+        <label class="form-label" for="setup-email">Email</label>
+        <input id="setup-email" class="form-control" name="Email" type="email" autocomplete="username" required />
+      </div>
+      <div>
+        <label class="form-label" for="setup-password">Password</label>
+        <input id="setup-password" class="form-control" name="Password" type="password" autocomplete="new-password"
+          minlength="8" required />
+        <span class="form-text">At least 8 characters.</span>
+      </div>
+      <div>
+        <label class="form-label" for="setup-confirm">Confirm password</label>
+        <input id="setup-confirm" class="form-control" name="ConfirmPassword" type="password"
+          autocomplete="new-password" minlength="8" required />
+      </div>
+      <button type="submit" class="btn btn-primary mt-2">Create administrator</button>
+    </form>
+
+    <p class="small mt-3 mb-0"><a href="/logon">Already have an account? Log in</a></p>
+
+    {{#unless error}}
+      <p class="small text-muted mt-3 mb-0">
+        Open sign-up pages can stay on <strong>/newUser</strong> — disable them with <code class="small">disableSelfRegistration: true</code> on <code class="small">new ThaliaSecurity({ ... })</code>.
+      </p>
+    {{/unless}}
+  {{/if}}
 </div>

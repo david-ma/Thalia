@@ -406,8 +406,9 @@ describe('Request-handler: handler chain fallback (example-src)', () => {
  * Requires database (and optionally config/mailAuth.js) to be configured so the site and
  * route guard can start. If the server fails to start, these tests are skipped.
  *
- * Plan (see websites/example-auth/README.md): guest gets 401 for /, /profile/:id, /admin;
- * /fruit is guest read; profile viewable by logged-in user, editable only by owner or admin.
+ * Plan (see websites/example-auth/README.md): guest gets 401 for /profile, /admin, /users, /sessions,
+ * /audits, and destructive /fruit actions; /fruit list is guest-readable. Logged-in user reads /users
+ * but not /sessions; profile viewable when signed in, editable only by owner or admin.
  */
 const SKIP_EXAMPLE_AUTH_ENV = 'SKIP_EXAMPLE_AUTH_TESTS'
 const describeExampleAuth = process.env[SKIP_EXAMPLE_AUTH_ENV] === '1' ? describe.skip : describe
@@ -503,7 +504,7 @@ describeExampleAuth('Request-handler: example-auth guest (no session)', () => {
     if (serverStarted) await stopTestServer(PROJECT)
   })
 
-  test('guest GET / returns 401 (login required)', async () => {
+  test('guest GET /profile returns 401 (login required)', async () => {
     if (!serverStarted) return
     const response = await fetchFromServer('/profile', port)
     expect(response.status).toBe(401)
@@ -524,6 +525,30 @@ describeExampleAuth('Request-handler: example-auth guest (no session)', () => {
   test('guest GET /admin returns 401', async () => {
     if (!serverStarted) return
     const response = await fetchFromServer('/admin', port)
+    expect(response.status).toBe(401)
+  })
+
+  test('guest GET /users/list returns 401 (User CRUD requires sign-in)', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/users/list', port)
+    expect(response.status).toBe(401)
+  })
+
+  test('guest GET /sessions/list returns 401 (sessions guarded)', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/sessions/list', port)
+    expect(response.status).toBe(401)
+  })
+
+  test('guest GET /audits/list returns 401 (audits guarded)', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/audits/list', port)
+    expect(response.status).toBe(401)
+  })
+
+  test('guest GET /fruit/new returns 401 (guest may read /fruit only, not create)', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/fruit/new', port)
     expect(response.status).toBe(401)
   })
 
@@ -842,6 +867,32 @@ describeExampleAuth('Request-handler: example-auth authenticated (user / admin)'
     expect(html).toMatch(/<title>\s*List\s+fruit\s*<\/title>/i)
   })
 
+  test('logged-in user GET /users/list returns 200 (default /users rule: user may read)', async () => {
+    if (!serverStarted || !userCookie) return
+    const response = await fetchWithCookie('/users/list', userCookie)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toMatch(/user|myTable|DataTable|list|columns/i)
+  })
+
+  test('logged-in user GET /sessions/list returns 403 (sessions CRUD admin-only)', async () => {
+    if (!serverStarted || !userCookie) return
+    const response = await fetchWithCookie('/sessions/list', userCookie)
+    expect(response.status).toBe(403)
+  })
+
+  test('logged-in user GET /fruit/new returns 403 (fruit: user role is read-only)', async () => {
+    if (!serverStarted || !userCookie) return
+    const response = await fetchWithCookie('/fruit/new', userCookie)
+    expect(response.status).toBe(403)
+  })
+
+  test('admin GET /sessions/list returns 200', async () => {
+    if (!serverStarted || !adminCookie) return
+    const response = await fetchWithCookie('/sessions/list', adminCookie)
+    expect(response.status).toBe(200)
+  })
+
   test('admin GET /admin returns 200', async () => {
     if (!serverStarted || !adminCookie) return
     const response = await fetchWithCookie('/admin', adminCookie)
@@ -858,9 +909,9 @@ describeExampleAuth('Request-handler: example-auth authenticated (user / admin)'
     expect([200, 404]).toContain(response.status)
   })
 
-  test('auth flow: GET /logout returns 302 and clears session cookie', async () => {
+  test('auth flow: GET /logoff returns 302 and clears session cookie', async () => {
     if (!serverStarted || !userCookie) return
-    const response = await fetchWithCookie('/logout', userCookie, { redirect: 'manual' })
+    const response = await fetchWithCookie('/logoff', userCookie, { redirect: 'manual' })
     expect(response.status).toBe(302)
     expect(response.headers.get('location')).toMatch(/\/$/)
     const h = response.headers as Headers & { getSetCookie?: () => string[] }
@@ -869,7 +920,7 @@ describeExampleAuth('Request-handler: example-auth authenticated (user / admin)'
     expect(setCookieBlob).toMatch(/sessionId=;|Expires=Thu, 01 Jan 1970/)
   })
 
-  test('auth flow: after logout, request without cookie gets 401 for protected path', async () => {
+  test('auth flow: after logoff, request without cookie gets 401 for protected path', async () => {
     if (!serverStarted) return
     const response = await fetchFromServer('/profile', port)
     expect(response.status).toBe(401)

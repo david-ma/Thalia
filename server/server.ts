@@ -215,9 +215,20 @@ export class Server extends EventEmitter {
         }
       }
       this.httpSockets.clear()
-      
+
+      // Bun/Node: close every active connection so httpServer.close() resolves promptly in tests.
+      httpServer.closeIdleConnections?.()
+      httpServer.closeAllConnections?.()
+
       httpServer.close((err) => {
+        // Bun/Node: close() may error if the listener is already closed; shutdown should remain idempotent.
         if (err) {
+          const msg = err instanceof Error ? err.message : String(err)
+          if (/not\s+running|already\s+closed|Server\s+is\s+not\s+running/i.test(msg)) {
+            this.emit('stopped')
+            resolve()
+            return
+          }
           reject(err)
           return
         }

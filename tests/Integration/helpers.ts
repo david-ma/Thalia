@@ -97,9 +97,12 @@ export async function stopTestServer(project: string, opts?: Pick<StartTestServe
     try {
       await Promise.race([stopPromise, timeout])
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      const isTimeout = msg.includes('exceeded')
       console.warn(
-        `[stopTestServer] ${project} teardown did not finish in ${STOP_TEST_SERVER_MS}ms; continuing. ` +
-          (err instanceof Error ? err.message : String(err)),
+        isTimeout
+          ? `[stopTestServer] ${project} teardown timed out after ${STOP_TEST_SERVER_MS}ms; continuing. ${msg}`
+          : `[stopTestServer] ${project} teardown failed; continuing. ${msg}`,
       )
     }
     testServers.delete(cacheKey)

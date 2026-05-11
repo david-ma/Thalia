@@ -5,7 +5,7 @@ import { Website } from './website'
 import formidable from 'formidable'
 import { RequestInfo } from './server'
 import { RequestHandler } from './request-handler'
-import { eq } from 'drizzle-orm'
+import { and, eq, gt, or, isNull } from 'drizzle-orm'
 
 /**
  * True when `fullpath` is exactly this route key, or when it continues with another path segment
@@ -37,10 +37,12 @@ const ALWAYS_ALLOW_PATHS: string[] = [
   // Security routes
   '/logon',
   '/logout',
-  '/newUser',        // view       Disable by creating a blank "newUser.hbs" partial
-  '/createNewUser',  // controller
-  '/forgotPassword', // view       Disable by creating a blank "forgotPassword.hbs" partial
+  '/logoff',
+  '/newUser',        // view — omitted from this list when `thaliaAuth.disableSelfRegistration`
+  '/createNewUser',  // controller — omitted when `thaliaAuth.disableSelfRegistration`
+  '/forgotPassword', // view
   '/resetPassword',  // controller
+  '/setup', // first bootstrap (GET/POST until an admin exists)
 
   // static asset prefixes
   '/css',
@@ -69,7 +71,7 @@ function normalizeRoutePath(p: string | undefined | null): string {
  * If the cookie is present, the request is allowed to proceed.
  * If there is no cookie or the cookie is incorrect, the request is redirected to the login page.
  *
- * Routeguard also provides a logout
+ * Routeguard also provides a logoff
  *
  * RouteGuard currently takes in a very simple password.
  * We want to enable slightly more complex authentication methods.
@@ -149,7 +151,7 @@ export class BasicRouteGuard extends RouteGuard {
         const cookies = request.requestInfo.cookies
         const cookieName = `auth_${this.website.name}${routeRule.path}`
 
-        if (request.pathname.startsWith(`${routeRule.path}/logout`)) {
+        if (request.pathname.startsWith(`${routeRule.path}/logoff`)) {
           request.res.setHeader('Set-Cookie', `${cookieName}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`)
           request.res.writeHead(302, { Location: '/' })
           request.res.end()
@@ -262,11 +264,24 @@ export class BasicRouteGuard extends RouteGuard {
   private loadRoutes() {
     // These should be reachable without login even when RoleRouteGuard is enabled.
     // If they match a route but have no permissions, the RoleRouteGuard will 401.
-    const baseRoutes: RouteRule[] = ALWAYS_ALLOW_PATHS.map((p) => ({
+    const stripRegistration =
+      this.website.config.thaliaAuth?.disableSelfRegistration === true
+    const allowPaths = stripRegistration
+      ? ALWAYS_ALLOW_PATHS.filter((p) => p !== '/newUser' && p !== '/createNewUser')
+      : ALWAYS_ALLOW_PATHS
+
+    const baseRoutes: RouteRule[] = allowPaths.map((p) => ({
       path: p,
       permissions: ALWAYS_ALLOW_PERMISSIONS,
     }))
-    const routes = baseRoutes.concat(this.website.config.routes || [])
+    let siteRoutes = this.website.config.routes || []
+    if (stripRegistration) {
+      siteRoutes = siteRoutes.filter((r) => {
+        const p = normalizeRoutePath(r.path)
+        return p !== '/newUser' && p !== '/createNewUser'
+      })
+    }
+    const routes = baseRoutes.concat(siteRoutes)
     routes.forEach((route) => {
       // Ensure required fields
       route.path = normalizeRoutePath(route.path)
@@ -301,7 +316,15 @@ export class BasicRouteGuard extends RouteGuard {
     const pathname = pathnameOverride ?? requestInfo.pathname
     // console.debug('route-guard on:', pathname)
 
-    const matchingRoute = this.getMatchingRoute(requestInfo as any)
+    const ri =
+      pathnameOverride !== undefined ? { ...requestInfo, pathname: pathnameOverride ?? requestInfo.pathname } : requestInfo
+    const matchingRoute = this.getMatchingRoute({
+      website: this.website,
+      req,
+      res,
+      requestInfo: ri,
+      pathname: pathnameOverride ?? requestInfo.pathname,
+    } as unknown as RequestHandler)
     // const matchingRoute = this.getMatchingRoute(host, pathname)
 
     if (Object.keys(matchingRoute).length > 0) {
@@ -311,7 +334,7 @@ export class BasicRouteGuard extends RouteGuard {
         const cookies = requestInfo.cookies
         const cookieName = `auth_${website.name}${matchingRoute.path}`
 
-        if (pathname === `${matchingRoute.path}/logout`) {
+        if (pathname === `${matchingRoute.path}/logoff`) {
           res.setHeader('Set-Cookie', `${cookieName}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`)
           res.writeHead(302, { Location: '/' })
           res.end()
@@ -433,8 +456,10 @@ export class RoleRouteGuard extends BasicRouteGuard {
   public handleRequestChain(request: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
       const routeRule = this.getMatchingRoute(request)
-
-      // console.debug('Hnadling request chain RouteRule', routeRule)
+      // Match `BasicRouteGuard`: unknown host/path keys mean "not configured here" → pass through.
+      if (Object.keys(routeRule).length === 0) {
+        return next(request)
+      }
 
       return this.getUserAuth(request.req, request.requestInfo)
         .then((userAuth) => {
@@ -465,7 +490,7 @@ export class RoleRouteGuard extends BasicRouteGuard {
               })
 
               // console.log('Sending Login page', login_html)
-              request.res.writeHead(401, { 'Content-Type': 'text/html' })
+              request.res.writeHead(401, { 'Content-Type': 'text/html; charset=utf-8' })
               request.res.end(login_html)
               return finish('User is not logged in, so we sent the login page')
             } else {
@@ -481,81 +506,61 @@ export class RoleRouteGuard extends BasicRouteGuard {
     })
   }
 
-  private async getUserAuth(req: IncomingMessage, requestInfo: RequestInfo): Promise<UserAuth> {
-    return new Promise((resolve, reject) => {
-      const sessionId = requestInfo.cookies.sessionId
-      const drizzle = this.website.db.drizzle
-      const sessions = this.website.db.machines.sessions.table
-      const users = this.website.db.machines.users.table
-
-      if (!sessionId) {
-        resolve({
-          role: 'guest',
-        })
-      } else {
-        drizzle
-          .select()
-          .from(sessions)
-          .leftJoin(users, eq(sessions.userId, users.id))
-          .where(eq(sessions.sid, sessionId))
-          .then(([result]: any) => {
-            if (!result) {
-              return resolve({
-                role: 'guest',
-              })
-            }
-
-            resolve({
-              userId: result.users.id,
-              sessionId: result.sessions.sid,
-              name: result.users.name,
-              role: result.users.role,
-              email: result.users.email,
-              phone: result.users.phone,
-              isActive: result.users.isActive,
-              isVerified: result.users.isVerified,
-            })
-          })
-          .catch((err: unknown) => {
-            console.error('Error getting user auth', err)
-            resolve({
-              role: 'guest',
-            })
-          })
-      }
-    })
-  }
-
-  private canPerformAction(
-    userAuth: UserAuth,
-    routeRule: RoleRouteRule,
-    action: Permission,
-    resourceOwner?: string,
-  ): boolean {
-    // If no permissions are defined, allow access
-    if (!routeRule.permissions) {
-      return true
+  private getUserAuth(req: IncomingMessage, requestInfo: RequestInfo): Promise<UserAuth> {
+    const sessionId = requestInfo.cookies.sessionId
+    // Must run before touching `db` — init failures set `website.db` to null.
+    if (!this.website.db?.drizzle) {
+      return Promise.resolve({ role: 'guest' })
     }
 
-    // Check if action is allowed for user's role
-    const userPermissions = routeRule.permissions[userAuth.role] || routeRule.permissions.guest || []
-    if (!userPermissions.includes(action)) {
-      return false
+    const drizzle = this.website.db.drizzle
+    const sessionsTbl = this.website.db.machines.sessions.table
+    const users = this.website.db.machines.users.table
+
+    if (!sessionId) {
+      return Promise.resolve({ role: 'guest' })
     }
 
-    return true
-  }
+    type SessionJoinRow =
+      | {
+          sessions: { sid: string }
+          users: { id: number; name: string; email: string; role: string; locked: boolean; verified: boolean } | null
+        }
+      | undefined
 
-  private isAuthenticated(req: IncomingMessage): boolean {
-    return true
-  }
-
-  private hasRole(userAuth: any, role: string): boolean {
-    return true
-  }
-
-  private isLoggedIn(req: IncomingMessage): boolean {
-    return true
+    return drizzle
+      .select()
+      .from(sessionsTbl)
+      .leftJoin(users, eq(sessionsTbl.userId, users.id))
+      .where(
+        and(
+          eq(sessionsTbl.sid, sessionId),
+          eq(sessionsTbl.loggedOut, false),
+          or(isNull(sessionsTbl.expires), gt(sessionsTbl.expires, new Date())),
+        ),
+      )
+      .then((rows: unknown[]) => {
+        const result = rows[0] as SessionJoinRow
+        if (!result || !result.users || result.users.id == null) {
+          return { role: 'guest' as const }
+        }
+        if (result.users.locked) {
+          return { role: 'guest' as const }
+        }
+        return {
+          userId: result.users.id,
+          sessionId: result.sessions.sid,
+          name: result.users.name,
+          role: result.users.role as Role,
+          email: result.users.email,
+          locked: result.users.locked,
+          verified: result.users.verified,
+        }
+      })
+      .catch((err: unknown) => {
+        console.error('Error getting user auth', err)
+        return { role: 'guest' as const }
+      })
   }
 }
 
@@ -565,11 +570,11 @@ export class RoleRouteGuard extends BasicRouteGuard {
 
 export type UserAuth = {
   role: Role
-  userId?: string
+  userId?: number
   sessionId?: string
   name?: string
   email?: string
-  phone?: string
-  isActive?: boolean
-  isVerified?: boolean
+  /** Present when authenticated; mirrored from `users.locked`. */
+  locked?: boolean
+  verified?: boolean
 }

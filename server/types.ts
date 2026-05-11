@@ -115,6 +115,14 @@ export type SitemapUrl = {
   image?: string
 }
 
+/** Options for `ThaliaSecurity` + `RoleRouteGuard` (sessions, signup, bootstrap). */
+export type ThaliaAuthOptions = {
+  /** When true, omit `newUser` / `createNewUser` controllers and drop them from the auth allow-path list */
+  disableSelfRegistration?: boolean
+  /** Cookie + DB `sessions.expires` TTL (seconds). Default 7 days */
+  sessionMaxAgeSeconds?: number
+}
+
 export interface RawWebsiteConfig {
   domains?: string[]
   controllers?: Record<string, NestedControllerMap>
@@ -122,6 +130,8 @@ export interface RawWebsiteConfig {
   websockets?: RawWebsocketConfig
   database?: DatabaseConfig
   security?: SecurityConfig
+  /** Thalia security module settings (sessions, signup, bootstrap) */
+  thaliaAuth?: ThaliaAuthOptions
   handlebarsHelpers?: Record<string, (...args: any[]) => any>
   sitemap?: SitemapConfig
 }

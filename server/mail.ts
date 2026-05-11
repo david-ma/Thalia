@@ -29,7 +29,7 @@ export class MailService implements Machine {
   }
 
   public init(website: Website, name: string) {
-    console.log("Initialising MailService for", website.name)
+    console.log('Initialising MailService for', website.name)
     this.website = website
     this.name = name
 

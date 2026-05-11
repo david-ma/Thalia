@@ -90,8 +90,19 @@ function cookieIsSecureHttps(req: IncomingMessage, website: Website): boolean {
   return xf === 'https' || (website.env === 'production' && xf !== 'http')
 }
 
-function buildSessionCookieValue(sessionId: string, maxAgeSeconds: number, req: IncomingMessage, website: Website): string {
-  const parts = [`sessionId=${sessionId}`, 'Path=/', 'HttpOnly', 'SameSite=Strict', `Max-Age=${Math.floor(maxAgeSeconds)}`]
+function buildSessionCookieValue(
+  sessionId: string,
+  maxAgeSeconds: number,
+  req: IncomingMessage,
+  website: Website,
+): string {
+  const parts = [
+    `sessionId=${sessionId}`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Strict',
+    `Max-Age=${Math.floor(maxAgeSeconds)}`,
+  ]
   if (cookieIsSecureHttps(req, website)) parts.push('Secure')
   return parts.join('; ')
 }
@@ -229,8 +240,7 @@ export class ThaliaSecurity implements Machine {
   public defaultThaliaAuthOptions(): ThaliaAuthOptions {
     return {
       disableSelfRegistration: this.securityCtorOptions.disableSelfRegistration ?? false,
-      sessionMaxAgeSeconds:
-        this.securityCtorOptions.sessionMaxAgeSeconds ?? DEFAULT_THALIA_SESSION_MAX_AGE_SECONDS,
+      sessionMaxAgeSeconds: this.securityCtorOptions.sessionMaxAgeSeconds ?? DEFAULT_THALIA_SESSION_MAX_AGE_SECONDS,
     }
   }
 
@@ -334,7 +344,12 @@ export class ThaliaSecurity implements Machine {
   }
 
   /** Clear server session + expiry cookie (`/` path). Alias: `logoff`. */
-  private logoutController(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void {
+  private logoutController(
+    res: ServerResponse,
+    req: IncomingMessage,
+    website: Website,
+    requestInfo: RequestInfo,
+  ): void {
     const sid = requestInfo.cookies?.sessionId
     const sessionsTbl = website.db?.machines?.sessions?.table
     const finish = (): void => {
@@ -366,7 +381,11 @@ export class ThaliaSecurity implements Machine {
 
   private firstAdminExists(website: Website): Promise<boolean> {
     const usersTable = website.db.machines.users.table
-    return website.db.drizzle.select().from(usersTable).where(eq(usersTable.role, 'admin')).then((rows: User[]) => rows.length > 0)
+    return website.db.drizzle
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.role, 'admin'))
+      .then((rows: User[]) => rows.length > 0)
   }
 
   private forgotPasswordController(
@@ -405,8 +424,7 @@ export class ThaliaSecurity implements Machine {
               const token = crypto.randomBytes(32).toString('hex')
               const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
               const protocol =
-                (req.headers['x-forwarded-proto'] as string) ||
-                (website.env === 'production' ? 'https' : 'http')
+                (req.headers['x-forwarded-proto'] as string) || (website.env === 'production' ? 'https' : 'http')
               const resetUrl = `${protocol}://${requestInfo.host}/resetPassword?token=${token}`
 
               return db
@@ -674,7 +692,12 @@ export class ThaliaSecurity implements Machine {
   /**
    * Additional self-service sign-up (role `user`). First `admin` must be created via `/setup` unless you seed the DB.
    */
-  private createNewUserController(res: ServerResponse, req: IncomingMessage, website: Website, _requestInfo: RequestInfo): void {
+  private createNewUserController(
+    res: ServerResponse,
+    req: IncomingMessage,
+    website: Website,
+    _requestInfo: RequestInfo,
+  ): void {
     if (req.method !== 'POST') {
       res.writeHead(302, { Location: '/newUser' })
       res.end()
@@ -695,8 +718,8 @@ export class ThaliaSecurity implements Machine {
           return undefined
         }
         return ThaliaSecurity.hashPassword(password).then((hashedPassword) =>
-          website.db!.drizzle
-            .insert(users)
+          website
+            .db!.drizzle.insert(users)
             .values({
               name,
               email,

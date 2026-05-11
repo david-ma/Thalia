@@ -131,15 +131,11 @@ export class Website {
         }
         thaliaRoot = path.dirname(thaliaRoot)
       }
-      
+
       const thaliaPackageJson = path.join(thaliaRoot, 'package.json')
       if (fs.existsSync(thaliaPackageJson)) {
-        this.version.thaliaVersion = JSON.parse(
-          fs.readFileSync(thaliaPackageJson, 'utf8'),
-        ).version
-        this.version.thaliaGitHash = execSync('git rev-parse --short HEAD', { cwd: thaliaRoot })
-          .toString()
-          .trim()
+        this.version.thaliaVersion = JSON.parse(fs.readFileSync(thaliaPackageJson, 'utf8')).version
+        this.version.thaliaGitHash = execSync('git rev-parse --short HEAD', { cwd: thaliaRoot }).toString().trim()
       }
 
       if (fs.existsSync(path.join(this.rootPath, 'package.json'))) {
@@ -150,10 +146,9 @@ export class Website {
           this.version.gitHash = execSync('git rev-parse --short HEAD', {
             cwd: this.rootPath,
           })
-          .toString()
-          .trim()
-        }
-        catch (error) {
+            .toString()
+            .trim()
+        } catch (error) {
           this.version.gitHash = 'unknown'
         }
       }

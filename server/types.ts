@@ -91,15 +91,15 @@ import { RoleRouteRule } from './security.js'
 
 /**
  * Sitemap configuration for a website.
- * 
+ *
  * A sitemap is a list of URLs that are considered public and should be indexed by search engines.
  * We can make their lives easier by providing a nicely formatted sitemap and siteindex file.
- * 
+ *
  * Thalia's generate-sitemap.ts script will crawl the website based on the index.html and generate the sitemap and siteindex files.
- * 
+ *
  * However, some pages might not be linked. So we should provide a list of URLs that should be included in the sitemap.
  * We can make categories to give it structure.
- * 
+ *
  */
 export type SitemapConfig = {
   index: string

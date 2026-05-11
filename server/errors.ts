@@ -107,4 +107,3 @@ export class FileSystemError extends ThaliaError {
     super(message, 'FILE_SYSTEM_ERROR', context)
   }
 }
-

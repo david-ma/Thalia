@@ -73,52 +73,54 @@ export const latestlogs = async (res: ServerResponse, _req: IncomingMessage, web
 }
 
 /**
-   * Redirects GET requests to the lexicographically-latest file in `data/<folder>` matching `.<type>`.
-   * Files compressed with `.gz` are matched against their uncompressed name; Thalia's static handler
-   * is expected to serve the `.gz` sibling transparently.
-   * 
-   * The default options are json and sorted by name, so you write logs to /data/<foo>/<timestamp>.json and visiting /data/<foo> will redirect to the latest log.
-   * Using 'lastModified' will sort by last modified time instead, this is slower because it has to read the file stats for each file. But useful if you don't have control over the file names.
-   *
-   * Responds 404 if the folder is missing or contains no matching file.
-   * 
-   * If the slug is "list", it will return a list of all files in the folder.
-   */
-export function latestData(folder: string, options: {
-  type?: string,
-  sort?: 'name' | 'lastModified' | 'dateCreated'
-} = {}): Controller {
+ * Redirects GET requests to the lexicographically-latest file in `data/<folder>` matching `.<type>`.
+ * Files compressed with `.gz` are matched against their uncompressed name; Thalia's static handler
+ * is expected to serve the `.gz` sibling transparently.
+ *
+ * The default options are json and sorted by name, so you write logs to /data/<foo>/<timestamp>.json and visiting /data/<foo> will redirect to the latest log.
+ * Using 'lastModified' will sort by last modified time instead, this is slower because it has to read the file stats for each file. But useful if you don't have control over the file names.
+ *
+ * Responds 404 if the folder is missing or contains no matching file.
+ *
+ * If the slug is "list", it will return a list of all files in the folder.
+ */
+export function latestData(
+  folder: string,
+  options: {
+    type?: string
+    sort?: 'name' | 'lastModified' | 'dateCreated'
+  } = {},
+): Controller {
   const { type = 'json', sort = 'name' } = options
   return (res, _req, website, requestInfo) => {
     const dir = path.join(website.rootPath, 'data', folder)
     fs.promises
       .readdir(dir, { withFileTypes: true })
       .then((entries) => {
-        const files = entries
-          .filter((e) => e.isFile())
-          .map(e => e.name)
-        
-        let sortedFiles = files.map((name) => name.replace(/\.gz$/, ''))
-          .sort()
+        const files = entries.filter((e) => e.isFile()).map((e) => e.name)
+
+        let sortedFiles = files.map((name) => name.replace(/\.gz$/, '')).sort()
 
         if (sort === 'lastModified' || sort === 'dateCreated') {
           const fileStats = files.map((name) => {
             const stats = fs.statSync(path.join(dir, name))
             return {
               name: name.replace(/\.gz$/, ''),
-              stats: stats
+              stats: stats,
             }
           })
           if (sort === 'dateCreated') {
-            sortedFiles = fileStats.sort((a, b) => a.stats.birthtime.getTime() - b.stats.birthtime.getTime()).map(e => e.name)
+            sortedFiles = fileStats
+              .sort((a, b) => a.stats.birthtime.getTime() - b.stats.birthtime.getTime())
+              .map((e) => e.name)
           } else if (sort === 'lastModified') {
-            sortedFiles = fileStats.sort((a, b) => a.stats.mtime.getTime() - b.stats.mtime.getTime()).map(e => e.name)
+            sortedFiles = fileStats.sort((a, b) => a.stats.mtime.getTime() - b.stats.mtime.getTime()).map((e) => e.name)
           }
         }
 
         const filteredFiles = sortedFiles.filter((name) => name.endsWith(`.${type}`))
 
-        if (requestInfo.slug === "list") {
+        if (requestInfo.slug === 'list') {
           res.writeHead(200, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify(filteredFiles))
           return
@@ -780,7 +782,10 @@ export class CrudFactory implements Machine {
   }
 
   private reportSuccess(res: ServerResponse, message: string, redirect: string) {
-    const html = this.website.getContentHtml('message', this.wrapperTemplate)({
+    const html = this.website.getContentHtml(
+      'message',
+      this.wrapperTemplate,
+    )({
       state: 'Success',
       message,
       redirect,
@@ -799,7 +804,10 @@ export class CrudFactory implements Machine {
 
     console.error(error)
 
-    const html = this.website.getContentHtml('message', this.wrapperTemplate)({
+    const html = this.website.getContentHtml(
+      'message',
+      this.wrapperTemplate,
+    )({
       state: 'Error',
       message: error instanceof Error ? error.message : 'Unknown error',
       redirect: `/${this.name}`,
@@ -1455,10 +1463,9 @@ export class MarkdownViewerFactory {
   }
 }
 
-
 /**
  * Why not just use getContentHtml?
- * 
+ *
  * This controller serves a hbs or md file inside of a wrapper
  * @param filename - A hbs or md file to serve
  * @param data - Data to pass to the content template

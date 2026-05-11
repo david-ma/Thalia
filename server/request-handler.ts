@@ -2,7 +2,7 @@
  * A class based interpretation of the logic from website.ts
  *
  * This class will be more easily testable, and more easily extendable.
- * 
+ *
  * Not using WHATWG URL, but consider in future.
  */
 
@@ -142,7 +142,11 @@ export class RequestHandler {
       // Use the server's configured node_env (same as RequestInfo), not process.env, so tests and
       // embedded servers can set behaviour without mutating global NODE_ENV.
       if (requestHandler.requestInfo.node_env === 'development' && folder === 'dist') {
-        if(requestHandler.pathname.endsWith('.js') || requestHandler.pathname.endsWith('.css') || requestHandler.pathname.endsWith('.html')) {
+        if (
+          requestHandler.pathname.endsWith('.js') ||
+          requestHandler.pathname.endsWith('.css') ||
+          requestHandler.pathname.endsWith('.html')
+        ) {
           console.debug('Development mode: Skipping static file', requestHandler.pathname)
           return next(requestHandler)
         }
@@ -228,13 +232,13 @@ export class RequestHandler {
    *
    * In future, we could serve anything with .hbs after it, e.g. data.json.hbs or test.js.hbs
    * But this is not required yet so we have not implemented it.
-   * 
+   *
    * Note that because we put partials under src, it is possible to visit /views/partials/input.hbs and it will be served as html.
    * This might not be desirable, but it probably isn't a security risk or problem.
    * To fix this, we could move the partials to a separate folder, and only put handlebars files that we want to be served as full views in a folder called views.
    * But this would overcomplicate the system and give the developer too many folders to manage.
    * So we will leave it as is for now.
-   * 
+   *
    * All .hbs files in the src folder can be served as html. And all .hbs files are loaded as partials.
    * The folder names are just to help with the mental model of the website.
    */
@@ -275,8 +279,7 @@ export class RequestHandler {
 
       if (target && target.endsWith('.hbs') && fs.statSync(target).isFile()) {
         const siteName = requestHandler.website.name
-        const title =
-          path.basename(target) === 'index.hbs' ? `${siteName} – Home` : siteName
+        const title = path.basename(target) === 'index.hbs' ? `${siteName} – Home` : siteName
         requestHandler.website
           .asyncServeHandlebarsTemplate({
             res: requestHandler.res,
@@ -317,7 +320,15 @@ export class RequestHandler {
     })
   }
 
-  private static resolveFolderIndexData(rh: RequestHandler): { pathname: string; basePath: string; entries: { name: string; isDirectory: boolean }[]; parentPath: string; title: string } | null {
+  private static resolveFolderIndexData(
+    rh: RequestHandler,
+  ): {
+    pathname: string
+    basePath: string
+    entries: { name: string; isDirectory: boolean }[]
+    parentPath: string
+    title: string
+  } | null {
     const dirPath = path.join(rh.rootPath, 'src', RequestHandler.decodePathnameForFilesystemLookup(rh.pathname) ?? '')
     if (!fs.existsSync(dirPath) || !fs.statSync(dirPath).isDirectory()) return null
     let names: string[]
@@ -330,7 +341,13 @@ export class RequestHandler {
     const basePath = pathname ? pathname + '/' : ''
     const entries = names
       .map((name) => ({ name, isDirectory: fs.statSync(path.join(dirPath, name)).isDirectory() }))
-      .sort((a, b) => (a.isDirectory !== b.isDirectory ? (a.isDirectory ? -1 : 1) : a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })))
+      .sort((a, b) =>
+        a.isDirectory !== b.isDirectory
+          ? a.isDirectory
+            ? -1
+            : 1
+          : a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+      )
 
     // Very unix centric. Might have unexpected behaviour on Windows.
     const parentPath = pathname.includes('/') ? pathname.replace(/\/[^/]*$/, '') : ''
@@ -361,11 +378,13 @@ export class RequestHandler {
           try {
             html = RequestHandler.renderMarkdownWrapper(requestHandler, contentHtml, mermaidSources)
           } catch (error) {
-            console.debug("Error rendering markdown: ", error)
-            console.debug("Replacing {{ and }} with &#123;&#123; and &#125;&#125;")
-            html = RequestHandler.renderMarkdownWrapper(requestHandler,
-              contentHtml.replace(/{{/g, '&#123;&#123;').replace(/}}/g, '&#125;&#125;'), 
-              mermaidSources)
+            console.debug('Error rendering markdown: ', error)
+            console.debug('Replacing {{ and }} with &#123;&#123; and &#125;&#125;')
+            html = RequestHandler.renderMarkdownWrapper(
+              requestHandler,
+              contentHtml.replace(/{{/g, '&#123;&#123;').replace(/}}/g, '&#125;&#125;'),
+              mermaidSources,
+            )
           }
           requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
           requestHandler.res.end(html)
@@ -406,10 +425,7 @@ export class RequestHandler {
   private static resolveMarkdownPath(rh: RequestHandler): string | null {
     const p = RequestHandler.decodePathnameForFilesystemLookup(rh.pathname)
     if (p === null) return null
-    const mdCandidates = [
-      path.join(p, 'index.md'),
-      p.endsWith('.md') ? p : p + '.md',
-    ]
+    const mdCandidates = [path.join(p, 'index.md'), p.endsWith('.md') ? p : p + '.md']
     if (p === 'index.html') {
       mdCandidates.push('index.md')
     }
@@ -455,20 +471,23 @@ export class RequestHandler {
         Bun.build({
           entrypoints: [tsPath],
           target: 'browser',
-          outdir: requestHandler.projectDistPath // Perhaps we should write to /tmp instead
-        }).then((result) => {
-          const jsPath = result.outputs[0].path
-          return Bun.file(jsPath).text()
-        }).then((jsText) => {
-          requestHandler.res.writeHead(200, { 'Content-Type': 'text/javascript' })
-          requestHandler.res.end(jsText)
-          return finish(`Successfully compiled typescript file ${requestHandler.pathname}`)
-        }).catch((error) => {
-          // Fall back to next handler so pre-built assets (e.g. public/js/*.js)
-          // can be served when Bun.build fails (e.g. three/examples/jsm).
-          console.error('TypeScript compile failed, falling back:', requestHandler.pathname, error)
-          return next(requestHandler)
+          outdir: requestHandler.projectDistPath, // Perhaps we should write to /tmp instead
         })
+          .then((result) => {
+            const jsPath = result.outputs[0].path
+            return Bun.file(jsPath).text()
+          })
+          .then((jsText) => {
+            requestHandler.res.writeHead(200, { 'Content-Type': 'text/javascript' })
+            requestHandler.res.end(jsText)
+            return finish(`Successfully compiled typescript file ${requestHandler.pathname}`)
+          })
+          .catch((error) => {
+            // Fall back to next handler so pre-built assets (e.g. public/js/*.js)
+            // can be served when Bun.build fails (e.g. three/examples/jsm).
+            console.error('TypeScript compile failed, falling back:', requestHandler.pathname, error)
+            return next(requestHandler)
+          })
       } else {
         return next(requestHandler)
       }
@@ -538,7 +557,7 @@ export class RequestHandler {
     })
   }
 
-   // This checks if the path contains a .. segment, and if so, it returns a 400 Bad Request.
+  // This checks if the path contains a .. segment, and if so, it returns a 400 Bad Request.
   private static checkPathExploit(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
       const parts = requestHandler.pathname.split('/')

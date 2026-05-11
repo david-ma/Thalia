@@ -21,7 +21,6 @@ export async function asyncForEach(
   return 1
 }
 
-
 /**
  * Class-based async work queue with limited concurrency.
  *
@@ -33,24 +32,23 @@ export async function asyncForEach(
  *   - `onError(fn)`: called when a job rejects/throws.
  */
 export class AsyncWorkQueue<T> {
-  private queue: { id: number, job: () => Promise<T>, resolve: (result: T) => void, reject: (error: unknown) => void }[] = []
+  private queue: {
+    id: number
+    job: () => Promise<T>
+    resolve: (result: T) => void
+    reject: (error: unknown) => void
+  }[] = []
   private workers: (Promise<T> | null)[] = []
 
   private listeners: {
     idle: Set<() => void>
     error: Set<(error: unknown) => void>
   } = {
-      idle: new Set(),
-      error: new Set(),
-    }
+    idle: new Set(),
+    error: new Set(),
+  }
 
-  constructor({
-    jobs,
-    numberOfWorkers
-  }: {
-    jobs: (() => Promise<T>)[],
-    numberOfWorkers: number
-  }) {
+  constructor({ jobs, numberOfWorkers }: { jobs: (() => Promise<T>)[]; numberOfWorkers: number }) {
     for (let i = 0; i < (numberOfWorkers ?? 10); i++) {
       this.workers[i] = null
     }
@@ -118,7 +116,6 @@ export class AsyncWorkQueue<T> {
     } else {
       this.queue.push(next)
     }
-
   }
 
   private hasAvailableWorker() {
@@ -161,7 +158,6 @@ export function spinner(string: string = 'Loading...') {
     clearInterval(spinnerInterval)
   }
 }
-
 
 // Export the models utils?
 export * from '../models/util'

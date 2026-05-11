@@ -26,12 +26,12 @@ export class Thalia {
       const websites = await Website.loadAllWebsites(options)
       // Filter out any websites that failed to load
       const validWebsites = websites.filter((website) => website !== null && website !== undefined)
-      
+
       if (validWebsites.length === 0) {
         console.error('Error loading websites: No valid websites found')
         process.exit(1)
       }
-      
+
       return new Thalia(options, validWebsites)
     } catch (error) {
       console.error('Error loading websites:', error)

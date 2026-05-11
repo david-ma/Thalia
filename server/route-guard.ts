@@ -38,10 +38,10 @@ const ALWAYS_ALLOW_PATHS: string[] = [
   '/logon',
   '/logout',
   '/logoff',
-  '/newUser',        // view — omitted from this list when `thaliaAuth.disableSelfRegistration`
-  '/createNewUser',  // controller — omitted when `thaliaAuth.disableSelfRegistration`
+  '/newUser', // view — omitted from this list when `thaliaAuth.disableSelfRegistration`
+  '/createNewUser', // controller — omitted when `thaliaAuth.disableSelfRegistration`
   '/forgotPassword', // view
-  '/resetPassword',  // controller
+  '/resetPassword', // controller
   '/setup', // first bootstrap (GET/POST until an admin exists)
 
   // static asset prefixes
@@ -128,11 +128,11 @@ export class BasicRouteGuard extends RouteGuard {
     const rule = best?.[1] ?? {}
     if (Object.keys(rule).length === 0) {
       console.debug(
-        `[route-guard] No matching route: host=${JSON.stringify(host)} pathname=${JSON.stringify(pathname)} fullpath=${JSON.stringify(fullpath)}`
+        `[route-guard] No matching route: host=${JSON.stringify(host)} pathname=${JSON.stringify(pathname)} fullpath=${JSON.stringify(fullpath)}`,
       )
     } else {
       console.debug(
-        `[route-guard] Matched route: fullpath=${JSON.stringify(fullpath)} -> path=${(rule as RouteRule).path}`
+        `[route-guard] Matched route: fullpath=${JSON.stringify(fullpath)} -> path=${(rule as RouteRule).path}`,
       )
     }
     return rule
@@ -264,8 +264,7 @@ export class BasicRouteGuard extends RouteGuard {
   private loadRoutes() {
     // These should be reachable without login even when RoleRouteGuard is enabled.
     // If they match a route but have no permissions, the RoleRouteGuard will 401.
-    const stripRegistration =
-      this.website.config.thaliaAuth?.disableSelfRegistration === true
+    const stripRegistration = this.website.config.thaliaAuth?.disableSelfRegistration === true
     const allowPaths = stripRegistration
       ? ALWAYS_ALLOW_PATHS.filter((p) => p !== '/newUser' && p !== '/createNewUser')
       : ALWAYS_ALLOW_PATHS
@@ -317,7 +316,9 @@ export class BasicRouteGuard extends RouteGuard {
     // console.debug('route-guard on:', pathname)
 
     const ri =
-      pathnameOverride !== undefined ? { ...requestInfo, pathname: pathnameOverride ?? requestInfo.pathname } : requestInfo
+      pathnameOverride !== undefined
+        ? { ...requestInfo, pathname: pathnameOverride ?? requestInfo.pathname }
+        : requestInfo
     const matchingRoute = this.getMatchingRoute({
       website: this.website,
       req,
@@ -478,7 +479,7 @@ export class RoleRouteGuard extends BasicRouteGuard {
           } else {
             if (request.requestInfo.userAuth?.role === 'guest') {
               console.debug(
-                `[route-guard] 401 guest: host=${JSON.stringify(request.requestInfo.host)} pathname=${JSON.stringify(request.pathname)} action=${action} permissions=${JSON.stringify(request.requestInfo.permissions)} (no matching route or route has no guest permission for this action)`
+                `[route-guard] 401 guest: host=${JSON.stringify(request.requestInfo.host)} pathname=${JSON.stringify(request.pathname)} action=${action} permissions=${JSON.stringify(request.requestInfo.permissions)} (no matching route or route has no guest permission for this action)`,
               )
               // // please log in
               // const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
@@ -495,7 +496,7 @@ export class RoleRouteGuard extends BasicRouteGuard {
               return finish('User is not logged in, so we sent the login page')
             } else {
               console.debug(
-                `[route-guard] 403: host=${JSON.stringify(request.requestInfo.host)} pathname=${JSON.stringify(request.pathname)} role=${request.requestInfo.userAuth?.role} action=${action}`
+                `[route-guard] 403: host=${JSON.stringify(request.requestInfo.host)} pathname=${JSON.stringify(request.pathname)} role=${request.requestInfo.userAuth?.role} action=${action}`,
               )
               request.res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' })
               request.res.end('Access denied')

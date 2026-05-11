@@ -201,7 +201,7 @@ export class Server extends EventEmitter {
           /* ignore */
         }
       }
-      
+
       const httpServer = this.httpServer
       this.socketServer = {} as SocketServer
       this.httpServer = {} as HttpServer

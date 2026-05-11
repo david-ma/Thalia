@@ -16,7 +16,31 @@ export function routeFullpathMatchesMappedKey(fullpath: string, routeKey: string
   return fullpath === routeKey || fullpath.startsWith(`${routeKey}/`)
 }
 
-const ALWAYS_ALLOW_PATHS: string[] = ['/robots.txt', '/favicon.ico']
+/**
+ * Paths that should be reachable without authentication, even when RoleRouteGuard is enabled.
+ *
+ * Route-guard runs before static-file serving, so pages like /logon must be able to load assets.
+ * Prefix entries (e.g. "/css") match "/css/..." due to `routeFullpathMatchesMappedKey`.
+ */
+const ALWAYS_ALLOW_PATHS: string[] = [
+  // robots + icons
+  '/robots.txt',
+  '/favicon.ico',
+  '/apple-touch-icon.png',
+  '/apple-touch-icon-precomposed.png',
+
+  // common manifests / sitemaps
+  '/sitemap.xml',
+  '/manifest.json',
+  '/site.webmanifest',
+
+  // static asset prefixes
+  '/css',
+  '/js',
+  '/images',
+  '/img',
+  '/fonts',
+]
 const ALWAYS_ALLOW_PERMISSIONS: Record<Role, Permission[]> = {
   guest: ['read'],
   user: ['read'],

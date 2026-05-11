@@ -4,7 +4,7 @@
  * `src/views/level2-home.hbs` is served as `/views/level2-home` (no dist/public collision).
  *
  * `/index.html` behaviour depends on **ServerOptions.node_env** (also RequestInfo.node_env):
- * - `development`: `dist/*.html` is skipped so static HTML can fall through to Handlebars or `public/`.
+ * - `development`: `dist/*.html` is skipped so requests can reach Handlebars (`src/index.hbs` when present) or `public/`.
  * - anything else (e.g. `test`, `production`): `dist/index.html` is served when present.
  *
  * The dist skip uses `requestInfo.node_env`, not `process.env.NODE_ENV`, so tests stay deterministic.
@@ -52,11 +52,14 @@ describe('Level 2: Handlebars (node_env=development)', () => {
     await expectLevel2HomePage(port)
   })
 
-  test('/index.html: dist HTML skipped, then public/index.html when no src/index.hbs', async () => {
+  test('/index.html: dist HTML skipped in dev; Handlebars renders src/index.hbs before public/', async () => {
     const response = await fetchFromServer('/index.html', port)
     expect(response.status).toBe(200)
     const html = await response.text()
-    expect(html).toContain('public/index.html')
+    expect(html).toContain('<title>example-src – Home</title>')
+    expect(html).not.toContain(
+      'this should be overridden by the dist/index.html and src/index.hbs',
+    )
   })
 })
 

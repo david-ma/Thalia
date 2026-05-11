@@ -97,7 +97,7 @@
     "marked": "^16.0.0",
     "marked-highlight": "^2.2.3",
     "mysql2": "^3.14.1",
-    "nodemailer": "^7.0.3",
+    "nodemailer": "^8.0.7",
     "sass": "1.77.6",
     "socket.io": "^4.8.1"
   },

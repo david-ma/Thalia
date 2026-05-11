@@ -71,7 +71,7 @@
     "start": "bun server/cli.ts",
     "pm2:start": "pm2 startOrReload pm2.config.json",
     "pm2:stop": "pm2 delete pm2.config.json",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bunx -p typescript@5.8.3 tsc --noEmit",
     "dev": "bun bin/develop.ts",
     "build:scss": "bun bin/build-scss.ts",
     "sitemap": "bun bin/sitemap.ts",
@@ -99,13 +99,10 @@
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
-    "@types/bun": "latest",
     "@types/formidable": "^3.4.5",
-    "@types/node": "^20.19.1",
     "@types/nodemailer": "^6.4.17",
     "browser-sync": "^3.0.4",
-    "prettier": "^3.6.2",
-    "typescript": "^5.8.3"
+    "prettier": "^3.6.2"
   },
   "engines": {
     "bun": ">=1.0.0"

@@ -7,6 +7,9 @@ import * as cheerio from "cheerio";
 
 export const MAX_REDIRECTS = 20;
 
+/** Minimal fetch shape for smoke tests (avoids Bun’s `typeof fetch` extras such as `preconnect`). */
+export type SmokeFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+
 /** If sitemap lives at `.../websites/<project>/public/sitemap.xml`, default report path under that project. */
 export function defaultReportTxtPathForSitemap(sitemapPath: string): string | null {
   const resolved = path.resolve(sitemapPath);
@@ -54,9 +57,16 @@ export function targetPageUrl(targetBase: string, loc: string): string {
   return `${base}${pathname.startsWith("/") ? pathname : `/${pathname}`}`;
 }
 
-export function looksLikeHtml(buf: ArrayBuffer, contentType: string | null): boolean {
+export function looksLikeHtml(buf: ArrayBuffer | ArrayBufferView, contentType: string | null): boolean {
   if (contentType?.toLowerCase().includes("text/html")) return true;
-  const head = new TextDecoder().decode(buf.byteLength > 512 ? buf.slice(0, 512) : buf);
+  const u8 =
+    buf instanceof ArrayBuffer
+      ? new Uint8Array(buf)
+      : buf instanceof Uint8Array
+        ? buf
+        : new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+  const headBytes = u8.byteLength > 512 ? u8.subarray(0, 512) : u8;
+  const head = new TextDecoder().decode(headBytes);
   return /^\s*</.test(head);
 }
 
@@ -114,7 +124,7 @@ export async function fetchWithRedirectLog(
   url: string,
   logInfo: (line: string) => void,
   init: RequestInit | undefined,
-  fetchImpl: typeof fetch,
+  fetchImpl: SmokeFetch,
 ): Promise<{ response: Response; finalUrl: string }> {
   let current = url;
   for (let i = 0; i < MAX_REDIRECTS; i++) {
@@ -142,14 +152,14 @@ export interface RunSmokeOptions {
   targetBase: string;
   locs: string[];
   logInfo: (line: string) => void;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: SmokeFetch;
 }
 
 /**
  * For each sitemap loc, GET the target page (with redirect logging), then GET each same-origin asset discovered in HTML.
  */
 export async function runSmoke(options: RunSmokeOptions): Promise<SmokeResult> {
-  const fetchImpl = options.fetchImpl ?? fetch;
+  const fetchImpl: SmokeFetch = options.fetchImpl ?? ((input, init) => fetch(input, init));
   const baseOrigin = new URL(options.targetBase).origin;
   const failures: SmokeFailure[] = [];
   /** Asset URL -> set of page URLs (final URL after redirects) whose HTML referenced that asset. */

@@ -7,6 +7,7 @@ import {
   fetchWithRedirectLog,
   looksLikeHtml,
   runSmoke,
+  type SmokeFetch,
   targetPageUrl,
 } from "../../scripts/smoke-sitemap-lib.js";
 
@@ -46,7 +47,7 @@ describe("looksLikeHtml", () => {
   });
   test("detects leading tag", () => {
     const enc = new TextEncoder().encode("  \n<html>");
-    expect(looksLikeHtml(enc.buffer, null)).toBe(true);
+    expect(looksLikeHtml(enc, null)).toBe(true);
   });
 });
 
@@ -81,7 +82,7 @@ describe("collectSameOriginAssetUrls", () => {
 describe("fetchWithRedirectLog", () => {
   test("logs redirect and returns final 200 response", async () => {
     const logs: string[] = [];
-    const mockFetch: typeof fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const mockFetch: SmokeFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const u = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       if (u === "http://localhost:1337/old") {
         return new Response(null, {
@@ -111,7 +112,7 @@ describe("fetchWithRedirectLog", () => {
 
 describe("runSmoke", () => {
   test("reports page failure on 404", async () => {
-    const mockFetch: typeof fetch = async (input: RequestInfo | URL) => {
+    const mockFetch: SmokeFetch = async (input: RequestInfo | URL) => {
       const u = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       if (u.includes("/missing")) {
         return new Response("no", { status: 404 });
@@ -130,7 +131,7 @@ describe("runSmoke", () => {
   });
 
   test("discovers and checks same-origin asset", async () => {
-    const mockFetch: typeof fetch = async (input: RequestInfo | URL) => {
+    const mockFetch: SmokeFetch = async (input: RequestInfo | URL) => {
       const u = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       if (u.endsWith("/page") || u.includes("/page")) {
         return new Response(
@@ -158,7 +159,7 @@ describe("runSmoke", () => {
   });
 
   test("asset failure includes referencedFrom (source pages)", async () => {
-    const mockFetch: typeof fetch = async (input: RequestInfo | URL) => {
+    const mockFetch: SmokeFetch = async (input: RequestInfo | URL) => {
       const u = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       if (u === "http://localhost:1337/foo" || u.endsWith("/foo")) {
         return new Response('<html><img src="/missing.png" /></html>', {

@@ -11,7 +11,7 @@ export const config: RawWebsiteConfig = {
     fruit: (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: any) => {
       const shortname = requestInfo.action;
       if (!shortname) {
-          res.statusCode = 301;
+          res.statusCode = 302;
           res.setHeader('Location', '/');
           res.end();
           return;

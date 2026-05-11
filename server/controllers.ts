@@ -224,6 +224,91 @@ type CrudOptions = {
   relationships?: CrudRelationship[]
 }
 
+/** DataTables paging defaults for CrudFactory `GET …/json`. */
+export const CRUD_DATATABLES_DEFAULT_DRAW = '1'
+export const CRUD_DATATABLES_DEFAULT_START = 0
+export const CRUD_DATATABLES_DEFAULT_LENGTH = 10
+/** Upper bound on `length` to limit accidental large scans. */
+export const CRUD_DATATABLES_MAX_LENGTH = 500
+
+/** First scalar from a query-string value (`node` may use `string[]` for repeats). */
+export function crudFirstQueryValue(raw: string | string[] | undefined): string | undefined {
+  if (raw === undefined) return undefined
+  const v = Array.isArray(raw) ? raw[0] : raw
+  return v
+}
+
+export type CrudParsedDataTablesSearch = {
+  value: string | undefined
+  regex: boolean
+}
+
+export type CrudParsedDataTablesQuery = {
+  draw: string | undefined
+  start: string | undefined
+  length: string | undefined
+  order: Record<string, Record<string, string>>
+  search: CrudParsedDataTablesSearch
+}
+
+/** Parse DataTables.ajax query parameters into a structured object (CrudFactory `json`). */
+export function parseCrudDataTablesQuery(queryString: ParsedUrlQuery): CrudParsedDataTablesQuery {
+  const result: CrudParsedDataTablesQuery = {
+    draw: crudFirstQueryValue(queryString.draw),
+    start: crudFirstQueryValue(queryString.start),
+    length: crudFirstQueryValue(queryString.length),
+    order: {},
+    search: {
+      value: crudFirstQueryValue(queryString['search[value]']),
+      regex: crudFirstQueryValue(queryString['search[regex]']) === 'true',
+    },
+  }
+
+  Object.entries(queryString)
+    .filter(([key]) => key.startsWith('order'))
+    .forEach(([key, value]) => {
+      const regex = /order\[(\d+)\]\[(.*)\]/
+      const match = key.match(regex)
+      if (!match) return
+      const index = match[1]
+      const column = match[2]
+      const scalar = crudFirstQueryValue(value as string | string[])
+      if (scalar === undefined) return
+      const order = result.order[index] ?? ({} as Record<string, string>)
+      order[column] = scalar
+      result.order[index] = order
+    })
+
+  return result
+}
+
+export type NormalisedCrudDataTablesPaging = {
+  draw: string
+  offset: number
+  limit: number
+}
+
+/** Apply CrudFactory defaults and bounds to parsed DataTables paging fields. */
+export function normaliseCrudDataTablesPaging(parsed: CrudParsedDataTablesQuery): NormalisedCrudDataTablesPaging {
+  const drawRaw = parsed.draw
+  const draw =
+    drawRaw !== undefined && drawRaw !== '' ? drawRaw : CRUD_DATATABLES_DEFAULT_DRAW
+
+  const startParsed = parseInt(parsed.start ?? String(CRUD_DATATABLES_DEFAULT_START), 10)
+  const lengthParsed = parseInt(parsed.length ?? String(CRUD_DATATABLES_DEFAULT_LENGTH), 10)
+
+  const offset =
+    Number.isFinite(startParsed) && startParsed >= 0
+      ? Math.floor(startParsed)
+      : CRUD_DATATABLES_DEFAULT_START
+
+  let limit = Number.isFinite(lengthParsed) ? Math.floor(lengthParsed) : CRUD_DATATABLES_DEFAULT_LENGTH
+  if (limit < 1) limit = CRUD_DATATABLES_DEFAULT_LENGTH
+  limit = Math.min(CRUD_DATATABLES_MAX_LENGTH, limit)
+
+  return { draw, offset, limit }
+}
+
 // import { type LibSQLDatabase } from 'drizzle-orm/libsql'
 import { Permission } from './route-guard'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
@@ -638,12 +723,10 @@ export class CrudFactory implements Machine {
   private json(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const query = url.parse(requestInfo.url, true).query
 
-    const parsedQuery = CrudFactory.parseDTquery(query)
+    const parsedQuery = parseCrudDataTablesQuery(query)
+    const { draw, offset, limit } = normaliseCrudDataTablesPaging(parsedQuery)
 
     // const columns = this.filteredAttributes().map(this.mapColumns)
-
-    const offset = parseInt(parsedQuery.start)
-    const limit = parseInt(parsedQuery.length)
 
     const drizzleQuery = this.db.select().from(this.table)
 
@@ -658,7 +741,7 @@ export class CrudFactory implements Machine {
         // console.log("Found", records.length, "records in", this.name)
 
         const blob = {
-          draw: parsedQuery.draw,
+          draw,
           recordsTotal: records.length,
           recordsFiltered: records.length,
           data: records,
@@ -748,41 +831,6 @@ export class CrudFactory implements Machine {
     return blob
   }
 
-  private static parseDTquery(queryString: ParsedUrlQuery): ParsedDTquery {
-    const result = {
-      draw: queryString.draw,
-      start: queryString.start,
-      length: queryString.length,
-      order: {} as Record<string, Record<string, string>>,
-      search: {
-        value: queryString['search[value]'],
-        regex: queryString['search[regex]'],
-      },
-    }
-
-    Object.entries(queryString)
-      .filter(([key, value]) => {
-        return key.startsWith('order')
-      })
-      .forEach(([key, value]) => {
-        const regex = /order\[(\d+)\]\[(.*)\]/
-        const match = key.match(regex)
-        if (match) {
-          const index = match[1]
-          const column = match[2]
-
-          // Get the order for this index, or create it if it doesn't exist
-          const order = result.order[index] || ({} as Record<string, string>)
-          // Set the value for the column
-          order[column] = value as string
-          // Set the order for this index
-          result.order[index] = order
-        }
-      })
-
-    return result as any
-  }
-
   private reportSuccess(res: ServerResponse, message: string, redirect: string) {
     const html = this.website.getContentHtml(
       'message',
@@ -817,19 +865,6 @@ export class CrudFactory implements Machine {
     res.writeHead(500, { 'Content-Type': 'text/html' })
     res.end(html)
   }
-}
-
-type Search = {
-  value: string
-  regex: boolean
-}
-
-type ParsedDTquery = {
-  draw: string
-  start: string
-  length: string
-  order: Record<string, Record<string, string>>
-  search: Search
 }
 
 type Attribute = {

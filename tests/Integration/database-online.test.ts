@@ -152,6 +152,15 @@ describeDatabaseOnline('Integration: database online (example-auth + MySQL)', ()
     expect(html).toMatch(/fruit|myTable|DataTable|columns|list/i)
   })
 
+  test('user session: GET /fruit/json with no paging query echoes default draw and returns data array', async () => {
+    const cookie = (await loginExampleAuth(port, USER_EMAIL, PASSWORD))!
+    const response = await authFetch('/fruit/json', cookie)
+    expect(response.status).toBe(200)
+    const body = (await response.json()) as { draw?: string; data?: unknown[] }
+    expect(body.draw).toBe('1')
+    expect(Array.isArray(body.data)).toBe(true)
+  })
+
   test('admin session: GET /sessions/list returns 200', async () => {
     const cookie = (await loginExampleAuth(port, ADMIN_EMAIL, PASSWORD))!
     const response = await authFetch('/sessions/list', cookie)

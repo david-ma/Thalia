@@ -19,7 +19,7 @@
 
 // import { drizzle } from 'drizzle-orm/libsql'
 // import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
-import { drizzle } from 'drizzle-orm/mysql2'
+import { drizzle, type MySql2Database } from 'drizzle-orm/mysql2'
 import { sql } from 'drizzle-orm'
 import path from 'path'
 import { Website } from './website'
@@ -27,12 +27,50 @@ import { Machine } from './controllers'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import { DatabaseError } from './errors'
 
+/** Row counts keyed by schema registration name (used at init and in tests). */
+export type SchemaRowCounts = {
+  [key: string]: number
+}
+
+/**
+ * Runs `COUNT(*)` for each registered schema in parallel. Each query uses `.then()` / `.catch()` so
+ * one failure does not reject the batch; failed schemas are warned and omitted from the result.
+ */
+export async function countRowsPerSchemaParallel(
+  db: MySql2Database<any>,
+  schemas: Record<string, MySqlTableWithColumns<any>>,
+  websiteName: string,
+): Promise<SchemaRowCounts> {
+  const counts: SchemaRowCounts = {}
+  await Promise.all(
+    Object.entries(schemas).map(([name, schema]) =>
+      db
+        .select({ [name]: sql<number>`count(*)` })
+        .from(schema)
+        .then((rows: Record<string, unknown>[]) => {
+          const [key, raw] = Object.entries(rows[0] ?? {})[0] ?? [name, 0]
+          counts[key as string] = Number(raw)
+        })
+        .catch((error: unknown) => {
+          console.warn(
+            `[ThaliaDatabase] COUNT(*) skipped for schema "${name}" (${websiteName}) — migrate or sync tables?`,
+            error instanceof Error ? error.message : String(error),
+          )
+        }),
+    ),
+  )
+  return counts
+}
+
 export class ThaliaDatabase {
   private website: Website
   private url!: string
+  /** Avoid double `pool.end()` (e.g. failed init + explicit shutdown). */
+  private mysqlPoolClosed = false
   // private sqlite: libsql.Client
   // public drizzle!: MySqlDatabase<MySqlQueryResultHKT, PreparedQueryHKTBase, Record<string, never>, Record<string, never>>
-  public drizzle!: MySqlTableWithColumns<any>
+  /** MySQL Drizzle driver instance (queries, migrations helpers, `execute`). */
+  public drizzle!: MySql2Database<any>
   public schemas: { [key: string]: MySqlTableWithColumns<any> } = {}
   public machines: { [key: string]: Machine } = {}
 
@@ -51,6 +89,33 @@ export class ThaliaDatabase {
   }
 
   /**
+   * Closes the underlying mysql2 pool (`drizzle.$client`). Call from `Thalia.stop()` / test teardown
+   * so parallel integration tests do not exhaust `max_connections`.
+   */
+  public async closeMysqlPool(): Promise<void> {
+    if (this.mysqlPoolClosed) return
+    try {
+      /** Drizzle stores the callback mysql2 Pool on `$client`; the ORM session uses `.promise()`. */
+      type LegacyPool = { promise?: () => { end: () => Promise<void> } }
+      const pool = (this.drizzle as MySql2Database<any> | undefined)?.['$client'] as LegacyPool | undefined
+      if (pool?.promise) {
+        await pool.promise().end().catch(() => {})
+      } else {
+        const raw = pool as { end?: (cb?: (err?: Error) => void) => void } | undefined
+        if (raw?.end) {
+          await new Promise<void>((resolve) => {
+            raw.end!(() => resolve())
+          })
+        }
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      this.mysqlPoolClosed = true
+    }
+  }
+
+  /**
    * Initialise connection to the database
    * Check all schemas exist and are correct
    */
@@ -64,53 +129,26 @@ export class ThaliaDatabase {
       // console.log(drizzleConfig)
       this.url = drizzleConfig.default.dbCredentials.url
       // console.log(this.url)
-      this.drizzle = drizzle(this.url) as any
+      this.drizzle = drizzle(this.url)
 
       // await this.drizzle.$inferSelect(sql`SELECT 1`)
 
       // await this.drizzle.run(sql`SELECT 1`)
       console.log(`Starting Drizzle database connection for ${this.website.name}`)
 
-      return Promise.all(
-        Object.entries(this.schemas).map(async ([name, schema]) => {
-          return this.drizzle.select({ [name]: sql<number>`count(*)` }).from(schema)
-        }),
-      )
-        .catch((error: unknown) => {
-          console.error(`Error getting data from the ${this.website.name} database:`, error)
-          throw new DatabaseError(`Failed to query database for ${this.website.name}`, {
-            website: this.website.name,
-            originalError: error instanceof Error ? error.message : String(error),
-          })
-        })
-        .then((results) => {
-          const counts: Counts = results.reduce((acc, result) => {
-            const [name, count] = Object.entries(result[0])[0] as [string, number]
-            acc[name] = count
-            return acc
-          }, {} as Counts)
+      await this.drizzle.execute(sql`SELECT 1`)
 
-          console.log(`Counts from the ${this.website.name} Database:`, counts)
-          return this
-        })
-        .then(() => {
-          // Check that the machines have the same columns as their schemas
-          Object.entries(this.machines).forEach(([name, machine]) => {
-            machine.init(this.website, name)
-            // console.log("Looking at machine", name)
-            // console.log(Object.keys(machine.table))
-          })
+      const counts = await countRowsPerSchemaParallel(this.drizzle, this.schemas, this.website.name)
 
-          // TODO: Check that the models have the same columns as their schemas
+      console.log(`Counts from the ${this.website.name} Database:`, counts)
 
-          // Object.entries(this.schemas).forEach(([name, schema]) => {
-          //   console.log("Looking at schema", name)
-          //   console.log(Object.keys(schema))
-          // })
+      Object.entries(this.machines).forEach(([name, machine]) => {
+        machine.init(this.website, name)
+      })
 
-          return this
-        })
+      return this
     } catch (error) {
+      await this.closeMysqlPool()
       console.error(`Unable to connect to the ${this.website.name} database:`, error)
       throw new DatabaseError(`Failed to connect to database for ${this.website.name}`, {
         website: this.website.name,
@@ -118,8 +156,4 @@ export class ThaliaDatabase {
       })
     }
   }
-}
-
-type Counts = {
-  [key: string]: number
 }

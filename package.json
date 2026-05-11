@@ -78,11 +78,12 @@
     "sitemap": "bun bin/sitemap.ts",
     "sitemap:generate": "bun scripts/generate-sitemaps.ts",
     "sitemap:smoke": "bun scripts/smoke-sitemap.ts",
-    "test": "SKIP_EXAMPLE_AUTH_TESTS=1 bun test tests",
+    "test": "SKIP_EXAMPLE_AUTH_TESTS=1 SKIP_DATABASE_TESTS=1 bun test tests",
+    "test:integration:database": "SKIP_DATABASE_TESTS=0 bun test tests/Integration/database-online.test.ts",
     "test:integration:example-auth": "SKIP_EXAMPLE_AUTH_TESTS=0 bun test tests/Integration/request-handler.test.ts",
     "example-auth:seed-test-users": "bun websites/example-auth/scripts/seed-test-users.ts",
     "test:unit": "bun test tests/Unit",
-    "test:integration": "bun test tests/Integration"
+    "test:integration": "SKIP_DATABASE_TESTS=1 SKIP_EXAMPLE_AUTH_TESTS=1 bun test tests/Integration"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

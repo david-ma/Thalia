@@ -164,14 +164,10 @@ export class Website {
     const website = new Website(config)
 
     return Promise.all([website.loadPartials(), website.loadConfig(config).then(() => website.loadDatabase())]).then(
-      ([partials, websiteConfig]) => {
-        if (
-          websiteConfig &&
-          websiteConfig.machines &&
-          websiteConfig.machines.users &&
-          websiteConfig.machines.sessions &&
-          websiteConfig.machines.audits
-        ) {
+      ([_partials]) => {
+        // Use configured machines — not DB init outcome — so RBAC stays `RoleRouteGuard` when MySQL is down.
+        const machines = website.config.database?.machines
+        if (machines?.users && machines?.sessions && machines?.audits) {
           website.routeGuard = new RoleRouteGuard(website)
         } else if (website.config.routes.length > 0) {
           website.routeGuard = new BasicRouteGuard(website)
@@ -633,9 +629,10 @@ export class Website {
           .then(() => {
             resolve(this.db)
           })
-          .catch((error: unknown) => {
+          .catch(async (error: unknown) => {
             console.warn(`Failed to initialize database for website "${this.name}":`, error)
             console.warn(`Website "${this.name}" will continue without database connection`)
+            await db.closeMysqlPool()
             // Set db to undefined so code can check if database is available
             this.db = null as unknown as ThaliaDatabase
             resolve(null)
@@ -644,6 +641,21 @@ export class Website {
         resolve(null)
       }
     })
+  }
+
+  /**
+   * Close the configured MySQL pool so test runs and shutdown do not leak connections.
+   * Safe when `db` is null (init failed).
+   */
+  public async closeDatabase(): Promise<void> {
+    try {
+      const db = this.db as ThaliaDatabase | null
+      if (db) {
+        await db.closeMysqlPool()
+      }
+    } catch {
+      /* ignore */
+    }
   }
 }
 

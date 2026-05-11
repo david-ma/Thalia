@@ -226,7 +226,8 @@ type CrudOptions = {
 
 // import { type LibSQLDatabase } from 'drizzle-orm/libsql'
 import { Permission } from './route-guard'
-import { MySqlDatabase, MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
+import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
+import type { MySql2Database } from 'drizzle-orm/mysql2'
 
 /**
  * A Machine is a singleton that needs to be initialised by Thalia.
@@ -256,7 +257,8 @@ export class CrudFactory implements Machine {
   public name!: string
   public table: MySqlTableWithColumns<any>
   private website!: Website
-  private db!: MySqlTableWithColumns<any>
+  /** Drizzle client (`website.db.drizzle`), not a table. */
+  private db!: MySql2Database<any>
   // private db!: LibSQLDatabase<Record<string, never>>
   // private sqlite!: libsql.Client
   private static blacklist = ['createdAt', 'updatedAt', 'deletedAt'] // Filter 'id' as well?

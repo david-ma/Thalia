@@ -44,7 +44,11 @@ export class Thalia {
   }
 
   public async stop(): Promise<void> {
-    await this.server.stop()
+    try {
+      await this.server.stop()
+    } finally {
+      await Promise.all(this.websites.map((website) => website.closeDatabase()))
+    }
   }
 
   public getServer(): Server {

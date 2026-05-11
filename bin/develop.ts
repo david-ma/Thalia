@@ -160,19 +160,6 @@ function startServer({
 
   const processes: ChildProcess[] = [server]
 
-  const webpackCjs = path.join(projectRoot, 'webpack.config.cjs')
-  const webpackJs = path.join(projectRoot, 'webpack.config.js')
-  if (fs.existsSync(webpackCjs) || fs.existsSync(webpackJs)) {
-    const webpackConfig = fs.existsSync(webpackCjs) ? 'webpack.config.cjs' : 'webpack.config.js'
-    const webpack = spawn('npx', ['webpack', '--watch', '--config', webpackConfig], {
-      env,
-      stdio: ['inherit', 'pipe', 'pipe'],
-      cwd: projectRoot,
-    })
-    teeChildOutput(webpack, logStream, errStream)
-    processes.push(webpack)
-  }
-
   // Cleanup function
   const cleanup = () => {
     console.log("\nProcesses to quit: ");

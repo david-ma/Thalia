@@ -104,11 +104,6 @@ function formatError(error) {
            `3. Run the build command again\n`;
   }
   
-  // Check if it's a webpack error
-  if (message.includes('webpack')) {
-    return `\n🚫 Build Error:\n${message}\n`;
-  }
-  
   // Default error formatting
   return `\n🚫 Error: ${message}\n`;
 }
@@ -117,7 +112,6 @@ function formatError(error) {
 function buildProject(project) {
   console.log(`\nBuilding project: ${project}`);
   try {
-    // Check for conflicts before running webpack
     checkFileConflicts(project);
     
     // Create public directory if it doesn't exist
@@ -135,15 +129,6 @@ function buildProject(project) {
       } catch (error) {
         console.error(`  ⚠️  SCSS build failed, continuing...`);
       }
-    }
-    
-    // Build with webpack if config exists
-    const webpackConfig = path.join(__dirname, '..', 'websites', project, 'webpack.config.js');
-    if (fs.existsSync(webpackConfig)) {
-      console.log(`  Building with webpack...`);
-      execSync(`PROJECT=${project} webpack --config webpack.prod.js`, {
-        stdio: 'inherit'
-      });
     }
     
     console.log(`✅ Successfully built ${project}`);

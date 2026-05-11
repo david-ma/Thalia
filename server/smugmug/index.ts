@@ -1,3 +1,8 @@
+export {
+  assertSafeHttpsImageFetchUrl,
+  fetchRemoteHttpsImageBytes,
+  pickRemoteFileUrl,
+} from './remote-image-fetch.js'
 export { normalizeSmugMugAlbumUri } from './album-uri.js'
 export type { SmugMugUploadAck } from './save-image-map.js'
 export { buildSmugMugNewImageInsert } from './save-image-map.js'

@@ -109,20 +109,40 @@ export class SmugMugClient {
     })
   }
 
-  static createMultipartFormData(
-    file: { originalFilename?: string | null; mimetype?: string | null; filepath: string },
+  /**
+   * Multipart `file` part for upload.smugmug.com — same wire format as legacy disk-based helper.
+   */
+  static createMultipartFormDataFromBytes(
+    file: { buffer: Buffer; originalFilename?: string | null; mimetype?: string | null },
     boundary: string,
   ): Buffer {
+    const name = file.originalFilename ?? 'upload.bin'
+    const mime = file.mimetype ?? 'application/octet-stream'
     const parts = [
       `--${boundary}`,
-      'Content-Disposition: form-data; name="file"; filename="' + file.originalFilename + '"',
-      'Content-Type: ' + file.mimetype,
+      'Content-Disposition: form-data; name="file"; filename="' + name + '"',
+      'Content-Type: ' + mime,
       '',
-      fs.readFileSync(file.filepath),
+      file.buffer,
       '',
       `--${boundary}--`,
     ]
 
     return Buffer.concat(parts.map((part) => (typeof part === 'string' ? Buffer.from(part + '\r\n') : part)))
+  }
+
+  static createMultipartFormData(
+    file: { originalFilename?: string | null; mimetype?: string | null; filepath: string },
+    boundary: string,
+  ): Buffer {
+    const buffer = fs.readFileSync(file.filepath)
+    return SmugMugClient.createMultipartFormDataFromBytes(
+      {
+        buffer,
+        originalFilename: file.originalFilename,
+        mimetype: file.mimetype,
+      },
+      boundary,
+    )
   }
 }

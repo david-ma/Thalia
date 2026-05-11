@@ -20,6 +20,7 @@ import crypto from 'crypto'
 import https from 'https'
 import { SmugMugClient, type SmugMugTokenSet } from './smugmug/smugmug-client.js'
 import { normalizeSmugMugAlbumUri } from './smugmug/album-uri.js'
+import { fetchRemoteHttpsImageBytes, pickRemoteFileUrl } from './smugmug/remote-image-fetch.js'
 import { buildSmugMugNewImageInsert } from './smugmug/save-image-map.js'
 import {
   smugmugB64HmacSha1,
@@ -1073,6 +1074,47 @@ export function parseForm(res: ServerResponse, req: IncomingMessage): Promise<Pa
   }
 }
 
+const UPLOAD_PHOTO_JSON_MAX_BYTES = 64 * 1024
+
+/** Bounded JSON envelope for `{ uploadThingUrl/fileUrl/url, …metadata }` upload branch. */
+export function readLimitedJsonObject(
+  req: IncomingMessage,
+  maxBytes = UPLOAD_PHOTO_JSON_MAX_BYTES,
+): Promise<Record<string, unknown>> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = []
+    let total = 0
+    req.on('data', (d: unknown) => {
+      const b = Buffer.isBuffer(d) ? d : Buffer.from(String(d))
+      total += b.length
+      if (total > maxBytes) {
+        reject(new Error('JSON body too large'))
+        req.destroy()
+        return
+      }
+      chunks.push(b)
+    })
+    req.on('end', () => {
+      try {
+        const raw = Buffer.concat(chunks).toString('utf8')
+        if (!raw.trim()) {
+          reject(new Error('Empty JSON body'))
+          return
+        }
+        const v = JSON.parse(raw) as unknown
+        if (v === null || typeof v !== 'object' || Array.isArray(v)) {
+          reject(new Error('JSON body must be a plain object'))
+          return
+        }
+        resolve(v as Record<string, unknown>)
+      } catch {
+        reject(new Error('Invalid JSON'))
+      }
+    })
+    req.on('error', (e: unknown) => reject(e instanceof Error ? e : new Error(String(e))))
+  })
+}
+
 export class SmugMugUploader implements Machine {
   private website!: Website
   public name!: string
@@ -1358,10 +1400,29 @@ export class SmugMugUploader implements Machine {
       return
     }
 
+    const contentType = (req.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase()
+
+    if (contentType === 'application/json') {
+      readLimitedJsonObject(req)
+        .then((body) => this.uploadPhotoFromRemoteJsonBody(body))
+        .then((data) => {
+          res.end(JSON.stringify(data))
+        })
+        .catch((err: unknown) => {
+          console.error('Error uploading photo (JSON):', err)
+          const msg = err instanceof Error ? err.message : String(err)
+          const clientError =
+            /\bEmpty JSON\b|\bInvalid JSON\b|\bJSON body\b|\bMissing upload URL\b|\bOnly https\b|\bImage host\b|\bImage URL\b|\bcredentials\b|\btoo large\b/i.test(
+              msg,
+            )
+          this.smugRespondJson(res, clientError ? 400 : 502, { error: msg })
+        })
+      return
+    }
+
     parseForm(res, req)
       .then(this.uploadImageToSmugmug.bind(this))
       .then((data) => {
-        // console.log('Finished uploading, with this data:', data)
         res.end(JSON.stringify(data))
       })
       .catch((err) => {
@@ -1370,123 +1431,186 @@ export class SmugMugUploader implements Machine {
       })
   }
 
+  private jsonFieldString(body: Record<string, unknown>, ...keys: string[]): string {
+    for (const k of keys) {
+      const v = body[k]
+      if (typeof v === 'string' && v.trim()) return v.trim()
+    }
+    return ''
+  }
+
   /**
-   * Take a ParsedForm, and upload the image to SmugMug.
-   * If the image already exists, return the existing image.
-   * If the image doesn't exist, upload it to SmugMug, and return the new image.
-   *
-   * TODO:
-   * - Tests
-   * - Make it more efficient
+   * UploadThing-style JSON: fetch `uploadThingUrl` / `fileUrl` / `url`, then same SmugMug path as multipart.
+   */
+  private async uploadPhotoFromRemoteJsonBody(body: Record<string, unknown>): Promise<Image> {
+    const picked = pickRemoteFileUrl(body)
+    if (!picked) {
+      throw new Error('Missing upload URL (uploadThingUrl, fileUrl, or url)')
+    }
+    const { buffer, contentType } = await fetchRemoteHttpsImageBytes(picked)
+
+    let filename = this.jsonFieldString(body, 'filename', 'fileName')
+    if (!filename) {
+      try {
+        const u = new URL(picked)
+        const seg = u.pathname.split('/').filter(Boolean).pop()
+        if (seg) filename = decodeURIComponent(seg)
+      } catch {
+        filename = ''
+      }
+    }
+    if (!filename) filename = 'upload.bin'
+
+    const caption = this.jsonFieldString(body, 'caption')
+    const titleRaw = this.jsonFieldString(body, 'title')
+    const title = titleRaw || filename || caption || ''
+    const keywords =
+      this.jsonFieldString(body, 'keywords') || title || caption || filename || this.website.name || ''
+
+    const mime =
+      this.jsonFieldString(body, 'mimeType', 'mimetype', 'contentType') ||
+      contentType ||
+      'application/octet-stream'
+
+    return this.uploadBufferToSmugmugPipeline({
+      bytes: buffer,
+      caption,
+      filename,
+      title,
+      keywords,
+      mime,
+    })
+  }
+
+  /**
+   * Multipart form field `fileToUpload` — reads the temp file once, then shares the buffer path with JSON fetches.
    */
   private async uploadImageToSmugmug(form: ParsedForm) {
-    const that = this
     const file = form.files.fileToUpload?.[0]
-    const drizzle = this.website.db.drizzle
-    const client = this.client
-
     if (!file) {
       return Promise.reject(new Error('No file provided'))
     }
+    if (!this.client) {
+      return Promise.reject(new Error('SmugMug client not initialised'))
+    }
+
+    const caption = form.fields.caption ?? ''
+    const filename = form.fields.filename ?? file.originalFilename ?? ''
+    const title = form.fields.title ?? filename ?? caption ?? ''
+    const keywords = form.fields.keywords ?? title ?? caption ?? filename ?? this.website.name ?? ''
+
+    const bytes = fs.readFileSync(file.filepath)
+    return this.uploadBufferToSmugmugPipeline({
+      bytes,
+      caption,
+      filename: filename || 'upload.bin',
+      title,
+      keywords,
+      mime: file.mimetype ?? 'application/octet-stream',
+    })
+  }
+
+  /**
+   * MD5 dedupe against `images.archivedMD5`, then OAuth multipart POST to upload.smugmug.com.
+   */
+  private async uploadBufferToSmugmugPipeline(args: {
+    bytes: Buffer
+    caption: string
+    filename: string
+    title: string
+    keywords: string
+    mime: string
+  }): Promise<Image> {
+    const that = this
+    const client = this.client
     if (!client) {
       return Promise.reject(new Error('SmugMug client not initialised'))
     }
 
-    const md5sum = crypto.createHash('md5').update(fs.readFileSync(file.filepath)).digest('hex')
+    const drizzle = this.website.db.drizzle
+    const md5sum = crypto.createHash('md5').update(args.bytes).digest('hex')
 
-    return drizzle
-      .select()
-      .from(images)
-      .where(eq(images.archivedMD5, md5sum))
-      .then((imageResults: Image[]) => {
-        if (imageResults.length > 0) {
-          return Promise.resolve(imageResults[0])
-        } else {
-          return new Promise((resolve, reject) => {
-            const caption = form.fields.caption ?? ''
-            const filename = form.fields.filename ?? file.originalFilename ?? ''
-            const title = form.fields.title ?? filename ?? caption ?? ''
-            const keywords = form.fields.keywords ?? title ?? caption ?? filename ?? this.website.name ?? ''
+    const existing = await drizzle.select().from(images).where(eq(images.archivedMD5, md5sum))
+    if (existing.length > 0) {
+      return existing[0]
+    }
 
-            const host = 'upload.smugmug.com'
-            const path = '/'
-            const targetUrl = `https://${host}${path}`
-            const method = 'POST'
+    return new Promise((resolve, reject) => {
+      const host = 'upload.smugmug.com'
+      const uploadPath = '/'
+      const targetUrl = `https://${host}${uploadPath}`
+      const method = 'POST'
+      const params = client.signRequest(method, targetUrl)
+      const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substr(2, 8)
+      const formData = SmugMugClient.createMultipartFormDataFromBytes(
+        {
+          buffer: args.bytes,
+          originalFilename: args.filename,
+          mimetype: args.mime,
+        },
+        boundary,
+      )
 
-            // Sign the request (same OAuth process)
-            const params = client.signRequest(method, targetUrl)
+      const options = {
+        host,
+        port: 443,
+        path: uploadPath,
+        method,
+        headers: {
+          Authorization: smugmugBundleAuthorization(targetUrl, params),
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          'Content-Length': formData.length,
+          'X-Smug-AlbumUri': normalizeSmugMugAlbumUri(this.album),
+          'X-Smug-Caption': args.caption,
+          'X-Smug-FileName': args.filename,
+          'X-Smug-Keywords': args.keywords,
+          'X-Smug-ResponseType': 'JSON',
+          'X-Smug-Title': args.title,
+          'X-Smug-Version': 'v2',
+        },
+      }
 
-            // https://forum.uipath.com/t/unable-to-pass-binary-image-data-inside-http-request-body/849190/8
-            // Create the multipart form data
-            const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substr(2, 8)
-            const formData = SmugMugClient.createMultipartFormData(file, boundary)
+      const httpsRequest = https.request(options, function (httpsResponse: IncomingMessage) {
+        let data: string = ''
 
-            const options = {
-              host: host,
-              port: 443,
-              path: path,
-              method: method,
-              headers: {
-                Authorization: smugmugBundleAuthorization(targetUrl, params),
-                'Content-Type': `multipart/form-data; boundary=${boundary}`,
-                'Content-Length': formData.length,
-                'X-Smug-AlbumUri': normalizeSmugMugAlbumUri(this.album),
-                'X-Smug-Caption': caption,
-                'X-Smug-FileName': filename,
-                'X-Smug-Keywords': keywords,
-                'X-Smug-ResponseType': 'JSON',
-                'X-Smug-Title': title,
-                'X-Smug-Version': 'v2',
-              },
-            }
+        httpsResponse.setEncoding('utf8')
+        httpsResponse.on('data', function (chunk) {
+          data += chunk
+        })
 
-            const httpsRequest = https.request(options, function (httpsResponse: IncomingMessage) {
-              let data: string = ''
-
-              httpsResponse.setEncoding('utf8')
-              httpsResponse.on('data', function (chunk) {
-                data += chunk
-              })
-
-              httpsResponse.on('end', () => {
-                that
-                  .saveImage(JSON.parse(data))
-                  .then((insertResult) => {
-                    const insertIdNum = SmugMugUploader.insertIdFromMysqlResult(insertResult)
-                    if (insertIdNum === undefined) {
-                      throw new Error('Image insert returned no insertId')
-                    }
-                    return drizzle.select().from(images).where(eq(images.id, insertIdNum))
-                  })
-                  .then((imageResults) => {
-                    const row = (imageResults as Image[])[0]
-                    if (row === undefined) {
-                      reject(new Error('Image row missing after insert'))
-                      return
-                    }
-                    resolve(row)
-                  })
-                  .catch((err: unknown) => {
-                    reject(err)
-                  })
-              })
+        httpsResponse.on('end', () => {
+          that
+            .saveImage(JSON.parse(data))
+            .then((insertResult) => {
+              const insertIdNum = SmugMugUploader.insertIdFromMysqlResult(insertResult)
+              if (insertIdNum === undefined) {
+                throw new Error('Image insert returned no insertId')
+              }
+              return drizzle.select().from(images).where(eq(images.id, insertIdNum))
             })
-
-            httpsRequest.on('error', function (e) {
-              console.error('problem with request:')
-              console.error(e)
-              reject(e)
+            .then((imageResults) => {
+              const row = (imageResults as Image[])[0]
+              if (row === undefined) {
+                reject(new Error('Image row missing after insert'))
+                return
+              }
+              resolve(row)
             })
-
-            // httpsRequest.on('close', () => {
-            //   console.log('httpRequest closed')
-            // })
-
-            httpsRequest.write(formData)
-            httpsRequest.end()
-          })
-        }
+            .catch((err: unknown) => {
+              reject(err)
+            })
+        })
       })
+
+      httpsRequest.on('error', function (e) {
+        console.error('problem with request:')
+        console.error(e)
+        reject(e)
+      })
+
+      httpsRequest.write(formData)
+      httpsRequest.end()
+    })
   }
 
   /** mysql2 `insertId` extraction from Drizzle `insert`/`execute` result shapes. */

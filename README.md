@@ -129,6 +129,8 @@ Golden OAuth/signing fixtures live under **`tests/fixtures/smugmug/`**; unit cov
 
 For uploads, **`smugmug.album` / `SMUGMUG_ALBUM` / `config.smugmug.album`** accepts a bare album key, an `/api/v2/album/…` API path (with or without a leading slash), or a **`https://api.smugmug.com/api/v2/album/…`** URL; gallery webpage URLs alone are rejected for the upload header (`normalizeSmugMugAlbumUri` in **`server/smugmug/album-uri.ts`**).
 
+**`/uploadPhoto`** supports **`application/json`** bodies (UploadThing-style): provide **`uploadThingUrl`**, **`fileUrl`**, or **`url`** (first non-empty wins) plus optional **`caption`**, **`title`**, **`keywords`**, **`filename`**, **`mimeType`**. The server **GET**s the HTTPS URL with **manual redirects** and SSRF guards (**`server/smugmug/remote-image-fetch.ts`**), then uploads bytes to SmugMug the same way as the legacy multipart form. Multipart **`fileToUpload`** behaviour is unchanged.
+
 Optional **signed GET smoke** against a sandbox account (**no uploads**, no writes via this path):
 
 ```bash

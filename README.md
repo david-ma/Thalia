@@ -127,6 +127,8 @@ If MySQL is down or seed users are missing, those tests **fail** (they do not pa
 
 Golden OAuth/signing fixtures live under **`tests/fixtures/smugmug/`**; unit coverage is in **`tests/Unit/smugmug-*.test.ts`**. Use **`tests/helpers/smugmug-fixtures.ts`** (`sampleSmugImageInsertRow()`) when seeding local MariaDB rows from the sample upload + AlbumImage payloads.
 
+For uploads, **`smugmug.album` / `SMUGMUG_ALBUM` / `config.smugmug.album`** accepts a bare album key, an `/api/v2/album/…` API path (with or without a leading slash), or a **`https://api.smugmug.com/api/v2/album/…`** URL; gallery webpage URLs alone are rejected for the upload header (`normalizeSmugMugAlbumUri` in **`server/smugmug/album-uri.ts`**).
+
 Optional **signed GET smoke** against a sandbox account (**no uploads**, no writes via this path):
 
 ```bash

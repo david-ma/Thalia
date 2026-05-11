@@ -132,7 +132,10 @@ export type ThaliaAuthOptions = {
  */
 export type SmugMugSiteOptions = {
   oauthCallbackUrl?: string
-  /** Album key for `X-Smug-AlbumUri` when not set in secrets. */
+  /**
+   * Default album target for uploads: bare **album key**, `/api/v2/album/{key}`, or API URL
+   * `https://api.smugmug.com/api/v2/album/{key}` (gallery page URLs are not accepted).
+   */
   album?: string
 }
 

@@ -19,6 +19,7 @@ import { ParsedUrlQuery } from 'querystring'
 import crypto from 'crypto'
 import https from 'https'
 import { SmugMugClient, type SmugMugTokenSet } from './smugmug/smugmug-client.js'
+import { normalizeSmugMugAlbumUri } from './smugmug/album-uri.js'
 import { buildSmugMugNewImageInsert } from './smugmug/save-image-map.js'
 import {
   smugmugB64HmacSha1,
@@ -1076,7 +1077,7 @@ export class SmugMugUploader implements Machine {
   private website!: Website
   public name!: string
   public table!: MySqlTableWithColumns<any>
-  /** Target album key; secrets `album` overrides env/config. */
+  /** Album key / API path / API URL fragment; normalized for `X-Smug-AlbumUri`. Secrets `album` overrides env/config. */
   private album = ''
   private tokens: SmugMugTokenSet | null = null
   private client: SmugMugClient | null = null
@@ -1240,8 +1241,8 @@ export class SmugMugUploader implements Machine {
     if (!t.oauth_token || !t.oauth_token_secret) {
       return 'SmugMug OAuth is incomplete (access token not stored); finish pairing in config/secrets.js.'
     }
-    if (!this.album.trim()) {
-      return 'SmugMug album is not set (secrets smugmug.album, SMUGMUG_ALBUM, or config.smugmug.album).'
+    if (!normalizeSmugMugAlbumUri(this.album)) {
+      return 'SmugMug album is not set or is unusable for upload (bare album key, /api/v2/album/… path, or https://api.smugmug.com/api/v2/album/… URL via secrets.smugmug.album / SMUGMUG_ALBUM / config.smugmug.album).'
     }
     return null
   }
@@ -1429,7 +1430,7 @@ export class SmugMugUploader implements Machine {
                 Authorization: smugmugBundleAuthorization(targetUrl, params),
                 'Content-Type': `multipart/form-data; boundary=${boundary}`,
                 'Content-Length': formData.length,
-                'X-Smug-AlbumUri': `/api/v2/album/${this.album}`,
+                'X-Smug-AlbumUri': normalizeSmugMugAlbumUri(this.album),
                 'X-Smug-Caption': caption,
                 'X-Smug-FileName': filename,
                 'X-Smug-Keywords': keywords,

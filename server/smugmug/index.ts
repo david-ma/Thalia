@@ -1,3 +1,4 @@
+export { normalizeSmugMugAlbumUri } from './album-uri.js'
 export type { SmugMugUploadAck } from './save-image-map.js'
 export { buildSmugMugNewImageInsert } from './save-image-map.js'
 export type { SmugMugTokenSet } from './smugmug-client.js'

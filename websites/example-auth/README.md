@@ -109,4 +109,17 @@ From Thalia root: `bun test tests/Integration/request-handler.test.ts`. For full
 
 ## Tests
 
-Integration tests in `tests/Integration/request-handler.test.ts` start example-auth and assert route guard + controller behaviour. If the DB isn’t available, the suite still passes and those tests no-op.
+Integration tests in `tests/Integration/request-handler.test.ts` start example-auth and assert route guard + controller behaviour. The repo’s default `bun run test` sets **`SKIP_EXAMPLE_AUTH_TESTS=1`** (no MySQL required).
+
+To run example-auth integration tests locally:
+
+1. Start MariaDB (e.g. `docker compose up -d` in this directory) or set **`DATABASE_URL`**.
+2. **`bun drizzle-kit push`** from this directory so `users`, `sessions`, etc. exist.
+3. From Thalia root: **`bun run example-auth:seed-test-users`** — upserts **`user@example-auth.test`** (role `user`) and **`admin@example-auth.test`** (role `admin`) with password **`test-password`**. Without this step, authenticated tests no-op because login returns no cookie.
+4. **`bun run test:integration:example-auth`**. Add **`REQUIRE_EXAMPLE_AUTH_LOGIN=1`** to fail fast if logins still do not yield cookies.
+
+Logins in tests read **`Set-Cookie`** via **`getSetCookie()`** where available so `sessionId` is not dropped.
+
+### SQLite instead of MySQL?
+
+Thalia’s **`ThaliaDatabase`** and security CRUD use **`drizzle-orm/mysql2`** and **`mysql-core`** table builders (`server/database.ts`). Moving example-auth to SQLite would mean a second driver path, schema dialect differences (e.g. `varchar`, autoincrement), and retesting security—not “swap the URL”. Bun’s built-in SQLite does **not** remove that work. **MariaDB in Docker + the seed script above** is the supported path for integration tests without redesigning the framework.

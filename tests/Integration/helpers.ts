@@ -14,6 +14,11 @@ export type StartTestServerOpts = {
   port?: number
   /** Passed to Thalia as `ServerOptions.node_env` (also RequestInfo.node_env). Default `'test'`. */
   node_env?: string
+  /**
+   * Stop any cached server for this project + node_env before starting.
+   * Use for suites that need a clean HTTP stack (e.g. auth) after another describe reused the site.
+   */
+  fresh?: boolean
 }
 
 function testServerCacheKey(project: string, node_env: string): string {
@@ -32,6 +37,10 @@ export async function startTestServer(
 ): Promise<{ thalia: Thalia; port: number }> {
   const node_env = opts?.node_env ?? 'test'
   const cacheKey = testServerCacheKey(project, node_env)
+
+  if (opts?.fresh) {
+    await stopTestServer(project, { node_env })
+  }
 
   const existing = testServers.get(cacheKey)
   if (existing) {
@@ -73,12 +82,25 @@ export async function startTestServer(
  * @param project Website project name under websites/
  * @param opts Must match the `node_env` used when starting (default `'test'`).
  */
+const STOP_TEST_SERVER_MS = 12_000
+
 export async function stopTestServer(project: string, opts?: Pick<StartTestServerOpts, 'node_env'>): Promise<void> {
   const node_env = opts?.node_env ?? 'test'
   const cacheKey = testServerCacheKey(project, node_env)
   const serverInfo = testServers.get(cacheKey)
   if (serverInfo) {
-    await serverInfo.thalia.stop()
+    const stopPromise = serverInfo.thalia.stop()
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`thalia.stop() exceeded ${STOP_TEST_SERVER_MS}ms`)), STOP_TEST_SERVER_MS),
+    )
+    try {
+      await Promise.race([stopPromise, timeout])
+    } catch (err) {
+      console.warn(
+        `[stopTestServer] ${project} teardown did not finish in ${STOP_TEST_SERVER_MS}ms; continuing. ` +
+          (err instanceof Error ? err.message : String(err)),
+      )
+    }
     testServers.delete(cacheKey)
   }
 }
@@ -87,7 +109,12 @@ export async function stopTestServer(project: string, opts?: Pick<StartTestServe
  * Stop all test servers (cleanup)
  */
 export async function stopAllTestServers(): Promise<void> {
-  const promises = Array.from(testServers.keys()).map((project) => stopTestServer(project))
+  const promises = Array.from(testServers.keys()).map((cacheKey) => {
+    const sep = cacheKey.indexOf('::')
+    const project = sep >= 0 ? cacheKey.slice(0, sep) : cacheKey
+    const node_env = sep >= 0 ? cacheKey.slice(sep + 2) : 'test'
+    return stopTestServer(project, { node_env })
+  })
   await Promise.all(promises)
 }
 
@@ -99,6 +126,10 @@ export async function fetchFromServer(url: string, port: number, options?: Reque
   // Add Host header to ensure requests go to the right server
   const headers = new Headers(options?.headers)
   headers.set('Host', `localhost:${port}`)
+  // Avoid keep-alive sockets keeping the test HTTP server open so httpServer.close() finishes in afterAll.
+  if (!headers.has('Connection')) {
+    headers.set('Connection', 'close')
+  }
   return fetch(fullUrl, { ...options, headers })
 }
 

@@ -555,6 +555,7 @@ export class CrudFactory implements Machine {
         const record = records[0]
 
         const data = {
+          title: `Show ${this.name} ${id}`,
           controllerName: this.name,
           id,
           record,
@@ -601,7 +602,7 @@ export class CrudFactory implements Machine {
     const fields = this.filteredAttributes().filter((field) => !removeList.includes(field.name))
 
     const data = {
-      title: this.name,
+      title: `New ${this.name}`,
       controllerName: this.name,
       fields,
     }
@@ -614,6 +615,7 @@ export class CrudFactory implements Machine {
 
   private list(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const data = {
+      title: `List ${this.name}`,
       controllerName: this.name,
       tableName: this.name,
       primaryKey: 'id',

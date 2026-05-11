@@ -722,7 +722,26 @@ test('auth flow: password reset via MailCatcher works end-to-end (example-auth)'
 })
 })
 
-/** Try to log in; returns Cookie header value or null. */
+/**
+ * Parse `sessionId` from a login response. Prefer `getSetCookie()` (Bun/Undici) because
+ * `headers.get('set-cookie')` is often null when multiple `Set-Cookie` headers are present.
+ */
+function sessionCookieFromLoginResponse(response: Response): string | null {
+  const headers = response.headers as Headers & { getSetCookie?: () => string[] }
+  const lines =
+    typeof headers.getSetCookie === 'function'
+      ? headers.getSetCookie()
+      : (() => {
+          const raw = headers.get('set-cookie')
+          return raw ? [raw] : []
+        })()
+  const blob = lines.join('\n')
+  if (!blob.includes('sessionId=')) return null
+  const match = blob.match(/sessionId=([^;\s,]+)/)
+  return match ? `sessionId=${match[1]}` : null
+}
+
+/** Try to log in; returns `Cookie` header value for `sessionId` or null. */
 async function loginExampleAuth(port: number, email: string, password: string): Promise<string | null> {
   const body = new URLSearchParams({ Email: email, Password: password }).toString()
   const response = await fetchFromServer('/logon', port, {
@@ -731,10 +750,8 @@ async function loginExampleAuth(port: number, email: string, password: string): 
     body,
     redirect: 'manual',
   })
-  const setCookie = response.headers.get('set-cookie')
-  if (!setCookie || !setCookie.includes('sessionId=')) return null
-  const match = setCookie.match(/sessionId=([^;]+)/)
-  return match ? `sessionId=${match[1]}` : null
+  if (response.status !== 302 && response.status !== 303) return null
+  return sessionCookieFromLoginResponse(response)
 }
 
 describeExampleAuth('Request-handler: example-auth authenticated (user / admin)', () => {
@@ -749,27 +766,47 @@ describeExampleAuth('Request-handler: example-auth authenticated (user / admin)'
 
   beforeAll(async () => {
     serverStarted = false
+    userCookie = null
+    adminCookie = null
     try {
-      const serverInfo = await startTestServer(PROJECT)
+      const serverInfo = await startTestServer(PROJECT, { fresh: true })
       port = serverInfo.port
       await waitForServerHttp(port)
       serverStarted = true
-      userCookie = await loginExampleAuth(port, USER_EMAIL, PASSWORD)
-      adminCookie = await loginExampleAuth(port, ADMIN_EMAIL, PASSWORD)
     } catch {
       port = 0
+      return
+    }
+    userCookie = await loginExampleAuth(port, USER_EMAIL, PASSWORD)
+    adminCookie = await loginExampleAuth(port, ADMIN_EMAIL, PASSWORD)
+    if (!userCookie || !adminCookie) {
+      console.warn(
+        '[example-auth authenticated] Login did not return session cookies for both test users; ' +
+          `authenticated tests will no-op. Seed ${USER_EMAIL} and ${ADMIN_EMAIL} (password: ${PASSWORD}) ` +
+          'or see websites/example-auth/README.md.',
+      )
     }
   })
 
-  afterAll(async () => {
-    if (serverStarted) await stopTestServer(PROJECT)
-  })
+  afterAll(
+    async () => {
+      if (serverStarted) await stopTestServer(PROJECT)
+    },
+    { timeout: 15_000 },
+  )
 
   function fetchWithCookie(url: string, cookie: string | null, options?: RequestInit) {
     const headers = new Headers(options?.headers)
     if (cookie) headers.set('Cookie', cookie)
     return fetchFromServer(url, port, { ...options, headers })
   }
+
+  /** Opt-in: CI or local with DB — fails fast if the server is up but logins did not yield cookies. */
+  test('example-auth: REQUIRE_EXAMPLE_AUTH_LOGIN=1 enforces seeded users when the server starts', () => {
+    if (process.env.REQUIRE_EXAMPLE_AUTH_LOGIN !== '1' || !serverStarted) return
+    expect(userCookie).not.toBeNull()
+    expect(adminCookie).not.toBeNull()
+  })
 
   test('logged-in user GET / returns 200', async () => {
     if (!serverStarted || !userCookie) return
@@ -799,6 +836,15 @@ describeExampleAuth('Request-handler: example-auth authenticated (user / admin)'
     expect(response.status).toBe(403)
   })
 
+  test('logged-in user GET /fruit returns 200 list (route guard must not match root / to /fruit)', async () => {
+    if (!serverStarted || !userCookie) return
+    const response = await fetchWithCookie('/fruit', userCookie, { redirect: 'manual' })
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toMatch(/fruit|myTable|DataTable|columns/i)
+    expect(html).toMatch(/<title>\s*List\s+fruit\s*<\/title>/i)
+  })
+
   test('admin GET /admin returns 200', async () => {
     if (!serverStarted || !adminCookie) return
     const response = await fetchWithCookie('/admin', adminCookie)
@@ -820,9 +866,10 @@ describeExampleAuth('Request-handler: example-auth authenticated (user / admin)'
     const response = await fetchWithCookie('/logout', userCookie, { redirect: 'manual' })
     expect(response.status).toBe(302)
     expect(response.headers.get('location')).toMatch(/\/$/)
-    const setCookie = response.headers.get('set-cookie')
-    expect(setCookie).toBeTruthy()
-    expect(setCookie).toMatch(/sessionId=;|Expires=Thu, 01 Jan 1970/)
+    const h = response.headers as Headers & { getSetCookie?: () => string[] }
+    const setCookieBlob =
+      typeof h.getSetCookie === 'function' ? h.getSetCookie().join('\n') : (h.get('set-cookie') ?? '')
+    expect(setCookieBlob).toMatch(/sessionId=;|Expires=Thu, 01 Jan 1970/)
   })
 
   test('auth flow: after logout, request without cookie gets 401 for protected path', async () => {

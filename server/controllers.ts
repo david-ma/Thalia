@@ -625,31 +625,41 @@ export class CrudFactory implements Machine {
       })
   }
 
-  private edit(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    const id = requestInfo.slug
-    if (!id) {
-      return this.reportError(res, new Error('No ID was provided.'), { status: 404 })
-    }
-    this.db
+  /**
+   * Select by primary key for `show` / `edit`: one row, or `reportError` and `null`.
+   */
+  private fetchCrudRecordByIdOrRespond(res: ServerResponse, id: string): Promise<any | null> {
+    return this.db
       .select(this.table)
       .from(this.table)
       .where(eq(this.table.id, id))
       .then((records: any[]) => {
         if (records.length === 0) {
           this.reportError(res, new Error('That record could not be found.'), { status: 404 })
-          return
+          return null
         }
         if (records.length > 1) {
-          console.error('CrudFactory edit:', this.name, 'multiple rows for ID', id)
+          console.error('CrudFactory fetch by id:', this.name, 'multiple rows for ID', id)
           this.reportError(
             res,
             new Error('More than one row matched that ID. Please raise this with your administrator.'),
             { status: 500 },
           )
-          return
+          return null
         }
+        return records[0]
+      })
+  }
 
-        const record = records[0]
+  private edit(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    const id = requestInfo.slug
+    if (!id) {
+      return this.reportError(res, new Error('No ID was provided.'), { status: 404 })
+    }
+    this.fetchCrudRecordByIdOrRespond(res, id)
+      .then((record) => {
+        if (record === null) return
+
         const isNotDeleted = record.deletedAt === null
 
         const data = {
@@ -681,24 +691,9 @@ export class CrudFactory implements Machine {
     if (!id) {
       return this.reportError(res, new Error('No ID was provided.'), { status: 404 })
     }
-    this.db
-      .select(this.table)
-      .from(this.table)
-      .where(eq(this.table.id, id))
-      .then((records: any[]) => {
-        if (records.length === 0) {
-          return this.reportError(res, new Error('That record could not be found.'), { status: 404 })
-        }
-        if (records.length > 1) {
-          console.error('CrudFactory show:', this.name, 'multiple rows for ID', id)
-          return this.reportError(
-            res,
-            new Error('More than one row matched that ID. Please raise this with your administrator.'),
-            { status: 500 },
-          )
-        }
-
-        const record = records[0]
+    this.fetchCrudRecordByIdOrRespond(res, id)
+      .then((record) => {
+        if (record === null) return
 
         const data = {
           title: `Show ${this.name} ${id}`,

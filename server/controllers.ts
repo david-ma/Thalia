@@ -479,18 +479,30 @@ export class CrudFactory implements Machine {
 
   private testdata(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     if (process.env.NODE_ENV !== 'development') {
-      return this.reportError(res, new Error('Test data can only be generated in development mode'))
+      return this.reportError(
+        res,
+        new Error('Test data can only be generated when the server is running in development mode.'),
+      )
     }
 
-    this.generateTestData(10).then(
-      () => {
-        res.writeHead(200, { 'Content-Type': 'text/html' })
-        res.end('Test data generated')
-      },
-      (error) => {
-        this.reportError(res, new Error(`Error generating test data: ${error}`))
-      },
-    )
+    this.generateTestData(10)
+      .then(() => {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+        res.end('Test data was generated.')
+      })
+      .catch((reason: unknown) => {
+        if (res.writableEnded) return
+        const err =
+          CrudFactory.asControllerError(reason) ?? new Error('Could not generate test data. Check the logs for detail.')
+        this.reportError(res, err)
+      })
+  }
+
+  /** Normalise rejection values for `.catch`; returns `undefined` when there is nothing useful to show. */
+  private static asControllerError(reason: unknown): Error | undefined {
+    if (reason instanceof Error) return reason
+    if (typeof reason === 'string' && reason.trim()) return new Error(reason.trim())
+    return undefined
   }
 
   public async generateTestData(amount: number = 10): Promise<any> {
@@ -536,10 +548,12 @@ export class CrudFactory implements Machine {
   private delete(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const id = requestInfo.slug
     if (!id) {
-      return this.reportError(res, new Error('No ID provided'))
+      return this.reportError(res, new Error('No ID was provided.'), { status: 404 })
     }
     if (!this.table.deletedAt) {
-      this.reportError(res, new Error('No deletedAt column found, cannot delete record'))
+      this.reportError(res, new Error('This table does not support archiving rows (there is no deleted_at column).'), {
+        status: 500,
+      })
       return
     }
 
@@ -547,24 +561,37 @@ export class CrudFactory implements Machine {
       .update(this.table)
       .set({ deletedAt: new Date().toISOString() })
       .where(eq(this.table.id, id))
-      .then((result: any) => {
-        this.reportSuccess(res, 'Record deleted', `/${this.name}`)
+      .then(() => {
+        this.reportSuccess(res, 'The record was archived (soft-deleted).', `/${this.name}`)
+      })
+      .catch((reason: unknown) => {
+        if (res.writableEnded) return
+        this.reportError(
+          res,
+          CrudFactory.asControllerError(reason) ?? new Error('Could not archive that record. Please try again.'),
+        )
       })
   }
 
   private restore(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const id = requestInfo.slug
     if (!id) {
-      this.reportError(res, new Error('No ID provided'))
-      return
+      return this.reportError(res, new Error('No ID was provided.'), { status: 404 })
     }
 
     this.db
       .update(this.table)
       .set({ deletedAt: null })
       .where(eq(this.table.id, id))
-      .then((result: any) => {
-        this.reportSuccess(res, 'Record restored', `/${this.name}`)
+      .then(() => {
+        this.reportSuccess(res, 'The record was restored.', `/${this.name}`)
+      })
+      .catch((reason: unknown) => {
+        if (res.writableEnded) return
+        this.reportError(
+          res,
+          CrudFactory.asControllerError(reason) ?? new Error('Could not restore that record. Please try again.'),
+        )
       })
   }
 
@@ -576,32 +603,32 @@ export class CrudFactory implements Machine {
   private update(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const id = requestInfo.slug
     if (!id) {
-      return this.reportError(res, new Error('No ID provided'))
+      return this.reportError(res, new Error('No ID was provided.'), { status: 404 })
     }
 
-    try {
-      parseForm(res, req).then(({ fields }) => {
-        fields = Object.fromEntries(
+    parseForm(res, req)
+      .then(({ fields }) => {
+        const filtered = Object.fromEntries(
           Object.entries(fields).filter(([key]) => !CrudFactory.blacklist.concat(['id']).includes(key)),
         )
-
-        this.db
-          .update(this.table)
-          .set(fields)
-          .where(eq(this.table.id, id))
-          .then((result: any) => {
-            this.reportSuccess(res, 'Record updated', `/${this.name}/show/${id}`)
-          })
+        return this.db.update(this.table).set(filtered).where(eq(this.table.id, id))
       })
-    } catch (error) {
-      this.reportError(res, new Error(`Error in ${website.name}/${this.name}/update: ${error}`))
-    }
+      .then(() => {
+        this.reportSuccess(res, 'The record was updated.', `/${this.name}/show/${id}`)
+      })
+      .catch((reason: unknown) => {
+        if (res.writableEnded) return
+        this.reportError(
+          res,
+          CrudFactory.asControllerError(reason) ?? new Error('Could not update that record. Please try again.'),
+        )
+      })
   }
 
   private edit(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const id = requestInfo.slug
     if (!id) {
-      return this.reportError(res, new Error('No ID provided'))
+      return this.reportError(res, new Error('No ID was provided.'), { status: 404 })
     }
     this.db
       .select(this.table)
@@ -609,14 +636,16 @@ export class CrudFactory implements Machine {
       .where(eq(this.table.id, id))
       .then((records: any[]) => {
         if (records.length === 0) {
-          res.writeHead(404, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ error: 'Record not found' }))
+          this.reportError(res, new Error('That record could not be found.'), { status: 404 })
           return
-        } else if (records.length > 1) {
-          // throw new Error('Multiple records found for ID')
-          console.error('Multiple records found for ID', id)
-          res.writeHead(404, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ error: 'Multiple records found for ID' }))
+        }
+        if (records.length > 1) {
+          console.error('CrudFactory edit:', this.name, 'multiple rows for ID', id)
+          this.reportError(
+            res,
+            new Error('More than one row matched that ID. Please raise this with your administrator.'),
+            { status: 500 },
+          )
           return
         }
 
@@ -635,26 +664,38 @@ export class CrudFactory implements Machine {
         }
 
         const html = website.getContentHtml('edit', this.wrapperTemplate)(data)
-        res.writeHead(200, { 'Content-Type': 'text/html' })
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
         res.end(html)
+      })
+      .catch((reason: unknown) => {
+        if (res.writableEnded) return
+        this.reportError(
+          res,
+          CrudFactory.asControllerError(reason) ?? new Error('Could not load that record for editing. Please try again.'),
+        )
       })
   }
 
   private show(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const id = requestInfo.slug
     if (!id) {
-      return this.reportError(res, new Error('No ID provided'))
+      return this.reportError(res, new Error('No ID was provided.'), { status: 404 })
     }
-    // select distinct id, name from table?
     this.db
       .select(this.table)
       .from(this.table)
       .where(eq(this.table.id, id))
       .then((records: any[]) => {
         if (records.length === 0) {
-          return this.reportError(res, new Error('Record not found'))
-        } else if (records.length > 1) {
-          return this.reportError(res, new Error('Multiple records found for ID'))
+          return this.reportError(res, new Error('That record could not be found.'), { status: 404 })
+        }
+        if (records.length > 1) {
+          console.error('CrudFactory show:', this.name, 'multiple rows for ID', id)
+          return this.reportError(
+            res,
+            new Error('More than one row matched that ID. Please raise this with your administrator.'),
+            { status: 500 },
+          )
         }
 
         const record = records[0]
@@ -671,8 +712,15 @@ export class CrudFactory implements Machine {
         }
 
         const html = website.getContentHtml('show', this.wrapperTemplate)(data)
-        res.writeHead(200, { 'Content-Type': 'text/html' })
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
         res.end(html)
+      })
+      .catch((reason: unknown) => {
+        if (res.writableEnded) return
+        this.reportError(
+          res,
+          CrudFactory.asControllerError(reason) ?? new Error('Could not load that record. Please try again.'),
+        )
       })
   }
 
@@ -680,23 +728,23 @@ export class CrudFactory implements Machine {
    * Takes POST requests with form data from /new, and inserts a new record into the database
    */
   private create(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    try {
-      parseForm(res, req).then(({ fields }) => {
-        this.db
-          .insert(this.table)
-          .values(fields)
-          .then(
-            (result: any) => {
-              this.reportSuccess(res, 'Record created' + JSON.stringify(result), `/${this.name}`)
-            },
-            (error: any) => {
-              this.reportError(res, new Error(`Error inserting record: ${error}`))
-            },
-          )
+    parseForm(res, req)
+      .then(({ fields }) => {
+        const filtered = Object.fromEntries(
+          Object.entries(fields).filter(([key]) => !CrudFactory.blacklist.concat(['id']).includes(key)),
+        )
+        return this.db.insert(this.table).values(filtered)
       })
-    } catch (error) {
-      this.reportError(res, new Error(`Error in ${website.name}/${this.name}/create: ${error}`))
-    }
+      .then(() => {
+        this.reportSuccess(res, 'The record was created.', `/${this.name}`)
+      })
+      .catch((reason: unknown) => {
+        if (res.writableEnded) return
+        this.reportError(
+          res,
+          CrudFactory.asControllerError(reason) ?? new Error('Could not create that record. Please try again.'),
+        )
+      })
   }
 
   /**
@@ -906,6 +954,7 @@ export class CrudFactory implements Machine {
   }
 
   private reportSuccess(res: ServerResponse, message: string, redirect: string) {
+    if (res.writableEnded) return
     const html = this.website.getContentHtml(
       'message',
       this.wrapperTemplate,
@@ -914,17 +963,15 @@ export class CrudFactory implements Machine {
       message,
       redirect,
     })
-    res.writeHead(200, { 'Content-Type': 'text/html' })
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
     res.end(html)
   }
 
   /**
-   * Pass an error back to the user.
-   * Handy place to add logging for the webmaster.
-   * Or add extra debugging information for the developer.
+   * HTML message page for Crud failures. Full detail is logged; the template sees a sanitised sentence.
    */
-  private reportError(res: ServerResponse, error: Error) {
-    // TODO: Add a way to log errors for the webmaster
+  private reportError(res: ServerResponse, error: Error, options?: { status?: number }) {
+    if (res.writableEnded || res.headersSent) return
 
     console.error(error)
 
@@ -933,11 +980,35 @@ export class CrudFactory implements Machine {
       this.wrapperTemplate,
     )({
       state: 'Error',
-      message: error instanceof Error ? error.message : 'Unknown error',
+      message: this.crudHumanReadableError(error),
       redirect: `/${this.name}`,
     })
-    res.writeHead(500, { 'Content-Type': 'text/html' })
+    const status = options?.status ?? 500
+    res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8' })
     res.end(html)
+  }
+
+  /** Safe copy for `<message>` templates — avoids leaking stacks or noisy driver dumps. */
+  private crudHumanReadableError(error: Error): string {
+    const raw = (error.message || '').trim()
+    if (!raw) return 'Something went wrong. Please try again.'
+
+    if (raw.length > 220 || /[\n\r]/.test(raw)) {
+      return 'Something went wrong. Please try again. If this keeps happening, contact your administrator.'
+    }
+
+    if (/ at [\w$.]+ \(/.test(raw) || /\.ts:\d+:\d+/.test(raw)) {
+      return 'Something went wrong. Please try again. If this keeps happening, contact your administrator.'
+    }
+
+    if (
+      /\bECONNRESET\b|\bECONNREFUSED\b|deadlock|ER_\w+|syntax error|\berrno\b|\bSQL\b/i.test(raw) &&
+      raw.length > 78
+    ) {
+      return 'Something went wrong while talking to the database. Please try again.'
+    }
+
+    return raw
   }
 }
 

@@ -9,18 +9,31 @@ import path from 'path'
 
 let testServers: Map<string, { thalia: Thalia; port: number }> = new Map()
 
+export type StartTestServerOpts = {
+  /** Explicit port; otherwise an ephemeral free port is chosen. */
+  port?: number
+  /** Passed to Thalia as `ServerOptions.node_env` (also RequestInfo.node_env). Default `'test'`. */
+  node_env?: string
+}
+
+function testServerCacheKey(project: string, node_env: string): string {
+  return `${project}::${node_env}`
+}
+
 /**
  * Start a test server for a specific project
  * @param project Project name (must exist in websites/)
- * @param port Optional port (will find available port if not provided)
+ * @param opts Optional port and `node_env` (servers are cached per project **and** node_env)
  * @returns Thalia instance and port number
  */
 export async function startTestServer(
   project: string,
-  port?: number,
+  opts?: StartTestServerOpts,
 ): Promise<{ thalia: Thalia; port: number }> {
-  // Check if server already running for this project
-  const existing = testServers.get(project)
+  const node_env = opts?.node_env ?? 'test'
+  const cacheKey = testServerCacheKey(project, node_env)
+
+  const existing = testServers.get(cacheKey)
   if (existing) {
     return existing
   }
@@ -29,13 +42,8 @@ export async function startTestServer(
   // character of `project`: names like example-minimal and example-src share 'e' and
   // used to collide on the same narrow portRange, so parallel describe beforeAll hooks
   // could bind the wrong site to the port waitForServerHttp() observed (CI flake).
-  let testPort: number
-  if (port) {
-    testPort = port
-  } else {
-    testPort = await getPort({ random: true })
-  }
-  
+  const testPort = opts?.port ?? (await getPort({ random: true }))
+
   // Resolve Thalia repo root from this file (tests/Integration/helpers.ts) so tests
   // work the same whether run from repo root or from a website dir (e.g. websites/kras).
   // Otherwise process.cwd() when run from websites/kras would yield rootPath
@@ -44,7 +52,7 @@ export async function startTestServer(
   const rootPath = path.join(thaliaRoot, 'websites', project)
 
   const options: ServerOptions = {
-    node_env: 'test',
+    node_env,
     project: project,
     port: testPort,
     mode: 'standalone',
@@ -55,19 +63,23 @@ export async function startTestServer(
   await thalia.start()
 
   const serverInfo = { thalia, port: testPort }
-  testServers.set(project, serverInfo)
+  testServers.set(cacheKey, serverInfo)
 
   return serverInfo
 }
 
 /**
- * Stop a test server
+ * Stop a test server started with {@link startTestServer}.
+ * @param project Website project name under websites/
+ * @param opts Must match the `node_env` used when starting (default `'test'`).
  */
-export async function stopTestServer(project: string): Promise<void> {
-  const serverInfo = testServers.get(project)
+export async function stopTestServer(project: string, opts?: Pick<StartTestServerOpts, 'node_env'>): Promise<void> {
+  const node_env = opts?.node_env ?? 'test'
+  const cacheKey = testServerCacheKey(project, node_env)
+  const serverInfo = testServers.get(cacheKey)
   if (serverInfo) {
     await serverInfo.thalia.stop()
-    testServers.delete(project)
+    testServers.delete(cacheKey)
   }
 }
 

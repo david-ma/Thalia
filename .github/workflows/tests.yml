@@ -21,6 +21,7 @@ jobs:
 
       - name: Run test suite (unit + non-DB integration)
         env:
+          NODE_ENV: test
           SKIP_EXAMPLE_AUTH_TESTS: "1"
           SKIP_MAILCATCHER_TESTS: "1"
         run: bun test

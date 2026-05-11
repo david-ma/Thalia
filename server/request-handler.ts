@@ -139,7 +139,9 @@ export class RequestHandler {
     }
 
     return new Promise((next, finish) => {
-      if(process.env.NODE_ENV === 'development' && folder === 'dist') {
+      // Use the server's configured node_env (same as RequestInfo), not process.env, so tests and
+      // embedded servers can set behaviour without mutating global NODE_ENV.
+      if (requestHandler.requestInfo.node_env === 'development' && folder === 'dist') {
         if(requestHandler.pathname.endsWith('.js') || requestHandler.pathname.endsWith('.css') || requestHandler.pathname.endsWith('.html')) {
           console.debug('Development mode: Skipping static file', requestHandler.pathname)
           return next(requestHandler)

@@ -1,7 +1,7 @@
 {
   "name": "thalia",
-  "private": true,
-  "version": "1.0.3",
+  "private": false,
+  "version": "1.0.1",
   "type": "module",
   "description": "Yet another server framework for serving websites",
   "main": "./server/index.ts",

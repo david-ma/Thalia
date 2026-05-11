@@ -118,7 +118,7 @@ describe('Request-handler: example-src (Handlebars, TypeScript, controller)', ()
     expect(response.headers.get('content-type')).toContain('text/html')
     const html = await response.text()
     expect(html.length).toBeGreaterThan(0)
-    // `/` redirects to index.html; in development dist/*.html may be skipped so public/index.html wins.
+    // `/` redirects to index.html; when server's node_env is `development`, dist/*.html is skipped so public may win.
     expect(html).toMatch(/dist version|public\/index\.html/)
   })
 

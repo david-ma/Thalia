@@ -20,7 +20,7 @@ import crypto from 'crypto'
 import https from 'https'
 import { SmugMugClient, type SmugMugTokenSet } from './smugmug/smugmug-client.js'
 import { normalizeSmugMugAlbumUri } from './smugmug/album-uri.js'
-import { SMUGMUG_HTTPS_TIMEOUT_MS } from './smugmug/constants.js'
+import { requestHttpsUtf8 } from './smugmug/https-request.js'
 import { fetchRemoteHttpsImageBytes, pickRemoteFileUrl } from './smugmug/remote-image-fetch.js'
 import { parseSmugMugMultipartUploadResponse } from './smugmug/multipart-upload-response.js'
 import { buildSmugMugNewImageInsert, type SmugMugUploadAck } from './smugmug/save-image-map.js'
@@ -1524,10 +1524,9 @@ export class SmugMugUploader implements Machine {
     keywords: string
     mime: string
   }): Promise<Image> {
-    const that = this
     const client = this.client
     if (!client) {
-      return Promise.reject(new Error('SmugMug client not initialised'))
+      throw new Error('SmugMug client not initialised')
     }
 
     const drizzle = this.website.db.drizzle
@@ -1538,99 +1537,53 @@ export class SmugMugUploader implements Machine {
       return existing[0]
     }
 
-    return new Promise((resolve, reject) => {
-      const host = 'upload.smugmug.com'
-      const uploadPath = '/'
-      const targetUrl = `https://${host}${uploadPath}`
-      const method = 'POST'
-      const params = client.signRequest(method, targetUrl)
-      const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substr(2, 8)
-      const formData = SmugMugClient.createMultipartFormDataFromBytes(
-        {
-          buffer: args.bytes,
-          originalFilename: args.filename,
-          mimetype: args.mime,
-        },
-        boundary,
-      )
+    const host = 'upload.smugmug.com'
+    const uploadPath = '/'
+    const targetUrl = `https://${host}${uploadPath}`
+    const method = 'POST'
+    const params = client.signRequest(method, targetUrl)
+    const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substr(2, 8)
+    const formData = SmugMugClient.createMultipartFormDataFromBytes(
+      {
+        buffer: args.bytes,
+        originalFilename: args.filename,
+        mimetype: args.mime,
+      },
+      boundary,
+    )
 
-      const options = {
-        host,
-        port: 443,
-        path: uploadPath,
-        method,
-        headers: {
-          Authorization: smugmugBundleAuthorization(targetUrl, params),
-          'Content-Type': `multipart/form-data; boundary=${boundary}`,
-          'Content-Length': formData.length,
-          'X-Smug-AlbumUri': normalizeSmugMugAlbumUri(this.album),
-          'X-Smug-Caption': args.caption,
-          'X-Smug-FileName': args.filename,
-          'X-Smug-Keywords': args.keywords,
-          'X-Smug-ResponseType': 'JSON',
-          'X-Smug-Title': args.title,
-          'X-Smug-Version': 'v2',
-        },
-      }
-
-      const httpsRequest = https.request(options, function (httpsResponse: IncomingMessage) {
-        let data: string = ''
-
-        httpsResponse.setEncoding('utf8')
-        httpsResponse.on('data', function (chunk) {
-          data += chunk
-        })
-
-        httpsResponse.on('error', function (e) {
-          reject(e instanceof Error ? e : new Error(String(e)))
-        })
-
-        httpsResponse.on('end', () => {
-          let ack: SmugMugUploadAck
-          try {
-            ack = parseSmugMugMultipartUploadResponse(httpsResponse.statusCode, data)
-          } catch (e: unknown) {
-            reject(e instanceof Error ? e : new Error(String(e)))
-            return
-          }
-
-          that
-            .saveImage(ack)
-            .then((insertResult) => {
-              const insertIdNum = SmugMugUploader.insertIdFromMysqlResult(insertResult)
-              if (insertIdNum === undefined) {
-                throw new Error('Image insert returned no insertId')
-              }
-              return drizzle.select().from(images).where(eq(images.id, insertIdNum))
-            })
-            .then((imageResults) => {
-              const row = (imageResults as Image[])[0]
-              if (row === undefined) {
-                reject(new Error('Image row missing after insert'))
-                return
-              }
-              resolve(row)
-            })
-            .catch((err: unknown) => {
-              reject(err)
-            })
-        })
-      })
-
-      httpsRequest.setTimeout(SMUGMUG_HTTPS_TIMEOUT_MS, () => {
-        httpsRequest.destroy()
-        reject(new Error('SmugMug upload request timed out'))
-      })
-
-      httpsRequest.on('error', function (e) {
-        console.error('problem with request:')
-        console.error(e)
-        reject(e)
-      })
-
-      httpsRequest.write(formData)
-      httpsRequest.end()
+    const { statusCode, bodyUtf8 } = await requestHttpsUtf8({
+      hostname: host,
+      port: 443,
+      path: uploadPath,
+      method,
+      headers: {
+        Authorization: smugmugBundleAuthorization(targetUrl, params),
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        'Content-Length': formData.length,
+        'X-Smug-AlbumUri': normalizeSmugMugAlbumUri(this.album),
+        'X-Smug-Caption': args.caption,
+        'X-Smug-FileName': args.filename,
+        'X-Smug-Keywords': args.keywords,
+        'X-Smug-ResponseType': 'JSON',
+        'X-Smug-Title': args.title,
+        'X-Smug-Version': 'v2',
+      },
+      body: formData,
     })
+
+    const ack = parseSmugMugMultipartUploadResponse(statusCode, bodyUtf8)
+    const insertResult = await this.saveImage(ack)
+    const insertIdNum = SmugMugUploader.insertIdFromMysqlResult(insertResult)
+    if (insertIdNum === undefined) {
+      throw new Error('Image insert returned no insertId')
+    }
+    const imageResults = await drizzle.select().from(images).where(eq(images.id, insertIdNum))
+    const row = (imageResults as Image[])[0]
+    if (row === undefined) {
+      throw new Error('Image row missing after insert')
+    }
+    return row
   }
 
   /** mysql2 `insertId` extraction from Drizzle `insert`/`execute` result shapes. */

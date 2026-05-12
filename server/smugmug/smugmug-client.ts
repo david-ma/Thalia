@@ -3,10 +3,8 @@
  */
 
 import fs from 'fs'
-import https from 'https'
-import type { IncomingMessage } from 'http'
 
-import { SMUGMUG_HTTPS_TIMEOUT_MS } from './constants.js'
+import { requestHttpsUtf8 } from './https-request.js'
 import {
   smugmugB64HmacSha1,
   smugmugBundleAuthorization,
@@ -76,51 +74,25 @@ export class SmugMugClient {
    * Signed `GET …/path?_verbosity=1` against `api.smugmug.com`; resolves raw JSON string body (legacy parity).
    */
   smugmugApiCall(path: string, method = 'GET'): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const urlWithVerbosity = `${path}?_verbosity=1`
-      const targetUrl = `${SmugMugClient.BASE_URL}${urlWithVerbosity}`
-      const params = this.signRequest(method, targetUrl)
+    const urlWithVerbosity = `${path}?_verbosity=1`
+    const targetUrl = `${SmugMugClient.BASE_URL}${urlWithVerbosity}`
+    const params = this.signRequest(method, targetUrl)
 
-      const options = {
-        host: 'api.smugmug.com',
-        port: 443,
-        path: urlWithVerbosity,
-        method,
-        headers: {
-          Authorization: smugmugBundleAuthorization(targetUrl, params),
-          Accept: 'application/json',
-          'X-Smug-ResponseType': 'JSON',
-        },
+    return requestHttpsUtf8({
+      hostname: 'api.smugmug.com',
+      port: 443,
+      path: urlWithVerbosity,
+      method,
+      headers: {
+        Authorization: smugmugBundleAuthorization(targetUrl, params),
+        Accept: 'application/json',
+        'X-Smug-ResponseType': 'JSON',
+      },
+    }).then(({ statusCode, bodyUtf8 }) => {
+      if (statusCode === undefined || statusCode < 200 || statusCode >= 300) {
+        throw new Error(`SmugMug API request failed (HTTP ${statusCode ?? 'unknown'})`)
       }
-
-      const httpsRequest = https.request(options, (httpsResponse: IncomingMessage) => {
-        let data = ''
-        httpsResponse.on('data', (chunk: unknown) => {
-          data += chunk as string
-        })
-        httpsResponse.on('error', (e: unknown) => {
-          reject(e instanceof Error ? e : new Error(String(e)))
-        })
-        httpsResponse.on('end', () => {
-          const code = httpsResponse.statusCode
-          if (code === undefined || code < 200 || code >= 300) {
-            reject(new Error(`SmugMug API request failed (HTTP ${code ?? 'unknown'})`))
-            return
-          }
-          resolve(data)
-        })
-      })
-
-      httpsRequest.setTimeout(SMUGMUG_HTTPS_TIMEOUT_MS, () => {
-        httpsRequest.destroy()
-        reject(new Error('SmugMug API request timed out'))
-      })
-
-      httpsRequest.on('error', (e: unknown) => {
-        reject(e)
-      })
-
-      httpsRequest.end()
+      return bodyUtf8
     })
   }
 

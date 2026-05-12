@@ -1,3 +1,5 @@
+export { requestHttpsUtf8 } from './https-request.js'
+export type { HttpsUtf8Response, RequestHttpsUtf8Params } from './https-request.js'
 export {
   assertSafeHttpsImageFetchUrl,
   fetchRemoteHttpsImageBytes,

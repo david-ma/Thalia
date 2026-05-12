@@ -20,4 +20,5 @@ export {
   parseProfileUpdatePayload,
   profileJsonErrorBody,
   profileJsonErrorString,
+  profileSelfRedirectLocation,
 } from './profile-controller-factory.js'

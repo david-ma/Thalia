@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   parseProfileUpdatePayload,
   profileJsonErrorString,
+  profileSelfRedirectLocation,
 } from '../../server/security/profile-controller-factory.js'
 
 const fields = ['name', 'photo'] as const
@@ -11,6 +12,19 @@ describe('profileJsonErrorString', () => {
   test('serialises error and code', () => {
     const s = profileJsonErrorString('Invalid JSON', 'INVALID_JSON')
     expect(JSON.parse(s)).toEqual({ error: 'Invalid JSON', code: 'INVALID_JSON' })
+  })
+})
+
+describe('profileSelfRedirectLocation', () => {
+  test('returns canonical URL when bare path and session user', () => {
+    expect(profileSelfRedirectLocation('', 42, true)).toBe('/profile/42')
+    expect(profileSelfRedirectLocation('   ', 42, true)).toBe('/profile/42')
+  })
+  test('returns null when id segment present, redirect disabled, or no user', () => {
+    expect(profileSelfRedirectLocation('', 42, false)).toBe(null)
+    expect(profileSelfRedirectLocation('', undefined, true)).toBe(null)
+    expect(profileSelfRedirectLocation('7', 42, true)).toBe(null)
+    expect(profileSelfRedirectLocation('x', 42, true)).toBe(null)
   })
 })
 

@@ -46,6 +46,11 @@ export interface ProfileControllerFactoryOptions {
   /** Handlebars content template name (default `profile_content`). */
   contentTemplate?: string
   /**
+   * When true (default), GET `/profile` (no id segment) redirects to `/profile/<currentUserId>` if the viewer has a session user id.
+   * Non-numeric segments (e.g. `/profile/foo`) still return **400**.
+   */
+  profileIndexRedirect?: boolean
+  /**
    * `authenticated`: any signed-in user allowed by route rules may GET a profile by id.
    * `owner_or_admin`: only the profile owner or `admin` may GET.
    */
@@ -79,6 +84,7 @@ export type ProfileViewModelInput = {
 
 type ResolvedOptions = {
   contentTemplate: string
+  profileIndexRedirect: boolean
   profileReadScope: ProfileReadScope
   updatableFields: readonly ('name' | 'photo')[]
   maxJsonBytes: number
@@ -88,9 +94,25 @@ type ResolvedOptions = {
   buildPageDescription: (displayName: string) => string
 }
 
+/**
+ * GET `/profile` with no id: return `/profile/<userId>` when redirect is enabled and **`userId`** is set; otherwise **null**.
+ * Does not apply when **`rawAction`** is non-empty (e.g. invalid `/profile/foo` — caller should **400**).
+ */
+export function profileSelfRedirectLocation(
+  rawAction: string,
+  userId: number | undefined,
+  profileIndexRedirect: boolean,
+): string | null {
+  if (!profileIndexRedirect) return null
+  if (rawAction.trim() !== '') return null
+  if (userId === undefined) return null
+  return `/profile/${userId}`
+}
+
 function resolveOptions(options?: ProfileControllerFactoryOptions): ResolvedOptions {
   return {
     contentTemplate: options?.contentTemplate ?? DEFAULT_CONTENT_TEMPLATE,
+    profileIndexRedirect: options?.profileIndexRedirect ?? true,
     profileReadScope: options?.profileReadScope ?? 'authenticated',
     updatableFields: options?.updatableFields?.length ? options.updatableFields : [...DEFAULT_UPDATABLE_FIELDS],
     maxJsonBytes: options?.maxJsonBytes ?? DEFAULT_MAX_JSON_BYTES,
@@ -255,8 +277,9 @@ export class ProfileControllerFactory implements Machine {
     website: Website,
     requestInfo: RequestInfo,
   ): Promise<void> {
-    const userIdParam = requestInfo.action || ''
-    const id = parseInt(userIdParam, 10)
+    const rawAction = (requestInfo.action ?? '').trim()
+    const id = rawAction === '' ? NaN : parseInt(rawAction, 10)
+    const hasValidNumericId = rawAction !== '' && Number.isFinite(id)
     const userAuth = requestInfo.userAuth
 
     if (!website.db) {
@@ -269,7 +292,24 @@ export class ProfileControllerFactory implements Machine {
     const usersTable = website.db.machines.users.table
 
     if (req.method === 'GET') {
-      if (!Number.isFinite(id)) {
+      if (!hasValidNumericId) {
+        if (rawAction !== '') {
+          res.statusCode = 400
+          res.setHeader('Content-Type', 'text/html; charset=utf-8')
+          res.end('<h1>Bad Request</h1><p>Invalid profile ID.</p>')
+          return
+        }
+        const redirectTo = profileSelfRedirectLocation(
+          rawAction,
+          userAuth?.userId,
+          this.resolved.profileIndexRedirect,
+        )
+        if (redirectTo) {
+          res.statusCode = 302
+          res.setHeader('Location', redirectTo)
+          res.end()
+          return
+        }
         res.statusCode = 400
         res.setHeader('Content-Type', 'text/html; charset=utf-8')
         res.end('<h1>Bad Request</h1><p>Profile ID required.</p>')
@@ -352,7 +392,7 @@ export class ProfileControllerFactory implements Machine {
     }
 
     if (req.method === 'PUT' || req.method === 'PATCH' || req.method === 'POST') {
-      if (!Number.isFinite(id)) {
+      if (!hasValidNumericId) {
         res.statusCode = 400
         res.setHeader('Content-Type', 'application/json')
         res.end(profileJsonErrorString('Profile ID required', 'PROFILE_ID_REQUIRED'))

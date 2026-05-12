@@ -15,6 +15,7 @@
  *
  * Route permissions are coarse (per path + role). For resource-level rules (e.g. “only edit your own row”),
  * keep enforcing them inside the controller (see **`ProfileControllerFactory`** in `thalia/security`).
+ * **`GET /profile`** (no id) redirects to **`/profile/<session user id>`** by default; set **`profileIndexRedirect: false`** on the factory to keep a **400** instead.
  *
  * ### `config.thaliaAuth`
  *

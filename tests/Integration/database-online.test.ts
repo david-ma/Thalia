@@ -9,6 +9,7 @@
  * From repo root:
  * ```
  * SKIP_DATABASE_TESTS=0 bun run test:integration:database
+ * (also runs `example-auth-images-notes-blob.test.ts` for `images.notes_blob`)
  * bun run example-auth:seed-test-users   # upserts fixtures (see websites/example-auth/README.md)
  * ```
  */
@@ -229,35 +230,50 @@ describeDatabaseOnline('Integration: database online (example-auth + MySQL)', ()
     expect(html).toMatch(/audit|myTable|DataTable|columns|list/i)
   })
 
-  test('authenticated user: GET /profile/1 returns 200 or 404 (reads users table)', async () => {
+  test('authenticated user: GET /profile/:id returns 200 for an existing user (id from /users/json)', async () => {
     const cookie = (await loginExampleAuth(port, USER_EMAIL, PASSWORD))!
-    const response = await authFetch('/profile/1', cookie)
-    expect([200, 404]).toContain(response.status)
-    if (response.status === 200) {
-      const html = await response.text()
-      expect(html).toMatch(/profile|<h1/i)
-    }
+    const listRes = await authFetch('/users/json?draw=1&start=0&length=100', cookie)
+    expect(listRes.status).toBe(200)
+    const listBody = (await listRes.json()) as { data?: { id?: number }[] }
+    const anyId = listBody.data?.find((r) => typeof r?.id === 'number')?.id
+    if (anyId === undefined) return
+    const response = await authFetch(`/profile/${anyId}`, cookie)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toMatch(/profile|<h1/i)
   })
 
-  test('admin: PUT /profile/:id updates users row (id from /users/json DataTables feed)', async () => {
+  test('admin: PUT /profile/:id updates users row then restores original name', async () => {
     const adminCookie = (await loginExampleAuth(port, ADMIN_EMAIL, PASSWORD))!
-    const jsonRes = await authFetch('/users/json?draw=1&start=0&length=50', adminCookie)
+    const jsonRes = await authFetch('/users/json?draw=1&start=0&length=500', adminCookie)
     expect(jsonRes.status).toBe(200)
-    const payload = (await jsonRes.json()) as { data?: { id?: number }[] }
-    expect(Array.isArray(payload.data)).toBe(true)
-    expect(payload.data!.length).toBeGreaterThan(0)
-    const targetId = payload.data![0]?.id
-    expect(typeof targetId).toBe('number')
-
-    const suffix = `${Date.now()}`
-    const put = await authFetch(`/profile/${targetId}`, adminCookie, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: `DBOnline-${suffix}` }),
-    })
-    expect(put.status).toBe(200)
-    const body = await put.json()
-    expect(body.ok).toBe(true)
-    expect(body.id).toBe(targetId)
+    const payload = (await jsonRes.json()) as {
+      data?: { id?: number; name?: string | null; email?: string | null }[]
+    }
+    const target = payload.data?.find(
+      (r) => typeof r?.id === 'number' && String(r.email ?? '').toLowerCase() === USER_EMAIL.toLowerCase(),
+    )
+    if (!target?.id) {
+      throw new Error(`Need seeded ${USER_EMAIL} (run bun run example-auth:seed-test-users).`)
+    }
+    const priorName = target.name ?? ''
+    const newName = `DBOnline-${Date.now()}`
+    try {
+      const put = await authFetch(`/profile/${target.id}`, adminCookie, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName }),
+      })
+      expect(put.status).toBe(200)
+      const body = await put.json()
+      expect(body.ok).toBe(true)
+      expect(body.id).toBe(target.id)
+    } finally {
+      await authFetch(`/profile/${target.id}`, adminCookie, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: priorName }),
+      })
+    }
   })
 })

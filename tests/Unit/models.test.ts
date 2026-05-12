@@ -91,7 +91,7 @@ describe('models/smugmug tables', () => {
 
   test('images table links to albums and requires imageKey', () => {
     expect(Object.keys(images)).toEqual(
-      expect.arrayContaining(['albumId', 'albumKey', 'imageKey', 'uri']),
+      expect.arrayContaining(['albumId', 'albumKey', 'imageKey', 'uri', 'notesBlob']),
     )
   })
 })

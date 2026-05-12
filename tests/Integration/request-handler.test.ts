@@ -23,6 +23,7 @@
 
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
 import { startTestServer, stopTestServer, fetchFromServer, waitForServerHttp } from './helpers.js'
+import { deleteExampleAuthUserByEmail } from './helpers-example-auth-db.js'
 
 describe('Request-handler: example-minimal (static, 404, path exploit)', () => {
   let port: number
@@ -616,15 +617,17 @@ const SKIP_MAILCATCHER_ENV = 'SKIP_MAILCATCHER_TESTS'
 test('auth flow: password reset via MailCatcher works end-to-end (example-auth)', async () => {
   if (!serverStarted) return
 
+  const TEST_EMAIL = `reset-user-${Date.now()}@example-auth.test`
+
   if (process.env[SKIP_MAILCATCHER_ENV] === '1') {
     expect(true).toBe(true)
     return
   }
 
-  const TEST_EMAIL = `reset-user-${Date.now()}@example-auth.test`
   const OLD_PASSWORD = 'old-password-1'
   const NEW_PASSWORD = 'new-password-2'
 
+  try {
   // Helper: clear MailCatcher messages; fail if MailCatcher not reachable
   async function clearMailcatcher(): Promise<boolean> {
     try {
@@ -744,6 +747,9 @@ test('auth flow: password reset via MailCatcher works end-to-end (example-auth)'
     const resp = await fetchFromServer('/', port, { headers })
     expect([200, 401]).toContain(resp.status)
   }
+  } finally {
+    await deleteExampleAuthUserByEmail(TEST_EMAIL)
+  }
 })
 })
 
@@ -836,20 +842,34 @@ describeExampleAuth('Request-handler: example-auth authenticated (user / admin)'
     expect(response.status).toBe(200)
   })
 
-  test('logged-in user GET /profile/1 returns 200 or 404 (view any profile)', async () => {
+  test('logged-in user GET /profile/:id returns 200 for an existing user id from /users/json', async () => {
     if (!serverStarted || !userCookie) return
-    const response = await fetchWithCookie('/profile/1', userCookie)
-    expect([200, 404]).toContain(response.status)
+    const listRes = await fetchWithCookie('/users/json?draw=1&start=0&length=100', userCookie)
+    expect(listRes.status).toBe(200)
+    const listBody = (await listRes.json()) as { data?: { id?: number }[] }
+    const anyId = listBody.data?.find((r) => typeof r?.id === 'number')?.id
+    if (anyId === undefined) return
+    const response = await fetchWithCookie(`/profile/${anyId}`, userCookie)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toMatch(/profile|<h1/i)
   })
 
-  test('user PUT /profile/2 without being owner returns 403', async () => {
+  test('user PUT /profile/:id on another user returns 403 (row-level guard)', async () => {
     if (!serverStarted || !userCookie) return
-    const response = await fetchWithCookie('/profile/2', userCookie, {
+    const listRes = await fetchWithCookie('/users/json?draw=1&start=0&length=500', userCookie)
+    expect(listRes.status).toBe(200)
+    const listBody = (await listRes.json()) as { data?: { id?: number; email?: string | null }[] }
+    const adminRow = listBody.data?.find(
+      (r) => typeof r?.id === 'number' && String(r.email ?? '').toLowerCase() === ADMIN_EMAIL.toLowerCase(),
+    )
+    expect(adminRow?.id).toBeDefined()
+    const response = await fetchWithCookie(`/profile/${adminRow!.id}`, userCookie, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: 'Hacked' }),
     })
-    expect([403, 404]).toContain(response.status)
+    expect(response.status).toBe(403)
   })
 
   test('user GET /admin returns 403', async () => {
@@ -899,14 +919,34 @@ describeExampleAuth('Request-handler: example-auth authenticated (user / admin)'
     expect(response.status).toBe(200)
   })
 
-  test('admin PUT /profile/1 returns 200 or 404 (admin can edit any)', async () => {
+  test('admin PUT /profile/:id updates a user then restores original name', async () => {
     if (!serverStarted || !adminCookie) return
-    const response = await fetchWithCookie('/profile/1', adminCookie, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Updated by admin' }),
-    })
-    expect([200, 404]).toContain(response.status)
+    const listRes = await fetchWithCookie('/users/json?draw=1&start=0&length=500', adminCookie)
+    expect(listRes.status).toBe(200)
+    const listBody = (await listRes.json()) as { data?: { id?: number; name?: string | null; email?: string | null }[] }
+    const target = listBody.data?.find(
+      (r) => typeof r?.id === 'number' && String(r.email ?? '').toLowerCase() === USER_EMAIL.toLowerCase(),
+    )
+    if (!target?.id) return
+    const priorName = target.name ?? ''
+    const newName = `RH-AdminPut-${Date.now()}`
+    try {
+      const response = await fetchWithCookie(`/profile/${target.id}`, adminCookie, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName }),
+      })
+      expect(response.status).toBe(200)
+      const body = await response.json()
+      expect(body.ok).toBe(true)
+      expect(body.id).toBe(target.id)
+    } finally {
+      await fetchWithCookie(`/profile/${target.id}`, adminCookie, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: priorName }),
+      })
+    }
   })
 
   test('auth flow: GET /logoff returns 302 and clears session cookie', async () => {

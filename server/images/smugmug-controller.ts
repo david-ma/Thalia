@@ -10,6 +10,10 @@ import type { Machine } from '../types.js'
 import { parseForm, type ParsedForm } from '../util.js'
 import type { RequestInfo } from '../server.js'
 import type { Website } from '../website.js'
+import type { ImageMeta, ImageStoreAdapter } from './adapters.js'
+import { SmugMugAdapter } from './smugmug-adapter.js'
+import { UploadThingUrlAdapter } from './uploadthing-url-adapter.js'
+import { LocalDiskAdapter } from './local-disk-adapter.js'
 import { normalizeSmugMugAlbumUri } from './album-uri.js'
 import { requestHttpsUtf8 } from './https-request.js'
 import { smugmugLogLine } from './log.js'
@@ -29,7 +33,6 @@ import {
   THALIA_SMUG_JSON_CLIENT_ERROR,
   THALIA_SMUG_JSON_SERVER_ERROR,
   THALIA_SMUG_MULTIPART_FAILED,
-  THALIA_SMUG_NOT_CONFIGURED,
 } from './upload-photo-errors.js'
 import { parseSmugMugVerbosityAlbumImage } from './verbosity-response.js'
 
@@ -90,6 +93,12 @@ export class ThaliaImageUploader implements Machine {
    */
   private initPromise: Promise<void> = Promise.resolve()
 
+  /**
+   * Active image storage adapter — set by `init()` after secrets load.
+   * Never null once `initPromise` has resolved.
+   */
+  private adapter: ImageStoreAdapter | null = null
+
   /** Resolved from `SMUGMUG_OAUTH_CALLBACK_URL`, `config.smugmug.oauthCallbackUrl`, or localhost default. */
   private oauthCallbackResolved = 'http://localhost:3000/oauthCallback'
 
@@ -123,6 +132,28 @@ export class ThaliaImageUploader implements Machine {
     return 'local-disk'
   }
 
+  /**
+   * Selects UploadThing or local-disk depending on `UPLOADTHING_SECRET`.
+   * Called from `init()` whenever SmugMug cannot be initialised.
+   */
+  private setupFallbackAdapter(): void {
+    const hasUploadThingKey = !!process.env.UPLOADTHING_SECRET?.trim()
+    if (hasUploadThingKey) {
+      this.adapterName = 'uploadthing'
+      this.adapter = new UploadThingUrlAdapter(this.website)
+    } else {
+      this.adapterName = 'local-disk'
+      this.adapter = new LocalDiskAdapter(this.website)
+    }
+    smugmugLogLine({
+      service: this.adapterName,
+      level: 'info',
+      operation: 'init_adapter_fallback',
+      website: this.website.name,
+      msg: `SmugMug unavailable; using ${this.adapterName} adapter.`,
+    })
+  }
+
   public init(website: Website, name: string): void {
     this.website = website
     this.name = name
@@ -149,8 +180,9 @@ export class ThaliaImageUploader implements Machine {
             level: 'warn',
             operation: 'init_no_smug_export',
             website: website.name,
-            msg: 'config/secrets.js has no smugmug export; uploads disabled.',
+            msg: 'config/secrets.js has no smugmug export; falling back to next tier.',
           })
+          this.setupFallbackAdapter()
           return
         }
 
@@ -172,13 +204,23 @@ export class ThaliaImageUploader implements Machine {
             level: 'warn',
             operation: 'init_missing_consumer',
             website: website.name,
-            msg: 'consumer_key/consumer_secret missing; uploads disabled.',
+            msg: 'consumer_key/consumer_secret missing; falling back to next tier.',
           })
           this.client = null
+          this.setupFallbackAdapter()
           return
         }
 
         this.client = new SmugMugClient(this.tokens)
+        this.adapter = new SmugMugAdapter(this.website, this.client, this.tokens, this.album)
+        this.adapterName = 'smugmug'
+        smugmugLogLine({
+          service: 'smugmug',
+          level: 'info',
+          operation: 'init_adapter_ready',
+          website: website.name,
+          msg: 'SmugMug adapter ready.',
+        })
 
         if (this.tokens.oauth_token && this.tokens.oauth_token_secret) {
           return
@@ -264,17 +306,18 @@ export class ThaliaImageUploader implements Machine {
             level: 'warn',
             operation: 'init_secrets_missing',
             website: website.name,
-            msg: 'config/secrets.js not found or unreadable; uploads disabled.',
+            msg: 'config/secrets.js not found or unreadable; falling back to next tier.',
           })
-          return
+        } else {
+          smugmugLogLine({
+            service: 'smugmug',
+            level: 'error',
+            operation: 'init_secrets_load_failed',
+            website: website.name,
+            msg: error instanceof Error ? error.message : String(error),
+          })
         }
-        smugmugLogLine({
-          service: 'smugmug',
-          level: 'error',
-          operation: 'init_secrets_load_failed',
-          website: website.name,
-          msg: error instanceof Error ? error.message : String(error),
-        })
+        this.setupFallbackAdapter()
       })
   }
 
@@ -297,24 +340,6 @@ export class ThaliaImageUploader implements Machine {
     res.statusCode = statusCode
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
     res.end(JSON.stringify(payload))
-  }
-
-  /** Non-null upload path requires consumer OAuth, access token, album key, and a loaded client. */
-  private uploadNotReadyReason(): string | null {
-    if (!this.client || !this.tokens) {
-      return 'SmugMug is not configured (secrets missing or incomplete).'
-    }
-    const t = this.tokens
-    if (!t.consumer_key || !t.consumer_secret) {
-      return 'SmugMug consumer credentials are missing.'
-    }
-    if (!t.oauth_token || !t.oauth_token_secret) {
-      return 'SmugMug OAuth is incomplete (access token not stored); finish pairing in config/secrets.js.'
-    }
-    if (!normalizeSmugMugAlbumUri(this.album)) {
-      return 'SmugMug album is not set or is unusable for upload (bare album key, /api/v2/album/… path, or https://api.smugmug.com/api/v2/album/… URL via secrets.smugmug.album / SMUGMUG_ALBUM / config.smugmug.album).'
-    }
-    return null
   }
 
   public oauthCallback(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
@@ -429,21 +454,15 @@ export class ThaliaImageUploader implements Machine {
     }
 
     void this.initPromise.then(() => {
-      const reason = this.uploadNotReadyReason()
-      if (reason) {
+      if (!this.adapter) {
         smugmugLogLine({
-          service: 'smugmug',
-          level: 'warn',
-          operation: 'upload_photo_not_configured',
+          service: this.adapterName,
+          level: 'error',
+          operation: 'upload_adapter_not_ready',
           website: this.website.name,
-          msg: `${THALIA_SMUG_NOT_CONFIGURED}: ${reason}`,
+          msg: 'Image adapter not initialised; init() may not have been called.',
         })
-        this.smugRespondJson(res, 503, {
-          code: THALIA_SMUG_NOT_CONFIGURED,
-          error: reason,
-          hint:
-            'Configure SmugMug in config/secrets.js (smugmug: consumer_key, consumer_secret, oauth_token, oauth_token_secret, album) or env SMUGMUG_*. Search codebase for THALIA_SMUG_NOT_CONFIGURED.',
-        })
+        this.smugRespondJson(res, 503, { error: 'Image storage not ready. Please try again shortly.' })
         return
       }
 
@@ -522,9 +541,10 @@ export class ThaliaImageUploader implements Machine {
   }
 
   /**
-   * UploadThing-style JSON: fetch `uploadThingUrl` / `fileUrl` / `url`, then same SmugMug path as multipart.
+   * UploadThing-style JSON: fetch `uploadThingUrl` / `fileUrl` / `url`, then store via active adapter.
+   * Passes `sourceUrl` so UploadThingUrlAdapter can persist the CDN URL directly.
    */
-  private async uploadPhotoFromRemoteJsonBody(body: Record<string, unknown>): Promise<Image> {
+  private async uploadPhotoFromRemoteJsonBody(body: Record<string, unknown>) {
     const picked = pickRemoteFileUrl(body)
     if (!picked) {
       throw new Error('Missing upload URL (uploadThingUrl, fileUrl, or url)')
@@ -556,26 +576,24 @@ export class ThaliaImageUploader implements Machine {
       contentType ||
       'application/octet-stream'
 
-    return this.uploadBufferToSmugmugPipeline({
-      bytes: buffer,
-      caption,
+    const meta: ImageMeta = {
       filename,
-      title,
-      keywords,
-      mime,
-    })
+      mimeType: mime,
+      caption: caption || undefined,
+      title: title || undefined,
+      keywords: keywords || undefined,
+      sourceUrl: picked,
+    }
+    return this.adapter!.store(buffer, meta)
   }
 
   /**
-   * Multipart form field `fileToUpload` — reads the temp file once, then shares the buffer path with JSON fetches.
+   * Multipart form field `fileToUpload` — reads the temp file then stores via active adapter.
    */
   private async uploadImageToSmugmug(form: ParsedForm) {
     const file = form.files.fileToUpload?.[0]
     if (!file) {
       return Promise.reject(new Error('No file provided'))
-    }
-    if (!this.client) {
-      return Promise.reject(new Error('SmugMug client not initialised'))
     }
 
     const caption = form.fields.caption ?? ''
@@ -584,14 +602,14 @@ export class ThaliaImageUploader implements Machine {
     const keywords = form.fields.keywords ?? title ?? caption ?? filename ?? this.website.name ?? ''
 
     const bytes = await fsp.readFile(file.filepath)
-    return this.uploadBufferToSmugmugPipeline({
-      bytes,
-      caption,
+    const meta: ImageMeta = {
       filename: filename || 'upload.bin',
-      title,
-      keywords,
-      mime: file.mimetype ?? 'application/octet-stream',
-    })
+      mimeType: file.mimetype ?? 'application/octet-stream',
+      caption: caption || undefined,
+      title: title || undefined,
+      keywords: keywords || undefined,
+    }
+    return this.adapter!.store(bytes, meta)
   }
 
   /**

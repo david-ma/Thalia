@@ -1,8 +1,18 @@
 import { describe, expect, test } from 'bun:test'
-import { parseProfileUpdatePayload } from '../../server/security/profile-controller-factory.js'
+import {
+  parseProfileUpdatePayload,
+  profileJsonErrorString,
+} from '../../server/security/profile-controller-factory.js'
 
 const fields = ['name', 'photo'] as const
 const maxLen = 64
+
+describe('profileJsonErrorString', () => {
+  test('serialises error and code', () => {
+    const s = profileJsonErrorString('Invalid JSON', 'INVALID_JSON')
+    expect(JSON.parse(s)).toEqual({ error: 'Invalid JSON', code: 'INVALID_JSON' })
+  })
+})
 
 describe('parseProfileUpdatePayload', () => {
   test('accepts name only', () => {
@@ -35,51 +45,59 @@ describe('parseProfileUpdatePayload', () => {
       ok: false,
       status: 400,
       error: 'JSON body must be an object',
+      code: 'JSON_NOT_OBJECT',
     })
   })
 
-  test('422 for unknown field', () => {
+  test('422 for unknown field includes code', () => {
     const r = parseProfileUpdatePayload({ name: 'a', extra: 1 }, fields, maxLen)
     expect(r.ok).toBe(false)
     if (!r.ok) {
       expect(r.status).toBe(422)
+      expect(r.code).toBe('UNKNOWN_FIELD')
       expect(r.error).toContain('extra')
     }
   })
 
-  test('422 for empty object', () => {
+  test('422 for empty object includes code', () => {
     const r = parseProfileUpdatePayload({}, fields, maxLen)
     expect(r.ok).toBe(false)
-    if (!r.ok) expect(r.status).toBe(422)
+    if (!r.ok) {
+      expect(r.status).toBe(422)
+      expect(r.code).toBe('NO_FIELDS_TO_UPDATE')
+    }
   })
 
-  test('422 for wrong type', () => {
+  test('422 for wrong type includes code', () => {
     const r = parseProfileUpdatePayload({ name: 42 }, fields, maxLen)
     expect(r.ok).toBe(false)
-    if (!r.ok) expect(r.status).toBe(422)
+    if (!r.ok) expect(r.code).toBe('FIELD_NOT_STRING')
   })
 
-  test('422 for empty name', () => {
+  test('422 for empty name includes code', () => {
     const r = parseProfileUpdatePayload({ name: '   ' }, fields, maxLen)
     expect(r.ok).toBe(false)
-    if (!r.ok) expect(r.status).toBe(422)
+    if (!r.ok) expect(r.code).toBe('NAME_EMPTY')
   })
 
-  test('422 when name is null', () => {
+  test('422 when name is null includes code', () => {
     const r = parseProfileUpdatePayload({ name: null }, fields, maxLen)
     expect(r.ok).toBe(false)
-    if (!r.ok) expect(r.status).toBe(422)
+    if (!r.ok) expect(r.code).toBe('FIELD_NULL_INVALID')
   })
 
-  test('422 when string too long', () => {
+  test('422 when string too long includes code', () => {
     const r = parseProfileUpdatePayload({ name: 'x'.repeat(100) }, fields, 10)
     expect(r.ok).toBe(false)
-    if (!r.ok) expect(r.status).toBe(422)
+    if (!r.ok) expect(r.code).toBe('FIELD_TOO_LONG')
   })
 
   test('respects narrowed updatableFields (name only)', () => {
     const r = parseProfileUpdatePayload({ name: 'z', photo: 'u' }, ['name'], maxLen)
     expect(r.ok).toBe(false)
-    if (!r.ok) expect(r.status).toBe(422)
+    if (!r.ok) {
+      expect(r.status).toBe(422)
+      expect(r.code).toBe('UNKNOWN_FIELD')
+    }
   })
 })

@@ -10,7 +10,14 @@ export type { ThaliaSecurityConstructorOptions } from './thalia-security.js'
 export { ThaliaSecurity, SnipeSecurity } from './thalia-security.js'
 export type {
   ProfileControllerFactoryOptions,
+  ProfileJsonErrorBody,
+  ProfileJsonErrorCode,
   ProfileReadScope,
   ProfileViewModelInput,
 } from './profile-controller-factory.js'
-export { ProfileControllerFactory, parseProfileUpdatePayload } from './profile-controller-factory.js'
+export {
+  ProfileControllerFactory,
+  parseProfileUpdatePayload,
+  profileJsonErrorBody,
+  profileJsonErrorString,
+} from './profile-controller-factory.js'

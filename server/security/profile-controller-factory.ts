@@ -11,6 +11,35 @@ const DEFAULT_MAX_JSON_BYTES = 64 * 1024
 const DEFAULT_MAX_STRING_FIELD_LENGTH = 4096
 const DEFAULT_UPDATABLE_FIELDS = ['name', 'photo'] as const
 
+/** Machine-readable reason on JSON error bodies (`{ error, code }`). */
+export type ProfileJsonErrorCode =
+  | 'BODY_TOO_LARGE'
+  | 'BODY_READ_ERROR'
+  | 'FIELD_NOT_STRING'
+  | 'FIELD_NULL_INVALID'
+  | 'FIELD_TOO_LONG'
+  | 'INVALID_JSON'
+  | 'JSON_NOT_OBJECT'
+  | 'NAME_EMPTY'
+  | 'NO_FIELDS_TO_UPDATE'
+  | 'PROFILE_FORBIDDEN'
+  | 'PROFILE_ID_REQUIRED'
+  | 'PROFILE_UPDATE_FAILED'
+  | 'UNKNOWN_FIELD'
+
+export type ProfileJsonErrorBody = {
+  error: string
+  code: ProfileJsonErrorCode
+}
+
+export function profileJsonErrorBody(error: string, code: ProfileJsonErrorCode): ProfileJsonErrorBody {
+  return { error, code }
+}
+
+export function profileJsonErrorString(error: string, code: ProfileJsonErrorCode): string {
+  return JSON.stringify(profileJsonErrorBody(error, code))
+}
+
 export type ProfileReadScope = 'authenticated' | 'owner_or_admin'
 
 export interface ProfileControllerFactoryOptions {
@@ -75,21 +104,24 @@ function resolveOptions(options?: ProfileControllerFactoryOptions): ResolvedOpti
 /**
  * Validates a parsed JSON object for profile PATCH/POST.
  * **400**: not a plain object. **422**: unknown keys, wrong types, empty patch, invalid strings.
+ * On failure, **`code`** is a stable {@link ProfileJsonErrorCode} for API clients.
  */
 export function parseProfileUpdatePayload(
   parsed: unknown,
   updatableFields: readonly ('name' | 'photo')[],
   maxStringFieldLength: number,
-): { ok: true; patch: Record<string, string | null> } | { ok: false; status: 400 | 422; error: string } {
+):
+  | { ok: true; patch: Record<string, string | null> }
+  | { ok: false; status: 400 | 422; error: string; code: ProfileJsonErrorCode } {
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    return { ok: false, status: 400, error: 'JSON body must be an object' }
+    return { ok: false, status: 400, error: 'JSON body must be an object', code: 'JSON_NOT_OBJECT' }
   }
   const body = parsed as Record<string, unknown>
   const keys = Object.keys(body)
   const allowed = new Set<string>(updatableFields)
   for (const k of keys) {
     if (!allowed.has(k)) {
-      return { ok: false, status: 422, error: `Unknown or disallowed field: ${k}` }
+      return { ok: false, status: 422, error: `Unknown or disallowed field: ${k}`, code: 'UNKNOWN_FIELD' }
     }
   }
   const patch: Record<string, string | null> = {}
@@ -101,18 +133,18 @@ export function parseProfileUpdatePayload(
         patch[field] = null
         continue
       }
-      return { ok: false, status: 422, error: `Invalid value for ${field}` }
+      return { ok: false, status: 422, error: `Invalid value for ${field}`, code: 'FIELD_NULL_INVALID' }
     }
     if (typeof raw !== 'string') {
-      return { ok: false, status: 422, error: `${field} must be a string` }
+      return { ok: false, status: 422, error: `${field} must be a string`, code: 'FIELD_NOT_STRING' }
     }
     const trimmed = raw.trim()
     if (trimmed.length > maxStringFieldLength) {
-      return { ok: false, status: 422, error: `${field} is too long` }
+      return { ok: false, status: 422, error: `${field} is too long`, code: 'FIELD_TOO_LONG' }
     }
     if (field === 'name') {
       if (trimmed.length === 0) {
-        return { ok: false, status: 422, error: 'name must be non-empty' }
+        return { ok: false, status: 422, error: 'name must be non-empty', code: 'NAME_EMPTY' }
       }
       patch[field] = trimmed
       continue
@@ -121,7 +153,7 @@ export function parseProfileUpdatePayload(
     patch[field] = trimmed.length === 0 ? null : trimmed
   }
   if (Object.keys(patch).length === 0) {
-    return { ok: false, status: 422, error: 'No valid fields to update' }
+    return { ok: false, status: 422, error: 'No valid fields to update', code: 'NO_FIELDS_TO_UPDATE' }
   }
   return { ok: true, patch }
 }
@@ -130,12 +162,16 @@ function escapeHtmlText(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
-function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<{ ok: true; body: string } | { ok: false; status: 400; error: string }> {
+type ReadJsonBodyResult =
+  | { ok: true; body: string }
+  | { ok: false; status: 400; error: string; code: ProfileJsonErrorCode }
+
+function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<ReadJsonBodyResult> {
   return new Promise((resolvePromise) => {
     let total = 0
     let settled = false
     const chunks: Buffer[] = []
-    const finish = (result: { ok: true; body: string } | { ok: false; status: 400; error: string }): void => {
+    const finish = (result: ReadJsonBodyResult): void => {
       if (settled) return
       settled = true
       cleanup()
@@ -145,7 +181,7 @@ function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<{ ok: tru
       const buf = typeof chunk === 'string' ? Buffer.from(chunk, 'utf8') : chunk
       total += buf.length
       if (total > maxBytes) {
-        finish({ ok: false, status: 400, error: 'Request body too large' })
+        finish({ ok: false, status: 400, error: 'Request body too large', code: 'BODY_TOO_LARGE' })
         return
       }
       chunks.push(buf)
@@ -154,7 +190,7 @@ function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<{ ok: tru
       finish({ ok: true, body: Buffer.concat(chunks).toString('utf8') })
     }
     const onError = (): void => {
-      finish({ ok: false, status: 400, error: 'Could not read request body' })
+      finish({ ok: false, status: 400, error: 'Could not read request body', code: 'BODY_READ_ERROR' })
     }
     const cleanup = (): void => {
       req.off('data', onData)
@@ -319,13 +355,15 @@ export class ProfileControllerFactory implements Machine {
       if (!Number.isFinite(id)) {
         res.statusCode = 400
         res.setHeader('Content-Type', 'application/json')
-        res.end(JSON.stringify({ error: 'Profile ID required' }))
+        res.end(profileJsonErrorString('Profile ID required', 'PROFILE_ID_REQUIRED'))
         return
       }
       if (!this.canWriteProfile(website, requestInfo, id)) {
         res.statusCode = 403
         res.setHeader('Content-Type', 'application/json')
-        res.end(JSON.stringify({ error: 'Forbidden: only owner or admin can edit this profile' }))
+        res.end(
+          profileJsonErrorString('Forbidden: only owner or admin can edit this profile', 'PROFILE_FORBIDDEN'),
+        )
         return
       }
 
@@ -333,7 +371,7 @@ export class ProfileControllerFactory implements Machine {
       if (!raw.ok) {
         res.statusCode = raw.status
         res.setHeader('Content-Type', 'application/json')
-        res.end(JSON.stringify({ error: raw.error }))
+        res.end(profileJsonErrorString(raw.error, raw.code))
         return
       }
       let parsed: unknown
@@ -342,7 +380,7 @@ export class ProfileControllerFactory implements Machine {
       } catch {
         res.statusCode = 400
         res.setHeader('Content-Type', 'application/json')
-        res.end(JSON.stringify({ error: 'Invalid JSON' }))
+        res.end(profileJsonErrorString('Invalid JSON', 'INVALID_JSON'))
         return
       }
       const fields = this.resolved.updatableFields as ('name' | 'photo')[]
@@ -350,7 +388,7 @@ export class ProfileControllerFactory implements Machine {
       if (!parsedResult.ok) {
         res.statusCode = parsedResult.status
         res.setHeader('Content-Type', 'application/json')
-        res.end(JSON.stringify({ error: parsedResult.error }))
+        res.end(profileJsonErrorString(parsedResult.error, parsedResult.code))
         return
       }
       try {
@@ -362,7 +400,7 @@ export class ProfileControllerFactory implements Machine {
         res.statusCode = 500
         res.setHeader('Content-Type', 'application/json')
         const msg = err instanceof Error ? err.message : String(err)
-        res.end(JSON.stringify({ error: msg }))
+        res.end(profileJsonErrorString(msg, 'PROFILE_UPDATE_FAILED'))
       }
       return
     }

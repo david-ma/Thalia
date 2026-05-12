@@ -93,7 +93,35 @@ export class ThaliaImageUploader implements Machine {
   /** Resolved from `SMUGMUG_OAUTH_CALLBACK_URL`, `config.smugmug.oauthCallbackUrl`, or localhost default. */
   private oauthCallbackResolved = 'http://localhost:3000/oauthCallback'
 
-  constructor() {}
+  /**
+   * Which storage tier was selected at construction time (from env vars).
+   * Reflects the best adapter available based on `SMUGMUG_CONSUMER_KEY`,
+   * `SMUGMUG_CONSUMER_SECRET`, and `UPLOADTHING_SECRET`.
+   * May be refined by `init()` once `config/secrets.js` has loaded.
+   */
+  public adapterName: 'smugmug' | 'uploadthing' | 'local-disk'
+
+  constructor() {
+    const hasSmugMugKeys = !!(
+      process.env.SMUGMUG_CONSUMER_KEY?.trim() &&
+      process.env.SMUGMUG_CONSUMER_SECRET?.trim()
+    )
+    const hasUploadThingKey = !!process.env.UPLOADTHING_SECRET?.trim()
+    this.adapterName = ThaliaImageUploader.pickAdapterName({ hasSmugMugKeys, hasUploadThingKey })
+  }
+
+  /**
+   * Selects the best available storage tier based on which credentials are present.
+   * Priority: SmugMug > UploadThing > local-disk (last-resort fallback).
+   */
+  static pickAdapterName(opts: {
+    hasSmugMugKeys: boolean
+    hasUploadThingKey: boolean
+  }): 'smugmug' | 'uploadthing' | 'local-disk' {
+    if (opts.hasSmugMugKeys) return 'smugmug'
+    if (opts.hasUploadThingKey) return 'uploadthing'
+    return 'local-disk'
+  }
 
   public init(website: Website, name: string): void {
     this.website = website

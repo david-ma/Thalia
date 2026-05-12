@@ -89,9 +89,12 @@ export const images = mysqlTable('images', {
   archivedUri: vc('archived_uri'),
   archivedSize: int('archived_size'),
   archivedMD5: vc('archived_md5'),
-  imageKey: vc('image_key').notNull(),
+  /** SmugMug image key — null for non-SmugMug adapters (UploadThing, local-disk). */
+  imageKey: vc('image_key'),
   preferredDisplayFileExtension: vc('preferred_display_file_extension'),
-  uri: vc('uri')
+  uri: vc('uri'),
+  /** Which adapter stored this image: 'smugmug' | 'uploadthing' | 'local-disk'. */
+  adapterName: vc('adapter_name', 64),
 })
 
 export type Image = InferSelectModel<typeof images>

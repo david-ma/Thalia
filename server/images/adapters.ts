@@ -12,6 +12,9 @@
 /**
  * Caller-supplied metadata about the image being stored.
  * All fields except `filename` and `mimeType` are optional.
+ *
+ * `sourceUrl` is used by `UploadThingUrlAdapter`: pass the canonical UT CDN URL
+ * so it can be stored as the serve URL without re-uploading bytes.
  */
 export type ImageMeta = {
   filename: string
@@ -19,6 +22,8 @@ export type ImageMeta = {
   caption?: string
   title?: string
   keywords?: string
+  /** Canonical URL already hosted externally (e.g. UploadThing CDN). Stored as `images.url` by UploadThingUrlAdapter. */
+  sourceUrl?: string
 }
 
 /**

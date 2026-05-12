@@ -47,5 +47,6 @@ export function buildSmugMugNewImageInsert(data: SmugMugUploadAck, ai: Record<st
     preferredDisplayFileExtension:
       typeof ai.PreferredDisplayFileExtension === 'string' ? ai.PreferredDisplayFileExtension : '',
     uri: typeof ai.Uri === 'string' && ai.Uri ? ai.Uri : data.Image.ImageUri,
+    adapterName: 'smugmug',
   }
 }

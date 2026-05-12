@@ -25,10 +25,10 @@
  *  [x] Extract ImageStoreAdapter interface + StoredImage type (server/images/adapters.ts)
  *  [x] Write failing tests for adapter selection + generalized image model
  *      (tests/Unit/image-adapter-selection.test.ts) — 5 pass (interface), 7 fail (not yet impl)
- *  [ ] Migrate DB: add adapterName column (varchar, nullable) to `images` table;
+ *  [x] Migrate DB: add adapterName column (varchar, nullable) to `images` table;
  *      make imageKey nullable (non-SmugMug adapters have no key); write migration
  *      0003_image_adapter_name + update models/smugmug.ts accordingly
- *  [ ] Implement SmugMugAdapter, UploadThingUrlAdapter, LocalDiskAdapter
+ *  [x] Implement SmugMugAdapter, UploadThingUrlAdapter, LocalDiskAdapter
  *      (LocalDisk: write to /data/photos/<md5>.<ext>, store local URL in DB)
  *  [ ] ThaliaImageUploader.init() probes config and picks the best available adapter;
  *      no more 503 when SmugMug is unconfigured — always falls back to next tier
@@ -65,6 +65,9 @@
  */
 
 export type { ImageMeta, ImageStoreAdapter, StoredImage } from './adapters.js'
+export { SmugMugAdapter } from './smugmug-adapter.js'
+export { UploadThingUrlAdapter } from './uploadthing-url-adapter.js'
+export { LocalDiskAdapter } from './local-disk-adapter.js'
 export { requestHttpsUtf8 } from './https-request.js'
 export type { HttpsUtf8Response, RequestHttpsUtf8Params, SmugMugHttpsLogContext } from './https-request.js'
 export { redactLogText, smugmugLogLine } from './log.js'

@@ -5,6 +5,7 @@ import { Website } from './website'
 import formidable from 'formidable'
 import { RequestInfo } from './server'
 import { RequestHandler } from './request-handler'
+import { CrudFactory } from './controllers'
 import { and, eq, gt, or, isNull } from 'drizzle-orm'
 
 /**
@@ -428,8 +429,10 @@ export class BasicRouteGuard extends RouteGuard {
 export type Role = 'admin' | 'user' | 'guest'
 export type Permission = 'read' | 'update' | 'delete' | 'create' | 'manage'
 
-import { RoleRouteRule } from './security'
-import { CrudFactory } from './controllers'
+export interface RoleRouteRule extends RouteRule {
+  path: string
+  permissions: Partial<Record<Role, Permission[]>>
+}
 
 export type SecurityConfig = {
   roles: Role[]

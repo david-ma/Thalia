@@ -93,10 +93,8 @@ export interface DatabaseConfig {
   machines?: Record<string, Machine>
 }
 
-import { SecurityConfig } from './route-guard.js'
-export type { SecurityConfig }
-
-import { RoleRouteRule } from './security/index.js'
+import { SecurityConfig, type RoleRouteRule } from './route-guard.js'
+export type { SecurityConfig, RoleRouteRule }
 
 /**
  * Sitemap configuration for a website.

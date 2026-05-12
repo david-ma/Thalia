@@ -24,6 +24,7 @@ import { requestHttpsUtf8 } from './smugmug/https-request.js'
 import { fetchRemoteHttpsImageBytes, pickRemoteFileUrl } from './smugmug/remote-image-fetch.js'
 import { parseSmugMugMultipartUploadResponse } from './smugmug/multipart-upload-response.js'
 import { buildSmugMugNewImageInsert, type SmugMugUploadAck } from './smugmug/save-image-map.js'
+import { mysqlInsertIdFromDrizzleMysql2Result } from './smugmug/mysql-insert-result.js'
 import { parseSmugMugVerbosityAlbumImage } from './smugmug/verbosity-response.js'
 import { smugmugLogLine } from './smugmug/log.js'
 import {
@@ -1171,10 +1172,10 @@ export class SmugMugUploader implements Machine {
         }
 
         this.tokens = {
-          consumer_key: String(smug.consumer_key ?? ''),
-          consumer_secret: String(smug.consumer_secret ?? ''),
-          oauth_token: String(smug.oauth_token ?? ''),
-          oauth_token_secret: String(smug.oauth_token_secret ?? ''),
+          consumer_key: String(smug.consumer_key ?? process.env.SMUGMUG_CONSUMER_KEY ?? ''),
+          consumer_secret: String(smug.consumer_secret ?? process.env.SMUGMUG_CONSUMER_SECRET ?? ''),
+          oauth_token: String(smug.oauth_token ?? process.env.SMUGMUG_OAUTH_TOKEN ?? ''),
+          oauth_token_secret: String(smug.oauth_token_secret ?? process.env.SMUGMUG_OAUTH_TOKEN_SECRET ?? ''),
         }
 
         const secretAlbum = typeof smug.album === 'string' ? smug.album.trim() : ''
@@ -1683,7 +1684,7 @@ export class SmugMugUploader implements Machine {
 
     const ack = parseSmugMugMultipartUploadResponse(statusCode, bodyUtf8)
     const insertResult = await this.saveImage(ack)
-    const insertIdNum = SmugMugUploader.insertIdFromMysqlResult(insertResult)
+    const insertIdNum = mysqlInsertIdFromDrizzleMysql2Result(insertResult)
     if (insertIdNum === undefined) {
       throw new Error('Image insert returned no insertId')
     }
@@ -1693,16 +1694,6 @@ export class SmugMugUploader implements Machine {
       throw new Error('Image row missing after insert')
     }
     return row
-  }
-
-  /** mysql2 `insertId` extraction from Drizzle `insert`/`execute` result shapes. */
-  private static insertIdFromMysqlResult(result: unknown): number | undefined {
-    if (result != null && typeof result === 'object' && 'insertId' in result) {
-      const raw = (result as { insertId: number | bigint | undefined }).insertId
-      if (raw === undefined) return undefined
-      return typeof raw === 'bigint' ? Number(raw) : raw
-    }
-    return undefined
   }
 
   private saveImage(data: SmugMugUploadAck): Promise<unknown> {

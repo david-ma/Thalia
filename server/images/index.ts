@@ -32,7 +32,7 @@
  *      (LocalDisk: write to /data/photos/<md5>.<ext>, store local URL in DB)
  *  [x] ThaliaImageUploader.init() probes config and picks the best available adapter;
  *      no more 503 when SmugMug is unconfigured — always falls back to next tier
- *  [ ] ThaliaImageUploader exposes adminController() — optional, read-only controller
+ *  [x] ThaliaImageUploader exposes adminController() — optional, read-only controller
  *      listing images + adapter status; gated by website.devMode or a specified role;
  *      no CrudFactory wiring required from webmaster (zero-config admin surface)
  *  [ ] Move smugmug-specific files into server/images/smugmug/ subfolder, strip the

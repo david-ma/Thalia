@@ -3,13 +3,14 @@ import crypto from 'node:crypto'
 import fsp from 'node:fs/promises'
 import https from 'node:https'
 import path from 'node:path'
-import { eq } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 import type { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import { images, type Image } from '../../models/smugmug.js'
 import type { Machine } from '../types.js'
+import type { Role } from '../route-guard.js'
 import { parseForm, type ParsedForm } from '../util.js'
 import type { RequestInfo } from '../server.js'
-import type { Website } from '../website.js'
+import type { Website, Controller } from '../website.js'
 import type { ImageMeta, ImageStoreAdapter } from './adapters.js'
 import { SmugMugAdapter } from './smugmug-adapter.js'
 import { UploadThingUrlAdapter } from './uploadthing-url-adapter.js'
@@ -530,6 +531,84 @@ export class ThaliaImageUploader implements Machine {
           })
         })
     })
+  }
+
+  /**
+   * Returns a read-only admin controller listing stored images and reporting adapter status.
+   *
+   * **Access control (applied in order):**
+   * 1. `website.env === 'development'` — always allowed (devMode).
+   * 2. `requestInfo.userAuth?.role` is in `allowedRoles` — allowed.
+   * 3. Otherwise — 403 Forbidden.
+   *
+   * **Minimal wire-up in `config/config.ts`:**
+   * ```ts
+   * controllers: { admin: { images: imageUploader.adminController() } }
+   * ```
+   *
+   * @param opts.allowedRoles  Roles granted access in non-dev environments. Default: `['admin']`.
+   * @param opts.pageSize      Images per page (max 200, default 50).
+   */
+  public adminController(opts?: { allowedRoles?: Role[]; pageSize?: number }): Controller {
+    const allowedRoles: Role[] = opts?.allowedRoles ?? ['admin']
+    const pageSize = Math.min(opts?.pageSize ?? 50, 200)
+
+    return (res, _req, website, requestInfo) => {
+      const isDev = website.env === 'development'
+      const userRole = requestInfo.userAuth?.role
+      const hasRole = userRole !== undefined && allowedRoles.includes(userRole)
+
+      if (!isDev && !hasRole) {
+        res.statusCode = 403
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.end(JSON.stringify({ error: 'Forbidden' }))
+        return
+      }
+
+      void this.initPromise.then(async () => {
+        const status = {
+          adapterName: this.adapterName,
+          adapterReady: this.adapter !== null,
+        }
+
+        const drizzle = website.db?.drizzle
+        if (!drizzle) {
+          res.statusCode = 200
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
+          res.end(JSON.stringify({ ...status, images: [], note: 'No database configured.' }))
+          return
+        }
+
+        try {
+          const pageParam = parseInt(requestInfo.query.page ?? '1', 10)
+          const page = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam
+          const offset = (page - 1) * pageSize
+
+          const rows = await drizzle
+            .select()
+            .from(images)
+            .orderBy(desc(images.createdAt))
+            .limit(pageSize)
+            .offset(offset)
+
+          res.statusCode = 200
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
+          res.end(JSON.stringify({ ...status, page, pageSize, images: rows }))
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err)
+          smugmugLogLine({
+            service: this.adapterName,
+            level: 'error',
+            operation: 'admin_images_query',
+            website: website.name,
+            msg,
+          })
+          res.statusCode = 500
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
+          res.end(JSON.stringify({ error: 'Failed to query images', detail: msg }))
+        }
+      })
+    }
   }
 
   private jsonFieldString(body: Record<string, unknown>, ...keys: string[]): string {

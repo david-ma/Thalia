@@ -170,6 +170,9 @@ function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<{ ok: tru
 /**
  * `Machine` that serves a user profile page (GET) and JSON updates (PUT/PATCH/POST) for whitelisted `users` columns.
  * Row-level write auth: **owner** or **admin**. Coarse route rules stay in {@link RoleRouteRule}.
+ *
+ * Prefer a **site** Handlebars partial (e.g. `websites/.../src/partials/profile_content.hbs`). The framework file
+ * **`src/views/security/profile.hbs`** is a legacy demo scaffold, not wired to this factory.
  */
 export class ProfileControllerFactory implements Machine {
   public table: MySqlTableWithColumns<any> = defaultUsersTable as MySqlTableWithColumns<any>

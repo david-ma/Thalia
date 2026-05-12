@@ -24,7 +24,7 @@ It’s designed so you can start with something tangible quickly, then grow it i
 - **Controllers for dynamic pages**: add route handlers for forms, API calls, redirects, light dynamic behaviour.
 - **DB-backed internal tool**: add Drizzle schemas + queries, then build pages/controllers around them.
 - **CRUD-first admin UI**: register CrudFactory machines for quick admin interfaces, then replace/augment with custom controllers as needs evolve.
-- **Security-gated app**: use Thalia’s optional security subsystem when you need auth/roles/guards (see repo docs and examples).
+- **Security-gated app**: use Thalia’s optional security subsystem when you need auth/roles/guards (see repo docs and examples). For **editable user profiles**, use **`ProfileControllerFactory`** from **`thalia/security`** with a site Handlebars partial (see **`websites/example-auth/src/partials/profile_content.hbs`**); the framework file **`src/views/security/profile.hbs`** is a **legacy demo** only—not the supported profile flow.
 
 ## Why Thalia vs “another framework” or WordPress
 

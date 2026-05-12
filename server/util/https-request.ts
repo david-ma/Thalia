@@ -1,13 +1,14 @@
 /**
- * Shared HTTPS client for SmugMug hosts (timeout, UTF-8 body accumulation).
+ * Shared HTTPS client (timeout, UTF-8 body accumulation).
+ * Used by SmugMug flows and any other code that needs a simple HTTPS text response.
  */
 
 import https from 'https'
 import type { IncomingMessage } from 'http'
 import type { OutgoingHttpHeaders } from 'http'
 
-import { SMUGMUG_HTTPS_TIMEOUT_MS } from './smugmug/constants.js'
-import { smugmugLogLine } from './log.js'
+import { SMUGMUG_HTTPS_TIMEOUT_MS } from '../images/smugmug/constants.js'
+import { smugmugLogLine } from '../images/log.js'
 
 export type SmugMugHttpsLogContext = {
   website?: string

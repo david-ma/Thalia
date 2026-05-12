@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { requestHttpsUtf8 } from '../../server/images/https-request.js'
+import { requestHttpsUtf8 } from '../../server/util/https-request.js'
 
 describe('requestHttpsUtf8', () => {
   test('returns a defined HTTP status from SmugMug host', async () => {

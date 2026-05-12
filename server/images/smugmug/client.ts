@@ -4,7 +4,7 @@
 
 import fs from 'fs'
 
-import { requestHttpsUtf8 } from '../https-request.js'
+import { requestHttpsUtf8 } from '../../util/https-request.js'
 import {
   smugmugB64HmacSha1,
   smugmugBundleAuthorization,

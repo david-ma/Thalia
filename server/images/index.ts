@@ -40,7 +40,7 @@
  *      Rename models/smugmug.ts → models/images.ts at the same time.
  *  [x] Merge multipart-upload-response.ts + verbosity-response.ts → smugmug/response-parsers.ts
  *  [x] Move mysql-insert-result.ts to models/util.ts (not image-specific)
- *  [ ] Move https-request.ts to server/util/ (no SmugMug logic; useful everywhere)
+ *  [x] Move https-request.ts to server/util/ (no SmugMug logic; useful everywhere)
  *  [ ] Generalise log.ts service field from hardcoded 'smugmug' to the adapter name
  *
  * ─── BUGS ──────────────────────────────────────────────────────────────────────
@@ -68,8 +68,8 @@ export type { ImageMeta, ImageStoreAdapter, StoredImage } from './adapters.js'
 export { SmugMugAdapter } from './smugmug/adapter.js'
 export { UploadThingUrlAdapter } from './uploadthing-url-adapter.js'
 export { LocalDiskAdapter } from './local-disk-adapter.js'
-export { requestHttpsUtf8 } from './https-request.js'
-export type { HttpsUtf8Response, RequestHttpsUtf8Params, SmugMugHttpsLogContext } from './https-request.js'
+export { requestHttpsUtf8 } from '../util/https-request.js'
+export type { HttpsUtf8Response, RequestHttpsUtf8Params, SmugMugHttpsLogContext } from '../util/https-request.js'
 export { redactLogText, smugmugLogLine } from './log.js'
 export type { SmugmugLogEvent, SmugmugLogLevel } from './log.js'
 export {

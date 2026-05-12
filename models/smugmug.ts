@@ -1,6 +1,41 @@
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm'
-import { mysqlTable, text, int } from 'drizzle-orm/mysql-core'
+import { customType, mysqlTable, text, int } from 'drizzle-orm/mysql-core'
 import { vc, baseTableConfig } from './util'
+
+/** Arbitrary JSON-compatible document stored as UTF-8 in `images.notes_blob` (no schema churn for new keys). */
+export type ImageNotesBlob = Record<string, unknown>
+
+const imageNotesBlobColumn = customType<{
+  data: ImageNotesBlob | null
+  driverData: Buffer | null
+}>({
+  dataType() {
+    return 'longblob'
+  },
+  toDriver(value) {
+    if (value == null) return null
+    if (typeof value === 'string') {
+      const s = value.trim()
+      if (!s) return null
+      return Buffer.from(s, 'utf8')
+    }
+    return Buffer.from(JSON.stringify(value), 'utf8')
+  },
+  fromDriver(value) {
+    if (value == null) return null
+    const buf = Buffer.isBuffer(value) ? value : Buffer.from(value as Uint8Array)
+    if (buf.length === 0) return null
+    try {
+      const parsed: unknown = JSON.parse(buf.toString('utf8'))
+      if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as ImageNotesBlob
+      }
+      return null
+    } catch {
+      return null
+    }
+  },
+})
 
 // Album Model. Keys/URLs match SmugMug API: albumKey (e.g. jHhcL7), uri (API path), webUri (public gallery URL).
 export const albums = mysqlTable('albums', {
@@ -25,8 +60,8 @@ export type NewAlbum = InferInsertModel<typeof albums>
 export const images = mysqlTable('images', {
   ...baseTableConfig,
   albumKey: vc('album_key'),
-  /** Site-local notes (Thalia DB); distinct from SmugMug `caption`. */
-  notes: text('notes'),
+  /** Site-local JSON document as UTF-8 bytes (Thalia DB); distinct from SmugMug `caption`. */
+  notesBlob: imageNotesBlobColumn('notes_blob'),
   caption: text('caption'),
   albumId: int('album_id').references(() => albums.id),
   filename: vc('filename'),

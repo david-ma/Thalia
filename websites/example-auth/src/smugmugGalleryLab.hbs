@@ -2,8 +2,8 @@
   <section class="container py-4" aria-labelledby="smug-lab-title">
     <h1 id="smug-lab-title" class="h3 mb-2">SmugMug gallery lab</h1>
     <p class="text-muted small mb-4">
-      Browse albums and cached images from Thalia’s JSON endpoints, compare SmugMug fields with Thalia columns, and save
-      <strong>notes</strong> on each row (<code>images.notes</code>). Notes require a signed-in <strong>user</strong> or
+      Browse albums and cached images from Thalia’s JSON endpoints, compare SmugMug fields with Thalia columns, and edit a
+      <strong>JSON notes blob</strong> per row (<code>images.notes_blob</code>, UTF-8 in <code>LONGBLOB</code>). Saving requires a signed-in <strong>user</strong> or
       <strong>admin</strong> (route guard <code>update</code> on <code>/</code>).
     </p>
 
@@ -61,7 +61,14 @@
             return '<tr><th class="text-end pe-2 text-nowrap">' + esc(k) + '</th><td><pre class="mb-0 small" style="white-space:pre-wrap;max-height:8rem;overflow:auto">' + esc(JSON.stringify(row[k], null, 0)) + '</pre></td></tr>'
           })
           .join('')
-        var notesVal = row.notes != null ? String(row.notes) : ''
+        var nb = row.notesBlob
+        var notesVal = ''
+        try {
+          notesVal =
+            nb != null && typeof nb === 'object' && !Array.isArray(nb) ? JSON.stringify(nb, null, 2) : JSON.stringify({}, null, 2)
+        } catch (e) {
+          notesVal = '{}'
+        }
         var id = row.id
         detailEl.className = 'border rounded p-3 bg-white small'
         detailEl.innerHTML =
@@ -71,11 +78,11 @@
           '<table class="table table-sm table-bordered mb-3">' +
           rowsHtml +
           '</table>' +
-          '<label class="form-label" for="smug-lab-notes">Notes (Thalia DB only)</label>' +
-          '<textarea id="smug-lab-notes" class="form-control mb-2" rows="4">' +
+          '<label class="form-label" for="smug-lab-notes">Notes blob (JSON object, stored in Thalia)</label>' +
+          '<textarea id="smug-lab-notes" class="form-control font-monospace mb-2" rows="6" spellcheck="false">' +
           esc(notesVal) +
           '</textarea>' +
-          '<button type="button" class="btn btn-primary btn-sm" id="smug-lab-save">Save notes</button>' +
+          '<button type="button" class="btn btn-primary btn-sm" id="smug-lab-save">Save notes blob</button>' +
           '<p id="smug-lab-save-msg" class="small text-muted mt-2 mb-0"></p>'
 
         var saveBtn = document.getElementById('smug-lab-save')
@@ -84,8 +91,20 @@
         if (saveBtn && msg && ta) {
           saveBtn.addEventListener('click', function () {
             msg.textContent = 'Saving…'
+            var raw = ta.value.trim()
+            var parsed
+            try {
+              parsed = raw ? JSON.parse(raw) : {}
+            } catch (e) {
+              msg.textContent = 'Invalid JSON: ' + (e && e.message ? e.message : String(e))
+              return
+            }
+            if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+              msg.textContent = 'Root value must be a JSON object {...}, not an array or primitive.'
+              return
+            }
             var fd = new FormData()
-            fd.append('notes', ta.value)
+            fd.append('notesBlob', JSON.stringify(parsed))
             fetch('/smugmugImages/update/' + encodeURIComponent(String(id)), { method: 'POST', body: fd })
               .then(function (r) {
                 if (r.ok) {

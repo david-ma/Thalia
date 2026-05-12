@@ -1,5 +1,5 @@
 /**
- * Reference config for **`ThaliaSecurity`** (`server/security.ts`) and **`RoleRouteGuard`**.
+ * Reference config for **`ThaliaSecurity`** (`server/security/index.ts`) and **`RoleRouteGuard`**.
  *
  * ### How this file is layered
  *
@@ -54,7 +54,7 @@ const fruitConfig = {
 const mailAuthPath = path.join(import.meta.dirname, 'mailAuth.js');
 
 /**
- * Wired into `Website.config.thaliaAuth` after merge. Options map to defaults shown in `server/security.ts`
+ * Wired into `Website.config.thaliaAuth` after merge. Options map to defaults shown in `server/security/index.ts`
  * (`ThaliaSecurity.defaultThaliaAuthOptions`).
  */
 const security = new ThaliaSecurity({

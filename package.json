@@ -37,8 +37,8 @@
       "types": "./models/security-models.ts"
     },
     "./security": {
-      "import": "./server/security.ts",
-      "types": "./server/security.ts"
+      "import": "./server/security/index.ts",
+      "types": "./server/security/index.ts"
     },
     "./controllers": {
       "import": "./server/controllers.ts",

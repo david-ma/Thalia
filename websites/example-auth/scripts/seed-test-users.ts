@@ -11,7 +11,7 @@ import { drizzle } from 'drizzle-orm/mysql2'
 import mysql from 'mysql2/promise'
 import { eq } from 'drizzle-orm'
 import { users } from '../models/drizzle-schema.ts'
-import { ThaliaSecurity } from '../../../server/security.ts'
+import { ThaliaSecurity } from '../../../server/security/index.ts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 

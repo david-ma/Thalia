@@ -96,7 +96,7 @@ export interface DatabaseConfig {
 import { SecurityConfig } from './route-guard.js'
 export type { SecurityConfig }
 
-import { RoleRouteRule } from './security.js'
+import { RoleRouteRule } from './security/index.js'
 
 /**
  * Sitemap configuration for a website.

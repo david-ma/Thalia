@@ -17,7 +17,7 @@
       "thalia/server": ["server/server.ts"],
       "thalia/website": ["server/website.ts"],
       "thalia/controllers": ["server/controllers.ts"],
-      "thalia/security": ["server/security.ts"],
+      "thalia/security": ["server/security/index.ts"],
       "thalia/models": ["models/index.ts"],
       "thalia/mail": ["server/mail.ts"],
       "thalia/util": ["server/util.ts"],

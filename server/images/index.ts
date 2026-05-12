@@ -23,8 +23,8 @@
  *  [x] Rename server/smugmug/ → server/images/  (this file → server/images/index.ts)
  *  [x] Rename SmugMugUploader → ThaliaImageUploader
  *  [x] Extract ImageStoreAdapter interface + StoredImage type (server/images/adapters.ts)
- *  [ ] Write failing tests for adapter selection + generalized image model
- *      (tests/Unit/image-adapter-selection.test.ts) — expect failures until adapters land
+ *  [x] Write failing tests for adapter selection + generalized image model
+ *      (tests/Unit/image-adapter-selection.test.ts) — 5 pass (interface), 7 fail (not yet impl)
  *  [ ] Migrate DB: add adapterName column (varchar, nullable) to `images` table;
  *      make imageKey nullable (non-SmugMug adapters have no key); write migration
  *      0003_image_adapter_name + update models/smugmug.ts accordingly

@@ -103,11 +103,38 @@ function profileController(
                     res.end('<h1>Not Found</h1><p>Profile not found.</p>');
                     return;
                 }
+                const isOwner =
+                    userAuth?.userId !== undefined && String(userAuth.userId) === String(user.id);
+                const isAdmin = userAuth?.role === 'admin';
+                const canEdit = isOwner || isAdmin;
+                const profileName = user.name ?? '';
+                const profileEmail = user.email ?? '';
+                const profilePhoto = (user.photo && String(user.photo).trim()) || '';
+                const profileInitialRaw =
+                    (profileName.trim()[0] ?? '') ||
+                    (profileEmail.trim()[0] ?? '') ||
+                    '?';
+                const profileInitial = profileInitialRaw.toUpperCase();
+                const profileDisplayName =
+                    profileName.trim() || profileEmail || `User ${user.id}`;
+                const profileRole = user.role ?? 'user';
+                const html = website.getContentHtml('profile_content')({
+                    title: `Profile — ${profileDisplayName}`,
+                    description: `Account profile for ${profileDisplayName} on Example Auth.`,
+                    profileId: user.id,
+                    profileName,
+                    profileDisplayName,
+                    profileEmail,
+                    profileRole,
+                    profilePhoto,
+                    profileInitial,
+                    canEdit,
+                    isOwnProfile: isOwner,
+                    viewerIsAdmin: !!isAdmin,
+                });
                 res.statusCode = 200;
-                res.setHeader('Content-Type', 'text/html');
-                res.end(
-                    `<h1>Profile</h1><p>ID: ${user.id}</p><p>Name: ${user.name ?? ''}</p><p>Role: ${user.role ?? ''}</p>`,
-                );
+                res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                res.end(html);
             })
             .catch((err: unknown) => {
                 res.statusCode = 500;

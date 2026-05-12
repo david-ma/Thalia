@@ -77,3 +77,29 @@ div.warning {
     text-align: center;
   }
 }
+
+.profile-page {
+  .profile-card {
+    background: $background;
+  }
+
+  .profile-avatar {
+    object-fit: cover;
+  }
+
+  .profile-avatar-placeholder {
+    width: 128px;
+    height: 128px;
+    font-size: 2.5rem;
+    background: $secondary;
+  }
+
+  .profile-dl dt {
+    font-weight: 600;
+    color: $secondary;
+  }
+
+  h1.text-primary {
+    color: $primary !important;
+  }
+}

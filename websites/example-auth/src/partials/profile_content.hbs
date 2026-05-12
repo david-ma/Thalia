@@ -1,0 +1,155 @@
+{{!-- Served via profileController + Website#getContentHtml('profile_content'). --}}
+<div class="profile-page py-2">
+  <nav class="mb-4" aria-label="Breadcrumb">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item"><a href="/">Home</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Profile</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4 align-items-start">
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm profile-card">
+        <div class="card-body text-center p-4">
+          {{#if profilePhoto}}
+            <img
+              class="profile-avatar rounded-circle border shadow-sm mb-3"
+              src="{{profilePhoto}}"
+              alt=""
+              width="128"
+              height="128"
+            />
+          {{else}}
+            <div
+              class="profile-avatar-placeholder rounded-circle border shadow-sm d-inline-flex align-items-center justify-content-center mb-3 mx-auto text-white fw-semibold"
+              aria-hidden="true"
+            >{{profileInitial}}</div>
+          {{/if}}
+          <h1 class="h3 mb-1 text-primary">{{profileDisplayName}}</h1>
+          <p class="text-muted small mb-2">User ID {{profileId}}</p>
+          <p class="mb-0">
+            <span class="badge text-bg-secondary text-uppercase">{{profileRole}}</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+          <h2 class="h5 text-uppercase text-muted mb-3">Account details</h2>
+          <dl class="row mb-0 profile-dl">
+            <dt class="col-sm-3">Email</dt>
+            <dd class="col-sm-9">{{#if profileEmail}}<a href="mailto:{{profileEmail}}">{{profileEmail}}</a>{{else}}<span class="text-muted">Not set</span>{{/if}}</dd>
+            <dt class="col-sm-3">Role</dt>
+            <dd class="col-sm-9">{{profileRole}}</dd>
+            <dt class="col-sm-3">Display name</dt>
+            <dd class="col-sm-9">{{profileName}}</dd>
+          </dl>
+        </div>
+      </div>
+
+      {{#if viewerIsAdmin}}
+        {{#unless isOwnProfile}}
+          <div class="alert alert-info py-2 small mb-4" role="status">
+            You are signed in as an administrator and may update this user&apos;s display name.
+          </div>
+        {{/unless}}
+      {{/if}}
+
+      <div
+        id="profile-root"
+        class="card border-0 shadow-sm"
+        data-profile-id="{{profileId}}"
+        data-can-edit="{{#if canEdit}}1{{else}}0{{/if}}"
+      >
+        <div class="card-body p-4">
+          <h2 class="h5 text-uppercase text-muted mb-3">Display name</h2>
+          {{#if canEdit}}
+            <p class="small text-muted mb-3">
+              This is the name shown in the session card and admin lists. It is not used for sign-in (email is).
+            </p>
+            <div class="row g-2 align-items-end flex-wrap">
+              <div class="col-md-8">
+                <label for="profile-name-input" class="form-label small text-muted mb-1">Name</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="profile-name-input"
+                  maxlength="255"
+                  value="{{profileName}}"
+                  autocomplete="name"
+                />
+              </div>
+              <div class="col-md-4">
+                <button type="button" class="btn btn-primary w-100" id="profile-save-btn">Save changes</button>
+              </div>
+            </div>
+            <p class="small mt-3 mb-0" id="profile-save-status" role="status" aria-live="polite"></p>
+          {{else}}
+            <p class="text-muted mb-0">
+              You can view this profile. Only the account owner or an administrator can change the display name.
+            </p>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var root = document.getElementById('profile-root')
+    if (!root || root.getAttribute('data-can-edit') !== '1') return
+    var id = root.getAttribute('data-profile-id')
+    var input = document.getElementById('profile-name-input')
+    var btn = document.getElementById('profile-save-btn')
+    var statusEl = document.getElementById('profile-save-status')
+    if (!id || !input || !btn || !statusEl) return
+    function setStatus(msg, kind) {
+      statusEl.textContent = msg
+      statusEl.className = 'small mt-3 mb-0'
+      if (kind === 'ok') statusEl.classList.add('text-success')
+      else if (kind === 'err') statusEl.classList.add('text-danger')
+      else statusEl.classList.add('text-muted')
+    }
+    btn.addEventListener('click', function () {
+      var name = (input.value || '').trim()
+      setStatus('Saving…', '')
+      btn.disabled = true
+      fetch('/profile/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name }),
+      })
+        .then(function (r) {
+          return r.text().then(function (t) {
+            return { r: r, t: t }
+          })
+        })
+        .then(function (ctx) {
+          var r = ctx.r
+          var t = ctx.t
+          var data = {}
+          try {
+            data = t ? JSON.parse(t) : {}
+          } catch (e) {}
+          if (!r.ok) {
+            setStatus(data.error || 'Could not save (' + r.status + ').', 'err')
+            return
+          }
+          if (data.error) {
+            setStatus(String(data.error), 'err')
+            return
+          }
+          setStatus('Saved. Refresh the page to see the name everywhere.', 'ok')
+        })
+        .catch(function () {
+          setStatus('Network error. Try again.', 'err')
+        })
+        .finally(function () {
+          btn.disabled = false
+        })
+    })
+  })()
+</script>

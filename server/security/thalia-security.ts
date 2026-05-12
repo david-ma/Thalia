@@ -260,14 +260,21 @@ export class ThaliaSecurity implements Machine {
                 .where(eq(usersTable.id, user.id))
                 .then(() => {
                   const partialTemplate = website.handlebars.partials['passwordResetEmail']
+                  const siteLabel = (website.name && String(website.name).trim()) || ''
+                  const preheader = siteLabel
+                    ? `${siteLabel} — use the link below to set a new password. Expires in 1 hour.`
+                    : 'Use the link below to set a new password. Expires in 1 hour.'
                   const html = partialTemplate
                     ? website.handlebars.compile(partialTemplate)({
                         resetUrl,
                         siteName: website.name,
                         email: user.email,
+                        preheader,
                       })
                     : `<p>Reset your password: <a href="${resetUrl}">${resetUrl}</a></p>`
-                  const text = `Reset your password: ${resetUrl}`
+                  const text = siteLabel
+                    ? `${siteLabel} — Reset your password: ${resetUrl}\n\nThis link expires in 1 hour. If you did not request this, you can ignore this email.`
+                    : `Reset your password: ${resetUrl}\n\nThis link expires in 1 hour. If you did not request this, you can ignore this email.`
 
                   mailService.sendEmail({
                     to: user.email,

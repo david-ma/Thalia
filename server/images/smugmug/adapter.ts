@@ -14,11 +14,11 @@ import { images } from '../../../models/images.js'
 import { normalizeSmugMugAlbumUri } from './album-uri.js'
 import { requestHttpsUtf8 } from '../https-request.js'
 import { mysqlInsertIdFromDrizzleMysql2Result } from '../mysql-insert-result.js'
-import { parseSmugMugMultipartUploadResponse } from '../multipart-upload-response.js'
+import { parseSmugMugMultipartUploadResponse } from './response-parsers.js'
 import { buildSmugMugNewImageInsert } from './save-image-map.js'
 import { SmugMugClient, type SmugMugTokenSet } from './client.js'
 import { smugmugBundleAuthorization } from './oauth.js'
-import { parseSmugMugVerbosityAlbumImage } from '../verbosity-response.js'
+import { parseSmugMugVerbosityAlbumImage } from './response-parsers.js'
 
 export class SmugMugAdapter implements ImageStoreAdapter {
   readonly name = 'smugmug'

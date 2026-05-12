@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
-import { parseSmugMugMultipartUploadResponse } from '../../server/images/multipart-upload-response.js'
-import { parseSmugMugVerbosityAlbumImage } from '../../server/images/verbosity-response.js'
+import {
+  parseSmugMugMultipartUploadResponse,
+  parseSmugMugVerbosityAlbumImage,
+} from '../../server/images/smugmug/response-parsers.js'
 
 describe('parseSmugMugMultipartUploadResponse', () => {
   const validBody = JSON.stringify({

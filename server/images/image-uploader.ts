@@ -19,7 +19,7 @@ import { normalizeSmugMugAlbumUri } from './smugmug/album-uri.js'
 import { requestHttpsUtf8 } from './https-request.js'
 import { smugmugLogLine } from './log.js'
 import { mysqlInsertIdFromDrizzleMysql2Result } from './mysql-insert-result.js'
-import { parseSmugMugMultipartUploadResponse } from './multipart-upload-response.js'
+import { parseSmugMugMultipartUploadResponse } from './smugmug/response-parsers.js'
 import { fetchRemoteHttpsImageBytes, pickRemoteFileUrl } from './remote-image-fetch.js'
 import { buildSmugMugNewImageInsert, type SmugMugUploadAck } from './smugmug/save-image-map.js'
 import { SmugMugClient, type SmugMugTokenSet } from './smugmug/client.js'
@@ -35,7 +35,7 @@ import {
   THALIA_SMUG_JSON_SERVER_ERROR,
   THALIA_SMUG_MULTIPART_FAILED,
 } from './upload-photo-errors.js'
-import { parseSmugMugVerbosityAlbumImage } from './verbosity-response.js'
+import { parseSmugMugVerbosityAlbumImage } from './smugmug/response-parsers.js'
 
 const UPLOAD_PHOTO_JSON_MAX_BYTES = 64 * 1024
 
@@ -171,6 +171,30 @@ export class ThaliaImageUploader implements Machine {
     const envAlbum = process.env.SMUGMUG_ALBUM?.trim()
     const cfgAlbum = cfg?.album?.trim()
     this.album = envAlbum || cfgAlbum || ''
+
+    // THALIA_IMAGE_ADAPTER bypasses secrets probing entirely — intended for tests and
+    // environments where credentials are not needed (e.g. forced local-disk in CI).
+    const forcedAdapter = process.env.THALIA_IMAGE_ADAPTER?.trim()
+    if (forcedAdapter === 'local-disk' || forcedAdapter === 'uploadthing') {
+      if (forcedAdapter === 'local-disk') {
+        const basePath = process.env.THALIA_LOCAL_DISK_BASEPATH?.trim() || '/data/photos'
+        const baseUrl = process.env.THALIA_LOCAL_DISK_BASEURL?.trim() || '/data/photos'
+        this.adapterName = 'local-disk'
+        this.adapter = new LocalDiskAdapter(this.website, basePath, baseUrl)
+      } else {
+        this.adapterName = 'uploadthing'
+        this.adapter = new UploadThingUrlAdapter(this.website)
+      }
+      smugmugLogLine({
+        service: this.adapterName,
+        level: 'info',
+        operation: 'init_adapter_forced',
+        website: website.name,
+        msg: `Using forced adapter from THALIA_IMAGE_ADAPTER=${forcedAdapter}.`,
+      })
+      this.initPromise = Promise.resolve()
+      return
+    }
 
     const secretsPath = path.join(this.website.rootPath, 'config', 'secrets.js')
 

@@ -60,17 +60,15 @@ describeDatabaseOnline('Integration: local-disk adapter upload (example-auth + M
     // Create a writable temp dir for image files
     tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'thalia-local-disk-it-'))
 
-    // Save and clear keys that would select a higher-priority adapter
+    // Force local-disk adapter regardless of any credentials in secrets.js or env.
+    // THALIA_IMAGE_ADAPTER takes priority over config/secrets.js so the test is
+    // deterministic even on machines that have valid SmugMug credentials.
     savedEnv = {
-      SMUGMUG_CONSUMER_KEY: process.env.SMUGMUG_CONSUMER_KEY,
-      SMUGMUG_CONSUMER_SECRET: process.env.SMUGMUG_CONSUMER_SECRET,
-      UPLOADTHING_SECRET: process.env.UPLOADTHING_SECRET,
+      THALIA_IMAGE_ADAPTER: process.env.THALIA_IMAGE_ADAPTER,
       THALIA_LOCAL_DISK_BASEPATH: process.env.THALIA_LOCAL_DISK_BASEPATH,
       THALIA_LOCAL_DISK_BASEURL: process.env.THALIA_LOCAL_DISK_BASEURL,
     }
-    delete process.env.SMUGMUG_CONSUMER_KEY
-    delete process.env.SMUGMUG_CONSUMER_SECRET
-    delete process.env.UPLOADTHING_SECRET
+    process.env.THALIA_IMAGE_ADAPTER = 'local-disk'
     process.env.THALIA_LOCAL_DISK_BASEPATH = tmpDir
     process.env.THALIA_LOCAL_DISK_BASEURL = '/test-photos'
 
@@ -97,7 +95,7 @@ describeDatabaseOnline('Integration: local-disk adapter upload (example-auth + M
       await fsp.rm(tmpDir, { recursive: true, force: true }).catch(() => {})
     }
 
-    // Restore env vars
+    // Restore env vars to their original values
     for (const [key, value] of Object.entries(savedEnv)) {
       if (value === undefined) {
         delete process.env[key]

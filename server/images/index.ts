@@ -38,7 +38,7 @@
  *  [x] Move smugmug-specific files into server/images/smugmug/ subfolder, strip the
  *      "smugmug-" prefix from filenames (smugmug-oauth.ts → smugmug/oauth.ts, etc.)
  *      Rename models/smugmug.ts → models/images.ts at the same time.
- *  [ ] Merge multipart-upload-response.ts + verbosity-response.ts → smugmug/response-parsers.ts
+ *  [x] Merge multipart-upload-response.ts + verbosity-response.ts → smugmug/response-parsers.ts
  *  [ ] Move mysql-insert-result.ts to models/util.ts (not image-specific)
  *  [ ] Move https-request.ts to server/util/ (no SmugMug logic; useful everywhere)
  *  [ ] Generalise log.ts service field from hardcoded 'smugmug' to the adapter name
@@ -77,8 +77,7 @@ export {
   fetchRemoteHttpsImageBytes,
   pickRemoteFileUrl,
 } from './remote-image-fetch.js'
-export { parseSmugMugVerbosityAlbumImage } from './verbosity-response.js'
-export { parseSmugMugMultipartUploadResponse } from './multipart-upload-response.js'
+export { parseSmugMugVerbosityAlbumImage, parseSmugMugMultipartUploadResponse } from './smugmug/response-parsers.js'
 export { SMUGMUG_REMOTE_FETCH_TIMEOUT_MS, SMUGMUG_HTTPS_TIMEOUT_MS } from './smugmug/constants.js'
 export { normalizeSmugMugAlbumUri } from './smugmug/album-uri.js'
 export type { SmugMugUploadAck } from './smugmug/save-image-map.js'

@@ -74,7 +74,7 @@ export function readLimitedJsonObject(
   })
 }
 
-export class SmugMugUploader implements Machine {
+export class ThaliaImageUploader implements Machine {
   private website!: Website
   public name!: string
   public table!: MySqlTableWithColumns<any>
@@ -230,7 +230,7 @@ export class SmugMugUploader implements Machine {
         req.end()
       })
       .catch((error: unknown) => {
-        if (SmugMugUploader.isMissingSecretsModule(error)) {
+        if (ThaliaImageUploader.isMissingSecretsModule(error)) {
           smugmugLogLine({
             service: 'smugmug',
             level: 'warn',

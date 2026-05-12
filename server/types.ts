@@ -77,7 +77,7 @@ export interface BasicWebsiteConfig {
 
 /**
  * A Machine is a singleton that needs to be initialised by Thalia.
- * They provide controllers. CrudFactories are Machines; SmugMugUploader is a Machine.
+ * They provide controllers. CrudFactories are Machines; ThaliaImageUploader is a Machine.
  */
 export type Machine = {
   init: (website: Website, name: string) => void
@@ -133,7 +133,7 @@ export type ThaliaAuthOptions = {
 }
 
 /**
- * Optional SmugMug machine settings (`SmugMugUploader`).
+ * Optional SmugMug machine settings (`ThaliaImageUploader`).
  * Precedence: `config/secrets.js` `smugmug` fields override these when set.
  *
  * For local OAuth, the callback URL must match what SmugMug redirects to; use a tunnel

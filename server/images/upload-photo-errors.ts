@@ -3,7 +3,7 @@
  * Search the codebase for the constant name or string literal to find server handling and hints.
  */
 
-/** `SmugMugUploader.uploadNotReadyReason` — missing `config/secrets.js` export, consumer keys, OAuth access token, or album URI. */
+/** `ThaliaImageUploader.uploadNotReadyReason` — missing `config/secrets.js` export, consumer keys, OAuth access token, or album URI. */
 export const THALIA_SMUG_NOT_CONFIGURED = 'THALIA_SMUG_NOT_CONFIGURED'
 
 /** Multipart upload failed after the body was accepted (SmugMug API, DB insert, etc.). See `upload_photo_form` logs. */

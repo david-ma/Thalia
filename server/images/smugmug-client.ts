@@ -1,5 +1,5 @@
 /**
- * Thin SmugMug API v2 + OAuth-signed HTTP client for Thalia (`SmugMugUploader` consumes this).
+ * Thin SmugMug API v2 + OAuth-signed HTTP client for Thalia (`ThaliaImageUploader` consumes this).
  */
 
 import fs from 'fs'

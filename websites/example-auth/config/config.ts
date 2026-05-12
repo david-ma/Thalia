@@ -24,7 +24,7 @@
 import path from 'path';
 import type { IncomingMessage, ServerResponse } from 'http';
 import { eq } from 'drizzle-orm';
-import { CrudFactory, SmugMugUploader } from 'thalia/controllers';
+import { CrudFactory, ThaliaImageUploader } from 'thalia/controllers';
 import type { RequestInfo } from 'thalia/server';
 import type { User } from 'thalia/models';
 import { type RoleRouteRule, ThaliaSecurity } from 'thalia/security';
@@ -261,12 +261,12 @@ const roleBasedSecurityConfig = recursiveObjectMerge(recursiveObjectMerge(securi
 
 const AlbumMachine = new CrudFactory(albums);
 const ImageMachine = new CrudFactory(images);
-const smugMugUploader = new SmugMugUploader();
+const imageUploader = new ThaliaImageUploader();
 const smugmugConfig = {
     controllers: {
         smugmugAlbums: AlbumMachine.controller.bind(AlbumMachine),
         smugmugImages: ImageMachine.controller.bind(ImageMachine),
-        uploadPhoto: smugMugUploader.controller.bind(smugMugUploader),
+        uploadPhoto: imageUploader.controller.bind(imageUploader),
     },
     database: {
         schemas: {
@@ -276,7 +276,7 @@ const smugmugConfig = {
         machines: {
             albums: AlbumMachine,
             images: ImageMachine,
-            smugmug: smugMugUploader,
+            smugmug: imageUploader,
         },
     },
 };

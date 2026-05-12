@@ -21,7 +21,7 @@
  *
  * ─── REFACTOR PLAN ─────────────────────────────────────────────────────────────
  *  [x] Rename server/smugmug/ → server/images/  (this file → server/images/index.ts)
- *  [ ] Rename SmugMugUploader → ThaliaImageUploader (or PhotoUploader)
+ *  [x] Rename SmugMugUploader → ThaliaImageUploader
  *  [ ] Extract ImageStoreAdapter interface + StoredImage type (server/images/adapters.ts)
  *  [ ] Implement SmugMugAdapter, UploadThingUrlAdapter, LocalDiskAdapter
  *  [ ] ThaliaImageUploader.init() probes config and picks the best available adapter

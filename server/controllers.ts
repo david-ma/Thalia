@@ -1101,5 +1101,5 @@ export function md_file(filename: string, data: any = {}, wrapper_template: stri
   }
 }
 
-export { SmugMugUploader, readLimitedJsonObject } from './images/smugmug-controller.js'
+export { ThaliaImageUploader, readLimitedJsonObject } from './images/smugmug-controller.js'
 export { parseForm, type ParsedForm } from './util.js'

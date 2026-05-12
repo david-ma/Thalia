@@ -188,6 +188,16 @@ const exampleAuthRoutes: RoleRouteRule[] = [
     { path: '/forgotPassword', permissions: { guest: ['read', 'create'], user: ['read', 'create'], admin: ['read', 'create'] } },
     { path: '/resetPassword', permissions: { guest: ['read', 'create'], user: ['read', 'create'], admin: ['read', 'create'] } },
 
+    /** Multipart / JSON SmugMug upload — needs `create` if route guard maps POST to create on this path in future. */
+    {
+        path: '/uploadPhoto',
+        permissions: {
+            guest: ['read', 'create'],
+            user: ['read', 'create'],
+            admin: ['read', 'update', 'delete', 'create'],
+        },
+    },
+
     // --- App content: adjust per site; comments show the intent for this demo ---
     {
         path: '/fruit',

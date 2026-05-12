@@ -85,6 +85,52 @@
     })
     fileInput.addEventListener('change', handleFiles)
 
+    function setUploadFailureUi(status) {
+      if (status === 401 || status === 403) {
+        help.textContent = 'Permission denied. Sign in or contact the site admin.'
+      } else {
+        help.textContent = 'Server error. Try again later.'
+      }
+    }
+
+    function logUploadFailure(status, responseText, parsed) {
+      var code = parsed && parsed.code ? parsed.code : null
+      var errLine = parsed && parsed.error ? String(parsed.error) : ''
+      var hint = parsed && parsed.hint ? String(parsed.hint) : ''
+      var snippet = (responseText || '').slice(0, 500)
+      if (status === 401 || status === 403) {
+        console.warn(
+          '[Thalia upload]',
+          'HTTP',
+          status,
+          '— route guard blocked POST (sign in, or add RoleRouteRule for /uploadPhoto with create/read for this role). Body:',
+          snippet,
+        )
+        return
+      }
+      if (code) {
+        console.warn(
+          '[Thalia upload]',
+          'HTTP',
+          status,
+          'code=' + code,
+          errLine,
+          hint ? 'hint: ' + hint : '',
+          '— search the Thalia codebase for',
+          code,
+          'or open server/smugmug/upload-photo-errors.ts.',
+        )
+      } else {
+        console.warn('[Thalia upload]', 'HTTP', status, 'non-JSON or unknown error body:', snippet)
+      }
+    }
+
+    function applyUploadSuccess(parsed) {
+      help.textContent = 'Image uploaded! Click save!'
+      var thumb = parsed.thumbnailUrl || parsed.thumbnail || ''
+      if (thumb) previews.innerHTML += '<img src="' + thumb + '" alt="" />'
+    }
+
     function handleFiles(event) {
       if (!event.target.files || event.target.files.length === 0) return
       var files = event.target.files
@@ -109,14 +155,35 @@
             cache: false,
             contentType: false,
             processData: false,
-            success: function (data) {
-              var parsed = typeof data === 'string' ? JSON.parse(data) : data
-              help.textContent = 'Image uploaded! Click save!'
-              var thumb = parsed.thumbnailUrl || parsed.thumbnail || ''
-              if (thumb) previews.innerHTML += '<img src="' + thumb + '" alt="" />'
+            success: function (data, _textStatus, jqXHR) {
+              var raw = typeof data === 'string' ? data : JSON.stringify(data)
+              var parsed
+              try {
+                parsed = typeof data === 'string' ? JSON.parse(data) : data
+              } catch (e) {
+                console.warn('[Thalia upload] success handler: invalid JSON', raw.slice(0, 300))
+                setUploadFailureUi(500)
+                return
+              }
+              if (parsed && parsed.error) {
+                var st = jqXHR && typeof jqXHR.status === 'number' ? jqXHR.status : 200
+                logUploadFailure(st, raw, parsed)
+                setUploadFailureUi(st)
+                return
+              }
+              applyUploadSuccess(parsed)
             },
-            error: function () {
-              help.textContent = 'Error. Try again :('
+            error: function (xhr) {
+              var status = xhr && typeof xhr.status === 'number' ? xhr.status : 0
+              var text = (xhr && xhr.responseText) || ''
+              var parsed
+              try {
+                parsed = text ? JSON.parse(text) : null
+              } catch (e) {
+                parsed = null
+              }
+              logUploadFailure(status, text, parsed)
+              setUploadFailureUi(status)
             },
             complete: function () {
               loading.src = ''
@@ -125,16 +192,31 @@
         } else {
           fetch(uploadUrl, { method: 'POST', body: formData })
             .then(function (r) {
-              return r.text()
+              return r.text().then(function (text) {
+                return { r: r, text: text }
+              })
             })
-            .then(function (text) {
-              var parsed = JSON.parse(text)
-              help.textContent = 'Image uploaded!'
-              var thumb = parsed.thumbnailUrl || parsed.thumbnail || ''
-              if (thumb) previews.innerHTML += '<img src="' + thumb + '" alt="" />'
+            .then(function (ctx) {
+              var r = ctx.r
+              var text = ctx.text || ''
+              var parsed
+              try {
+                parsed = text ? JSON.parse(text) : null
+              } catch (e) {
+                logUploadFailure(r.status, text, null)
+                setUploadFailureUi(r.status)
+                return
+              }
+              if (!r.ok || (parsed && parsed.error)) {
+                logUploadFailure(r.status, text, parsed)
+                setUploadFailureUi(r.status)
+                return
+              }
+              applyUploadSuccess(parsed)
             })
             .catch(function () {
-              help.textContent = 'Error. Try again :('
+              console.warn('[Thalia upload] network or fetch failure for', uploadUrl)
+              setUploadFailureUi(0)
             })
             .finally(function () {
               loading.src = ''

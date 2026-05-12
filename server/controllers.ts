@@ -27,6 +27,12 @@ import { buildSmugMugNewImageInsert, type SmugMugUploadAck } from './smugmug/sav
 import { parseSmugMugVerbosityAlbumImage } from './smugmug/verbosity-response.js'
 import { smugmugLogLine } from './smugmug/log.js'
 import {
+  THALIA_SMUG_JSON_CLIENT_ERROR,
+  THALIA_SMUG_JSON_SERVER_ERROR,
+  THALIA_SMUG_MULTIPART_FAILED,
+  THALIA_SMUG_NOT_CONFIGURED,
+} from './smugmug/upload-photo-errors.js'
+import {
   smugmugB64HmacSha1,
   smugmugBundleAuthorization,
   smugmugExpandParams,
@@ -1303,7 +1309,8 @@ export class SmugMugUploader implements Machine {
     )
   }
 
-  private smugRespondJson(res: ServerResponse, statusCode: number, payload: Record<string, string>): void {
+  private smugRespondJson(res: ServerResponse, statusCode: number, payload: Record<string, string | undefined>): void {
+    if (res.writableEnded || res.headersSent) return
     res.statusCode = statusCode
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
     res.end(JSON.stringify(payload))
@@ -1448,7 +1455,19 @@ export class SmugMugUploader implements Machine {
 
     const reason = this.uploadNotReadyReason()
     if (reason) {
-      this.smugRespondJson(res, 503, { error: reason })
+      smugmugLogLine({
+        service: 'smugmug',
+        level: 'warn',
+        operation: 'upload_photo_not_configured',
+        website: this.website.name,
+        msg: `${THALIA_SMUG_NOT_CONFIGURED}: ${reason}`,
+      })
+      this.smugRespondJson(res, 503, {
+        code: THALIA_SMUG_NOT_CONFIGURED,
+        error: reason,
+        hint:
+          'Configure SmugMug in config/secrets.js (smugmug: consumer_key, consumer_secret, oauth_token, oauth_token_secret, album) or env SMUGMUG_*. Search codebase for THALIA_SMUG_NOT_CONFIGURED.',
+      })
       return
     }
 
@@ -1458,22 +1477,32 @@ export class SmugMugUploader implements Machine {
       readLimitedJsonObject(req)
         .then((body) => this.uploadPhotoFromRemoteJsonBody(body))
         .then((data) => {
+          if (res.writableEnded || res.headersSent) return
+          res.statusCode = 200
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
           res.end(JSON.stringify(data))
         })
         .catch((err: unknown) => {
-          smugmugLogLine({
-            service: 'smugmug',
-            level: 'error',
-            operation: 'upload_photo_json',
-            website: this.website.name,
-            msg: err instanceof Error ? err.message : String(err),
-          })
           const msg = err instanceof Error ? err.message : String(err)
           const clientError =
             /\bEmpty JSON\b|\bInvalid JSON\b|\bJSON body\b|\bMissing upload URL\b|\bOnly https\b|\bImage host\b|\bImage URL\b|\bcredentials\b|\btoo large\b/i.test(
               msg,
             )
-          this.smugRespondJson(res, clientError ? 400 : 502, { error: msg })
+          const code = clientError ? THALIA_SMUG_JSON_CLIENT_ERROR : THALIA_SMUG_JSON_SERVER_ERROR
+          smugmugLogLine({
+            service: 'smugmug',
+            level: 'error',
+            operation: 'upload_photo_json',
+            website: this.website.name,
+            msg: `${code}: ${msg}`,
+          })
+          this.smugRespondJson(res, clientError ? 400 : 502, {
+            code,
+            error: msg,
+            hint: clientError
+              ? 'Fix JSON body or remote image URL (search THALIA_SMUG_JSON_CLIENT_ERROR).'
+              : 'Check SmugMug / network in server logs (search THALIA_SMUG_JSON_SERVER_ERROR).',
+          })
         })
       return
     }
@@ -1481,17 +1510,29 @@ export class SmugMugUploader implements Machine {
     parseForm(res, req)
       .then(this.uploadImageToSmugmug.bind(this))
       .then((data) => {
+        if (res.writableEnded || res.headersSent) return
+        res.statusCode = 200
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
         res.end(JSON.stringify(data))
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err)
         smugmugLogLine({
           service: 'smugmug',
           level: 'error',
           operation: 'upload_photo_form',
           website: this.website.name,
-          msg: err instanceof Error ? err.message : String(err),
+          msg: `${THALIA_SMUG_MULTIPART_FAILED}: ${msg}`,
         })
-        res.end('error')
+        if (res.writableEnded || res.headersSent) {
+          return
+        }
+        this.smugRespondJson(res, 502, {
+          code: THALIA_SMUG_MULTIPART_FAILED,
+          error: 'Upload failed after the file was accepted.',
+          hint:
+            'See server logs for this request (THALIA_SMUG_MULTIPART_FAILED). If uploads never worked, fix SmugMug secrets/OAuth/album (THALIA_SMUG_NOT_CONFIGURED).',
+        })
       })
   }
 

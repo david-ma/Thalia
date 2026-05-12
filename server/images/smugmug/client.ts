@@ -88,7 +88,7 @@ export class SmugMugClient {
       },
       log:
         logWebsite !== undefined
-          ? { website: logWebsite, operation: 'smugmug_api_get' }
+          ? { service: 'smugmug', website: logWebsite, operation: 'smugmug_api_get' }
           : undefined,
     }).then(({ statusCode, bodyUtf8 }) => {
       if (statusCode === undefined || statusCode < 200 || statusCode >= 300) {

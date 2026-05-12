@@ -65,6 +65,7 @@ export class SmugMugAdapter implements ImageStoreAdapter {
       },
       body: formData,
       log: {
+        service: 'smugmug',
         website: this.website.name,
         operation: 'upload_multipart',
         filename: meta.filename,

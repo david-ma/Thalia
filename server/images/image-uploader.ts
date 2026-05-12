@@ -512,7 +512,7 @@ export class ThaliaImageUploader implements Machine {
               )
             const code = clientError ? THALIA_SMUG_JSON_CLIENT_ERROR : THALIA_SMUG_JSON_SERVER_ERROR
             smugmugLogLine({
-              service: 'smugmug',
+              service: this.adapterName,
               level: 'error',
               operation: 'upload_photo_json',
               website: this.website.name,
@@ -540,7 +540,7 @@ export class ThaliaImageUploader implements Machine {
         .catch((err: unknown) => {
           const msg = err instanceof Error ? err.message : String(err)
           smugmugLogLine({
-            service: 'smugmug',
+            service: this.adapterName,
             level: 'error',
             operation: 'upload_photo_form',
             website: this.website.name,
@@ -655,7 +655,7 @@ export class ThaliaImageUploader implements Machine {
       throw new Error('Missing upload URL (uploadThingUrl, fileUrl, or url)')
     }
     const { buffer, contentType } = await fetchRemoteHttpsImageBytes(picked, {
-      log: { website: this.website.name },
+      log: { website: this.website.name, service: this.adapterName },
     })
 
     let filename = this.jsonFieldString(body, 'filename', 'fileName')
@@ -775,6 +775,7 @@ export class ThaliaImageUploader implements Machine {
       },
       body: formData,
       log: {
+        service: 'smugmug',
         website: this.website.name,
         operation: 'upload_multipart',
         filename: args.filename,

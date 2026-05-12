@@ -11,6 +11,8 @@ import { SMUGMUG_HTTPS_TIMEOUT_MS } from '../images/smugmug/constants.js'
 import { smugmugLogLine } from '../images/log.js'
 
 export type SmugMugHttpsLogContext = {
+  /** Defaults to `https-request` when omitted. */
+  service?: string
   website?: string
   operation: string
   filename?: string
@@ -87,7 +89,7 @@ export function requestHttpsUtf8(params: RequestHttpsUtf8Params): Promise<HttpsU
   return p.then((result) => {
     if (log) {
       smugmugLogLine({
-        service: 'smugmug',
+        service: log.service ?? 'https-request',
         level: 'info',
         operation: log.operation,
         website: log.website,
@@ -103,7 +105,7 @@ export function requestHttpsUtf8(params: RequestHttpsUtf8Params): Promise<HttpsU
   }).catch((e: unknown) => {
     if (log) {
       smugmugLogLine({
-        service: 'smugmug',
+        service: log.service ?? 'https-request',
         level: 'error',
         operation: log.operation,
         website: log.website,

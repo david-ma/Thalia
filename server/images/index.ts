@@ -41,7 +41,7 @@
  *  [x] Merge multipart-upload-response.ts + verbosity-response.ts → smugmug/response-parsers.ts
  *  [x] Move mysql-insert-result.ts to models/util.ts (not image-specific)
  *  [x] Move https-request.ts to server/util/ (no SmugMug logic; useful everywhere)
- *  [ ] Generalise log.ts service field from hardcoded 'smugmug' to the adapter name
+ *  [x] Generalise log.ts service field from hardcoded 'smugmug' to the adapter name
  *
  * ─── BUGS ──────────────────────────────────────────────────────────────────────
  *  [x] oauthCallback() was passing Date.now() (milliseconds) as oauth_timestamp. Fixed:
@@ -71,7 +71,7 @@ export { LocalDiskAdapter } from './local-disk-adapter.js'
 export { requestHttpsUtf8 } from '../util/https-request.js'
 export type { HttpsUtf8Response, RequestHttpsUtf8Params, SmugMugHttpsLogContext } from '../util/https-request.js'
 export { redactLogText, smugmugLogLine } from './log.js'
-export type { SmugmugLogEvent, SmugmugLogLevel } from './log.js'
+export type { SmugmugLogEvent, SmugmugLogLevel, ImageLogService } from './log.js'
 export {
   assertSafeHttpsImageFetchUrl,
   fetchRemoteHttpsImageBytes,

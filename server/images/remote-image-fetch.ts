@@ -87,7 +87,11 @@ export type FetchedHttpsImage = {
 
 export async function fetchRemoteHttpsImageBytes(
   urlString: string,
-  options?: { maxBytes?: number; maxRedirects?: number; log?: { website?: string } },
+  options?: {
+    maxBytes?: number
+    maxRedirects?: number
+    log?: { website?: string; service?: string }
+  },
 ): Promise<FetchedHttpsImage> {
   const maxBytes = options?.maxBytes ?? DEFAULT_MAX_BYTES
   const maxRedirects = options?.maxRedirects ?? DEFAULT_MAX_REDIRECTS
@@ -136,7 +140,7 @@ export async function fetchRemoteHttpsImageBytes(
 
       if (log) {
         smugmugLogLine({
-          service: 'smugmug',
+          service: log.service ?? 'remote-fetch',
           level: 'info',
           operation: 'remote_image_fetch',
           website: log.website,
@@ -155,7 +159,7 @@ export async function fetchRemoteHttpsImageBytes(
   } catch (e: unknown) {
     if (log) {
       smugmugLogLine({
-        service: 'smugmug',
+        service: log.service ?? 'remote-fetch',
         level: 'error',
         operation: 'remote_image_fetch',
         website: log.website,

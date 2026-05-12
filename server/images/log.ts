@@ -1,12 +1,18 @@
 /**
- * Token-safe structured logs for SmugMug (Phase F `5a`).
+ * Token-safe structured logs for the image subsystem (Phase F `5a`).
  * One JSON object per line; never emit oauth_* values or raw Authorization headers.
+ *
+ * `service` is typically an adapter tier (`smugmug`, `uploadthing`, `local-disk`) or a
+ * transport label (`https-request`, `remote-fetch`) for correlation in aggregators.
  */
 
 export type SmugmugLogLevel = 'info' | 'warn' | 'error'
 
+/** Free-form service / adapter label on each log line (see module JSDoc). */
+export type ImageLogService = string
+
 export type SmugmugLogEvent = {
-  service: 'smugmug'
+  service: ImageLogService
   level: SmugmugLogLevel
   operation: string
   website?: string

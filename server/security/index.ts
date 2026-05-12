@@ -8,3 +8,9 @@ export type { UserDetails } from './security-service.js'
 export { SecurityService } from './security-service.js'
 export type { ThaliaSecurityConstructorOptions } from './thalia-security.js'
 export { ThaliaSecurity, SnipeSecurity } from './thalia-security.js'
+export type {
+  ProfileControllerFactoryOptions,
+  ProfileReadScope,
+  ProfileViewModelInput,
+} from './profile-controller-factory.js'
+export { ProfileControllerFactory, parseProfileUpdatePayload } from './profile-controller-factory.js'

@@ -79,7 +79,7 @@
     "sitemap:generate": "bun scripts/generate-sitemaps.ts",
     "sitemap:smoke": "bun scripts/smoke-sitemap.ts",
     "test": "SKIP_EXAMPLE_AUTH_TESTS=1 SKIP_DATABASE_TESTS=1 bun test tests",
-    "test:integration:database": "SKIP_DATABASE_TESTS=0 bun test tests/Integration/database-online.test.ts tests/Integration/example-auth-images-notes-blob.test.ts",
+    "test:integration:database": "SKIP_DATABASE_TESTS=0 bun test tests/Integration/database-online.test.ts tests/Integration/example-auth-images-notes-blob.test.ts tests/Integration/example-auth-profile.test.ts",
     "test:integration:example-auth": "SKIP_EXAMPLE_AUTH_TESTS=0 bun test tests/Integration/request-handler.test.ts",
     "test:unit": "bun test tests/Unit",
     "test:integration": "SKIP_DATABASE_TESTS=1 SKIP_EXAMPLE_AUTH_TESTS=1 bun test tests/Integration"

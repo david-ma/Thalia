@@ -2,8 +2,6 @@
  * Thin SmugMug API v2 + OAuth-signed HTTP client for Thalia (`ThaliaImageUploader` consumes this).
  */
 
-import fs from 'fs'
-
 import { requestHttpsUtf8 } from '../../util/https-request.js'
 import {
   smugmugB64HmacSha1,
@@ -99,6 +97,71 @@ export class SmugMugClient {
   }
 
   /**
+   * POST `getAccessToken` with OAuth 1.0a signing (same rules as {@link signRequest}).
+   * On success updates `this.tokens.oauth_token` and `oauth_token_secret` from the response body.
+   * On failure restores the token pair from before the call.
+   */
+  exchangeAccessToken(
+    oauthVerifier: string,
+    oauthTokenFromCallback: string,
+    website?: string,
+  ): Promise<Record<string, string>> {
+    const prevToken = this.tokens.oauth_token
+    const prevSecret = this.tokens.oauth_token_secret
+    this.tokens.oauth_token = oauthTokenFromCallback
+
+    const path = '/services/oauth/1.0a/getAccessToken'
+    const targetUrl = `${SmugMugClient.BASE_URL}${path}?${new URLSearchParams({ oauth_verifier: oauthVerifier }).toString()}`
+    const signed = this.signRequest('POST', targetUrl)
+    const query = new URLSearchParams(signed).toString()
+    const fullPath = `${path}?${query}`
+
+    return requestHttpsUtf8({
+      hostname: 'api.smugmug.com',
+      port: 443,
+      path: fullPath,
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+      log:
+        website !== undefined
+          ? { service: 'smugmug', website, operation: 'oauth_access_token' }
+          : undefined,
+    })
+      .then(({ statusCode, bodyUtf8 }) => {
+        if (statusCode === undefined || statusCode < 200 || statusCode >= 300) {
+          throw new Error(`SmugMug access token exchange failed (HTTP ${statusCode ?? 'unknown'})`)
+        }
+        const parsed = SmugMugClient.parseOAuthFormBody(bodyUtf8)
+        if (typeof parsed.oauth_token === 'string') {
+          this.tokens.oauth_token = parsed.oauth_token
+        }
+        if (typeof parsed.oauth_token_secret === 'string') {
+          this.tokens.oauth_token_secret = parsed.oauth_token_secret
+        }
+        return parsed
+      })
+      .catch((e: unknown) => {
+        this.tokens.oauth_token = prevToken
+        this.tokens.oauth_token_secret = prevSecret
+        throw e
+      })
+  }
+
+  /** Parse `a=b&c=d` form body from SmugMug OAuth token responses (values are not URL-decoded). */
+  static parseOAuthFormBody(body: string): Record<string, string> {
+    return body.split('&').reduce(
+      (acc, item) => {
+        const eq = item.indexOf('=')
+        const key = eq >= 0 ? item.slice(0, eq) : item
+        const value = eq >= 0 ? item.slice(eq + 1) : ''
+        if (key) acc[key] = value
+        return acc
+      },
+      {} as Record<string, string>,
+    )
+  }
+
+  /**
    * Multipart `file` part for upload.smugmug.com — same wire format as legacy disk-based helper.
    */
   static createMultipartFormDataFromBytes(
@@ -118,20 +181,5 @@ export class SmugMugClient {
     ]
 
     return Buffer.concat(parts.map((part) => (typeof part === 'string' ? Buffer.from(part + '\r\n') : part)))
-  }
-
-  static createMultipartFormData(
-    file: { originalFilename?: string | null; mimetype?: string | null; filepath: string },
-    boundary: string,
-  ): Buffer {
-    const buffer = fs.readFileSync(file.filepath)
-    return SmugMugClient.createMultipartFormDataFromBytes(
-      {
-        buffer,
-        originalFilename: file.originalFilename,
-        mimetype: file.mimetype,
-      },
-      boundary,
-    )
   }
 }

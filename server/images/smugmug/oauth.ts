@@ -14,8 +14,17 @@ export function smugmugSortParams(object: Record<string, string>): Record<string
   return result
 }
 
+/**
+ * Normalised OAuth parameter string for the signature base string (before the outer
+ * {@link smugmugOauthEscape} in {@link SmugMugClient.signRequest}).
+ *
+ * **Limitation:** values must not contain raw `&` or `=`; those characters break the
+ * `key=value&…` join. Typical SmugMug OAuth fields are alphanumeric; use
+ * {@link smugmugOauthEscape} on untrusted inputs before placing them in `params`.
+ */
 export function smugmugExpandParams(params: Record<string, string>): string {
   return Object.keys(params)
+    .sort()
     .map((key) => `${key}=${params[key]}`)
     .join('&')
 }

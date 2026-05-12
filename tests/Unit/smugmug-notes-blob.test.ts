@@ -57,7 +57,8 @@ describe('images.notesBlob (LONGBLOB JSON)', () => {
 
   test('mapFromDriverValue: accepts Uint8Array from driver', () => {
     const buf = col.mapToDriverValue({ a: 1 })!
-    const u8 = new Uint8Array(buf)
+    expect(Buffer.isBuffer(buf)).toBe(true)
+    const u8 = new Uint8Array(buf as Buffer)
     expect(col.mapFromDriverValue(u8 as never)).toEqual({ a: 1 })
   })
 })

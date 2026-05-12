@@ -53,15 +53,16 @@
  *      oauthCallback() gate behind void this.initPromise.then(() => { … }).
  *
  * ─── MINOR OPTIMISATIONS ───────────────────────────────────────────────────────
- *  [ ] oauthCallback() reimplements OAuth token exchange with raw https.request —
+ *  [x] oauthCallback() reimplements OAuth token exchange with raw https.request —
  *      consolidate into SmugMugClient so there is one OAuth path to maintain.
- *  [ ] smugmugExpandParams() joins values without URL-encoding them — latently unsafe
- *      if the pattern is reused with non-alphanumeric param values.
- *  [ ] SmugMugClient.createMultipartFormData() (disk-based) calls fs.readFileSync —
+ *  [x] smugmugExpandParams() sorts keys deterministically; values with raw `&`/`=` remain
+ *      unsupported (documented on the function) — full RFC-normalised encoding would change
+ *      the golden OAuth signature fixture.
+ *  [x] SmugMugClient.createMultipartFormData() (disk-based) calls fs.readFileSync —
  *      make async or delete (currently unused in the live flow).
- *  [ ] pickRemoteFileUrl() could also accept 'imageUrl' and 'appUrl' field names to
+ *  [x] pickRemoteFileUrl() could also accept 'imageUrl' and 'appUrl' field names to
  *      cover more upload-client conventions.
- *  [ ] constants.ts (2 lines) can fold into https-request.ts or the main client file.
+ *  [x] constants.ts (2 lines) can fold into https-request.ts or the main client file.
  */
 
 export type { ImageMeta, ImageStoreAdapter, StoredImage } from './adapters.js'
@@ -78,7 +79,7 @@ export {
   pickRemoteFileUrl,
 } from './remote-image-fetch.js'
 export { parseSmugMugVerbosityAlbumImage, parseSmugMugMultipartUploadResponse } from './smugmug/response-parsers.js'
-export { SMUGMUG_REMOTE_FETCH_TIMEOUT_MS, SMUGMUG_HTTPS_TIMEOUT_MS } from './smugmug/constants.js'
+export { SMUGMUG_REMOTE_FETCH_TIMEOUT_MS, SMUGMUG_HTTPS_TIMEOUT_MS } from '../util/https-request.js'
 export { normalizeSmugMugAlbumUri } from './smugmug/album-uri.js'
 export type { SmugMugUploadAck } from './smugmug/save-image-map.js'
 export { buildSmugMugNewImageInsert } from './smugmug/save-image-map.js'

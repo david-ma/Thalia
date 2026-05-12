@@ -1,7 +1,7 @@
 import type { MySql2Database } from 'drizzle-orm/mysql2'
 import type { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import { users, sessions, audits } from './security-models'
-import { albums, images } from './smugmug'
+import { albums, images } from './images'
 
 /** DB + schema tables (Thalia sites use Drizzle + mysql2). */
 export interface SeqObject {

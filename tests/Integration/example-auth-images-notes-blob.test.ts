@@ -13,6 +13,7 @@ import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/mysql2'
 import type { MySql2Database } from 'drizzle-orm/mysql2'
 import mysql from 'mysql2/promise'
+import type { RowDataPacket } from 'mysql2'
 import path from 'path'
 import { images } from '../../websites/example-auth/models/drizzle-schema.js'
 
@@ -34,10 +35,11 @@ describeDatabaseOnline('Integration: example-auth images.notesBlob (MySQL)', () 
     pool = mysql.createPool(url)
     db = drizzle(pool)
 
-    const [rows] = await pool.query<{ c: number }[]>(
+    const [rows] = await pool.query<RowDataPacket[]>(
       "SELECT COUNT(*) AS c FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'images' AND COLUMN_NAME = 'notes_blob'",
     )
-    const c = Array.isArray(rows) && rows[0] ? Number(rows[0].c) : 0
+    const first = Array.isArray(rows) && rows[0] ? (rows[0] as RowDataPacket & { c: number }) : undefined
+    const c = first != null ? Number(first.c) : 0
     if (c < 1) {
       throw new Error(
         'Column `images.notes_blob` is missing. From `websites/example-auth` run `bun drizzle-kit push` ' +

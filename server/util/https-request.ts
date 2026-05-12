@@ -7,8 +7,11 @@ import https from 'https'
 import type { IncomingMessage } from 'http'
 import type { OutgoingHttpHeaders } from 'http'
 
-import { SMUGMUG_HTTPS_TIMEOUT_MS } from '../images/smugmug/constants.js'
 import { smugmugLogLine } from '../images/log.js'
+
+/** HTTPS timeouts for SmugMug + remote image fetch (milliseconds). */
+export const SMUGMUG_REMOTE_FETCH_TIMEOUT_MS = 120_000
+export const SMUGMUG_HTTPS_TIMEOUT_MS = 120_000
 
 export type SmugMugHttpsLogContext = {
   /** Defaults to `https-request` when omitted. */

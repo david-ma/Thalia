@@ -378,7 +378,6 @@ export class ThaliaImageUploader implements Machine {
         return
       }
 
-      const persistTokens = this.tokens
       const smugClient = this.client
 
       const query = requestInfo.query
@@ -390,85 +389,28 @@ export class ThaliaImageUploader implements Machine {
         return
       }
 
-      const tokenExchangeParams: Record<string, string> = {
-        oauth_consumer_key: persistTokens.consumer_key,
-        oauth_token: oauthTokenQuery,
-        oauth_signature_method: 'HMAC-SHA1',
-        oauth_timestamp: String(Math.floor(Date.now() / 1000)),
-        oauth_nonce: Math.random().toString().replace('0.', ''),
-        oauth_verifier: oauthVerifier,
-      }
-
-      const sorted = smugmugSortParams(tokenExchangeParams)
-
-      const normalized = encodeURIComponent(
-        Object.entries(sorted)
-          .map(([key, value]) => `${key}=${value}`)
-          .join('&'),
-      )
-      const method = 'POST'
-
-      tokenExchangeParams.oauth_signature = smugmugB64HmacSha1(
-        `${persistTokens.consumer_secret}&${persistTokens.oauth_token_secret}`,
-        `${method}&${encodeURIComponent(smugClient.accessTokenUrl)}&${normalized}`,
-      )
-
-      const options = {
-        host: 'api.smugmug.com',
-        port: 443,
-        path: '/services/oauth/1.0a/getAccessToken?' + new URLSearchParams(tokenExchangeParams).toString(),
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-        },
-      }
-
-      const httpsRequest = https.request(options, (httpsResponse: any) => {
-        let data = ''
-        httpsResponse.on('data', (chunk: any) => {
-          data += chunk
+      void smugClient
+        .exchangeAccessToken(oauthVerifier, oauthTokenQuery, this.website.name)
+        .then((response) => {
+          if (res.writableEnded || res.headersSent) return
+          res.end(JSON.stringify(response))
         })
-
-        httpsResponse.on('error', (e: any) => {
+        .catch((e: unknown) => {
           smugmugLogLine({
             service: 'smugmug',
             level: 'error',
-            operation: 'oauth_access_token_response',
+            operation: 'oauth_access_token',
             website: this.website.name,
             hostname: 'api.smugmug.com',
             msg: e instanceof Error ? e.message : String(e),
           })
+          if (!res.writableEnded && !res.headersSent) {
+            this.smugRespondJson(res, 502, {
+              error: 'SmugMug access token exchange failed.',
+              detail: e instanceof Error ? e.message : String(e),
+            })
+          }
         })
-
-        httpsResponse.on('end', () => {
-          const response = data.split('&').reduce(
-            (acc, item) => {
-              const [key, value] = item.split('=')
-              acc[key] = value
-              return acc
-            },
-            {} as Record<string, string>,
-          )
-
-          persistTokens.oauth_token = response.oauth_token
-          persistTokens.oauth_token_secret = response.oauth_token_secret
-
-          res.end(JSON.stringify(response))
-        })
-      })
-
-      httpsRequest.on('error', (e: any) => {
-        smugmugLogLine({
-          service: 'smugmug',
-          level: 'error',
-          operation: 'oauth_access_token_request',
-          website: this.website.name,
-          hostname: 'api.smugmug.com',
-          msg: e instanceof Error ? e.message : String(e),
-        })
-      })
-
-      httpsRequest.end()
     })
   }
 
@@ -652,7 +594,7 @@ export class ThaliaImageUploader implements Machine {
   private async uploadPhotoFromRemoteJsonBody(body: Record<string, unknown>) {
     const picked = pickRemoteFileUrl(body)
     if (!picked) {
-      throw new Error('Missing upload URL (uploadThingUrl, fileUrl, or url)')
+      throw new Error('Missing upload URL (uploadThingUrl, fileUrl, imageUrl, appUrl, or url)')
     }
     const { buffer, contentType } = await fetchRemoteHttpsImageBytes(picked, {
       log: { website: this.website.name, service: this.adapterName },

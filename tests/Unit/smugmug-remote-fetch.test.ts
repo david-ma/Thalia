@@ -5,14 +5,43 @@ import {
 } from '../../server/images/remote-image-fetch.js'
 
 describe('pickRemoteFileUrl', () => {
-  test('prefers uploadThingUrl over fileUrl and url', () => {
+  test('prefers uploadThingUrl over fileUrl, imageUrl, appUrl, and url', () => {
     expect(
       pickRemoteFileUrl({
         url: 'https://ignored.example/',
+        appUrl: 'https://app.example/',
+        imageUrl: 'https://image.example/',
         fileUrl: 'https://file.example/',
         uploadThingUrl: 'https://uploadthing.example/foo',
       }),
     ).toBe('https://uploadthing.example/foo')
+  })
+
+  test('prefers fileUrl over imageUrl, appUrl, and url', () => {
+    expect(
+      pickRemoteFileUrl({
+        url: 'https://u.example/',
+        appUrl: 'https://app.example/',
+        imageUrl: 'https://image.example/',
+        fileUrl: 'https://file.example/',
+      }),
+    ).toBe('https://file.example/')
+  })
+
+  test('prefers imageUrl over appUrl and url', () => {
+    expect(
+      pickRemoteFileUrl({
+        url: 'https://u.example/',
+        appUrl: 'https://app.example/',
+        imageUrl: 'https://image.example/img',
+      }),
+    ).toBe('https://image.example/img')
+  })
+
+  test('prefers appUrl over url', () => {
+    expect(pickRemoteFileUrl({ url: 'https://u.example/', appUrl: 'https://app.example/a' })).toBe(
+      'https://app.example/a',
+    )
   })
 
   test('falls back across names', () => {

@@ -3,7 +3,7 @@
  * Manual redirect handling so each hop stays on **https** and passes SSRF guards.
  */
 
-import { SMUGMUG_REMOTE_FETCH_TIMEOUT_MS } from './smugmug/constants.js'
+import { SMUGMUG_REMOTE_FETCH_TIMEOUT_MS } from '../util/https-request.js'
 import { smugmugLogLine } from './log.js'
 
 const DEFAULT_MAX_BYTES = 50 * 1024 * 1024
@@ -70,9 +70,9 @@ export function assertSafeHttpsImageFetchUrl(candidate: string): URL {
   return u
 }
 
-/** Reads first non-empty string from common UploadThing-style field names. */
+/** Reads first non-empty string from common upload-client JSON field names. */
 export function pickRemoteFileUrl(body: Record<string, unknown>): string | undefined {
-  const keys = ['uploadThingUrl', 'fileUrl', 'url'] as const
+  const keys = ['uploadThingUrl', 'fileUrl', 'imageUrl', 'appUrl', 'url'] as const
   for (const k of keys) {
     const v = body[k]
     if (typeof v === 'string' && v.trim()) return v.trim()

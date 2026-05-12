@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   assertSafeHttpsImageFetchUrl,
   pickRemoteFileUrl,
-} from '../../server/smugmug/remote-image-fetch.js'
+} from '../../server/images/remote-image-fetch.js'
 
 describe('pickRemoteFileUrl', () => {
   test('prefers uploadThingUrl over fileUrl and url', () => {

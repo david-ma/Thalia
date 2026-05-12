@@ -1,5 +1,5 @@
 /**
- * Thalia image upload subsystem — currently lives at server/smugmug/ but should be renamed to server/images/.
+ * Thalia image upload subsystem — lives at server/images/ (renamed from server/smugmug/).
  *
  * ─── WHAT IT DOES TODAY ────────────────────────────────────────────────────────
  * Accepts a user photo (multipart form or UploadThing-style JSON body), fetches or
@@ -20,7 +20,7 @@
  *                 store the local path/URL in the DB.
  *
  * ─── REFACTOR PLAN ─────────────────────────────────────────────────────────────
- *  [ ] Rename server/smugmug/ → server/images/  (this file → server/images/index.ts)
+ *  [x] Rename server/smugmug/ → server/images/  (this file → server/images/index.ts)
  *  [ ] Rename SmugMugUploader → ThaliaImageUploader (or PhotoUploader)
  *  [ ] Extract ImageStoreAdapter interface + StoredImage type (server/images/adapters.ts)
  *  [ ] Implement SmugMugAdapter, UploadThingUrlAdapter, LocalDiskAdapter
@@ -34,10 +34,10 @@
  *  [ ] Generalise log.ts service field from hardcoded 'smugmug' to the adapter name
  *
  * ─── BUGS ──────────────────────────────────────────────────────────────────────
- *  [!] oauthCallback() passes Date.now() (milliseconds) as oauth_timestamp — must be
- *      Math.floor(Date.now() / 1000) (seconds); SmugMug rejects stale/future timestamps.
- *  [!] uploadImageToSmugmug() calls fs.readFileSync() blocking the event loop for
- *      large uploads — replace with await fs.promises.readFile().
+ *  [x] oauthCallback() was passing Date.now() (milliseconds) as oauth_timestamp. Fixed:
+ *      Math.floor(Date.now() / 1000) (seconds).
+ *  [x] uploadImageToSmugmug() called fs.readFileSync() blocking the event loop. Fixed:
+ *      await fsp.readFile().
  *  [x] init() used void import(secretsPath) — early requests saw a false "not configured"
  *      503 while secrets were still loading. Fixed: initPromise stored; controller() and
  *      oauthCallback() gate behind void this.initPromise.then(() => { … }).

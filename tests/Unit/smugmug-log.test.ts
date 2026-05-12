@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { redactLogText } from '../../server/smugmug/log.js'
+import { redactLogText } from '../../server/images/log.js'
 
 describe('redactLogText', () => {
   test('strips oauth query pairs from error text', () => {

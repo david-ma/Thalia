@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { buildSmugMugNewImageInsert } from '../../server/smugmug/save-image-map.js'
+import { buildSmugMugNewImageInsert } from '../../server/images/save-image-map.js'
 import { loadUploadAndVerbosityFixture, sampleSmugImageInsertRow } from '../helpers/smugmug-fixtures.js'
 
 describe('buildSmugMugNewImageInsert', () => {

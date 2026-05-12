@@ -1101,5 +1101,5 @@ export function md_file(filename: string, data: any = {}, wrapper_template: stri
   }
 }
 
-export { SmugMugUploader, readLimitedJsonObject } from './smugmug/smugmug-controller.js'
+export { SmugMugUploader, readLimitedJsonObject } from './images/smugmug-controller.js'
 export { parseForm, type ParsedForm } from './util.js'

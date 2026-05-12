@@ -4,8 +4,8 @@
 
 import fs from 'fs'
 import path from 'path'
-import type { SmugMugUploadAck } from '../../server/smugmug/save-image-map.js'
-import { buildSmugMugNewImageInsert } from '../../server/smugmug/save-image-map.js'
+import type { SmugMugUploadAck } from '../../server/images/save-image-map.js'
+import { buildSmugMugNewImageInsert } from '../../server/images/save-image-map.js'
 
 export type OAuthSignatureFixture = {
   method: string

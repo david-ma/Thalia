@@ -9,8 +9,8 @@ import {
   smugmugExpandParams,
   smugmugOauthEscape,
   smugmugSortParams,
-} from '../../server/smugmug/smugmug-oauth.js'
-import { SmugMugClient, type SmugMugTokenSet } from '../../server/smugmug/smugmug-client.js'
+} from '../../server/images/smugmug-oauth.js'
+import { SmugMugClient, type SmugMugTokenSet } from '../../server/images/smugmug-client.js'
 import { loadSmugmugOAuthSignatureFixture } from '../helpers/smugmug-fixtures.js'
 
 describe('SmugMug OAuth helpers', () => {

@@ -2,7 +2,7 @@
  * Maps SmugMug upload ack + AlbumImage API payload into Drizzle `images` insert values.
  */
 
-import type { NewImage } from '../../models/smugmug.js'
+import type { NewImage } from '../../../models/images.js'
 
 /** Subset of upload.smugmug.com JSON used when persisting AlbumImage metadata. */
 export type SmugMugUploadAck = {

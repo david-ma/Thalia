@@ -6,7 +6,7 @@ import https from 'https'
 import type { IncomingMessage } from 'http'
 import type { OutgoingHttpHeaders } from 'http'
 
-import { SMUGMUG_HTTPS_TIMEOUT_MS } from './constants.js'
+import { SMUGMUG_HTTPS_TIMEOUT_MS } from './smugmug/constants.js'
 import { smugmugLogLine } from './log.js'
 
 export type SmugMugHttpsLogContext = {

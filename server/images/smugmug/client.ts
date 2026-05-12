@@ -4,14 +4,14 @@
 
 import fs from 'fs'
 
-import { requestHttpsUtf8 } from './https-request.js'
+import { requestHttpsUtf8 } from '../https-request.js'
 import {
   smugmugB64HmacSha1,
   smugmugBundleAuthorization,
   smugmugExpandParams,
   smugmugOauthEscape,
   smugmugSortParams,
-} from './smugmug-oauth.js'
+} from './oauth.js'
 
 export type SmugMugTokenSet = {
   consumer_key: string

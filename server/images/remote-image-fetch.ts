@@ -3,7 +3,7 @@
  * Manual redirect handling so each hop stays on **https** and passes SSRF guards.
  */
 
-import { SMUGMUG_REMOTE_FETCH_TIMEOUT_MS } from './constants.js'
+import { SMUGMUG_REMOTE_FETCH_TIMEOUT_MS } from './smugmug/constants.js'
 import { smugmugLogLine } from './log.js'
 
 const DEFAULT_MAX_BYTES = 50 * 1024 * 1024

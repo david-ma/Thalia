@@ -2,7 +2,7 @@
  * Parse and validate JSON from `POST https://upload.smugmug.com/` (multipart upload ack).
  */
 
-import type { SmugMugUploadAck } from './save-image-map.js'
+import type { SmugMugUploadAck } from './smugmug/save-image-map.js'
 
 /**
  * @throws If HTTP status is not 2xx, JSON is invalid, or required `Image` fields are missing.

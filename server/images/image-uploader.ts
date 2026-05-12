@@ -5,31 +5,31 @@ import https from 'node:https'
 import path from 'node:path'
 import { desc, eq } from 'drizzle-orm'
 import type { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
-import { images, type Image } from '../../models/smugmug.js'
+import { images, type Image } from '../../models/images.js'
 import type { Machine } from '../types.js'
 import type { Role } from '../route-guard.js'
 import { parseForm, type ParsedForm } from '../util.js'
 import type { RequestInfo } from '../server.js'
 import type { Website, Controller } from '../website.js'
 import type { ImageMeta, ImageStoreAdapter } from './adapters.js'
-import { SmugMugAdapter } from './smugmug-adapter.js'
+import { SmugMugAdapter } from './smugmug/adapter.js'
 import { UploadThingUrlAdapter } from './uploadthing-url-adapter.js'
 import { LocalDiskAdapter } from './local-disk-adapter.js'
-import { normalizeSmugMugAlbumUri } from './album-uri.js'
+import { normalizeSmugMugAlbumUri } from './smugmug/album-uri.js'
 import { requestHttpsUtf8 } from './https-request.js'
 import { smugmugLogLine } from './log.js'
 import { mysqlInsertIdFromDrizzleMysql2Result } from './mysql-insert-result.js'
 import { parseSmugMugMultipartUploadResponse } from './multipart-upload-response.js'
 import { fetchRemoteHttpsImageBytes, pickRemoteFileUrl } from './remote-image-fetch.js'
-import { buildSmugMugNewImageInsert, type SmugMugUploadAck } from './save-image-map.js'
-import { SmugMugClient, type SmugMugTokenSet } from './smugmug-client.js'
+import { buildSmugMugNewImageInsert, type SmugMugUploadAck } from './smugmug/save-image-map.js'
+import { SmugMugClient, type SmugMugTokenSet } from './smugmug/client.js'
 import {
   smugmugB64HmacSha1,
   smugmugBundleAuthorization,
   smugmugExpandParams,
   smugmugOauthEscape,
   smugmugSortParams,
-} from './smugmug-oauth.js'
+} from './smugmug/oauth.js'
 import {
   THALIA_SMUG_JSON_CLIENT_ERROR,
   THALIA_SMUG_JSON_SERVER_ERROR,

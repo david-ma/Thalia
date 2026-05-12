@@ -7,7 +7,7 @@
 
 // Import models
 import { users, sessions, audits, type User, type NewUser, type Session, type NewSession, type Audit, type NewAudit } from './security-models'
-import { albums, images, type Album, type NewAlbum, type Image, type NewImage } from './smugmug'
+import { albums, images, type Album, type NewAlbum, type Image, type NewImage } from './images'
 
 // Export types
 export type { User, NewUser, Session, NewSession, Audit, NewAudit }
@@ -27,7 +27,7 @@ export type ModelsRegistry = typeof models
 
 // Export factory functions
 export { UserFactory, SessionFactory, AuditFactory } from './security-models'
-export { AlbumFactory, ImageFactory } from './smugmug'
+export { AlbumFactory, ImageFactory } from './images'
 
 import * as security from './security-models'
 export { security }

@@ -35,7 +35,7 @@
  *  [x] ThaliaImageUploader exposes adminController() — optional, read-only controller
  *      listing images + adapter status; gated by website.devMode or a specified role;
  *      no CrudFactory wiring required from webmaster (zero-config admin surface)
- *  [ ] Move smugmug-specific files into server/images/smugmug/ subfolder, strip the
+ *  [x] Move smugmug-specific files into server/images/smugmug/ subfolder, strip the
  *      "smugmug-" prefix from filenames (smugmug-oauth.ts → smugmug/oauth.ts, etc.)
  *      Rename models/smugmug.ts → models/images.ts at the same time.
  *  [ ] Merge multipart-upload-response.ts + verbosity-response.ts → smugmug/response-parsers.ts
@@ -65,7 +65,7 @@
  */
 
 export type { ImageMeta, ImageStoreAdapter, StoredImage } from './adapters.js'
-export { SmugMugAdapter } from './smugmug-adapter.js'
+export { SmugMugAdapter } from './smugmug/adapter.js'
 export { UploadThingUrlAdapter } from './uploadthing-url-adapter.js'
 export { LocalDiskAdapter } from './local-disk-adapter.js'
 export { requestHttpsUtf8 } from './https-request.js'
@@ -79,16 +79,16 @@ export {
 } from './remote-image-fetch.js'
 export { parseSmugMugVerbosityAlbumImage } from './verbosity-response.js'
 export { parseSmugMugMultipartUploadResponse } from './multipart-upload-response.js'
-export { SMUGMUG_REMOTE_FETCH_TIMEOUT_MS, SMUGMUG_HTTPS_TIMEOUT_MS } from './constants.js'
-export { normalizeSmugMugAlbumUri } from './album-uri.js'
-export type { SmugMugUploadAck } from './save-image-map.js'
-export { buildSmugMugNewImageInsert } from './save-image-map.js'
-export type { SmugMugTokenSet } from './smugmug-client.js'
-export { SmugMugClient } from './smugmug-client.js'
+export { SMUGMUG_REMOTE_FETCH_TIMEOUT_MS, SMUGMUG_HTTPS_TIMEOUT_MS } from './smugmug/constants.js'
+export { normalizeSmugMugAlbumUri } from './smugmug/album-uri.js'
+export type { SmugMugUploadAck } from './smugmug/save-image-map.js'
+export { buildSmugMugNewImageInsert } from './smugmug/save-image-map.js'
+export type { SmugMugTokenSet } from './smugmug/client.js'
+export { SmugMugClient } from './smugmug/client.js'
 export {
   smugmugB64HmacSha1,
   smugmugBundleAuthorization,
   smugmugExpandParams,
   smugmugOauthEscape,
   smugmugSortParams,
-} from './smugmug-oauth.js'
+} from './smugmug/oauth.js'

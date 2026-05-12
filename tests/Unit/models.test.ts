@@ -10,7 +10,7 @@ import {
   util as modelsUtil,
 } from '../../models/index.js'
 import { users, sessions, audits } from '../../models/security-models.js'
-import { albums, images } from '../../models/smugmug.js'
+import { albums, images } from '../../models/images.js'
 import { baseTableConfig, vc } from '../../models/util.js'
 import type { SecurityObject, SmugmugObject, SeqObject } from '../../models/types.js'
 

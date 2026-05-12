@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, test } from 'bun:test'
-import { SmugMugClient, type SmugMugTokenSet } from '../../server/images/smugmug-client.js'
+import { SmugMugClient, type SmugMugTokenSet } from '../../server/images/smugmug/client.js'
 
 const smugReadCi = process.env.SMUGMUG_READ_CI === '1'
 const smugWrite = process.env.SMUGMUG_WRITE === '1'

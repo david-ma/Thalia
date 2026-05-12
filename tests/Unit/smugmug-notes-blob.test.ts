@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { images } from '../../models/smugmug.js'
+import { images } from '../../models/images.js'
 
 describe('images.notesBlob (LONGBLOB JSON)', () => {
   const col = images.notesBlob

@@ -21,7 +21,7 @@
  */
 
 import { describe, expect, test } from 'bun:test'
-import { ThaliaImageUploader } from '../../server/images/smugmug-controller.js'
+import { ThaliaImageUploader } from '../../server/images/image-uploader.js'
 import type { ImageMeta, ImageStoreAdapter, StoredImage } from '../../server/images/adapters.js'
 
 // ── A: Interface conformance (PASS now) ────────────────────────────────────

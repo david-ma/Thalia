@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { normalizeSmugMugAlbumUri } from '../../server/images/album-uri.js'
+import { normalizeSmugMugAlbumUri } from '../../server/images/smugmug/album-uri.js'
 
 describe('normalizeSmugMugAlbumUri', () => {
   test('bare album key maps to upload header path', () => {

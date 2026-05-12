@@ -41,7 +41,13 @@
           <h2 class="h5 text-uppercase text-muted mb-3">Account details</h2>
           <dl class="row mb-0 profile-dl">
             <dt class="col-sm-3">Email</dt>
-            <dd class="col-sm-9">{{#if profileEmail}}<a href="mailto:{{profileEmail}}">{{profileEmail}}</a>{{else}}<span class="text-muted">Not set</span>{{/if}}</dd>
+            <dd class="col-sm-9">
+              {{#if profileEmailRedacted}}
+                <span class="text-muted">Hidden from viewers.</span>
+              {{else}}
+                {{#if profileEmail}}<a href="mailto:{{profileEmail}}">{{profileEmail}}</a>{{else}}<span class="text-muted">Not set</span>{{/if}}
+              {{/if}}
+            </dd>
             <dt class="col-sm-3">Role</dt>
             <dd class="col-sm-9">{{profileRole}}</dd>
             <dt class="col-sm-3">Display name</dt>

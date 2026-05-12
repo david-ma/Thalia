@@ -10,6 +10,7 @@ export type { ThaliaSecurityConstructorOptions } from './thalia-security.js'
 export { ThaliaSecurity, SnipeSecurity } from './thalia-security.js'
 export type {
   ProfileControllerFactoryOptions,
+  ProfileEmailVisibility,
   ProfileJsonErrorBody,
   ProfileJsonErrorCode,
   ProfilePhotoValidationResult,
@@ -21,6 +22,7 @@ export {
   parseProfileUpdatePayload,
   profileJsonErrorBody,
   profileJsonErrorString,
+  profileRevealEmailForGet,
   profileSelfRedirectLocation,
   validateProfilePhotoHttpHttpsUrl,
 } from './profile-controller-factory.js'

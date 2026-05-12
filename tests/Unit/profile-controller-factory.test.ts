@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   parseProfileUpdatePayload,
   profileJsonErrorString,
+  profileRevealEmailForGet,
   profileSelfRedirectLocation,
   validateProfilePhotoHttpHttpsUrl,
 } from '../../server/security/profile-controller-factory.js'
@@ -44,6 +45,21 @@ describe('validateProfilePhotoHttpHttpsUrl', () => {
     })
     expect(validateProfilePhotoHttpHttpsUrl('ftp://x/y')).toMatchObject({ ok: false, code: 'PHOTO_VALUE_REJECTED' })
     expect(validateProfilePhotoHttpHttpsUrl('not a url')).toMatchObject({ ok: false, code: 'PHOTO_VALUE_REJECTED' })
+  })
+})
+
+describe('profileRevealEmailForGet', () => {
+  test('everyone mode always reveals', () => {
+    expect(profileRevealEmailForGet('everyone', 1, 2, 'user')).toBe(true)
+    expect(profileRevealEmailForGet('everyone', 1, undefined, undefined)).toBe(true)
+  })
+  test('owner_or_admin_only reveals for admin or profile owner', () => {
+    expect(profileRevealEmailForGet('owner_or_admin_only', 5, 5, 'user')).toBe(true)
+    expect(profileRevealEmailForGet('owner_or_admin_only', 5, 9, 'admin')).toBe(true)
+  })
+  test('owner_or_admin_only hides for other signed-in users', () => {
+    expect(profileRevealEmailForGet('owner_or_admin_only', 5, 9, 'user')).toBe(false)
+    expect(profileRevealEmailForGet('owner_or_admin_only', 5, undefined, 'user')).toBe(false)
   })
 })
 

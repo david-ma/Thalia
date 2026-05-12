@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import type { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import type { Controller, Website } from '../website.js'
 import type { Machine } from '../types.js'
@@ -42,6 +42,27 @@ export function profileJsonErrorString(error: string, code: ProfileJsonErrorCode
 }
 
 export type ProfileReadScope = 'authenticated' | 'owner_or_admin'
+
+/**
+ * Who may see the real **`email`** on GET profile HTML.
+ * **`everyone`** (default): any reader allowed by {@link ProfileControllerFactoryOptions.profileReadScope} sees **`email`**.
+ * **`owner_or_admin_only`**: others get an empty **`email`** in locals and **`profileEmailRedacted`** in the template (SQL uses a literal instead of the column when masked).
+ */
+export type ProfileEmailVisibility = 'everyone' | 'owner_or_admin_only'
+
+/**
+ * Whether GET profile should expose the real **`email`** (vs masked for template + SQL projection).
+ */
+export function profileRevealEmailForGet(
+  visibility: ProfileEmailVisibility,
+  profileUserId: number,
+  viewerUserId: number | undefined,
+  viewerRole: string | undefined,
+): boolean {
+  if (visibility === 'everyone') return true
+  if (viewerRole === 'admin') return true
+  return viewerUserId !== undefined && String(viewerUserId) === String(profileUserId)
+}
 
 /** Result of optional {@link ProfileControllerFactoryOptions.validatePhoto} (after JSON parse + trim). */
 export type ProfilePhotoValidationResult =
@@ -86,6 +107,8 @@ export interface ProfileControllerFactoryOptions {
    * `owner_or_admin`: only the profile owner or `admin` may GET.
    */
   profileReadScope?: ProfileReadScope
+  /** Who may see **`email`** on GET (default **`everyone`**). */
+  profileEmailVisibility?: ProfileEmailVisibility
   /** Whitelist of `users` columns this JSON handler may update (default `name` + `photo`). */
   updatableFields?: readonly ('name' | 'photo')[]
   /** Max raw JSON body bytes for PATCH/POST (default 64 KiB). */
@@ -117,12 +140,15 @@ export type ProfileViewModelInput = {
   canEdit: boolean
   isOwnProfile: boolean
   viewerIsAdmin: boolean
+  /** True when email exists but is withheld from this viewer (see {@link ProfileEmailVisibility}). */
+  profileEmailRedacted: boolean
 }
 
 type ResolvedOptions = {
   contentTemplate: string
   profileIndexRedirect: boolean
   profileReadScope: ProfileReadScope
+  profileEmailVisibility: ProfileEmailVisibility
   updatableFields: readonly ('name' | 'photo')[]
   maxJsonBytes: number
   maxStringFieldLength: number
@@ -152,6 +178,7 @@ function resolveOptions(options?: ProfileControllerFactoryOptions): ResolvedOpti
     contentTemplate: options?.contentTemplate ?? DEFAULT_CONTENT_TEMPLATE,
     profileIndexRedirect: options?.profileIndexRedirect ?? true,
     profileReadScope: options?.profileReadScope ?? 'authenticated',
+    profileEmailVisibility: options?.profileEmailVisibility ?? 'everyone',
     updatableFields: options?.updatableFields?.length ? options.updatableFields : [...DEFAULT_UPDATABLE_FIELDS],
     maxJsonBytes: options?.maxJsonBytes ?? DEFAULT_MAX_JSON_BYTES,
     maxStringFieldLength: options?.maxStringFieldLength ?? DEFAULT_MAX_STRING_FIELD_LENGTH,
@@ -361,11 +388,17 @@ export class ProfileControllerFactory implements Machine {
         return
       }
       try {
+        const revealEmail = profileRevealEmailForGet(
+          this.resolved.profileEmailVisibility,
+          id,
+          userAuth?.userId,
+          userAuth?.role,
+        )
         const rows = await website.db.drizzle
           .select({
             id: usersTable.id,
             name: usersTable.name,
-            email: usersTable.email,
+            email: revealEmail ? usersTable.email : sql<string>`''`.mapWith(String),
             photo: usersTable.photo,
             role: usersTable.role,
           })
@@ -382,6 +415,7 @@ export class ProfileControllerFactory implements Machine {
         const isOwner = userAuth?.userId !== undefined && String(userAuth.userId) === String(user.id)
         const isAdmin = userAuth?.role === 'admin'
         const canEdit = isOwner || isAdmin
+        const profileEmailRedacted = this.resolved.profileEmailVisibility === 'owner_or_admin_only' && !revealEmail
         const profileName = user.name ?? ''
         const profileEmail = user.email ?? ''
         const profilePhoto = (user.photo && String(user.photo).trim()) || ''
@@ -401,6 +435,7 @@ export class ProfileControllerFactory implements Machine {
           canEdit,
           isOwnProfile: isOwner,
           viewerIsAdmin: !!isAdmin,
+          profileEmailRedacted,
         }
         const extra = this.resolved.buildViewModel?.(baseLocals) ?? {}
         const html = website.getContentHtml(this.resolved.contentTemplate)({
@@ -416,6 +451,7 @@ export class ProfileControllerFactory implements Machine {
           canEdit,
           isOwnProfile: isOwner,
           viewerIsAdmin: !!isAdmin,
+          profileEmailRedacted,
           ...extra,
         })
         res.statusCode = 200

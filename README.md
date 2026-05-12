@@ -101,10 +101,10 @@ bun run test:unit
 bun run test:integration
 ```
 
-The default `bun run test` script sets **`SKIP_EXAMPLE_AUTH_TESTS=1`** so the suite passes without MySQL and seeded users (same idea as CI). To run **only** the request-handler integration file with example-auth enabled (needs DB + schema push + **`bun run example-auth:seed-test-users`** — see `websites/example-auth/README.md`):
+The default `bun run test` script sets **`SKIP_EXAMPLE_AUTH_TESTS=1`** so the suite passes without MySQL and seeded users (same idea as CI). To run **only** the request-handler integration file with example-auth enabled (needs DB + schema push + seed users — see `websites/example-auth/README.md`):
 
 ```bash
-bun run example-auth:seed-test-users
+bun websites/example-auth/scripts/seed-test-users.ts
 bun run test:integration:example-auth
 ```
 
@@ -117,7 +117,7 @@ REQUIRE_EXAMPLE_AUTH_LOGIN=1 bun run test:integration:example-auth
 **Database “online” integration** (`tests/Integration/database-online.test.ts`) exercises example-auth against a **live MySQL/MariaDB** (Crud **`/json`** counts, seeded logins, profile updates). The suite runs **only** when **`SKIP_DATABASE_TESTS=0`**; the default **`bun run test`** sets **`SKIP_DATABASE_TESTS=1`** so CI and laptop runs stay green without a database. From Thalia root:
 
 ```bash
-bun run example-auth:seed-test-users   # upserts test users (see websites/example-auth/README.md)
+bun websites/example-auth/scripts/seed-test-users.ts   # upserts test users (see websites/example-auth/README.md)
 bun run test:integration:database      # same as SKIP_DATABASE_TESTS=0 bun test tests/Integration/database-online.test.ts
 ```
 

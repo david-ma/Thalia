@@ -72,7 +72,7 @@ Examples live under `websites/` and may have their own READMEs (e.g. `websites/e
 - To run the `example-auth` request-handler integration test (requires DB + seeded users):
 
 ```bash
-bun run example-auth:seed-test-users
+bun websites/example-auth/scripts/seed-test-users.ts
 bun run test:integration:example-auth
 ```
 

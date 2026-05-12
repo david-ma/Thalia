@@ -5,22 +5,53 @@
  *   (unset, **`1`**, etc.) → the whole suite is **`describe.skip`** (counts as skipped in Bun).
  * - When enabled, failures are **never** swallowed: missing DB, migrations, or seed users **fail**
  *   with normal `expect` / HTTP status checks.
+ * - **`beforeAll`** starts the app, then logs in with the fixture accounts. If logins fail (e.g. empty DB
+ *   after `docker compose down -v`), it runs **`bun websites/example-auth/scripts/seed-test-users.ts`**
+ *   once and retries.
  *
  * From repo root:
  * ```
  * SKIP_DATABASE_TESTS=0 bun run test:integration:database
  * (also runs `example-auth-images-notes-blob.test.ts` for `images.notes_blob`)
- * bun run example-auth:seed-test-users   # upserts fixtures (see websites/example-auth/README.md)
+ * bun websites/example-auth/scripts/seed-test-users.ts   # upserts fixtures (see websites/example-auth/README.md)
  * ```
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import path from 'node:path'
 import {
   fetchFromServer,
   startTestServer,
   stopTestServer,
   waitForServerHttp,
 } from './helpers.js'
+
+const thaliaRoot = path.resolve(import.meta.dirname, '../..')
+const exampleAuthSeedScriptPath = path.join(
+  thaliaRoot,
+  'websites',
+  'example-auth',
+  'scripts',
+  'seed-test-users.ts',
+)
+
+/** Run the repo seed script so a wiped MySQL volume still satisfies database-online tests. */
+function runExampleAuthSeedScript(): void {
+  const result = Bun.spawnSync(['bun', exampleAuthSeedScriptPath], {
+    cwd: thaliaRoot,
+    stdout: 'pipe',
+    stderr: 'pipe',
+    env: process.env as Record<string, string>,
+  })
+  if (result.exitCode !== 0) {
+    const err = result.stderr.toString()
+    const out = result.stdout.toString()
+    throw new Error(
+      `Seed script failed (exit ${result.exitCode}): ${exampleAuthSeedScriptPath}. ` +
+        `Run migrations (e.g. drizzle-kit push) then run that script from repo root. stderr:\n${err}\nstdout:\n${out}`,
+    )
+  }
+}
 
 /** Only **`'0'`** turns this suite on; any other env value (including unset) skips. */
 const RUN_DATABASE_ONLINE_TESTS = process.env.SKIP_DATABASE_TESTS === '0'
@@ -62,7 +93,7 @@ async function loginExampleAuth(port: number, email: string, password: string): 
 describeDatabaseOnline('Integration: database online (example-auth + MySQL)', () => {
   let port!: number
 
-  beforeAll(async () => {
+  beforeAll(async function prepareExampleAuthDatabaseOnline() {
     const { port: p } = await startTestServer(PROJECT, { fresh: true })
     port = p
     await waitForServerHttp(port)
@@ -71,12 +102,17 @@ describeDatabaseOnline('Integration: database online (example-auth + MySQL)', ()
     const html = await logonPage.text()
     expect(html).toMatch(/log in|login|password/i)
 
-    const userCookie = await loginExampleAuth(port, USER_EMAIL, PASSWORD)
-    const adminCookie = await loginExampleAuth(port, ADMIN_EMAIL, PASSWORD)
+    let userCookie = await loginExampleAuth(port, USER_EMAIL, PASSWORD)
+    let adminCookie = await loginExampleAuth(port, ADMIN_EMAIL, PASSWORD)
+    if (userCookie === null || adminCookie === null) {
+      runExampleAuthSeedScript()
+      userCookie = await loginExampleAuth(port, USER_EMAIL, PASSWORD)
+      adminCookie = await loginExampleAuth(port, ADMIN_EMAIL, PASSWORD)
+    }
     if (userCookie === null || adminCookie === null) {
       throw new Error(
-        `Seeded logins required (${USER_EMAIL}, ${ADMIN_EMAIL}, password "${PASSWORD}"). ` +
-          'Run `bun run example-auth:seed-test-users` from repo root.',
+        `Seeded logins still failing after seed (${USER_EMAIL}, ${ADMIN_EMAIL}, password "${PASSWORD}"). ` +
+          'Check DATABASE_URL matches the DB Thalia uses, and that migrations created the users table.',
       )
     }
   })
@@ -254,7 +290,9 @@ describeDatabaseOnline('Integration: database online (example-auth + MySQL)', ()
       (r) => typeof r?.id === 'number' && String(r.email ?? '').toLowerCase() === USER_EMAIL.toLowerCase(),
     )
     if (!target?.id) {
-      throw new Error(`Need seeded ${USER_EMAIL} (run bun run example-auth:seed-test-users).`)
+      throw new Error(
+        `Need seeded ${USER_EMAIL} (from repo root: bun websites/example-auth/scripts/seed-test-users.ts).`,
+      )
     }
     const priorName = target.name ?? ''
     const newName = `DBOnline-${Date.now()}`

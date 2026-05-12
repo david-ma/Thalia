@@ -3,7 +3,7 @@
  *
  * Requires DATABASE_URL or readable docker-compose next to drizzle.config (same rules as drizzle.config.ts).
  *
- *   bun run example-auth:seed-test-users
+ *   bun websites/example-auth/scripts/seed-test-users.ts   # from Thalia repo root
  */
 import path from 'path'
 import { fileURLToPath } from 'url'

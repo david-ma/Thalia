@@ -119,7 +119,7 @@ To run example-auth integration tests locally:
 
 1. Start MariaDB (e.g. `docker compose up -d` in this directory) or set **`DATABASE_URL`**.
 2. **`bun drizzle-kit push`** from this directory so `users`, `sessions`, etc. exist.
-3. From Thalia root: **`bun run example-auth:seed-test-users`** — upserts **`user@example-auth.test`** (role `user`) and **`admin@example-auth.test`** (role `admin`) with password **`test-password`**. Without this step, authenticated tests no-op because login returns no cookie.
+3. From Thalia root: **`bun websites/example-auth/scripts/seed-test-users.ts`** — upserts **`user@example-auth.test`** (role `user`) and **`admin@example-auth.test`** (role `admin`) with password **`test-password`**. Without this step, authenticated tests no-op because login returns no cookie.
 4. **`bun run test:integration:example-auth`**. Add **`REQUIRE_EXAMPLE_AUTH_LOGIN=1`** to fail fast if logins still do not yield cookies.
 
 Logins in tests read **`Set-Cookie`** via **`getSetCookie()`** where available so `sessionId` is not dropped.
@@ -131,7 +131,7 @@ These hit **real HTTP + Drizzle + MySQL** (Crud **`/json`** totals, **`/fruit`**
 From Thalia root (after DB is up and schema is pushed):
 
 ```bash
-bun run example-auth:seed-test-users
+bun websites/example-auth/scripts/seed-test-users.ts
 bun run test:integration:database
 ```
 

@@ -5,6 +5,8 @@
 import fs from 'fs'
 import https from 'https'
 import type { IncomingMessage } from 'http'
+
+import { SMUGMUG_HTTPS_TIMEOUT_MS } from './constants.js'
 import {
   smugmugB64HmacSha1,
   smugmugBundleAuthorization,
@@ -96,9 +98,22 @@ export class SmugMugClient {
         httpsResponse.on('data', (chunk: unknown) => {
           data += chunk as string
         })
+        httpsResponse.on('error', (e: unknown) => {
+          reject(e instanceof Error ? e : new Error(String(e)))
+        })
         httpsResponse.on('end', () => {
+          const code = httpsResponse.statusCode
+          if (code === undefined || code < 200 || code >= 300) {
+            reject(new Error(`SmugMug API request failed (HTTP ${code ?? 'unknown'})`))
+            return
+          }
           resolve(data)
         })
+      })
+
+      httpsRequest.setTimeout(SMUGMUG_HTTPS_TIMEOUT_MS, () => {
+        httpsRequest.destroy()
+        reject(new Error('SmugMug API request timed out'))
       })
 
       httpsRequest.on('error', (e: unknown) => {

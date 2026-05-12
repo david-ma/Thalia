@@ -20,8 +20,11 @@ import crypto from 'crypto'
 import https from 'https'
 import { SmugMugClient, type SmugMugTokenSet } from './smugmug/smugmug-client.js'
 import { normalizeSmugMugAlbumUri } from './smugmug/album-uri.js'
+import { SMUGMUG_HTTPS_TIMEOUT_MS } from './smugmug/constants.js'
 import { fetchRemoteHttpsImageBytes, pickRemoteFileUrl } from './smugmug/remote-image-fetch.js'
-import { buildSmugMugNewImageInsert } from './smugmug/save-image-map.js'
+import { parseSmugMugMultipartUploadResponse } from './smugmug/multipart-upload-response.js'
+import { buildSmugMugNewImageInsert, type SmugMugUploadAck } from './smugmug/save-image-map.js'
+import { parseSmugMugVerbosityAlbumImage } from './smugmug/verbosity-response.js'
 import {
   smugmugB64HmacSha1,
   smugmugBundleAuthorization,
@@ -1578,9 +1581,21 @@ export class SmugMugUploader implements Machine {
           data += chunk
         })
 
+        httpsResponse.on('error', function (e) {
+          reject(e instanceof Error ? e : new Error(String(e)))
+        })
+
         httpsResponse.on('end', () => {
+          let ack: SmugMugUploadAck
+          try {
+            ack = parseSmugMugMultipartUploadResponse(httpsResponse.statusCode, data)
+          } catch (e: unknown) {
+            reject(e instanceof Error ? e : new Error(String(e)))
+            return
+          }
+
           that
-            .saveImage(JSON.parse(data))
+            .saveImage(ack)
             .then((insertResult) => {
               const insertIdNum = SmugMugUploader.insertIdFromMysqlResult(insertResult)
               if (insertIdNum === undefined) {
@@ -1600,6 +1615,11 @@ export class SmugMugUploader implements Machine {
               reject(err)
             })
         })
+      })
+
+      httpsRequest.setTimeout(SMUGMUG_HTTPS_TIMEOUT_MS, () => {
+        httpsRequest.destroy()
+        reject(new Error('SmugMug upload request timed out'))
       })
 
       httpsRequest.on('error', function (e) {
@@ -1623,31 +1643,18 @@ export class SmugMugUploader implements Machine {
     return undefined
   }
 
-  private saveImage(data: {
-    stat: string
-    method: string
-    Image: {
-      StatusImageReplaceUri: string
-      ImageUri: string
-      AlbumImageUri: string
-      URL: string
-    }
-    Asset: {
-      AssetComponentUri: string
-      AssetUri: string
-    }
-  }): Promise<unknown> {
+  private saveImage(data: SmugMugUploadAck): Promise<unknown> {
     const AlbumImageUri = data.Image.AlbumImageUri
+    if (typeof AlbumImageUri !== 'string' || !AlbumImageUri.trim()) {
+      return Promise.reject(new Error('SmugMug upload ack missing Image.AlbumImageUri'))
+    }
     const client = this.client
     if (!client) {
       return Promise.reject(new Error('SmugMug client not initialised'))
     }
 
     return client.smugmugApiCall(AlbumImageUri).then((response: string) => {
-      const responseData = JSON.parse(response) as {
-        Response?: { AlbumImage?: Record<string, any> }
-      }
-      const ai = responseData.Response?.AlbumImage
+      const ai = parseSmugMugVerbosityAlbumImage(response)
       const drizzle = this.website.db.drizzle
       const values = buildSmugMugNewImageInsert(data, ai)
       return drizzle.insert(images).values(values)

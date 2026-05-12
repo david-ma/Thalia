@@ -3,9 +3,10 @@
  * Manual redirect handling so each hop stays on **https** and passes SSRF guards.
  */
 
+import { SMUGMUG_REMOTE_FETCH_TIMEOUT_MS } from './constants.js'
+
 const DEFAULT_MAX_BYTES = 50 * 1024 * 1024
 const DEFAULT_MAX_REDIRECTS = 8
-const DEFAULT_FETCH_TIMEOUT_MS = 120_000
 
 async function discardResponseBody(res: Response): Promise<void> {
   try {
@@ -96,7 +97,7 @@ export async function fetchRemoteHttpsImageBytes(
     const res = await fetch(current.href, {
       method: 'GET',
       redirect: 'manual',
-      signal: AbortSignal.timeout(DEFAULT_FETCH_TIMEOUT_MS),
+      signal: AbortSignal.timeout(SMUGMUG_REMOTE_FETCH_TIMEOUT_MS),
     })
 
     if ([301, 302, 303, 307, 308].includes(res.status)) {

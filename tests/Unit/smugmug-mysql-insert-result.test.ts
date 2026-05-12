@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { mysqlInsertIdFromDrizzleMysql2Result } from '../../server/images/mysql-insert-result.js'
+import { mysqlInsertIdFromDrizzleMysql2Result } from '../../models/util.js'
 
 describe('mysqlInsertIdFromDrizzleMysql2Result', () => {
   test('reads insertId from mysql2 tuple [ResultSetHeader, fields]', () => {

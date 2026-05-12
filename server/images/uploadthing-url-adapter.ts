@@ -11,7 +11,7 @@ import { eq } from 'drizzle-orm'
 import type { ImageMeta, ImageStoreAdapter, StoredImage } from './adapters.js'
 import type { Website } from '../website.js'
 import { images } from '../../models/images.js'
-import { mysqlInsertIdFromDrizzleMysql2Result } from './mysql-insert-result.js'
+import { mysqlInsertIdFromDrizzleMysql2Result } from '../../models/util.js'
 
 export class UploadThingUrlAdapter implements ImageStoreAdapter {
   readonly name = 'uploadthing'

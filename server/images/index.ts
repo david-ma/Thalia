@@ -39,7 +39,7 @@
  *      "smugmug-" prefix from filenames (smugmug-oauth.ts → smugmug/oauth.ts, etc.)
  *      Rename models/smugmug.ts → models/images.ts at the same time.
  *  [x] Merge multipart-upload-response.ts + verbosity-response.ts → smugmug/response-parsers.ts
- *  [ ] Move mysql-insert-result.ts to models/util.ts (not image-specific)
+ *  [x] Move mysql-insert-result.ts to models/util.ts (not image-specific)
  *  [ ] Move https-request.ts to server/util/ (no SmugMug logic; useful everywhere)
  *  [ ] Generalise log.ts service field from hardcoded 'smugmug' to the adapter name
  *

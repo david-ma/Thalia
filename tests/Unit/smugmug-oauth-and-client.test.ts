@@ -5,6 +5,7 @@
 import { describe, expect, test, spyOn } from 'bun:test'
 import {
   smugmugB64HmacSha1,
+  smugmugBundleAuthorization,
   smugmugExpandParams,
   smugmugOauthEscape,
   smugmugSortParams,
@@ -15,6 +16,16 @@ import { loadSmugmugOAuthSignatureFixture } from '../helpers/smugmug-fixtures.js
 describe('SmugMug OAuth helpers', () => {
   test('smugmugOauthEscape keeps RFC 5849 “unreserved” exceptions', () => {
     expect(smugmugOauthEscape("!'()*")).toBe('%21%27%28%29%2A')
+  })
+
+  test('smugmugBundleAuthorization encodes oauth_signature per Appendix A (no raw + or / in header)', () => {
+    const header = smugmugBundleAuthorization('https://api.example/', {
+      oauth_consumer_key: 'ck',
+      oauth_signature: 'a+b/c=',
+      oauth_nonce: 'n',
+    })
+    expect(header).toMatch(/oauth_signature="[^"]*%2B[^"]*%2F[^"]*%3D"/)
+    expect(header).not.toContain('oauth_signature="a+')
   })
 
   test('smugmugSortParams + expand + HMAC matches golden vector file', () => {

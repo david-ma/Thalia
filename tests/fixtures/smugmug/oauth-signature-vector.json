@@ -1,5 +1,5 @@
 {
-  "_comment": "Golden OAuth 1.0a base string + HMAC for SmugMugClient.signRequest. mockRandom=0 yields a base64 signature without +/ so signRequest does not recurse on the legacy retry path.",
+  "_comment": "Golden OAuth 1.0a base string + HMAC for SmugMugClient.signRequest (mocked Math.random + Date.now). The raw base64 signature may contain +/; Authorization header encoding uses smugmugOauthEscape (RFC 5849 Appendix A) — no nonce retry.",
   "method": "GET",
   "targetUrl": "https://api.smugmug.com/api/v2/album/AbCd?_verbosity=1",
   "tokens": {

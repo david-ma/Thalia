@@ -37,7 +37,7 @@ export class SmugMugClient {
     return `${SmugMugClient.BASE_URL}/services/oauth/1.0a/getRequestToken`
   }
 
-  /** Same algorithm as legacy `SmugMugUploader.signRequest` — includes `+/` signature retry workaround. */
+  /** OAuth 1.0a HMAC-SHA1 signing; `oauth_signature` is RFC 5849 Appendix A–encoded in {@link smugmugBundleAuthorization}. */
   signRequest(method: string, targetUrl: string): Record<string, string> {
     const urlObj = new URL(targetUrl)
     const baseUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`
@@ -65,9 +65,7 @@ export class SmugMugClient {
       `${method}&${smugmugOauthEscape(baseUrl)}&${escapedParams}`,
     )
 
-    return params.oauth_signature.match(/[\+\/]/)
-      ? this.signRequest(method, targetUrl)
-      : params
+    return params
   }
 
   /**

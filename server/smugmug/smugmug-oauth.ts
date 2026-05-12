@@ -42,7 +42,7 @@ export function smugmugBundleAuthorization(url: string, params: Record<string, s
     .map((key) => {
       let value: string = params[key]
       if (key === 'oauth_signature') {
-        value = encodeURIComponent(value)
+        value = smugmugOauthEscape(value)
       }
       return `${key}="${value}"`
     })

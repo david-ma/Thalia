@@ -1,5 +1,7 @@
 export { requestHttpsUtf8 } from './https-request.js'
-export type { HttpsUtf8Response, RequestHttpsUtf8Params } from './https-request.js'
+export type { HttpsUtf8Response, RequestHttpsUtf8Params, SmugMugHttpsLogContext } from './https-request.js'
+export { redactLogText, smugmugLogLine } from './log.js'
+export type { SmugmugLogEvent, SmugmugLogLevel } from './log.js'
 export {
   assertSafeHttpsImageFetchUrl,
   fetchRemoteHttpsImageBytes,

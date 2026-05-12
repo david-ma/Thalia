@@ -4,6 +4,7 @@
  */
 
 import { SMUGMUG_REMOTE_FETCH_TIMEOUT_MS } from './constants.js'
+import { smugmugLogLine } from './log.js'
 
 const DEFAULT_MAX_BYTES = 50 * 1024 * 1024
 const DEFAULT_MAX_REDIRECTS = 8
@@ -86,51 +87,84 @@ export type FetchedHttpsImage = {
 
 export async function fetchRemoteHttpsImageBytes(
   urlString: string,
-  options?: { maxBytes?: number; maxRedirects?: number },
+  options?: { maxBytes?: number; maxRedirects?: number; log?: { website?: string } },
 ): Promise<FetchedHttpsImage> {
   const maxBytes = options?.maxBytes ?? DEFAULT_MAX_BYTES
   const maxRedirects = options?.maxRedirects ?? DEFAULT_MAX_REDIRECTS
+  const log = options?.log
+  const t0 = Date.now()
 
-  let current = assertSafeHttpsImageFetchUrl(urlString)
+  let current: URL | undefined
+  try {
+    current = assertSafeHttpsImageFetchUrl(urlString)
 
-  for (let hop = 0; hop <= maxRedirects; hop++) {
-    const res = await fetch(current.href, {
-      method: 'GET',
-      redirect: 'manual',
-      signal: AbortSignal.timeout(SMUGMUG_REMOTE_FETCH_TIMEOUT_MS),
-    })
+    for (let hop = 0; hop <= maxRedirects; hop++) {
+      const res = await fetch(current.href, {
+        method: 'GET',
+        redirect: 'manual',
+        signal: AbortSignal.timeout(SMUGMUG_REMOTE_FETCH_TIMEOUT_MS),
+      })
 
-    if ([301, 302, 303, 307, 308].includes(res.status)) {
-      await discardResponseBody(res)
-      const loc = res.headers.get('location')
-      if (!loc) {
-        throw new Error('Remote image redirect missing Location header')
+      if ([301, 302, 303, 307, 308].includes(res.status)) {
+        await discardResponseBody(res)
+        const loc = res.headers.get('location')
+        if (!loc) {
+          throw new Error('Remote image redirect missing Location header')
+        }
+        current = assertSafeHttpsImageFetchUrl(new URL(loc, current).href)
+        continue
       }
-      current = assertSafeHttpsImageFetchUrl(new URL(loc, current).href)
-      continue
-    }
 
-    if (!res.ok) {
-      throw new Error(`Remote image fetch failed (${res.status})`)
-    }
+      if (!res.ok) {
+        throw new Error(`Remote image fetch failed (${res.status})`)
+      }
 
-    const cl = res.headers.get('content-length')
-    if (cl) {
-      const n = Number(cl)
-      if (Number.isFinite(n) && n > maxBytes) {
+      const cl = res.headers.get('content-length')
+      if (cl) {
+        const n = Number(cl)
+        if (Number.isFinite(n) && n > maxBytes) {
+          throw new Error('Remote image too large')
+        }
+      }
+
+      const buffer = Buffer.from(await res.arrayBuffer())
+      if (buffer.length > maxBytes) {
         throw new Error('Remote image too large')
       }
+
+      const ct = res.headers.get('content-type')?.split(';')[0]?.trim()
+
+      if (log) {
+        smugmugLogLine({
+          service: 'smugmug',
+          level: 'info',
+          operation: 'remote_image_fetch',
+          website: log.website,
+          hostname: current.hostname,
+          method: 'GET',
+          durationMs: Date.now() - t0,
+          httpStatus: res.status,
+          byteLength: buffer.length,
+        })
+      }
+
+      return { buffer, contentType: ct }
     }
 
-    const buffer = Buffer.from(await res.arrayBuffer())
-    if (buffer.length > maxBytes) {
-      throw new Error('Remote image too large')
+    throw new Error('Too many redirects when fetching remote image')
+  } catch (e: unknown) {
+    if (log) {
+      smugmugLogLine({
+        service: 'smugmug',
+        level: 'error',
+        operation: 'remote_image_fetch',
+        website: log.website,
+        hostname: current?.hostname,
+        method: 'GET',
+        durationMs: Date.now() - t0,
+        msg: e instanceof Error ? e.message : String(e),
+      })
     }
-
-    const ct = res.headers.get('content-type')?.split(';')[0]?.trim()
-
-    return { buffer, contentType: ct }
+    throw e
   }
-
-  throw new Error('Too many redirects when fetching remote image')
 }

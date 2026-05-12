@@ -145,6 +145,8 @@ bun test tests/Integration/smugmug-read-live.test.ts
 
 The default **`bun test`** / GitHub Actions job does **not** set **`SMUGMUG_READ_CI`** (see `.github/workflows/tests.yml`).
 
+SmugMug upload/API paths emit **one JSON line per request** to stdout/stderr (`service: "smugmug"`, `operation`, `durationMs`, `httpStatus`, `website`, …) via **`server/smugmug/log.ts`** — never **`oauth_*`** values; free-text **`msg`** fields are passed through **`redactLogText`**.
+
 ### Service-dependent tests (DB / MailCatcher)
 
 The `websites/example-auth` fixture exercises Thalia’s auth + route guard + mail flows and **expects external services** in some scenarios (database; MailCatcher for an end-to-end password-reset test).

@@ -71,7 +71,7 @@ export class SmugMugClient {
   /**
    * Signed `GET …/path?_verbosity=1` against `api.smugmug.com`; resolves raw JSON string body (legacy parity).
    */
-  smugmugApiCall(path: string, method = 'GET'): Promise<string> {
+  smugmugApiCall(path: string, method = 'GET', logWebsite?: string): Promise<string> {
     const urlWithVerbosity = `${path}?_verbosity=1`
     const targetUrl = `${SmugMugClient.BASE_URL}${urlWithVerbosity}`
     const params = this.signRequest(method, targetUrl)
@@ -86,6 +86,10 @@ export class SmugMugClient {
         Accept: 'application/json',
         'X-Smug-ResponseType': 'JSON',
       },
+      log:
+        logWebsite !== undefined
+          ? { website: logWebsite, operation: 'smugmug_api_get' }
+          : undefined,
     }).then(({ statusCode, bodyUtf8 }) => {
       if (statusCode === undefined || statusCode < 200 || statusCode >= 300) {
         throw new Error(`SmugMug API request failed (HTTP ${statusCode ?? 'unknown'})`)

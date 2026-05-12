@@ -25,6 +25,7 @@ import { fetchRemoteHttpsImageBytes, pickRemoteFileUrl } from './smugmug/remote-
 import { parseSmugMugMultipartUploadResponse } from './smugmug/multipart-upload-response.js'
 import { buildSmugMugNewImageInsert, type SmugMugUploadAck } from './smugmug/save-image-map.js'
 import { parseSmugMugVerbosityAlbumImage } from './smugmug/verbosity-response.js'
+import { smugmugLogLine } from './smugmug/log.js'
 import {
   smugmugB64HmacSha1,
   smugmugBundleAuthorization,
@@ -1153,7 +1154,13 @@ export class SmugMugUploader implements Machine {
       .then((mod: { smugmug?: Partial<SmugMugTokenSet> & { album?: string } }) => {
         const smug = mod.smugmug
         if (!smug) {
-          console.warn(`[${website.name}] SmugMug: config/secrets.js has no smugmug export; uploads disabled.`)
+          smugmugLogLine({
+            service: 'smugmug',
+            level: 'warn',
+            operation: 'init_no_smug_export',
+            website: website.name,
+            msg: 'config/secrets.js has no smugmug export; uploads disabled.',
+          })
           return
         }
 
@@ -1170,9 +1177,13 @@ export class SmugMugUploader implements Machine {
         }
 
         if (!this.tokens.consumer_key || !this.tokens.consumer_secret) {
-          console.warn(
-            `[${website.name}] SmugMug: consumer_key/consumer_secret missing; uploads disabled.`,
-          )
+          smugmugLogLine({
+            service: 'smugmug',
+            level: 'warn',
+            operation: 'init_missing_consumer',
+            website: website.name,
+            msg: 'consumer_key/consumer_secret missing; uploads disabled.',
+          })
           this.client = null
           return
         }
@@ -1232,25 +1243,49 @@ export class SmugMugUploader implements Machine {
               this.tokens!.oauth_token_secret = response.oauth_token_secret
               // Browser step: `${this.client.authorizeUrl}?oauth_token=…&oauth_callback=${this.oauthCallbackResolved}`
             } else {
-              console.error(`[${website.name}] SmugMug: request token failed (see SmugMug response).`)
+              smugmugLogLine({
+                service: 'smugmug',
+                level: 'error',
+                operation: 'oauth_request_token_failed',
+                website: website.name,
+                hostname: 'api.smugmug.com',
+                msg: 'Request token response not confirmed.',
+              })
             }
           })
         })
 
         req.on('error', (e: unknown) => {
-          console.error(`[${website.name}] SmugMug: request token HTTP error:`, e)
+          smugmugLogLine({
+            service: 'smugmug',
+            level: 'error',
+            operation: 'oauth_request_token_http',
+            website: website.name,
+            hostname: 'api.smugmug.com',
+            msg: e instanceof Error ? e.message : String(e),
+          })
         })
 
         req.end()
       })
       .catch((error: unknown) => {
         if (SmugMugUploader.isMissingSecretsModule(error)) {
-          console.warn(
-            `[${website.name}] SmugMug: config/secrets.js not found or unreadable; uploads disabled.`,
-          )
+          smugmugLogLine({
+            service: 'smugmug',
+            level: 'warn',
+            operation: 'init_secrets_missing',
+            website: website.name,
+            msg: 'config/secrets.js not found or unreadable; uploads disabled.',
+          })
           return
         }
-        console.error(`[${website.name}] SmugMug: error loading secrets:`, error)
+        smugmugLogLine({
+          service: 'smugmug',
+          level: 'error',
+          operation: 'init_secrets_load_failed',
+          website: website.name,
+          msg: error instanceof Error ? error.message : String(error),
+        })
       })
   }
 
@@ -1357,7 +1392,14 @@ export class SmugMugUploader implements Machine {
       })
 
       httpsResponse.on('error', (e: any) => {
-        console.error('Token Exchange Error:', e)
+        smugmugLogLine({
+          service: 'smugmug',
+          level: 'error',
+          operation: 'oauth_access_token_response',
+          website: this.website.name,
+          hostname: 'api.smugmug.com',
+          msg: e instanceof Error ? e.message : String(e),
+        })
       })
 
       httpsResponse.on('end', () => {
@@ -1382,7 +1424,14 @@ export class SmugMugUploader implements Machine {
     })
 
     httpsRequest.on('error', (e: any) => {
-      console.error('Token Exchange Error:', e)
+      smugmugLogLine({
+        service: 'smugmug',
+        level: 'error',
+        operation: 'oauth_access_token_request',
+        website: this.website.name,
+        hostname: 'api.smugmug.com',
+        msg: e instanceof Error ? e.message : String(e),
+      })
     })
 
     httpsRequest.end()
@@ -1412,7 +1461,13 @@ export class SmugMugUploader implements Machine {
           res.end(JSON.stringify(data))
         })
         .catch((err: unknown) => {
-          console.error('Error uploading photo (JSON):', err)
+          smugmugLogLine({
+            service: 'smugmug',
+            level: 'error',
+            operation: 'upload_photo_json',
+            website: this.website.name,
+            msg: err instanceof Error ? err.message : String(err),
+          })
           const msg = err instanceof Error ? err.message : String(err)
           const clientError =
             /\bEmpty JSON\b|\bInvalid JSON\b|\bJSON body\b|\bMissing upload URL\b|\bOnly https\b|\bImage host\b|\bImage URL\b|\bcredentials\b|\btoo large\b/i.test(
@@ -1429,7 +1484,13 @@ export class SmugMugUploader implements Machine {
         res.end(JSON.stringify(data))
       })
       .catch((err) => {
-        console.error('Error uploading photo:', err)
+        smugmugLogLine({
+          service: 'smugmug',
+          level: 'error',
+          operation: 'upload_photo_form',
+          website: this.website.name,
+          msg: err instanceof Error ? err.message : String(err),
+        })
         res.end('error')
       })
   }
@@ -1450,7 +1511,9 @@ export class SmugMugUploader implements Machine {
     if (!picked) {
       throw new Error('Missing upload URL (uploadThingUrl, fileUrl, or url)')
     }
-    const { buffer, contentType } = await fetchRemoteHttpsImageBytes(picked)
+    const { buffer, contentType } = await fetchRemoteHttpsImageBytes(picked, {
+      log: { website: this.website.name },
+    })
 
     let filename = this.jsonFieldString(body, 'filename', 'fileName')
     if (!filename) {
@@ -1570,6 +1633,11 @@ export class SmugMugUploader implements Machine {
         'X-Smug-Version': 'v2',
       },
       body: formData,
+      log: {
+        website: this.website.name,
+        operation: 'upload_multipart',
+        filename: args.filename,
+      },
     })
 
     const ack = parseSmugMugMultipartUploadResponse(statusCode, bodyUtf8)
@@ -1606,7 +1674,7 @@ export class SmugMugUploader implements Machine {
       return Promise.reject(new Error('SmugMug client not initialised'))
     }
 
-    return client.smugmugApiCall(AlbumImageUri).then((response: string) => {
+    return client.smugmugApiCall(AlbumImageUri, 'GET', this.website.name).then((response: string) => {
       const ai = parseSmugMugVerbosityAlbumImage(response)
       const drizzle = this.website.db.drizzle
       const values = buildSmugMugNewImageInsert(data, ai)

@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import crypto from 'node:crypto'
-import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import https from 'node:https'
 import path from 'node:path'
 import { eq } from 'drizzle-orm'
@@ -306,7 +306,7 @@ export class SmugMugUploader implements Machine {
       oauth_consumer_key: persistTokens.consumer_key,
       oauth_token: oauthTokenQuery,
       oauth_signature_method: 'HMAC-SHA1',
-      oauth_timestamp: String(Date.now()),
+      oauth_timestamp: String(Math.floor(Date.now() / 1000)),
       oauth_nonce: Math.random().toString().replace('0.', ''),
       oauth_verifier: oauthVerifier,
     }
@@ -544,7 +544,7 @@ export class SmugMugUploader implements Machine {
     const title = form.fields.title ?? filename ?? caption ?? ''
     const keywords = form.fields.keywords ?? title ?? caption ?? filename ?? this.website.name ?? ''
 
-    const bytes = fs.readFileSync(file.filepath)
+    const bytes = await fsp.readFile(file.filepath)
     return this.uploadBufferToSmugmugPipeline({
       bytes,
       caption,

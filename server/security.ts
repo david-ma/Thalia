@@ -176,7 +176,7 @@ const default_routes: RoleRouteRule[] = [
 ]
 
 import { RequestInfo } from './server'
-import { parseForm } from './controllers'
+import { parseForm } from './util.js'
 import { and, eq, gt } from 'drizzle-orm'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 // import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'

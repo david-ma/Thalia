@@ -1,3 +1,4 @@
+import type { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import { Controller, NestedControllerMap, Website } from './website'
 import { Socket } from 'socket.io'
 
@@ -74,7 +75,15 @@ export interface BasicWebsiteConfig {
   port: number
 }
 
-import { Machine } from './controllers.js'
+/**
+ * A Machine is a singleton that needs to be initialised by Thalia.
+ * They provide controllers. CrudFactories are Machines; SmugMugUploader is a Machine.
+ */
+export type Machine = {
+  init: (website: Website, name: string) => void
+  controller: Controller
+  table: MySqlTableWithColumns<any>
+}
 
 // Use SQLiteTableWithColumns for now, but we will add PgTableWithColumns later
 // export type DatabaseTable = SQLiteTableWithColumns<any> | PgTableWithColumns<any>

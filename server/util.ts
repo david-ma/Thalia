@@ -1,3 +1,6 @@
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import formidable from 'formidable'
+
 // Asynchronous for each, doing a limited number of things at a time.
 export async function asyncForEach(
   array: any[],
@@ -157,6 +160,50 @@ export function spinner(string: string = 'Loading...') {
     process.stdout.write(`\r${string}\n`)
     clearInterval(spinnerInterval)
   }
+}
+
+export type ParsedForm = {
+  fields: Record<string, string>
+  files: formidable.Files<string>
+}
+
+function parseFields(fields: formidable.Fields<string>): Record<string, string> {
+  return Object.entries(fields).reduce(
+    (obj, [key, value]) => {
+      if (Array.isArray(value)) {
+        obj[key] = String(value[0] ?? '')
+      } else {
+        obj[key] = String(value ?? '')
+      }
+      return obj
+    },
+    {} as Record<string, string>,
+  )
+}
+
+export function parseForm(res: ServerResponse, req: IncomingMessage): Promise<ParsedForm> {
+  return new Promise((resolve, reject) => {
+    const methods = ['POST', 'PUT', 'PATCH', 'DELETE']
+    if (!methods.includes(req.method ?? '')) {
+      res.writeHead(405, { 'Content-Type': 'text/html' })
+      res.end('Method not allowed')
+      reject(new Error('Method not allowed'))
+      return
+    }
+
+    const form = formidable({ multiples: false })
+    form.parse(req, (err, fields, files) => {
+      if (err) {
+        console.error('Error', err)
+        res.writeHead(400, { 'Content-Type': 'text/html' })
+        res.end('Invalid form data')
+        reject(err)
+        return
+      }
+
+      resolve({ fields: parseFields(fields), files })
+    })
+  })
 }
 
 // Export the models utils?

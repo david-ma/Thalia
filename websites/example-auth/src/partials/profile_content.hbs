@@ -1,4 +1,4 @@
-{{!-- Served via profileController + Website#getContentHtml('profile_content'). --}}
+{{!-- Served via ProfileControllerFactory + Website#getContentHtml('profile_content'). --}}
 <div class="profile-page py-2">
   <nav class="mb-4" aria-label="Breadcrumb">
     <ol class="breadcrumb mb-0">
@@ -15,9 +15,10 @@
             <img
               class="profile-avatar rounded-circle border shadow-sm mb-3"
               src="{{profilePhoto}}"
-              alt=""
+              alt="Avatar for {{profileDisplayName}}"
               width="128"
               height="128"
+              referrerpolicy="no-referrer"
             />
           {{else}}
             <div
@@ -45,6 +46,8 @@
             <dd class="col-sm-9">{{profileRole}}</dd>
             <dt class="col-sm-3">Display name</dt>
             <dd class="col-sm-9">{{profileName}}</dd>
+            <dt class="col-sm-3">Photo URL</dt>
+            <dd class="col-sm-9 text-break">{{#if profilePhoto}}<a href="{{profilePhoto}}" target="_blank" rel="noopener noreferrer">{{profilePhoto}}</a>{{else}}<span class="text-muted">Not set</span>{{/if}}</dd>
           </dl>
         </div>
       </div>
@@ -52,7 +55,7 @@
       {{#if viewerIsAdmin}}
         {{#unless isOwnProfile}}
           <div class="alert alert-info py-2 small mb-4" role="status">
-            You are signed in as an administrator and may update this user&apos;s display name.
+            You are signed in as an administrator and may update this user&apos;s display name and photo URL.
           </div>
         {{/unless}}
       {{/if}}
@@ -64,14 +67,15 @@
         data-can-edit="{{#if canEdit}}1{{else}}0{{/if}}"
       >
         <div class="card-body p-4">
-          <h2 class="h5 text-uppercase text-muted mb-3">Display name</h2>
+          <h2 class="h5 text-uppercase text-muted mb-3">Edit profile</h2>
           {{#if canEdit}}
             <p class="small text-muted mb-3">
-              This is the name shown in the session card and admin lists. It is not used for sign-in (email is).
+              Display name is shown in the session card and admin lists; it is not used for sign-in (email is).
+              Photo must be a normal <strong>https</strong> image URL you trust (e.g. from your CDN). Clear the field to remove the photo.
             </p>
-            <div class="row g-2 align-items-end flex-wrap">
-              <div class="col-md-8">
-                <label for="profile-name-input" class="form-label small text-muted mb-1">Name</label>
+            <div class="row g-3">
+              <div class="col-12">
+                <label for="profile-name-input" class="form-label small text-muted mb-1">Display name</label>
                 <input
                   type="text"
                   class="form-control"
@@ -81,14 +85,27 @@
                   autocomplete="name"
                 />
               </div>
-              <div class="col-md-4">
+              <div class="col-12">
+                <label for="profile-photo-input" class="form-label small text-muted mb-1">Photo URL</label>
+                <input
+                  type="url"
+                  class="form-control"
+                  id="profile-photo-input"
+                  maxlength="4096"
+                  value="{{profilePhoto}}"
+                  placeholder="https://…"
+                  autocomplete="off"
+                  inputmode="url"
+                />
+              </div>
+              <div class="col-12 col-md-4">
                 <button type="button" class="btn btn-primary w-100" id="profile-save-btn">Save changes</button>
               </div>
             </div>
             <p class="small mt-3 mb-0" id="profile-save-status" role="status" aria-live="polite"></p>
           {{else}}
             <p class="text-muted mb-0">
-              You can view this profile. Only the account owner or an administrator can change the display name.
+              You can view this profile. Only the account owner or an administrator can change the display name or photo URL.
             </p>
           {{/if}}
         </div>
@@ -102,10 +119,11 @@
     var root = document.getElementById('profile-root')
     if (!root || root.getAttribute('data-can-edit') !== '1') return
     var id = root.getAttribute('data-profile-id')
-    var input = document.getElementById('profile-name-input')
+    var nameInput = document.getElementById('profile-name-input')
+    var photoInput = document.getElementById('profile-photo-input')
     var btn = document.getElementById('profile-save-btn')
     var statusEl = document.getElementById('profile-save-status')
-    if (!id || !input || !btn || !statusEl) return
+    if (!id || !nameInput || !photoInput || !btn || !statusEl) return
     function setStatus(msg, kind) {
       statusEl.textContent = msg
       statusEl.className = 'small mt-3 mb-0'
@@ -114,13 +132,14 @@
       else statusEl.classList.add('text-muted')
     }
     btn.addEventListener('click', function () {
-      var name = (input.value || '').trim()
+      var name = (nameInput.value || '').trim()
+      var photo = (photoInput.value || '').trim()
       setStatus('Saving…', '')
       btn.disabled = true
       fetch('/profile/' + id, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name }),
+        body: JSON.stringify({ name: name, photo: photo }),
       })
         .then(function (r) {
           return r.text().then(function (t) {
@@ -142,7 +161,7 @@
             setStatus(String(data.error), 'err')
             return
           }
-          setStatus('Saved. Refresh the page to see the name everywhere.', 'ok')
+          setStatus('Saved. Refresh the page to see your name and photo everywhere.', 'ok')
         })
         .catch(function () {
           setStatus('Network error. Try again.', 'err')

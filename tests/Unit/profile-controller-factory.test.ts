@@ -3,6 +3,7 @@ import {
   parseProfileUpdatePayload,
   profileJsonErrorString,
   profileSelfRedirectLocation,
+  validateProfilePhotoHttpHttpsUrl,
 } from '../../server/security/profile-controller-factory.js'
 
 const fields = ['name', 'photo'] as const
@@ -25,6 +26,24 @@ describe('profileSelfRedirectLocation', () => {
     expect(profileSelfRedirectLocation('', undefined, true)).toBe(null)
     expect(profileSelfRedirectLocation('7', 42, true)).toBe(null)
     expect(profileSelfRedirectLocation('x', 42, true)).toBe(null)
+  })
+})
+
+describe('validateProfilePhotoHttpHttpsUrl', () => {
+  test('allows null', () => {
+    expect(validateProfilePhotoHttpHttpsUrl(null)).toEqual({ ok: true })
+  })
+  test('allows http and https URLs', () => {
+    expect(validateProfilePhotoHttpHttpsUrl('https://example.com/a.png')).toEqual({ ok: true })
+    expect(validateProfilePhotoHttpHttpsUrl('http://localhost/x')).toEqual({ ok: true })
+  })
+  test('rejects non-http(s) schemes and invalid URLs', () => {
+    expect(validateProfilePhotoHttpHttpsUrl('javascript:alert(1)')).toMatchObject({
+      ok: false,
+      code: 'PHOTO_VALUE_REJECTED',
+    })
+    expect(validateProfilePhotoHttpHttpsUrl('ftp://x/y')).toMatchObject({ ok: false, code: 'PHOTO_VALUE_REJECTED' })
+    expect(validateProfilePhotoHttpHttpsUrl('not a url')).toMatchObject({ ok: false, code: 'PHOTO_VALUE_REJECTED' })
   })
 })
 

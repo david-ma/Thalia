@@ -24,7 +24,7 @@
  */
 import path from 'path';
 import { CrudFactory, ThaliaImageUploader } from 'thalia/controllers';
-import { type RoleRouteRule, ThaliaSecurity, ProfileControllerFactory } from 'thalia/security';
+import { type RoleRouteRule, ThaliaSecurity, ProfileControllerFactory, validateProfilePhotoHttpHttpsUrl } from 'thalia/security';
 import { recursiveObjectMerge } from 'thalia/website';
 import { fruit } from '../models/fruit.js';
 import { albums, images } from '../models/drizzle-schema';
@@ -58,6 +58,7 @@ const security = new ThaliaSecurity({
 
 const profileMachine = new ProfileControllerFactory({
     buildPageDescription: (displayName) => `Account profile for ${displayName} on Example Auth.`,
+    validatePhoto: validateProfilePhotoHttpHttpsUrl,
 });
 
 /**

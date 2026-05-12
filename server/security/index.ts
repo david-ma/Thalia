@@ -12,6 +12,7 @@ export type {
   ProfileControllerFactoryOptions,
   ProfileJsonErrorBody,
   ProfileJsonErrorCode,
+  ProfilePhotoValidationResult,
   ProfileReadScope,
   ProfileViewModelInput,
 } from './profile-controller-factory.js'
@@ -21,4 +22,5 @@ export {
   profileJsonErrorBody,
   profileJsonErrorString,
   profileSelfRedirectLocation,
+  validateProfilePhotoHttpHttpsUrl,
 } from './profile-controller-factory.js'

@@ -22,6 +22,7 @@ export type ProfileJsonErrorCode =
   | 'JSON_NOT_OBJECT'
   | 'NAME_EMPTY'
   | 'NO_FIELDS_TO_UPDATE'
+  | 'PHOTO_VALUE_REJECTED'
   | 'PROFILE_FORBIDDEN'
   | 'PROFILE_ID_REQUIRED'
   | 'PROFILE_UPDATE_FAILED'
@@ -42,6 +43,36 @@ export function profileJsonErrorString(error: string, code: ProfileJsonErrorCode
 
 export type ProfileReadScope = 'authenticated' | 'owner_or_admin'
 
+/** Result of optional {@link ProfileControllerFactoryOptions.validatePhoto} (after JSON parse + trim). */
+export type ProfilePhotoValidationResult =
+  | { ok: true }
+  | { ok: false; error: string; code?: ProfileJsonErrorCode }
+
+/**
+ * Stock validator: allow **`null`** (clear photo); non-null values must be absolute **`http:`** or **`https:`** URLs.
+ * Use with **`ProfileControllerFactoryOptions.validatePhoto`**.
+ */
+export function validateProfilePhotoHttpHttpsUrl(value: string | null): ProfilePhotoValidationResult {
+  if (value === null) return { ok: true }
+  try {
+    const u = new URL(value)
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+      return {
+        ok: false,
+        error: 'photo URL must use http or https',
+        code: 'PHOTO_VALUE_REJECTED',
+      }
+    }
+    return { ok: true }
+  } catch {
+    return {
+      ok: false,
+      error: 'photo must be a valid http(s) URL',
+      code: 'PHOTO_VALUE_REJECTED',
+    }
+  }
+}
+
 export interface ProfileControllerFactoryOptions {
   /** Handlebars content template name (default `profile_content`). */
   contentTemplate?: string
@@ -61,6 +92,12 @@ export interface ProfileControllerFactoryOptions {
   maxJsonBytes?: number
   /** Max trimmed string length for `name` / `photo` (default 4096). */
   maxStringFieldLength?: number
+  /**
+   * If set, run after a successful JSON parse when the patch includes **`photo`** (including **`null`** to clear).
+   * Return **`{ ok: false, error }`** for **422**; optional **`code`** defaults to **`PHOTO_VALUE_REJECTED`**.
+   * See **`validateProfilePhotoHttpHttpsUrl`** for a common **`http`/`https`**-only check.
+   */
+  validatePhoto?: (value: string | null) => ProfilePhotoValidationResult
   /** Optional override for template locals on GET (receives base locals + row). */
   buildViewModel?: (input: ProfileViewModelInput) => Record<string, unknown>
   /** Prefix for HTML `<title>` (default `Profile —`). */
@@ -89,6 +126,7 @@ type ResolvedOptions = {
   updatableFields: readonly ('name' | 'photo')[]
   maxJsonBytes: number
   maxStringFieldLength: number
+  validatePhoto?: ProfileControllerFactoryOptions['validatePhoto']
   buildViewModel?: ProfileControllerFactoryOptions['buildViewModel']
   pageTitlePrefix: string
   buildPageDescription: (displayName: string) => string
@@ -117,6 +155,7 @@ function resolveOptions(options?: ProfileControllerFactoryOptions): ResolvedOpti
     updatableFields: options?.updatableFields?.length ? options.updatableFields : [...DEFAULT_UPDATABLE_FIELDS],
     maxJsonBytes: options?.maxJsonBytes ?? DEFAULT_MAX_JSON_BYTES,
     maxStringFieldLength: options?.maxStringFieldLength ?? DEFAULT_MAX_STRING_FIELD_LENGTH,
+    validatePhoto: options?.validatePhoto,
     buildViewModel: options?.buildViewModel,
     pageTitlePrefix: options?.pageTitlePrefix ?? 'Profile —',
     buildPageDescription: options?.buildPageDescription ?? ((displayName: string) => `Account profile for ${displayName}.`),
@@ -430,6 +469,16 @@ export class ProfileControllerFactory implements Machine {
         res.setHeader('Content-Type', 'application/json')
         res.end(profileJsonErrorString(parsedResult.error, parsedResult.code))
         return
+      }
+      if (this.resolved.validatePhoto && 'photo' in parsedResult.patch) {
+        const photoVal = parsedResult.patch.photo as string | null
+        const vr = this.resolved.validatePhoto(photoVal)
+        if (!vr.ok) {
+          res.statusCode = 422
+          res.setHeader('Content-Type', 'application/json')
+          res.end(profileJsonErrorString(vr.error, vr.code ?? 'PHOTO_VALUE_REJECTED'))
+          return
+        }
       }
       try {
         await website.db.drizzle.update(usersTable).set(parsedResult.patch).where(eq(usersTable.id, id))

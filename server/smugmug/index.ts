@@ -1,3 +1,59 @@
+/**
+ * Thalia image upload subsystem — currently lives at server/smugmug/ but should be renamed to server/images/.
+ *
+ * ─── WHAT IT DOES TODAY ────────────────────────────────────────────────────────
+ * Accepts a user photo (multipart form or UploadThing-style JSON body), fetches or
+ * reads the bytes, deduplicates against the DB by MD5, then pushes the image to
+ * SmugMug via OAuth 1.0a multipart upload. SmugMug resizes the image and returns
+ * metadata (image key, album key, thumbnail URL, archived URL, dimensions, etc.)
+ * which Thalia stores in the `images` table for future serving.
+ *
+ * ─── TARGET GOLDEN PATHS ──────────────────────────────────────────────────────
+ * The controller should support three tiers, selected automatically by what is
+ * configured, with no 503 when a higher-priority adapter is absent:
+ *
+ *   1. SmugMug  — webmaster has SMUGMUG_* keys → upload to SmugMug, save all
+ *                 metadata (sizes, thumbnail URL, image key …) to DB. (current)
+ *   2. UploadThing only — no SmugMug keys → persist the UploadThing URL directly
+ *                 in the DB, serve that URL on future pages.
+ *   3. Local disk — no external keys → write bytes to /data/photos/<md5>.<ext>,
+ *                 store the local path/URL in the DB.
+ *
+ * ─── REFACTOR PLAN ─────────────────────────────────────────────────────────────
+ *  [ ] Rename server/smugmug/ → server/images/  (this file → server/images/index.ts)
+ *  [ ] Rename SmugMugUploader → ThaliaImageUploader (or PhotoUploader)
+ *  [ ] Extract ImageStoreAdapter interface + StoredImage type (server/images/adapters.ts)
+ *  [ ] Implement SmugMugAdapter, UploadThingUrlAdapter, LocalDiskAdapter
+ *  [ ] ThaliaImageUploader.init() probes config and picks the best available adapter
+ *  [ ] Move smugmug-specific files into server/images/smugmug/ subfolder, strip the
+ *      "smugmug-" prefix from filenames (smugmug-oauth.ts → smugmug/oauth.ts, etc.)
+ *  [ ] Merge multipart-upload-response.ts + verbosity-response.ts → smugmug/response-parsers.ts
+ *  [ ] Move mysql-insert-result.ts to models/util.ts (not image-specific)
+ *  [ ] Move https-request.ts to server/util/ (no SmugMug logic; useful everywhere)
+ *  [ ] Rename `images` Drizzle table to `photos` or `media` to reflect generic use
+ *  [ ] Generalise log.ts service field from hardcoded 'smugmug' to the adapter name
+ *
+ * ─── BUGS ──────────────────────────────────────────────────────────────────────
+ *  [!] oauthCallback() passes Date.now() (milliseconds) as oauth_timestamp — must be
+ *      Math.floor(Date.now() / 1000) (seconds); SmugMug rejects stale/future timestamps.
+ *  [!] uploadImageToSmugmug() calls fs.readFileSync() blocking the event loop for
+ *      large uploads — replace with await fs.promises.readFile().
+ *  [x] init() used void import(secretsPath) — early requests saw a false "not configured"
+ *      503 while secrets were still loading. Fixed: initPromise stored; controller() and
+ *      oauthCallback() gate behind void this.initPromise.then(() => { … }).
+ *
+ * ─── MINOR OPTIMISATIONS ───────────────────────────────────────────────────────
+ *  [ ] oauthCallback() reimplements OAuth token exchange with raw https.request —
+ *      consolidate into SmugMugClient so there is one OAuth path to maintain.
+ *  [ ] smugmugExpandParams() joins values without URL-encoding them — latently unsafe
+ *      if the pattern is reused with non-alphanumeric param values.
+ *  [ ] SmugMugClient.createMultipartFormData() (disk-based) calls fs.readFileSync —
+ *      make async or delete (currently unused in the live flow).
+ *  [ ] pickRemoteFileUrl() could also accept 'imageUrl' and 'appUrl' field names to
+ *      cover more upload-client conventions.
+ *  [ ] constants.ts (2 lines) can fold into https-request.ts or the main client file.
+ */
+
 export { requestHttpsUtf8 } from './https-request.js'
 export type { HttpsUtf8Response, RequestHttpsUtf8Params, SmugMugHttpsLogContext } from './https-request.js'
 export { redactLogText, smugmugLogLine } from './log.js'

@@ -82,6 +82,13 @@ export class SmugMugUploader implements Machine {
   private album = ''
   private tokens: SmugMugTokenSet | null = null
   private client: SmugMugClient | null = null
+  /**
+   * Resolves once `config/secrets.js` has been imported (or has failed to load).
+   * Never rejects — errors are caught and logged internally.
+   * Gate `controller()` and `oauthCallback()` behind this so early requests wait
+   * instead of seeing a false "not configured" 503 during the first few ms of startup.
+   */
+  private initPromise: Promise<void> = Promise.resolve()
 
   /** Resolved from `SMUGMUG_OAUTH_CALLBACK_URL`, `config.smugmug.oauthCallbackUrl`, or localhost default. */
   private oauthCallbackResolved = 'http://localhost:3000/oauthCallback'
@@ -105,7 +112,7 @@ export class SmugMugUploader implements Machine {
 
     const secretsPath = path.join(this.website.rootPath, 'config', 'secrets.js')
 
-    void import(secretsPath)
+    this.initPromise = import(secretsPath)
       .then((mod: { smugmug?: Partial<SmugMugTokenSet> & { album?: string } }) => {
         const smug = mod.smugmug
         if (!smug) {
@@ -283,104 +290,106 @@ export class SmugMugUploader implements Machine {
   }
 
   public oauthCallback(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    if (!this.client || !this.tokens?.consumer_secret || !this.tokens?.oauth_token_secret) {
-      this.smugRespondJson(res, 503, {
-        error: 'SmugMug OAuth is not configured (missing secrets or request-token secret).',
+    void this.initPromise.then(() => {
+      if (!this.client || !this.tokens?.consumer_secret || !this.tokens?.oauth_token_secret) {
+        this.smugRespondJson(res, 503, {
+          error: 'SmugMug OAuth is not configured (missing secrets or request-token secret).',
+        })
+        return
+      }
+
+      const persistTokens = this.tokens
+      const smugClient = this.client
+
+      const query = requestInfo.query
+      const oauthVerifier = Array.isArray(query.oauth_verifier) ? query.oauth_verifier[0] : query.oauth_verifier
+      const oauthTokenQuery = Array.isArray(query.oauth_token) ? query.oauth_token[0] : query.oauth_token
+
+      if (typeof oauthVerifier !== 'string' || !oauthVerifier || typeof oauthTokenQuery !== 'string' || !oauthTokenQuery) {
+        this.smugRespondJson(res, 400, { error: 'SmugMug OAuth callback missing oauth_verifier or oauth_token.' })
+        return
+      }
+
+      const tokenExchangeParams: Record<string, string> = {
+        oauth_consumer_key: persistTokens.consumer_key,
+        oauth_token: oauthTokenQuery,
+        oauth_signature_method: 'HMAC-SHA1',
+        oauth_timestamp: String(Math.floor(Date.now() / 1000)),
+        oauth_nonce: Math.random().toString().replace('0.', ''),
+        oauth_verifier: oauthVerifier,
+      }
+
+      const sorted = smugmugSortParams(tokenExchangeParams)
+
+      const normalized = encodeURIComponent(
+        Object.entries(sorted)
+          .map(([key, value]) => `${key}=${value}`)
+          .join('&'),
+      )
+      const method = 'POST'
+
+      tokenExchangeParams.oauth_signature = smugmugB64HmacSha1(
+        `${persistTokens.consumer_secret}&${persistTokens.oauth_token_secret}`,
+        `${method}&${encodeURIComponent(smugClient.accessTokenUrl)}&${normalized}`,
+      )
+
+      const options = {
+        host: 'api.smugmug.com',
+        port: 443,
+        path: '/services/oauth/1.0a/getAccessToken?' + new URLSearchParams(tokenExchangeParams).toString(),
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+        },
+      }
+
+      const httpsRequest = https.request(options, (httpsResponse: any) => {
+        let data = ''
+        httpsResponse.on('data', (chunk: any) => {
+          data += chunk
+        })
+
+        httpsResponse.on('error', (e: any) => {
+          smugmugLogLine({
+            service: 'smugmug',
+            level: 'error',
+            operation: 'oauth_access_token_response',
+            website: this.website.name,
+            hostname: 'api.smugmug.com',
+            msg: e instanceof Error ? e.message : String(e),
+          })
+        })
+
+        httpsResponse.on('end', () => {
+          const response = data.split('&').reduce(
+            (acc, item) => {
+              const [key, value] = item.split('=')
+              acc[key] = value
+              return acc
+            },
+            {} as Record<string, string>,
+          )
+
+          persistTokens.oauth_token = response.oauth_token
+          persistTokens.oauth_token_secret = response.oauth_token_secret
+
+          res.end(JSON.stringify(response))
+        })
       })
-      return
-    }
 
-    const persistTokens = this.tokens
-    const smugClient = this.client
-
-    const query = requestInfo.query
-    const oauthVerifier = Array.isArray(query.oauth_verifier) ? query.oauth_verifier[0] : query.oauth_verifier
-    const oauthTokenQuery = Array.isArray(query.oauth_token) ? query.oauth_token[0] : query.oauth_token
-
-    if (typeof oauthVerifier !== 'string' || !oauthVerifier || typeof oauthTokenQuery !== 'string' || !oauthTokenQuery) {
-      this.smugRespondJson(res, 400, { error: 'SmugMug OAuth callback missing oauth_verifier or oauth_token.' })
-      return
-    }
-
-    const tokenExchangeParams: Record<string, string> = {
-      oauth_consumer_key: persistTokens.consumer_key,
-      oauth_token: oauthTokenQuery,
-      oauth_signature_method: 'HMAC-SHA1',
-      oauth_timestamp: String(Math.floor(Date.now() / 1000)),
-      oauth_nonce: Math.random().toString().replace('0.', ''),
-      oauth_verifier: oauthVerifier,
-    }
-
-    const sorted = smugmugSortParams(tokenExchangeParams)
-
-    const normalized = encodeURIComponent(
-      Object.entries(sorted)
-        .map(([key, value]) => `${key}=${value}`)
-        .join('&'),
-    )
-    const method = 'POST'
-
-    tokenExchangeParams.oauth_signature = smugmugB64HmacSha1(
-      `${persistTokens.consumer_secret}&${persistTokens.oauth_token_secret}`,
-      `${method}&${encodeURIComponent(smugClient.accessTokenUrl)}&${normalized}`,
-    )
-
-    const options = {
-      host: 'api.smugmug.com',
-      port: 443,
-      path: '/services/oauth/1.0a/getAccessToken?' + new URLSearchParams(tokenExchangeParams).toString(),
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-      },
-    }
-
-    const httpsRequest = https.request(options, (httpsResponse: any) => {
-      let data = ''
-      httpsResponse.on('data', (chunk: any) => {
-        data += chunk
-      })
-
-      httpsResponse.on('error', (e: any) => {
+      httpsRequest.on('error', (e: any) => {
         smugmugLogLine({
           service: 'smugmug',
           level: 'error',
-          operation: 'oauth_access_token_response',
+          operation: 'oauth_access_token_request',
           website: this.website.name,
           hostname: 'api.smugmug.com',
           msg: e instanceof Error ? e.message : String(e),
         })
       })
 
-      httpsResponse.on('end', () => {
-        const response = data.split('&').reduce(
-          (acc, item) => {
-            const [key, value] = item.split('=')
-            acc[key] = value
-            return acc
-          },
-          {} as Record<string, string>,
-        )
-
-        persistTokens.oauth_token = response.oauth_token
-        persistTokens.oauth_token_secret = response.oauth_token_secret
-
-        res.end(JSON.stringify(response))
-      })
+      httpsRequest.end()
     })
-
-    httpsRequest.on('error', (e: any) => {
-      smugmugLogLine({
-        service: 'smugmug',
-        level: 'error',
-        operation: 'oauth_access_token_request',
-        website: this.website.name,
-        hostname: 'api.smugmug.com',
-        msg: e instanceof Error ? e.message : String(e),
-      })
-    })
-
-    httpsRequest.end()
   }
 
   public controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
@@ -391,29 +400,63 @@ export class SmugMugUploader implements Machine {
       return
     }
 
-    const reason = this.uploadNotReadyReason()
-    if (reason) {
-      smugmugLogLine({
-        service: 'smugmug',
-        level: 'warn',
-        operation: 'upload_photo_not_configured',
-        website: this.website.name,
-        msg: `${THALIA_SMUG_NOT_CONFIGURED}: ${reason}`,
-      })
-      this.smugRespondJson(res, 503, {
-        code: THALIA_SMUG_NOT_CONFIGURED,
-        error: reason,
-        hint:
-          'Configure SmugMug in config/secrets.js (smugmug: consumer_key, consumer_secret, oauth_token, oauth_token_secret, album) or env SMUGMUG_*. Search codebase for THALIA_SMUG_NOT_CONFIGURED.',
-      })
-      return
-    }
+    void this.initPromise.then(() => {
+      const reason = this.uploadNotReadyReason()
+      if (reason) {
+        smugmugLogLine({
+          service: 'smugmug',
+          level: 'warn',
+          operation: 'upload_photo_not_configured',
+          website: this.website.name,
+          msg: `${THALIA_SMUG_NOT_CONFIGURED}: ${reason}`,
+        })
+        this.smugRespondJson(res, 503, {
+          code: THALIA_SMUG_NOT_CONFIGURED,
+          error: reason,
+          hint:
+            'Configure SmugMug in config/secrets.js (smugmug: consumer_key, consumer_secret, oauth_token, oauth_token_secret, album) or env SMUGMUG_*. Search codebase for THALIA_SMUG_NOT_CONFIGURED.',
+        })
+        return
+      }
 
-    const contentType = (req.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase()
+      const contentType = (req.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase()
 
-    if (contentType === 'application/json') {
-      readLimitedJsonObject(req)
-        .then((body) => this.uploadPhotoFromRemoteJsonBody(body))
+      if (contentType === 'application/json') {
+        readLimitedJsonObject(req)
+          .then((body) => this.uploadPhotoFromRemoteJsonBody(body))
+          .then((data) => {
+            if (res.writableEnded || res.headersSent) return
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'application/json; charset=utf-8')
+            res.end(JSON.stringify(data))
+          })
+          .catch((err: unknown) => {
+            const msg = err instanceof Error ? err.message : String(err)
+            const clientError =
+              /\bEmpty JSON\b|\bInvalid JSON\b|\bJSON body\b|\bMissing upload URL\b|\bOnly https\b|\bImage host\b|\bImage URL\b|\bcredentials\b|\btoo large\b/i.test(
+                msg,
+              )
+            const code = clientError ? THALIA_SMUG_JSON_CLIENT_ERROR : THALIA_SMUG_JSON_SERVER_ERROR
+            smugmugLogLine({
+              service: 'smugmug',
+              level: 'error',
+              operation: 'upload_photo_json',
+              website: this.website.name,
+              msg: `${code}: ${msg}`,
+            })
+            this.smugRespondJson(res, clientError ? 400 : 502, {
+              code,
+              error: msg,
+              hint: clientError
+                ? 'Fix JSON body or remote image URL (search THALIA_SMUG_JSON_CLIENT_ERROR).'
+                : 'Check SmugMug / network in server logs (search THALIA_SMUG_JSON_SERVER_ERROR).',
+            })
+          })
+        return
+      }
+
+      parseForm(res, req)
+        .then(this.uploadImageToSmugmug.bind(this))
         .then((data) => {
           if (res.writableEnded || res.headersSent) return
           res.statusCode = 200
@@ -422,56 +465,24 @@ export class SmugMugUploader implements Machine {
         })
         .catch((err: unknown) => {
           const msg = err instanceof Error ? err.message : String(err)
-          const clientError =
-            /\bEmpty JSON\b|\bInvalid JSON\b|\bJSON body\b|\bMissing upload URL\b|\bOnly https\b|\bImage host\b|\bImage URL\b|\bcredentials\b|\btoo large\b/i.test(
-              msg,
-            )
-          const code = clientError ? THALIA_SMUG_JSON_CLIENT_ERROR : THALIA_SMUG_JSON_SERVER_ERROR
           smugmugLogLine({
             service: 'smugmug',
             level: 'error',
-            operation: 'upload_photo_json',
+            operation: 'upload_photo_form',
             website: this.website.name,
-            msg: `${code}: ${msg}`,
+            msg: `${THALIA_SMUG_MULTIPART_FAILED}: ${msg}`,
           })
-          this.smugRespondJson(res, clientError ? 400 : 502, {
-            code,
-            error: msg,
-            hint: clientError
-              ? 'Fix JSON body or remote image URL (search THALIA_SMUG_JSON_CLIENT_ERROR).'
-              : 'Check SmugMug / network in server logs (search THALIA_SMUG_JSON_SERVER_ERROR).',
+          if (res.writableEnded || res.headersSent) {
+            return
+          }
+          this.smugRespondJson(res, 502, {
+            code: THALIA_SMUG_MULTIPART_FAILED,
+            error: 'Upload failed after the file was accepted.',
+            hint:
+              'See server logs for this request (THALIA_SMUG_MULTIPART_FAILED). If uploads never worked, fix SmugMug secrets/OAuth/album (THALIA_SMUG_NOT_CONFIGURED).',
           })
         })
-      return
-    }
-
-    parseForm(res, req)
-      .then(this.uploadImageToSmugmug.bind(this))
-      .then((data) => {
-        if (res.writableEnded || res.headersSent) return
-        res.statusCode = 200
-        res.setHeader('Content-Type', 'application/json; charset=utf-8')
-        res.end(JSON.stringify(data))
-      })
-      .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : String(err)
-        smugmugLogLine({
-          service: 'smugmug',
-          level: 'error',
-          operation: 'upload_photo_form',
-          website: this.website.name,
-          msg: `${THALIA_SMUG_MULTIPART_FAILED}: ${msg}`,
-        })
-        if (res.writableEnded || res.headersSent) {
-          return
-        }
-        this.smugRespondJson(res, 502, {
-          code: THALIA_SMUG_MULTIPART_FAILED,
-          error: 'Upload failed after the file was accepted.',
-          hint:
-            'See server logs for this request (THALIA_SMUG_MULTIPART_FAILED). If uploads never worked, fix SmugMug secrets/OAuth/album (THALIA_SMUG_NOT_CONFIGURED).',
-        })
-      })
+    })
   }
 
   private jsonFieldString(body: Record<string, unknown>, ...keys: string[]): string {

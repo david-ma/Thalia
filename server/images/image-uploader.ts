@@ -144,7 +144,9 @@ export class ThaliaImageUploader implements Machine {
       this.adapter = new UploadThingUrlAdapter(this.website)
     } else {
       this.adapterName = 'local-disk'
-      this.adapter = new LocalDiskAdapter(this.website)
+      const basePath = process.env.THALIA_LOCAL_DISK_BASEPATH?.trim() || '/data/photos'
+      const baseUrl = process.env.THALIA_LOCAL_DISK_BASEURL?.trim() || '/data/photos'
+      this.adapter = new LocalDiskAdapter(this.website, basePath, baseUrl)
     }
     smugmugLogLine({
       service: this.adapterName,

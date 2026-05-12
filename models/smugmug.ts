@@ -25,6 +25,8 @@ export type NewAlbum = InferInsertModel<typeof albums>
 export const images = mysqlTable('images', {
   ...baseTableConfig,
   albumKey: vc('album_key'),
+  /** Site-local notes (Thalia DB); distinct from SmugMug `caption`. */
+  notes: text('notes'),
   caption: text('caption'),
   albumId: int('album_id').references(() => albums.id),
   filename: vc('filename'),

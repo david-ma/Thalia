@@ -15,6 +15,13 @@
       "when": 1773363237610,
       "tag": "0001_add-auth-tables",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1778611200000,
+      "tag": "0002_images_notes",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,146 @@
+{{!-- Reusable SmugMug-style multipart upload (drag + click). Params: uploadUrl (default /uploadPhoto), idPrefix (required for unique DOM ids), fileFieldName (default fileToUpload). --}}
+<style>
+  .smug-dd-{{idPrefix}} #{{idPrefix}}-uploadLabel:hover { cursor: pointer; }
+  .smug-dd-{{idPrefix}} #{{idPrefix}}-help { background: none; }
+  .smug-dd-{{idPrefix}} .smug-dd-drop {
+    width: 200px;
+    min-height: 100px;
+    border: 1px dotted #999;
+    padding: 10px;
+    transition: all 0.3s ease;
+  }
+  .smug-dd-{{idPrefix}} .smug-dd-drop.drag-over {
+    border: 2px dashed #007bff;
+    background-color: rgba(0, 123, 255, 0.1);
+    transform: scale(1.02);
+  }
+  .smug-dd-{{idPrefix}} .smug-dd-drop.drag-over #{{idPrefix}}-help { color: #007bff; }
+</style>
+
+<div
+  class="smug-dd-{{idPrefix}}"
+  id="{{idPrefix}}-dd-root"
+  data-upload-url="{{#if uploadUrl}}{{uploadUrl}}{{else}}/uploadPhoto{{/if}}"
+  data-file-field="{{#if fileFieldName}}{{fileFieldName}}{{else}}fileToUpload{{/if}}"
+>
+  <div class="smug-dd-drop" id="{{idPrefix}}-dropZone" role="region" aria-label="Image upload drop zone">
+    <label id="{{idPrefix}}-uploadLabel" for="{{idPrefix}}-fileInput">
+      <div id="{{idPrefix}}-previews">
+        <img id="{{idPrefix}}-loading" alt="" />
+      </div>
+      <span id="{{idPrefix}}-help">Click to upload image or drag & drop</span>
+    </label>
+    <form id="{{idPrefix}}-imageForm" style="display: none;">
+      <input type="file" accept="image/*" name="{{#if fileFieldName}}{{fileFieldName}}{{else}}fileToUpload{{/if}}" id="{{idPrefix}}-fileInput" multiple />
+    </form>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var root = document.getElementById('{{idPrefix}}-dd-root')
+    if (!root || root.dataset.smugDdBound === '1') return
+    root.dataset.smugDdBound = '1'
+    var uploadUrl = root.getAttribute('data-upload-url') || '/uploadPhoto'
+    var fileField = root.getAttribute('data-file-field') || 'fileToUpload'
+    var dropZone = document.getElementById('{{idPrefix}}-dropZone')
+    var fileInput = document.getElementById('{{idPrefix}}-fileInput')
+    var help = document.getElementById('{{idPrefix}}-help')
+    var loading = document.getElementById('{{idPrefix}}-loading')
+    var previews = document.getElementById('{{idPrefix}}-previews')
+    if (!dropZone || !fileInput || !help || !loading || !previews) return
+
+    function preventDefaults(e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function (eventName) {
+      dropZone.addEventListener(eventName, preventDefaults, false)
+      document.body.addEventListener(eventName, preventDefaults, false)
+    })
+    ;['dragenter', 'dragover'].forEach(function (eventName) {
+      dropZone.addEventListener(
+        eventName,
+        function () {
+          dropZone.classList.add('drag-over')
+        },
+        false,
+      )
+    })
+    ;['dragleave', 'drop'].forEach(function (eventName) {
+      dropZone.addEventListener(
+        eventName,
+        function () {
+          dropZone.classList.remove('drag-over')
+        },
+        false,
+      )
+    })
+
+    dropZone.addEventListener('drop', function (e) {
+      var dt = e.dataTransfer
+      if (!dt || !dt.files) return
+      fileInput.files = dt.files
+      handleFiles({ target: { files: dt.files } })
+    })
+    fileInput.addEventListener('change', handleFiles)
+
+    function handleFiles(event) {
+      if (!event.target.files || event.target.files.length === 0) return
+      var files = event.target.files
+      Array.from(files).forEach(function (file) {
+        if (!file.type || !file.type.startsWith('image/')) {
+          alert('Please select an image file')
+          return
+        }
+        help.textContent = 'Uploading image... please wait'
+        loading.src = '/images/loading.gif'
+        var formData = new FormData()
+        formData.append(fileField, file)
+        formData.append('caption', '')
+        formData.append('filename', file.name)
+        formData.append('title', file.name)
+        formData.append('keywords', '')
+        if (typeof $ !== 'undefined' && $.ajax) {
+          $.ajax({
+            url: uploadUrl,
+            type: 'POST',
+            data: formData,
+            cache: false,
+            contentType: false,
+            processData: false,
+            success: function (data) {
+              var parsed = typeof data === 'string' ? JSON.parse(data) : data
+              help.textContent = 'Image uploaded! Click save!'
+              var thumb = parsed.thumbnailUrl || parsed.thumbnail || ''
+              if (thumb) previews.innerHTML += '<img src="' + thumb + '" alt="" />'
+            },
+            error: function () {
+              help.textContent = 'Error. Try again :('
+            },
+            complete: function () {
+              loading.src = ''
+            },
+          })
+        } else {
+          fetch(uploadUrl, { method: 'POST', body: formData })
+            .then(function (r) {
+              return r.text()
+            })
+            .then(function (text) {
+              var parsed = JSON.parse(text)
+              help.textContent = 'Image uploaded!'
+              var thumb = parsed.thumbnailUrl || parsed.thumbnail || ''
+              if (thumb) previews.innerHTML += '<img src="' + thumb + '" alt="" />'
+            })
+            .catch(function () {
+              help.textContent = 'Error. Try again :('
+            })
+            .finally(function () {
+              loading.src = ''
+            })
+        }
+      })
+    }
+  })()
+</script>

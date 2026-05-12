@@ -1,0 +1,187 @@
+{{#> wrapper }}
+  <section class="container py-4" aria-labelledby="smug-lab-title">
+    <h1 id="smug-lab-title" class="h3 mb-2">SmugMug gallery lab</h1>
+    <p class="text-muted small mb-4">
+      Browse albums and cached images from Thalia’s JSON endpoints, compare SmugMug fields with Thalia columns, and save
+      <strong>notes</strong> on each row (<code>images.notes</code>). Notes require a signed-in <strong>user</strong> or
+      <strong>admin</strong> (route guard <code>update</code> on <code>/</code>).
+    </p>
+
+    <div class="row g-4 mb-4">
+      <div class="col-lg-6">
+        <h2 class="h5">Albums</h2>
+        <p class="small text-muted mb-2">GET <code>/smugmugAlbums/json?draw=1&amp;start=0&amp;length=100</code></p>
+        <ul id="smug-lab-albums" class="list-group small"></ul>
+      </div>
+      <div class="col-lg-6">
+        <h2 class="h5">Upload (multipart)</h2>
+        <p class="small text-muted mb-2">Same handler as the home teaser: <code>POST /uploadPhoto</code></p>
+        {{> smugmug_drag_drop_upload idPrefix="labUpload" uploadUrl="/uploadPhoto" }}
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <h2 class="h5">Images</h2>
+        <p class="small text-muted mb-2">GET <code>/smugmugImages/json?draw=1&amp;start=0&amp;length=100</code></p>
+        <div id="smug-lab-grid" class="d-flex flex-wrap gap-2"></div>
+      </div>
+      <div class="col-lg-5">
+        <h2 class="h5">Detail</h2>
+        <div id="smug-lab-detail" class="border rounded p-3 bg-light small text-muted">Select an image thumbnail.</div>
+      </div>
+    </div>
+
+    <p class="small text-muted mt-4 mb-0"><a href="/">Back to home</a></p>
+  </section>
+
+  <script>
+    (function () {
+      var albumsEl = document.getElementById('smug-lab-albums')
+      var gridEl = document.getElementById('smug-lab-grid')
+      var detailEl = document.getElementById('smug-lab-detail')
+      if (!albumsEl || !gridEl || !detailEl) return
+
+      function esc(s) {
+        return String(s == null ? '' : s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/"/g, '&quot;')
+      }
+
+      function renderDetail(row) {
+        if (!row) {
+          detailEl.className = 'border rounded p-3 bg-light small text-muted'
+          detailEl.textContent = 'Select an image thumbnail.'
+          return
+        }
+        var keys = Object.keys(row).sort()
+        var rowsHtml = keys
+          .map(function (k) {
+            return '<tr><th class="text-end pe-2 text-nowrap">' + esc(k) + '</th><td><pre class="mb-0 small" style="white-space:pre-wrap;max-height:8rem;overflow:auto">' + esc(JSON.stringify(row[k], null, 0)) + '</pre></td></tr>'
+          })
+          .join('')
+        var notesVal = row.notes != null ? String(row.notes) : ''
+        var id = row.id
+        detailEl.className = 'border rounded p-3 bg-white small'
+        detailEl.innerHTML =
+          '<p class="mb-2"><strong>Thalia id</strong> ' +
+          esc(id) +
+          '</p>' +
+          '<table class="table table-sm table-bordered mb-3">' +
+          rowsHtml +
+          '</table>' +
+          '<label class="form-label" for="smug-lab-notes">Notes (Thalia DB only)</label>' +
+          '<textarea id="smug-lab-notes" class="form-control mb-2" rows="4">' +
+          esc(notesVal) +
+          '</textarea>' +
+          '<button type="button" class="btn btn-primary btn-sm" id="smug-lab-save">Save notes</button>' +
+          '<p id="smug-lab-save-msg" class="small text-muted mt-2 mb-0"></p>'
+
+        var saveBtn = document.getElementById('smug-lab-save')
+        var msg = document.getElementById('smug-lab-save-msg')
+        var ta = document.getElementById('smug-lab-notes')
+        if (saveBtn && msg && ta) {
+          saveBtn.addEventListener('click', function () {
+            msg.textContent = 'Saving…'
+            var fd = new FormData()
+            fd.append('notes', ta.value)
+            fetch('/smugmugImages/update/' + encodeURIComponent(String(id)), { method: 'POST', body: fd })
+              .then(function (r) {
+                if (r.ok) {
+                  msg.textContent = 'Saved. Reloading row…'
+                  return fetch('/smugmugImages/json?draw=1&start=0&length=500').then(function (j) {
+                    return j.json()
+                  })
+                }
+                msg.textContent = 'Save failed (' + r.status + '). Sign in as user/admin if you are a guest.'
+                return null
+              })
+              .then(function (blob) {
+                if (!blob || !blob.data) return
+                var found = blob.data.find(function (x) {
+                  return String(x.id) === String(id)
+                })
+                if (found) renderDetail(found)
+                msg.textContent = 'Saved.'
+              })
+              .catch(function () {
+                msg.textContent = 'Network error.'
+              })
+          })
+        }
+      }
+
+      fetch('/smugmugAlbums/json?draw=1&start=0&length=100')
+        .then(function (r) {
+          return r.json()
+        })
+        .then(function (blob) {
+          var rows = blob.data || []
+          if (!rows.length) {
+            albumsEl.innerHTML = '<li class="list-group-item text-muted">No albums in DB.</li>'
+            return
+          }
+          albumsEl.innerHTML = rows
+            .map(function (a) {
+              var label = a.name || a.albumKey || a.uri || 'album'
+              return '<li class="list-group-item">' + esc(label) + '</li>'
+            })
+            .join('')
+        })
+        .catch(function () {
+          albumsEl.innerHTML = '<li class="list-group-item text-danger">Could not load albums.</li>'
+        })
+
+      fetch('/smugmugImages/json?draw=1&start=0&length=100')
+        .then(function (r) {
+          return r.json()
+        })
+        .then(function (blob) {
+          var rows = blob.data || []
+          if (!rows.length) {
+            gridEl.innerHTML = '<p class="text-muted small mb-0">No images in DB.</p>'
+            return
+          }
+          gridEl.innerHTML = rows
+            .map(function (img) {
+              var thumb = img.thumbnailUrl || ''
+              var id = img.id
+              if (!thumb) {
+                return (
+                  '<button type="button" class="btn btn-outline-secondary btn-sm smug-lab-pick" data-id="' +
+                  esc(id) +
+                  '">#' +
+                  esc(id) +
+                  '</button>'
+                )
+              }
+              return (
+                '<button type="button" class="btn p-0 border-0 smug-lab-pick bg-transparent" data-id="' +
+                esc(id) +
+                '" title="#' +
+                esc(id) +
+                '"><img src="' +
+                esc(thumb) +
+                '" alt="" width="96" height="96" style="object-fit:cover;border-radius:4px;border:1px solid #dee2e6" /></button>'
+              )
+            })
+            .join('')
+
+          var byId = {}
+          rows.forEach(function (r) {
+            byId[String(r.id)] = r
+          })
+          gridEl.querySelectorAll('.smug-lab-pick').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var id = btn.getAttribute('data-id')
+              renderDetail(byId[id])
+            })
+          })
+        })
+        .catch(function () {
+          gridEl.innerHTML = '<p class="text-danger small mb-0">Could not load images.</p>'
+        })
+    })()
+  </script>
+{{/wrapper}}

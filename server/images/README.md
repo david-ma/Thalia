@@ -56,6 +56,13 @@ Thalia’s job ends at **store bytes → return serve URL** (and optionally one 
 
 See `websites/example-src/src/docs/image-upload.md` (served at `/docs/image-upload` on example-src).
 
+## Auth (example sites)
+
+| Site | Upload route | Auth |
+|------|----------------|------|
+| **example-src** | `/uploadImage` | Open POST (demo only) |
+| **example-auth** | `/uploadPhoto` | `RoleRouteGuard` — guest/user/admin `create` per `config.routes` |
+
 ## Tests
 
 - Unit: `bun test tests/Unit/image-adapter-selection.test.ts`

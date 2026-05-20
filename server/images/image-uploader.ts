@@ -1,11 +1,10 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import crypto from 'node:crypto'
 import fsp from 'node:fs/promises'
 import https from 'node:https'
 import path from 'node:path'
-import { desc, eq } from 'drizzle-orm'
+import { desc } from 'drizzle-orm'
 import type { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
-import { images, type Image } from '../../models/images.js'
+import { images } from '../../models/images.js'
 import type { Machine } from '../types.js'
 import type { Role } from '../route-guard.js'
 import { parseForm, type ParsedForm } from '../util.js'
@@ -15,17 +14,11 @@ import type { ImageMeta, ImageStoreAdapter } from './adapters.js'
 import { SmugMugAdapter } from './smugmug/adapter.js'
 import { UploadThingUrlAdapter } from './uploadthing-url-adapter.js'
 import { LocalDiskAdapter } from './local-disk-adapter.js'
-import { normalizeSmugMugAlbumUri } from './smugmug/album-uri.js'
-import { requestHttpsUtf8 } from '../util/https-request.js'
 import { smugmugLogLine } from './log.js'
-import { mysqlInsertIdFromDrizzleMysql2Result } from '../../models/util.js'
-import { parseSmugMugMultipartUploadResponse } from './smugmug/response-parsers.js'
 import { fetchRemoteHttpsImageBytes, pickRemoteFileUrl } from './remote-image-fetch.js'
-import { buildSmugMugNewImageInsert, type SmugMugUploadAck } from './smugmug/save-image-map.js'
 import { SmugMugClient, type SmugMugTokenSet } from './smugmug/client.js'
 import {
   smugmugB64HmacSha1,
-  smugmugBundleAuthorization,
   smugmugExpandParams,
   smugmugOauthEscape,
   smugmugSortParams,
@@ -35,7 +28,6 @@ import {
   THALIA_SMUG_JSON_SERVER_ERROR,
   THALIA_SMUG_MULTIPART_FAILED,
 } from './upload-photo-errors.js'
-import { parseSmugMugVerbosityAlbumImage } from './smugmug/response-parsers.js'
 
 const UPLOAD_PHOTO_JSON_MAX_BYTES = 64 * 1024
 
@@ -523,7 +515,7 @@ export class ThaliaImageUploader implements Machine {
       }
 
       parseForm(res, req)
-        .then(this.uploadImageToSmugmug.bind(this))
+        .then(this.uploadImageFromMultipartForm.bind(this))
         .then((data) => {
           if (res.writableEnded || res.headersSent) return
           res.statusCode = 200
@@ -688,7 +680,7 @@ export class ThaliaImageUploader implements Machine {
   /**
    * Multipart form field `fileToUpload` — reads the temp file then stores via active adapter.
    */
-  private async uploadImageToSmugmug(form: ParsedForm) {
+  private async uploadImageFromMultipartForm(form: ParsedForm) {
     const file = form.files.fileToUpload?.[0]
     if (!file) {
       return Promise.reject(new Error('No file provided'))
@@ -708,102 +700,5 @@ export class ThaliaImageUploader implements Machine {
       keywords: keywords || undefined,
     }
     return this.adapter!.store(bytes, meta)
-  }
-
-  /**
-   * MD5 dedupe against `images.archivedMD5`, then OAuth multipart POST to upload.smugmug.com.
-   */
-  private async uploadBufferToSmugmugPipeline(args: {
-    bytes: Buffer
-    caption: string
-    filename: string
-    title: string
-    keywords: string
-    mime: string
-  }): Promise<Image> {
-    const client = this.client
-    if (!client) {
-      throw new Error('SmugMug client not initialised')
-    }
-
-    const drizzle = this.website.db.drizzle
-    const md5sum = crypto.createHash('md5').update(args.bytes).digest('hex')
-
-    const existing = await drizzle.select().from(images).where(eq(images.archivedMD5, md5sum))
-    if (existing.length > 0) {
-      return existing[0]
-    }
-
-    const host = 'upload.smugmug.com'
-    const uploadPath = '/'
-    const targetUrl = `https://${host}${uploadPath}`
-    const method = 'POST'
-    const params = client.signRequest(method, targetUrl)
-    const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substr(2, 8)
-    const formData = SmugMugClient.createMultipartFormDataFromBytes(
-      {
-        buffer: args.bytes,
-        originalFilename: args.filename,
-        mimetype: args.mime,
-      },
-      boundary,
-    )
-
-    const { statusCode, bodyUtf8 } = await requestHttpsUtf8({
-      hostname: host,
-      port: 443,
-      path: uploadPath,
-      method,
-      headers: {
-        Authorization: smugmugBundleAuthorization(targetUrl, params),
-        'Content-Type': `multipart/form-data; boundary=${boundary}`,
-        'Content-Length': formData.length,
-        'X-Smug-AlbumUri': normalizeSmugMugAlbumUri(this.album),
-        'X-Smug-Caption': args.caption,
-        'X-Smug-FileName': args.filename,
-        'X-Smug-Keywords': args.keywords,
-        'X-Smug-ResponseType': 'JSON',
-        'X-Smug-Title': args.title,
-        'X-Smug-Version': 'v2',
-      },
-      body: formData,
-      log: {
-        service: 'smugmug',
-        website: this.website.name,
-        operation: 'upload_multipart',
-        filename: args.filename,
-      },
-    })
-
-    const ack = parseSmugMugMultipartUploadResponse(statusCode, bodyUtf8)
-    const insertResult = await this.saveImage(ack)
-    const insertIdNum = mysqlInsertIdFromDrizzleMysql2Result(insertResult)
-    if (insertIdNum === undefined) {
-      throw new Error('Image insert returned no insertId')
-    }
-    const imageResults = await drizzle.select().from(images).where(eq(images.id, insertIdNum))
-    const row = (imageResults as Image[])[0]
-    if (row === undefined) {
-      throw new Error('Image row missing after insert')
-    }
-    return row
-  }
-
-  private saveImage(data: SmugMugUploadAck): Promise<unknown> {
-    const AlbumImageUri = data.Image.AlbumImageUri
-    if (typeof AlbumImageUri !== 'string' || !AlbumImageUri.trim()) {
-      return Promise.reject(new Error('SmugMug upload ack missing Image.AlbumImageUri'))
-    }
-    const client = this.client
-    if (!client) {
-      return Promise.reject(new Error('SmugMug client not initialised'))
-    }
-
-    return client.smugmugApiCall(AlbumImageUri, 'GET', this.website.name).then((response: string) => {
-      const ai = parseSmugMugVerbosityAlbumImage(response)
-      const drizzle = this.website.db.drizzle
-      const values = buildSmugMugNewImageInsert(data, ai)
-      return drizzle.insert(images).values(values)
-    })
   }
 }

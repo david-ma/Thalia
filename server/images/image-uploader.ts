@@ -63,6 +63,11 @@ export type ThaliaImageUploaderOptions = {
   /** Required when `adapter` is `uploadthing` (pass from config; Thalia does not read env). */
   uploadThingSecret?: string
   localDisk?: ThaliaImageUploaderLocalDiskOptions
+  /**
+   * When `false`, local-disk writes files only (no `images` table insert).
+   * Use for DB-less demos such as example-src. Default `true`.
+   */
+  persistToDatabase?: boolean
 }
 
 /** Bounded JSON envelope for `{ uploadThingUrl/fileUrl/url, …metadata }` upload branch. */
@@ -151,17 +156,25 @@ export class ThaliaImageUploader implements Machine {
     return options.adapter ?? 'local-disk'
   }
 
+  /**
+   * Paths for local-disk storage. `THALIA_LOCAL_DISK_*` env vars override constructor
+   * options at `init()` time so integration tests can set a temp dir after config import.
+   */
   private localDiskPaths(): { basePath: string; baseUrl: string } {
+    const envPath = process.env.THALIA_LOCAL_DISK_BASEPATH?.trim()
+    const envUrl = process.env.THALIA_LOCAL_DISK_BASEURL?.trim()
     return {
-      basePath: this.options.localDisk?.basePath?.trim() || DEFAULT_LOCAL_DISK_BASEPATH,
-      baseUrl: this.options.localDisk?.baseUrl?.trim() || DEFAULT_LOCAL_DISK_BASEURL,
+      basePath:
+        envPath || this.options.localDisk?.basePath?.trim() || DEFAULT_LOCAL_DISK_BASEPATH,
+      baseUrl: envUrl || this.options.localDisk?.baseUrl?.trim() || DEFAULT_LOCAL_DISK_BASEURL,
     }
   }
 
   private installLocalDiskAdapter(): void {
     const { basePath, baseUrl } = this.localDiskPaths()
+    const persistToDatabase = this.options.persistToDatabase !== false
     this.adapterName = 'local-disk'
-    this.adapter = new LocalDiskAdapter(this.website, basePath, baseUrl)
+    this.adapter = new LocalDiskAdapter(this.website, basePath, baseUrl, { persistToDatabase })
     smugmugLogLine({
       service: 'local-disk',
       level: 'info',
@@ -398,7 +411,15 @@ export class ThaliaImageUploader implements Machine {
     res.end(JSON.stringify(payload))
   }
 
+  /** Sites without `config.database` never run `machine.init()` — wire the machine on first request. */
+  private ensureWebsiteInit(website: Website): void {
+    if (!this.website) {
+      this.init(website, 'imageUpload')
+    }
+  }
+
   public oauthCallback(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    this.ensureWebsiteInit(website)
     void this.initPromise.then(() => {
       if (!this.client || !this.tokens?.consumer_secret || !this.tokens?.oauth_token_secret) {
         this.smugRespondJson(res, 503, {
@@ -444,6 +465,7 @@ export class ThaliaImageUploader implements Machine {
   }
 
   public controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    this.ensureWebsiteInit(website)
     const method = req.method ?? ''
 
     if (method != 'POST') {

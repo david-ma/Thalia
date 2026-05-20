@@ -198,6 +198,44 @@ describe('LocalDiskAdapter — store(): deduplication', () => {
   })
 })
 
+describe('LocalDiskAdapter — persistToDatabase: false (filesystem only)', () => {
+  test('store() writes file and returns StoredImage without using drizzle', async () => {
+    const bytes = Buffer.from('no-db-demo-bytes')
+    const expectedMd5 = crypto.createHash('md5').update(bytes).digest('hex')
+    const website = { name: 'no-db-site' } as unknown as Website
+    const adapter = new LocalDiskAdapter(website, tmpDir, '/site-photos', {
+      persistToDatabase: false,
+    })
+
+    const result = await adapter.store(bytes, { filename: 'demo.png', mimeType: 'image/png' })
+
+    expect(result.url).toBe(`/site-photos/${expectedMd5}.png`)
+    expect(result.filename).toBe('demo.png')
+    expect(result.md5).toBe(expectedMd5)
+    expect(result.adapterName).toBe('local-disk')
+
+    const diskPath = path.join(tmpDir, `${expectedMd5}.png`)
+    const written = await fsp.readFile(diskPath)
+    expect(written.equals(bytes)).toBe(true)
+  })
+
+  test('findByMd5() locates existing file on disk without drizzle', async () => {
+    const bytes = Buffer.from('dedup-on-disk-only')
+    const expectedMd5 = crypto.createHash('md5').update(bytes).digest('hex')
+    const website = { name: 'no-db-site' } as unknown as Website
+    const adapter = new LocalDiskAdapter(website, tmpDir, '/site-photos', {
+      persistToDatabase: false,
+    })
+
+    await adapter.store(bytes, { filename: 'a.jpg', mimeType: 'image/jpeg' })
+    const second = await adapter.store(bytes, { filename: 'b.jpg', mimeType: 'image/jpeg' })
+
+    expect(second.url).toBe(`/site-photos/${expectedMd5}.jpg`)
+    const files = await fsp.readdir(tmpDir)
+    expect(files.filter((f) => f.startsWith(expectedMd5))).toHaveLength(1)
+  })
+})
+
 describe('LocalDiskAdapter — findByMd5()', () => {
   test('returns null when the DB has no matching row', async () => {
     const drizzle = makeMockDrizzle({ existingRows: [] })

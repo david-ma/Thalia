@@ -8,7 +8,7 @@
         <form action="/uploadImage" method="post" enctype="multipart/form-data" class="d-flex flex-column gap-3">
           <div>
             <label class="form-label" for="upload-image-file">Image file</label>
-            <input id="upload-image-file" class="form-control" type="file" name="image" accept="image/*" />
+            <input id="upload-image-file" class="form-control" type="file" name="fileToUpload" accept="image/*" required />
           </div>
           <button type="submit" class="btn btn-primary">Upload</button>
         </form>

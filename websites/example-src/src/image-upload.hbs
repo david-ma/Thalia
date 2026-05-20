@@ -1,0 +1,19 @@
+{{#> wrapper }}
+  <section aria-labelledby="image-upload-title">
+    <h1 id="image-upload-title" class="h4 mb-3">Image upload</h1>
+    <p class="text-muted small mb-4">Simple multipart form for server-side handling of <code>/uploadImage</code>.</p>
+    <div class="card border-0 shadow-sm" style="max-width: 28rem">
+      <div class="card-body">
+
+        <form action="/uploadImage" method="post" enctype="multipart/form-data" class="d-flex flex-column gap-3">
+          <div>
+            <label class="form-label" for="upload-image-file">Image file</label>
+            <input id="upload-image-file" class="form-control" type="file" name="image" accept="image/*" />
+          </div>
+          <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
+
+      </div>
+    </div>
+  </section>
+{{/wrapper}}

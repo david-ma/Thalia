@@ -345,16 +345,13 @@ export type NormalisedCrudDataTablesPaging = {
 /** Apply CrudFactory defaults and bounds to parsed DataTables paging fields. */
 export function normaliseCrudDataTablesPaging(parsed: CrudParsedDataTablesQuery): NormalisedCrudDataTablesPaging {
   const drawRaw = parsed.draw
-  const draw =
-    drawRaw !== undefined && drawRaw !== '' ? drawRaw : CRUD_DATATABLES_DEFAULT_DRAW
+  const draw = drawRaw !== undefined && drawRaw !== '' ? drawRaw : CRUD_DATATABLES_DEFAULT_DRAW
 
   const startParsed = parseInt(parsed.start ?? String(CRUD_DATATABLES_DEFAULT_START), 10)
   const lengthParsed = parseInt(parsed.length ?? String(CRUD_DATATABLES_DEFAULT_LENGTH), 10)
 
   const offset =
-    Number.isFinite(startParsed) && startParsed >= 0
-      ? Math.floor(startParsed)
-      : CRUD_DATATABLES_DEFAULT_START
+    Number.isFinite(startParsed) && startParsed >= 0 ? Math.floor(startParsed) : CRUD_DATATABLES_DEFAULT_START
 
   let limit = Number.isFinite(lengthParsed) ? Math.floor(lengthParsed) : CRUD_DATATABLES_DEFAULT_LENGTH
   if (limit < 1) limit = CRUD_DATATABLES_DEFAULT_LENGTH
@@ -729,7 +726,8 @@ export class CrudFactory implements Machine {
         if (res.writableEnded) return
         this.reportError(
           res,
-          CrudFactory.asControllerError(reason) ?? new Error('Could not load that record for editing. Please try again.'),
+          CrudFactory.asControllerError(reason) ??
+            new Error('Could not load that record for editing. Please try again.'),
         )
       })
   }
@@ -867,9 +865,7 @@ export class CrudFactory implements Machine {
 
   /** `COUNT(*)` with optional Drizzle WHERE (omit for full-table count). */
   private crudJsonCountRows(where?: SQL): Promise<number> {
-    const base = this.db
-      .select({ count: sql<number>`cast(count(*) as unsigned)`.mapWith(Number) })
-      .from(this.table)
+    const base = this.db.select({ count: sql<number>`cast(count(*) as unsigned)`.mapWith(Number) }).from(this.table)
     const q = where !== undefined ? base.where(where) : base
     return q.then((rows) => rows[0]?.count ?? 0)
   }
@@ -892,8 +888,7 @@ export class CrudFactory implements Machine {
       this.crudJsonCountRows(combinedWhere),
       (() => {
         const base = this.db.select().from(this.table)
-        const dataQuery =
-          combinedWhere !== undefined ? base.where(combinedWhere) : base
+        const dataQuery = combinedWhere !== undefined ? base.where(combinedWhere) : base
         return dataQuery.limit(limit).offset(offset)
       })(),
     ])
@@ -1152,5 +1147,11 @@ export function md_file(filename: string, data: any = {}, wrapper_template: stri
   }
 }
 
-export { ThaliaImageUploader, readLimitedJsonObject } from './images/image-uploader.js'
+export {
+  ThaliaImageUploader,
+  readLimitedJsonObject,
+  type ImageUploaderAdapterName,
+  type ThaliaImageUploaderLocalDiskOptions,
+  type ThaliaImageUploaderOptions,
+} from './images/image-uploader.js'
 export { parseForm, type ParsedForm } from './util.js'

@@ -39,6 +39,32 @@ import { parseSmugMugVerbosityAlbumImage } from './smugmug/response-parsers.js'
 
 const UPLOAD_PHOTO_JSON_MAX_BYTES = 64 * 1024
 
+const DEFAULT_LOCAL_DISK_BASEPATH = '/data/photos'
+const DEFAULT_LOCAL_DISK_BASEURL = '/data/photos'
+
+/** Storage tier for {@link ThaliaImageUploader} — set explicitly in site `config.ts`. */
+export type ImageUploaderAdapterName = 'smugmug' | 'uploadthing' | 'local-disk'
+
+export type ThaliaImageUploaderLocalDiskOptions = {
+  /** Filesystem directory for stored files. Default `/data/photos`. */
+  basePath?: string
+  /** URL prefix returned in `images.url`. Default `/data/photos`. */
+  baseUrl?: string
+}
+
+/**
+ * Site-level configuration for {@link ThaliaImageUploader}.
+ * Adapter tier is **not** inferred from `UPLOADTHING_SECRET` or `SMUGMUG_*` env vars —
+ * declare `adapter` here (read env in `config.ts` if you want env-driven values).
+ */
+export type ThaliaImageUploaderOptions = {
+  /** Storage backend. Default `local-disk`. */
+  adapter?: ImageUploaderAdapterName
+  /** Required when `adapter` is `uploadthing` (pass from config; Thalia does not read env). */
+  uploadThingSecret?: string
+  localDisk?: ThaliaImageUploaderLocalDiskOptions
+}
+
 /** Bounded JSON envelope for `{ uploadThingUrl/fileUrl/url, …metadata }` upload branch. */
 export function readLimitedJsonObject(
   req: IncomingMessage,
@@ -103,57 +129,69 @@ export class ThaliaImageUploader implements Machine {
   /** Resolved from `SMUGMUG_OAUTH_CALLBACK_URL`, `config.smugmug.oauthCallbackUrl`, or localhost default. */
   private oauthCallbackResolved = 'http://localhost:3000/oauthCallback'
 
-  /**
-   * Which storage tier was selected at construction time (from env vars).
-   * Reflects the best adapter available based on `SMUGMUG_CONSUMER_KEY`,
-   * `SMUGMUG_CONSUMER_SECRET`, and `UPLOADTHING_SECRET`.
-   * May be refined by `init()` once `config/secrets.js` has loaded.
-   */
-  public adapterName: 'smugmug' | 'uploadthing' | 'local-disk'
+  /** Configured tier (from constructor options; `THALIA_IMAGE_ADAPTER` may override in tests). */
+  public adapterName: ImageUploaderAdapterName
 
-  constructor() {
-    const hasSmugMugKeys = !!(
-      process.env.SMUGMUG_CONSUMER_KEY?.trim() &&
-      process.env.SMUGMUG_CONSUMER_SECRET?.trim()
-    )
-    const hasUploadThingKey = !!process.env.UPLOADTHING_SECRET?.trim()
-    this.adapterName = ThaliaImageUploader.pickAdapterName({ hasSmugMugKeys, hasUploadThingKey })
+  private readonly options: ThaliaImageUploaderOptions
+
+  constructor(options: ThaliaImageUploaderOptions = {}) {
+    this.options = options
+    this.adapterName = ThaliaImageUploader.resolveConfiguredAdapter(options)
   }
 
   /**
-   * Selects the best available storage tier based on which credentials are present.
-   * Priority: SmugMug > UploadThing > local-disk (last-resort fallback).
+   * Resolves the adapter tier from constructor options.
+   * `THALIA_IMAGE_ADAPTER` overrides options when set (integration tests only).
    */
-  static pickAdapterName(opts: {
-    hasSmugMugKeys: boolean
-    hasUploadThingKey: boolean
-  }): 'smugmug' | 'uploadthing' | 'local-disk' {
-    if (opts.hasSmugMugKeys) return 'smugmug'
-    if (opts.hasUploadThingKey) return 'uploadthing'
-    return 'local-disk'
-  }
-
-  /**
-   * Selects UploadThing or local-disk depending on `UPLOADTHING_SECRET`.
-   * Called from `init()` whenever SmugMug cannot be initialised.
-   */
-  private setupFallbackAdapter(): void {
-    const hasUploadThingKey = !!process.env.UPLOADTHING_SECRET?.trim()
-    if (hasUploadThingKey) {
-      this.adapterName = 'uploadthing'
-      this.adapter = new UploadThingUrlAdapter(this.website)
-    } else {
-      this.adapterName = 'local-disk'
-      const basePath = process.env.THALIA_LOCAL_DISK_BASEPATH?.trim() || '/data/photos'
-      const baseUrl = process.env.THALIA_LOCAL_DISK_BASEURL?.trim() || '/data/photos'
-      this.adapter = new LocalDiskAdapter(this.website, basePath, baseUrl)
+  static resolveConfiguredAdapter(options: ThaliaImageUploaderOptions): ImageUploaderAdapterName {
+    const forced = process.env.THALIA_IMAGE_ADAPTER?.trim()
+    if (forced === 'smugmug' || forced === 'uploadthing' || forced === 'local-disk') {
+      return forced
     }
+    return options.adapter ?? 'local-disk'
+  }
+
+  private localDiskPaths(): { basePath: string; baseUrl: string } {
+    return {
+      basePath: this.options.localDisk?.basePath?.trim() || DEFAULT_LOCAL_DISK_BASEPATH,
+      baseUrl: this.options.localDisk?.baseUrl?.trim() || DEFAULT_LOCAL_DISK_BASEURL,
+    }
+  }
+
+  private installLocalDiskAdapter(): void {
+    const { basePath, baseUrl } = this.localDiskPaths()
+    this.adapterName = 'local-disk'
+    this.adapter = new LocalDiskAdapter(this.website, basePath, baseUrl)
     smugmugLogLine({
-      service: this.adapterName,
+      service: 'local-disk',
       level: 'info',
-      operation: 'init_adapter_fallback',
+      operation: 'init_adapter_ready',
       website: this.website.name,
-      msg: `SmugMug unavailable; using ${this.adapterName} adapter.`,
+      msg: 'Local-disk adapter ready.',
+    })
+  }
+
+  private installUploadThingAdapter(): void {
+    const secret = this.options.uploadThingSecret?.trim()
+    if (!secret) {
+      smugmugLogLine({
+        service: 'uploadthing',
+        level: 'error',
+        operation: 'init_missing_uploadthing_secret',
+        website: this.website.name,
+        msg: 'adapter is uploadthing but uploadThingSecret was not passed to ThaliaImageUploader constructor.',
+      })
+      this.adapter = null
+      return
+    }
+    this.adapterName = 'uploadthing'
+    this.adapter = new UploadThingUrlAdapter(this.website)
+    smugmugLogLine({
+      service: 'uploadthing',
+      level: 'info',
+      operation: 'init_adapter_ready',
+      website: this.website.name,
+      msg: 'UploadThing URL adapter ready.',
     })
   }
 
@@ -172,26 +210,17 @@ export class ThaliaImageUploader implements Machine {
     const cfgAlbum = cfg?.album?.trim()
     this.album = envAlbum || cfgAlbum || ''
 
-    // THALIA_IMAGE_ADAPTER bypasses secrets probing entirely — intended for tests and
-    // environments where credentials are not needed (e.g. forced local-disk in CI).
-    const forcedAdapter = process.env.THALIA_IMAGE_ADAPTER?.trim()
-    if (forcedAdapter === 'local-disk' || forcedAdapter === 'uploadthing') {
-      if (forcedAdapter === 'local-disk') {
-        const basePath = process.env.THALIA_LOCAL_DISK_BASEPATH?.trim() || '/data/photos'
-        const baseUrl = process.env.THALIA_LOCAL_DISK_BASEURL?.trim() || '/data/photos'
-        this.adapterName = 'local-disk'
-        this.adapter = new LocalDiskAdapter(this.website, basePath, baseUrl)
-      } else {
-        this.adapterName = 'uploadthing'
-        this.adapter = new UploadThingUrlAdapter(this.website)
-      }
-      smugmugLogLine({
-        service: this.adapterName,
-        level: 'info',
-        operation: 'init_adapter_forced',
-        website: website.name,
-        msg: `Using forced adapter from THALIA_IMAGE_ADAPTER=${forcedAdapter}.`,
-      })
+    const adapter = ThaliaImageUploader.resolveConfiguredAdapter(this.options)
+    this.adapterName = adapter
+
+    if (adapter === 'local-disk') {
+      this.installLocalDiskAdapter()
+      this.initPromise = Promise.resolve()
+      return
+    }
+
+    if (adapter === 'uploadthing') {
+      this.installUploadThingAdapter()
       this.initPromise = Promise.resolve()
       return
     }
@@ -207,9 +236,9 @@ export class ThaliaImageUploader implements Machine {
             level: 'warn',
             operation: 'init_no_smug_export',
             website: website.name,
-            msg: 'config/secrets.js has no smugmug export; falling back to next tier.',
+            msg: 'config/secrets.js has no smugmug export; falling back to local-disk.',
           })
-          this.setupFallbackAdapter()
+          this.installLocalDiskAdapter()
           return
         }
 
@@ -231,10 +260,10 @@ export class ThaliaImageUploader implements Machine {
             level: 'warn',
             operation: 'init_missing_consumer',
             website: website.name,
-            msg: 'consumer_key/consumer_secret missing; falling back to next tier.',
+            msg: 'consumer_key/consumer_secret missing; falling back to local-disk.',
           })
           this.client = null
-          this.setupFallbackAdapter()
+          this.installLocalDiskAdapter()
           return
         }
 
@@ -333,7 +362,7 @@ export class ThaliaImageUploader implements Machine {
             level: 'warn',
             operation: 'init_secrets_missing',
             website: website.name,
-            msg: 'config/secrets.js not found or unreadable; falling back to next tier.',
+            msg: 'config/secrets.js not found or unreadable; falling back to local-disk.',
           })
         } else {
           smugmugLogLine({
@@ -344,7 +373,7 @@ export class ThaliaImageUploader implements Machine {
             msg: error instanceof Error ? error.message : String(error),
           })
         }
-        this.setupFallbackAdapter()
+        this.installLocalDiskAdapter()
       })
   }
 

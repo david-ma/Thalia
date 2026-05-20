@@ -6,7 +6,7 @@
  *   - UploadThingUrlAdapter — no SmugMug; persists the UploadThing URL directly.
  *   - LocalDiskAdapter    — no external keys; writes to /data/photos/<md5>.<ext>.
  *
- * ThaliaImageUploader.init() selects the best available adapter automatically.
+ * ThaliaImageUploader.init() installs the adapter declared in site config.ts constructor options.
  */
 
 /**

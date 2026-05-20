@@ -124,7 +124,24 @@ const roleBasedSecurityConfig = recursiveObjectMerge(recursiveObjectMerge(securi
 
 const AlbumMachine = new CrudFactory(albums);
 const ImageMachine = new CrudFactory(images);
-const imageUploader = new ThaliaImageUploader();
+
+/** Explicit adapter tier — read env in config only; Thalia does not auto-pick from UPLOADTHING_SECRET / SMUGMUG_* */
+const imageUploaderAdapterEnv = process.env.THALIA_IMAGE_ADAPTER?.trim();
+const imageUploaderAdapter =
+    imageUploaderAdapterEnv === 'local-disk' ||
+    imageUploaderAdapterEnv === 'uploadthing' ||
+    imageUploaderAdapterEnv === 'smugmug'
+        ? imageUploaderAdapterEnv
+        : 'smugmug';
+
+const imageUploader = new ThaliaImageUploader({
+    adapter: imageUploaderAdapter,
+    uploadThingSecret: process.env.UPLOADTHING_SECRET,
+    localDisk: {
+        basePath: process.env.THALIA_LOCAL_DISK_BASEPATH ?? '/data/photos',
+        baseUrl: process.env.THALIA_LOCAL_DISK_BASEURL ?? '/data/photos',
+    },
+});
 const smugmugConfig = {
     controllers: {
         smugmugAlbums: AlbumMachine.controller.bind(AlbumMachine),

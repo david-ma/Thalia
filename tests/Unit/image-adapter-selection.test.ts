@@ -1,37 +1,22 @@
 /**
- * Adapter selection tests for ThaliaImageUploader.
- *
- * ── Section A: ImageStoreAdapter interface conformance ─────────────────────
- *    These tests PASS now. They lock in the shape of the interface and act as
- *    a regression guard after adapters are implemented.
- *
- * ── Section B: ThaliaImageUploader.pickAdapterName() ──────────────────────
- *    These tests FAIL now (method does not exist yet).
- *    They define the expected static helper that selects a tier based on
- *    available config, without needing the full async init() machinery.
- *    Pass condition: ThaliaImageUploader.pickAdapterName({ hasSmugMugKeys,
- *    hasUploadThingKey }) → 'smugmug' | 'uploadthing' | 'local-disk'.
- *
- * ── Section C: ThaliaImageUploader instance adapterName ───────────────────
- *    These tests FAIL now (property does not exist yet).
- *    They define the expected public adapterName property on instances.
- *    The property should be set synchronously during init() once the tier is
- *    resolved (SmugMug secrets load is async, but the fallback tiers can be
- *    resolved from env vars before the import resolves).
+ * ThaliaImageUploader constructor and adapter tier tests.
  */
 
 import { describe, expect, test } from 'bun:test'
 import { ThaliaImageUploader } from '../../server/images/image-uploader.js'
 import type { ImageMeta, ImageStoreAdapter, StoredImage } from '../../server/images/adapters.js'
 
-// ── A: Interface conformance (PASS now) ────────────────────────────────────
+// ── A: Interface conformance ────────────────────────────────────────────────
 
-/** A minimal in-memory mock that satisfies ImageStoreAdapter. */
 const store: StoredImage[] = []
 const mockAdapter: ImageStoreAdapter = {
   name: 'mock',
   async store(_bytes: Buffer, meta: ImageMeta): Promise<StoredImage> {
-    const row: StoredImage = { url: `https://mock.example.com/${meta.filename}`, filename: meta.filename, adapterName: 'mock' }
+    const row: StoredImage = {
+      url: `https://mock.example.com/${meta.filename}`,
+      filename: meta.filename,
+      adapterName: 'mock',
+    }
     store.push(row)
     return row
   },
@@ -40,7 +25,7 @@ const mockAdapter: ImageStoreAdapter = {
   },
 }
 
-describe('ImageStoreAdapter interface — conformance (passing)', () => {
+describe('ImageStoreAdapter interface — conformance', () => {
   test('mock adapter satisfies the interface at compile time', () => {
     expect(mockAdapter.name).toBe('mock')
     expect(typeof mockAdapter.store).toBe('function')
@@ -60,7 +45,6 @@ describe('ImageStoreAdapter interface — conformance (passing)', () => {
 
   test('store() optional fields can be absent', async () => {
     const result = await mockAdapter.store(Buffer.from('x'), { filename: 'x.png', mimeType: 'image/png' })
-    // SmugMug-specific fields should be absent for non-SmugMug adapters
     expect(result.imageKey).toBeUndefined()
     expect(result.albumKey).toBeUndefined()
   })
@@ -77,70 +61,59 @@ describe('ImageStoreAdapter interface — conformance (passing)', () => {
   })
 })
 
-// ── B: ThaliaImageUploader.pickAdapterName() (FAILING until implemented) ───
+// ── B: resolveConfiguredAdapter() ───────────────────────────────────────────
 
-describe('ThaliaImageUploader.pickAdapterName() — FAILING until implemented', () => {
-  test('returns "smugmug" when SmugMug consumer keys are present', () => {
-    // EXPECTED TO FAIL: ThaliaImageUploader.pickAdapterName does not exist yet.
-    // Once implemented, this static method should select the SmugMug tier.
-    const fn = (ThaliaImageUploader as any).pickAdapterName
-    expect(typeof fn).toBe('function')
-    expect(fn({ hasSmugMugKeys: true, hasUploadThingKey: false })).toBe('smugmug')
+describe('ThaliaImageUploader.resolveConfiguredAdapter()', () => {
+  test('returns explicit adapter from options', () => {
+    expect(ThaliaImageUploader.resolveConfiguredAdapter({ adapter: 'smugmug' })).toBe('smugmug')
+    expect(ThaliaImageUploader.resolveConfiguredAdapter({ adapter: 'uploadthing' })).toBe('uploadthing')
+    expect(ThaliaImageUploader.resolveConfiguredAdapter({ adapter: 'local-disk' })).toBe('local-disk')
   })
 
-  test('returns "smugmug" even when UploadThing key is also present (SmugMug takes priority)', () => {
-    const fn = (ThaliaImageUploader as any).pickAdapterName
-    expect(typeof fn).toBe('function')
-    expect(fn({ hasSmugMugKeys: true, hasUploadThingKey: true })).toBe('smugmug')
+  test('defaults to local-disk when adapter omitted', () => {
+    expect(ThaliaImageUploader.resolveConfiguredAdapter({})).toBe('local-disk')
   })
 
-  test('returns "uploadthing" when only UploadThing key is present', () => {
-    const fn = (ThaliaImageUploader as any).pickAdapterName
-    expect(typeof fn).toBe('function')
-    expect(fn({ hasSmugMugKeys: false, hasUploadThingKey: true })).toBe('uploadthing')
-  })
-
-  test('returns "local-disk" when no external keys are configured', () => {
-    const fn = (ThaliaImageUploader as any).pickAdapterName
-    expect(typeof fn).toBe('function')
-    expect(fn({ hasSmugMugKeys: false, hasUploadThingKey: false })).toBe('local-disk')
+  test('THALIA_IMAGE_ADAPTER overrides constructor options', () => {
+    const saved = process.env.THALIA_IMAGE_ADAPTER
+    process.env.THALIA_IMAGE_ADAPTER = 'local-disk'
+    expect(ThaliaImageUploader.resolveConfiguredAdapter({ adapter: 'smugmug' })).toBe('local-disk')
+    if (saved === undefined) delete process.env.THALIA_IMAGE_ADAPTER
+    else process.env.THALIA_IMAGE_ADAPTER = saved
   })
 })
 
-// ── C: ThaliaImageUploader instance adapterName (FAILING until implemented) ─
+// ── C: instance adapterName (constructor; not env-inferred) ─────────────────
 
-describe('ThaliaImageUploader instance adapterName — FAILING until implemented', () => {
-  test('new instance has adapterName set to a known string', () => {
-    // EXPECTED TO FAIL: adapterName property does not exist yet.
-    // Once init() sets the adapter, adapterName should reflect the selected tier.
+describe('ThaliaImageUploader instance adapterName', () => {
+  test('defaults to local-disk with no options', () => {
     const uploader = new ThaliaImageUploader()
-    const name: unknown = (uploader as any).adapterName
-    expect(typeof name).toBe('string')
+    expect(uploader.adapterName).toBe('local-disk')
   })
 
-  test('adapterName is one of the three valid tier names', () => {
-    const uploader = new ThaliaImageUploader()
-    const valid = ['smugmug', 'uploadthing', 'local-disk']
-    expect(valid).toContain((uploader as any).adapterName)
+  test('reflects explicit adapter option', () => {
+    expect(new ThaliaImageUploader({ adapter: 'smugmug' }).adapterName).toBe('smugmug')
+    expect(new ThaliaImageUploader({ adapter: 'uploadthing' }).adapterName).toBe('uploadthing')
   })
 
-  test('adapterName defaults to "local-disk" when no env vars are set', () => {
-    // Simulate a clean environment (no SmugMug or UploadThing keys)
+  test('UPLOADTHING_SECRET in env alone does not select uploadthing tier', () => {
     const saved = {
+      UPLOADTHING_SECRET: process.env.UPLOADTHING_SECRET,
       SMUGMUG_CONSUMER_KEY: process.env.SMUGMUG_CONSUMER_KEY,
       SMUGMUG_CONSUMER_SECRET: process.env.SMUGMUG_CONSUMER_SECRET,
-      UPLOADTHING_SECRET: process.env.UPLOADTHING_SECRET,
     }
+    process.env.UPLOADTHING_SECRET = 'test-secret-from-env'
     delete process.env.SMUGMUG_CONSUMER_KEY
     delete process.env.SMUGMUG_CONSUMER_SECRET
-    delete process.env.UPLOADTHING_SECRET
 
-    const uploader = new ThaliaImageUploader()
-    expect((uploader as any).adapterName).toBe('local-disk')
+    expect(new ThaliaImageUploader().adapterName).toBe('local-disk')
+    expect(new ThaliaImageUploader({ adapter: 'local-disk' }).adapterName).toBe('local-disk')
 
-    // Restore
-    if (saved.SMUGMUG_CONSUMER_KEY !== undefined) process.env.SMUGMUG_CONSUMER_KEY = saved.SMUGMUG_CONSUMER_KEY
-    if (saved.SMUGMUG_CONSUMER_SECRET !== undefined) process.env.SMUGMUG_CONSUMER_SECRET = saved.SMUGMUG_CONSUMER_SECRET
-    if (saved.UPLOADTHING_SECRET !== undefined) process.env.UPLOADTHING_SECRET = saved.UPLOADTHING_SECRET
+    if (saved.UPLOADTHING_SECRET === undefined) delete process.env.UPLOADTHING_SECRET
+    else process.env.UPLOADTHING_SECRET = saved.UPLOADTHING_SECRET
+    if (saved.SMUGMUG_CONSUMER_KEY === undefined) delete process.env.SMUGMUG_CONSUMER_KEY
+    else process.env.SMUGMUG_CONSUMER_KEY = saved.SMUGMUG_CONSUMER_KEY
+    if (saved.SMUGMUG_CONSUMER_SECRET === undefined) delete process.env.SMUGMUG_CONSUMER_SECRET
+    else process.env.SMUGMUG_CONSUMER_SECRET = saved.SMUGMUG_CONSUMER_SECRET
   })
 })

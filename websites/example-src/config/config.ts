@@ -4,10 +4,25 @@ import { RawWebsiteConfig } from 'thalia/types'
 import { Website } from 'thalia/website'
 import { latestData } from 'thalia/controllers'
 
+// import { ThaliaImageUploader } from 'thalia/controllers'
+// const imageUploader = new ThaliaImageUploader({
+//   adapter: 'local-disk', // or 'uploadthing' | 'smugmug'
+//   uploadThingSecret: process.env.UPLOADTHING_SECRET, // only when adapter is uploadthing
+//   localDisk: { basePath: 'data/photos', baseUrl: '/data/photos' },
+// })
+// controllers: { uploadImage: imageUploader.controller.bind(imageUploader) }
+// Register in database.machines when using DB-backed adapters (example-auth).
+
+
+
 export const config: RawWebsiteConfig = {
   // Empty config - just use defaults
 
   controllers: {
+    // uploadImage
+
+
+
     fruit: (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: any) => {
       const shortname = requestInfo.action;
       if (!shortname) {

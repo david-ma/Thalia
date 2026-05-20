@@ -1,4 +1,11 @@
 export type { ImageMeta, ImageStoreAdapter, StoredImage } from './adapters.js'
+export {
+  ThaliaImageUploader,
+  readLimitedJsonObject,
+  type ImageUploaderAdapterName,
+  type ThaliaImageUploaderLocalDiskOptions,
+  type ThaliaImageUploaderOptions,
+} from './image-uploader.js'
 export { SmugMugAdapter } from './smugmug/adapter.js'
 export { UploadThingUrlAdapter } from './uploadthing-url-adapter.js'
 export { LocalDiskAdapter } from './local-disk-adapter.js'

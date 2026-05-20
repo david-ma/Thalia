@@ -148,6 +148,57 @@ export function latestData(
   }
 }
 
+// Go deeper, /data/<folder>/<datestamp_UUID_folder>/manifest.json
+// If the slug is list, return a list of all folders.
+export function latestDataFolder(
+  folder: string,
+  options: {
+    shape?: RegExp
+    target?: string
+    sort?: 'name' | 'lastModified' | 'dateCreated'
+  } = {},
+): Controller {
+  return (res, _req, website, requestInfo) => {
+    const dir = path.join(website.rootPath, 'data', folder)
+    fs.promises
+      .readdir(dir, { withFileTypes: true })
+      .then((entries) => {
+        const subFolders = entries.filter((e) => e.isDirectory()).map((e) => e.name)
+        const sortedSubFolders = subFolders
+          .sort((a, b) => a.localeCompare(b))
+          .filter((subFolder) => {
+            if (options.shape) {
+              return options.shape.test(subFolder)
+            }
+            return true
+          })
+          .map((subFolder) => path.join(subFolder, options.target ?? 'manifest.json'))
+
+        if (requestInfo.slug === 'list') {
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify(sortedSubFolders))
+          return
+        }
+
+        const latestFolder = sortedSubFolders.pop()
+        if (!latestFolder) {
+          res.writeHead(404, { 'Content-Type': 'application/json' })
+          console.error(`No subfolders in ${folder}`)
+          res.end('404')
+          return
+        }
+        res.writeHead(302, { Location: `/${folder}/${latestFolder}` })
+        res.end()
+      })
+      .catch((err: NodeJS.ErrnoException) => {
+        const status = err.code === 'ENOENT' ? 404 : 500
+        res.writeHead(status, { 'Content-Type': 'text/plain' })
+        console.error(`Error in ${website.name}/latestDataFolder: ${err.message}`)
+        res.end('500')
+      })
+  }
+}
+
 export const version = async (res: ServerResponse, _req: IncomingMessage, website: Website) => {
   try {
     res.writeHead(200, { 'Content-Type': 'application/json' })

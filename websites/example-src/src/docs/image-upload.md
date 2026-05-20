@@ -18,7 +18,7 @@ This page documents the **example-src** upload demo. It is aimed at web develope
 On **example-src**, the machine is configured as:
 
 - `adapter: 'local-disk'`
-- `persistToDatabase: false` — files go to `public/uploads/`; **no row** in an `images` table
+- `persistToDatabase: false` — files go to `data/uploads/` (HTTP path `/uploads/…`); **no row** in an `images` table
 
 Thalia does **not** maintain a site-wide gallery, search index, or user-owned album list unless **you** add that.
 

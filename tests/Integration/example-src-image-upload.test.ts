@@ -10,7 +10,7 @@ import path from 'node:path'
 import { fetchFromServer, startTestServer, stopTestServer, waitForServerHttp } from './helpers.js'
 
 const thaliaRoot = path.resolve(import.meta.dirname, '../..')
-const uploadsDir = path.join(thaliaRoot, 'websites', 'example-src', 'public', 'uploads')
+const uploadsDir = path.join(thaliaRoot, 'websites', 'example-src', 'data', 'uploads')
 
 describe('Integration: example-src local-disk upload (no database)', () => {
   let port!: number
@@ -30,7 +30,7 @@ describe('Integration: example-src local-disk upload (no database)', () => {
     await stopTestServer('example-src')
   })
 
-  test('POST /uploadImage writes public/uploads file and returns JSON', async () => {
+  test('POST /uploadImage writes data/uploads file and returns JSON', async () => {
     const bytes = Buffer.from('example-src-ci-upload')
     const form = new FormData()
     form.append('fileToUpload', new File([bytes], 'ci-test.png', { type: 'image/png' }))

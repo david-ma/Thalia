@@ -11,7 +11,7 @@ const imageUploader = new ThaliaImageUploader({
   adapter: 'local-disk', // 'smugmug' | 'uploadthing' | 'local-disk'
   persistToDatabase: false, // optional; default true (MySQL `images` row)
   localDisk: {
-    basePath: path.join(siteRoot, 'public', 'uploads'),
+    basePath: path.join(siteRoot, 'data', 'uploads'),
     baseUrl: '/uploads',
   },
   // uploadThingSecret: '…', // required when adapter is 'uploadthing'

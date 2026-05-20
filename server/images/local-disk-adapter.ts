@@ -3,7 +3,7 @@
  *
  * Writes image bytes to `<basePath>/<md5>.<ext>` (default: `/data/photos/`) and optionally
  * stores metadata in the `images` table. The base path must be served by the webserver
- * (e.g. via Thalia's `public/` static-file route or a reverse-proxy alias).
+ * (e.g. Thalia's `data/` static handler — site `data/uploads/` served at `/uploads/…`).
  */
 
 import crypto from 'node:crypto'

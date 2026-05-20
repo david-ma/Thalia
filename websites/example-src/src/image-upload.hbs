@@ -1,19 +1,157 @@
 {{#> wrapper }}
-  <section aria-labelledby="image-upload-title">
-    <h1 id="image-upload-title" class="h4 mb-3">Image upload</h1>
-    <p class="text-muted small mb-4">Simple multipart form for server-side handling of <code>/uploadImage</code>.</p>
-    <div class="card border-0 shadow-sm" style="max-width: 28rem">
-      <div class="card-body">
+  <section aria-labelledby="image-upload-title" class="mb-4">
+    <h1 id="image-upload-title" class="h4 mb-2">Image upload</h1>
+    <p class="text-muted small mb-3">
+      Demo of <code>POST /uploadImage</code> with the <strong>local-disk</strong> adapter
+      (<code>persistToDatabase: false</code>). Thalia writes the file under
+      <code>public/uploads/</code> and returns a serve URL — it does <em>not</em> keep an index
+      of uploads for you.
+    </p>
+    <p class="small mb-4">
+      <a href="/docs/image-upload">Developer notes: who tracks uploaded images?</a>
+    </p>
 
-        <form action="/uploadImage" method="post" enctype="multipart/form-data" class="d-flex flex-column gap-3">
+    <div class="card border-0 shadow-sm mb-4" style="max-width: 28rem">
+      <div class="card-body">
+        <form id="upload-image-form" action="/uploadImage" method="post" enctype="multipart/form-data" class="d-flex flex-column gap-3">
           <div>
             <label class="form-label" for="upload-image-file">Image file</label>
             <input id="upload-image-file" class="form-control" type="file" name="fileToUpload" accept="image/*" required />
           </div>
-          <button type="submit" class="btn btn-primary">Upload</button>
+          <button type="submit" class="btn btn-primary" id="upload-image-submit">Upload</button>
         </form>
-
+        <div id="upload-image-status" class="small mt-3" role="status" aria-live="polite"></div>
       </div>
     </div>
+
+    <h2 class="h6 mb-2">This browser (localStorage demo)</h2>
+    <p class="text-muted small mb-2">
+      After a successful upload, the returned URL is stored in
+      <code>localStorage</code> so you can see a gallery without a database. Clear with the button
+      below — that only affects this browser, not files on disk.
+    </p>
+    <div class="d-flex gap-2 mb-3">
+      <button type="button" class="btn btn-outline-secondary btn-sm" id="upload-gallery-clear">Clear gallery</button>
+    </div>
+    <div id="upload-gallery" class="d-flex flex-wrap gap-3" aria-label="Uploaded images in this browser"></div>
   </section>
+
+  <script>
+    (function () {
+      var STORAGE_KEY = 'example-src-uploaded-images'
+      var form = document.getElementById('upload-image-form')
+      var statusEl = document.getElementById('upload-image-status')
+      var galleryEl = document.getElementById('upload-gallery')
+      var clearBtn = document.getElementById('upload-gallery-clear')
+      var submitBtn = document.getElementById('upload-image-submit')
+
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+      }
+
+      function loadItems() {
+        try {
+          var raw = localStorage.getItem(STORAGE_KEY)
+          var parsed = raw ? JSON.parse(raw) : []
+          return Array.isArray(parsed) ? parsed : []
+        } catch (e) {
+          return []
+        }
+      }
+
+      function saveItems(items) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+      }
+
+      function renderGallery() {
+        var items = loadItems()
+        if (!items.length) {
+          galleryEl.innerHTML = '<p class="text-muted small mb-0">No images saved in this browser yet.</p>'
+          return
+        }
+        galleryEl.innerHTML = items
+          .map(function (item) {
+            var url = escapeHtml(item.url || '')
+            var name = escapeHtml(item.filename || item.url || 'upload')
+            var when = item.uploadedAt ? escapeHtml(item.uploadedAt) : ''
+            return (
+              '<figure class="border rounded p-2 mb-0" style="max-width: 12rem">' +
+              '<a href="' + url + '" target="_blank" rel="noopener">' +
+              '<img src="' + url + '" alt="" class="img-fluid rounded" loading="lazy" />' +
+              '</a>' +
+              '<figcaption class="small text-muted mt-2 mb-0">' + name +
+              (when ? '<br><time class="text-muted">' + when + '</time>' : '') +
+              '</figcaption></figure>'
+            )
+          })
+          .join('')
+      }
+
+      function setStatus(message, isError) {
+        statusEl.textContent = message
+        statusEl.className = 'small mt-3' + (isError ? ' text-danger' : ' text-success')
+      }
+
+      function addUploaded(result) {
+        var items = loadItems()
+        items.unshift({
+          url: result.url,
+          filename: result.filename || result.url,
+          adapterName: result.adapterName,
+          uploadedAt: new Date().toISOString(),
+        })
+        saveItems(items.slice(0, 48))
+        renderGallery()
+      }
+
+      renderGallery()
+
+      clearBtn.addEventListener('click', function () {
+        localStorage.removeItem(STORAGE_KEY)
+        renderGallery()
+        setStatus('Gallery cleared (files on disk are unchanged).', false)
+      })
+
+      form.addEventListener('submit', function (ev) {
+        ev.preventDefault()
+        var fileInput = document.getElementById('upload-image-file')
+        if (!fileInput.files || !fileInput.files[0]) {
+          setStatus('Choose a file first.', true)
+          return
+        }
+
+        var body = new FormData()
+        body.append('fileToUpload', fileInput.files[0])
+
+        submitBtn.disabled = true
+        setStatus('Uploading…', false)
+
+        fetch('/uploadImage', { method: 'POST', body: body })
+          .then(function (res) {
+            return res.json().then(function (data) {
+              return { ok: res.ok, data: data }
+            })
+          })
+          .then(function (result) {
+            if (!result.ok) {
+              var err = result.data && result.data.error ? result.data.error : 'Upload failed'
+              throw new Error(err)
+            }
+            addUploaded(result.data)
+            setStatus('Uploaded: ' + result.data.url, false)
+            form.reset()
+          })
+          .catch(function (err) {
+            setStatus(err.message || 'Upload failed', true)
+          })
+          .finally(function () {
+            submitBtn.disabled = false
+          })
+      })
+    })()
+  </script>
 {{/wrapper}}

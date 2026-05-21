@@ -371,6 +371,12 @@ export class RequestHandler {
       fs.promises
         .readFile(target, 'utf8')
         .then((content) => {
+          if(requestHandler.requestInfo.query.raw === 'true') {
+            requestHandler.res.writeHead(200, { 'Content-Type': 'text/plain' })
+            requestHandler.res.end(content)
+            return finish(`Successfully served raw markdown ${requestHandler.pathname}`)
+          }
+
           const mermaidSources: string[] = []
           const contentHtml = wrapMarkdownCodeBlocks(parseMarkdown(content), mermaidSources)
           registerMarkdownHelpers(requestHandler.website.handlebars)

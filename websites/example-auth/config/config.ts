@@ -78,9 +78,26 @@ const exampleAuthRoutes: RoleRouteRule[] = [
     { path: '/forgotPassword', permissions: { guest: ['read', 'create'], user: ['read', 'create'], admin: ['read', 'create'] } },
     { path: '/resetPassword', permissions: { guest: ['read', 'create'], user: ['read', 'create'], admin: ['read', 'create'] } },
 
-    /** Multipart / JSON SmugMug upload — needs `create` if route guard maps POST to create on this path in future. */
+    /** Multipart / JSON image upload (`ThaliaImageUploader` — SmugMug, UploadThing URL, or local-disk). */
     {
         path: '/uploadPhoto',
+        permissions: {
+            guest: ['read', 'create'],
+            user: ['read', 'create'],
+            admin: ['read', 'update', 'delete', 'create'],
+        },
+    },
+    {
+        path: '/uploadImage',
+        permissions: {
+            guest: ['read', 'create'],
+            user: ['read', 'create'],
+            admin: ['read', 'update', 'delete', 'create'],
+        },
+    },
+    /** SmugMug OAuth 1.0a access-token exchange (browser redirect target). */
+    {
+        path: '/oauthCallback',
         permissions: {
             guest: ['read', 'create'],
             user: ['read', 'create'],
@@ -125,6 +142,8 @@ const roleBasedSecurityConfig = recursiveObjectMerge(recursiveObjectMerge(securi
 const AlbumMachine = new CrudFactory(albums);
 const ImageMachine = new CrudFactory(images);
 
+const siteRoot = path.join(import.meta.dirname, '..');
+
 /** Explicit adapter tier — read env in config only; Thalia does not auto-pick from UPLOADTHING_SECRET / SMUGMUG_* */
 const imageUploaderAdapterEnv = process.env.THALIA_IMAGE_ADAPTER?.trim();
 const imageUploaderAdapter =
@@ -138,15 +157,23 @@ const imageUploader = new ThaliaImageUploader({
     adapter: imageUploaderAdapter,
     uploadThingSecret: process.env.UPLOADTHING_SECRET,
     localDisk: {
-        basePath: process.env.THALIA_LOCAL_DISK_BASEPATH ?? '/data/photos',
-        baseUrl: process.env.THALIA_LOCAL_DISK_BASEURL ?? '/data/photos',
+        basePath: process.env.THALIA_LOCAL_DISK_BASEPATH ?? path.join(siteRoot, 'data', 'uploads'),
+        baseUrl: process.env.THALIA_LOCAL_DISK_BASEURL ?? '/uploads',
     },
 });
-const smugmugConfig = {
+
+const imageUploadConfig = {
+    /** Album + OAuth callback for `ThaliaImageUploader` when `adapter: 'smugmug'` (secrets.js overrides). */
+    smugmug: {
+        oauthCallbackUrl: process.env.SMUGMUG_OAUTH_CALLBACK_URL,
+        album: process.env.SMUGMUG_ALBUM,
+    },
     controllers: {
         smugmugAlbums: AlbumMachine.controller.bind(AlbumMachine),
         smugmugImages: ImageMachine.controller.bind(ImageMachine),
         uploadPhoto: imageUploader.controller.bind(imageUploader),
+        uploadImage: imageUploader.controller.bind(imageUploader),
+        oauthCallback: imageUploader.oauthCallback.bind(imageUploader),
     },
     database: {
         schemas: {
@@ -162,4 +189,4 @@ const smugmugConfig = {
 };
 
 /** Final site config: security + demo modules. */
-export const config = recursiveObjectMerge(roleBasedSecurityConfig, smugmugConfig);
+export const config = recursiveObjectMerge(roleBasedSecurityConfig, imageUploadConfig);

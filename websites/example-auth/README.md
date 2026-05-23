@@ -8,7 +8,8 @@ Example Thalia project with **ThaliaSecurity**, **RoleRouteGuard**, and a DB-bac
 - **RoleRouteGuard** with `config.routes` (path + permissions for admin/user/guest)
 - **`config/config.ts`** — start here: the file header documents how to merge `securityConfig()`, optional modules, and typed `RoleRouteRule[]` routes
 - **Fruit** CRUD (CrudFactory) at `/fruit` with route rule allowing guest **read** only (create/update/delete need higher roles)
-- Optional: albums/images (from SmugMug-style config); can be removed to keep the example minimal
+- **Image upload** (`ThaliaImageUploader`): SmugMug when `config/secrets.js` has credentials; otherwise local-disk under `data/uploads/` (see below)
+- Optional: albums/images CRUD at `/smugmugAlbums`, `/smugmugImages`; gallery lab at `/smugmugGalleryLab`
 
 ## First administrator
 
@@ -110,6 +111,18 @@ Routes, profile controller, and integration tests in `tests/Integration/request-
 From Thalia root: `bun test tests/Integration/request-handler.test.ts`. For full coverage, set up the DB and optionally seed a user.
 
 ---
+
+## Image upload (`ThaliaImageUploader`)
+
+Configured in `config/config.ts`:
+
+- **`adapter`:** `smugmug` by default (override with `THALIA_IMAGE_ADAPTER=local-disk|uploadthing|smugmug` for tests).
+- **Routes:** `POST /uploadPhoto`, `POST /uploadImage` (same handler), `GET /oauthCallback` (SmugMug OAuth).
+- **Secrets:** `config/secrets.js` exports `smugmug` consumer keys + tokens; optional `UPLOADTHING_SECRET` when using `adapter: 'uploadthing'`.
+- **Local-disk fallback:** writes to `data/uploads/`, served at `/uploads/…` when SmugMug cannot initialise.
+- **Pages:** `/uploadImage` (form + JSON response), home `#upload` teaser, `/smugmugGalleryLab` (drag-drop + CRUD tables).
+
+Force local-disk for integration tests: `THALIA_IMAGE_ADAPTER=local-disk` (see `tests/Integration/example-auth-local-disk.test.ts`).
 
 ## Tests
 

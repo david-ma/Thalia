@@ -1,18 +1,102 @@
 {{#> wrapper }}
   <section aria-labelledby="upload-image-title">
     <h1 id="upload-image-title" class="h4 mb-3">Upload image</h1>
-    <p class="text-muted small mb-4">Simple multipart form for server-side handling of <code>/uploadImage</code>.</p>
-    <div class="card border-0 shadow-sm" style="max-width: 28rem">
+    <p class="text-muted small mb-3">
+      Uses <code>ThaliaImageUploader</code> on <code>POST /uploadImage</code> (same handler as
+      <code>/uploadPhoto</code>). With SmugMug secrets, uploads go to SmugMug and rows land in the
+      <code>images</code> table; without secrets the machine falls back to
+      <code>data/uploads/</code> (served at <code>/uploads/…</code>).
+    </p>
+    <p class="small mb-4">
+      <a href="/smugmugGalleryLab">SmugMug gallery lab</a> · <a href="/#upload">Home upload teaser</a>
+    </p>
+
+    <div class="card border-0 shadow-sm mb-4" style="max-width: 28rem">
       <div class="card-body">
-        <form action="/uploadImage" method="post" enctype="multipart/form-data" class="d-flex flex-column gap-3">
+        <form id="upload-image-form" action="/uploadImage" method="post" enctype="multipart/form-data" class="d-flex flex-column gap-3">
           <div>
             <label class="form-label" for="upload-image-file">Image file</label>
-            <input id="upload-image-file" class="form-control" type="file" name="image" accept="image/*" />
+            <input id="upload-image-file" class="form-control" type="file" name="fileToUpload" accept="image/*" required />
           </div>
-          <button type="submit" class="btn btn-primary">Upload</button>
+          <button type="submit" class="btn btn-primary" id="upload-image-submit">Upload</button>
         </form>
+        <div id="upload-image-status" class="small mt-3" role="status" aria-live="polite"></div>
+        <pre id="upload-image-json" class="small bg-light border rounded p-2 mt-2 mb-0" style="display: none; max-height: 12rem; overflow: auto;"></pre>
       </div>
     </div>
+
     <p class="small text-muted mt-3 mb-0"><a href="/">Back to home</a></p>
   </section>
+
+  <script>
+    (function () {
+      var form = document.getElementById('upload-image-form')
+      var statusEl = document.getElementById('upload-image-status')
+      var jsonEl = document.getElementById('upload-image-json')
+      var submitBtn = document.getElementById('upload-image-submit')
+      if (!form) return
+
+      form.addEventListener('submit', function (ev) {
+        ev.preventDefault()
+        var fileInput = document.getElementById('upload-image-file')
+        if (!fileInput.files || !fileInput.files[0]) {
+          statusEl.textContent = 'Choose a file first.'
+          statusEl.className = 'small mt-3 text-danger'
+          return
+        }
+        var body = new FormData()
+        body.append('fileToUpload', fileInput.files[0])
+        body.append('filename', fileInput.files[0].name)
+        submitBtn.disabled = true
+        statusEl.textContent = 'Uploading…'
+        statusEl.className = 'small mt-3 text-muted'
+        jsonEl.style.display = 'none'
+
+        fetch('/uploadImage', { method: 'POST', body: body, credentials: 'same-origin' })
+          .then(function (res) {
+            return res.text().then(function (text) {
+              return { ok: res.ok, status: res.status, text: text }
+            })
+          })
+          .then(function (ctx) {
+            var parsed
+            try {
+              parsed = ctx.text ? JSON.parse(ctx.text) : null
+            } catch (e) {
+              parsed = null
+            }
+            if (!ctx.ok || (parsed && parsed.error)) {
+              var msg = parsed && parsed.error ? parsed.error : 'Upload failed (HTTP ' + ctx.status + ')'
+              statusEl.textContent = msg
+              statusEl.className = 'small mt-3 text-danger'
+              if (ctx.text) {
+                jsonEl.style.display = 'block'
+                jsonEl.textContent = ctx.text
+              }
+              return
+            }
+            statusEl.textContent = 'Uploaded (' + (parsed.adapterName || 'ok') + ')'
+            statusEl.className = 'small mt-3 text-success'
+            jsonEl.style.display = 'block'
+            jsonEl.textContent = JSON.stringify(parsed, null, 2)
+            if (parsed.url) {
+              statusEl.innerHTML =
+                'Uploaded — <a href="' +
+                parsed.url +
+                '" target="_blank" rel="noopener">open image</a> (' +
+                (parsed.adapterName || '') +
+                ')'
+            }
+            form.reset()
+          })
+          .catch(function () {
+            statusEl.textContent = 'Network error.'
+            statusEl.className = 'small mt-3 text-danger'
+          })
+          .finally(function () {
+            submitBtn.disabled = false
+          })
+      })
+    })()
+  </script>
 {{/wrapper}}

@@ -61,7 +61,7 @@ See `websites/example-src/src/docs/image-upload.md` (served at `/docs/image-uplo
 | Site | Upload route | Auth |
 |------|----------------|------|
 | **example-src** | `/uploadImage` | Open POST (demo only) |
-| **example-auth** | `/uploadPhoto` | `RoleRouteGuard` — guest/user/admin `create` per `config.routes` |
+| **example-auth** | `/uploadPhoto`, `/uploadImage`, `/oauthCallback` | `RoleRouteGuard` — guest/user/admin `create`; SmugMug via `config/secrets.js`, else `data/uploads/` |
 
 ## Tests
 

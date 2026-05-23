@@ -108,6 +108,24 @@ describeDatabaseOnline('Integration: local-disk adapter upload (example-auth + M
     await pool.end()
   })
 
+  test('POST /uploadImage with multipart form returns 200 JSON with adapterName "local-disk"', async () => {
+    const imageBytes = Buffer.from('fake-png-bytes-upload-image-route')
+    const file = new File([imageBytes], 'test-upload-image.png', { type: 'image/png' })
+    const form = new FormData()
+    form.append('fileToUpload', file)
+
+    const response = await fetchFromServer('/uploadImage', port, {
+      method: 'POST',
+      body: form,
+    })
+
+    expect(response.status).toBe(200)
+    const body = (await response.json()) as Record<string, unknown>
+    expect(body.adapterName).toBe('local-disk')
+    expect(typeof body.url).toBe('string')
+    if (typeof body.url === 'string') insertedUrls.push(body.url)
+  })
+
   test('POST /uploadPhoto with multipart form returns 200 JSON with adapterName "local-disk"', async () => {
     const imageBytes = Buffer.from('fake-png-bytes-for-local-disk-test')
     const file = new File([imageBytes], 'test-upload.png', { type: 'image/png' })

@@ -225,8 +225,7 @@ function compileMarkdownPageHtml(
   }
   const renderedBody = handlebars.compile(contentHtml)(compileCtx)
   const markdownTabItems = buildMarkdownDocTabItems(renderedBody, frontMatterYaml)
-  let wrapper = handlebars.partials['markdown_wrapper'] ?? '{{> content }}'
-  wrapper = wrapper.replace('</body>', '{{> markdown_processing }}\n</body>')
+  let wrapper = handlebars.partials['markdown'] ?? '{{> content }}'
   return handlebars.compile(wrapper)({
     ...compileCtx,
     ...pageMetaFromFrontMatter(frontMatter),

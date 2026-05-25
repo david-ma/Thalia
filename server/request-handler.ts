@@ -14,14 +14,7 @@ import { dirname } from 'path'
 import fs from 'fs'
 import * as sass from 'sass'
 import zlib from 'zlib'
-import {
-  parseMarkdown,
-  wrapMarkdownCodeBlocks,
-  registerMarkdownHelpers,
-  parseFrontMatter,
-  extractFrontMatterYaml,
-  buildMarkdownDocTabItems,
-} from './markdown'
+import { renderMarkdownPage } from './markdown'
 
 const GZIP_SIZE_THRESHOLD = 10 * 1024 // 10kb
 
@@ -429,33 +422,20 @@ export class RequestHandler {
             return finish(`Successfully served raw markdown ${requestHandler.pathname}`)
           }
 
-          const mermaidSources: string[] = []
-
-          const [contentWithoutFrontMatter, frontMatter] = parseFrontMatter(content)
-          const frontMatterYaml = extractFrontMatterYaml(content)
-
-          const contentHtml = wrapMarkdownCodeBlocks(parseMarkdown(contentWithoutFrontMatter), mermaidSources)
-          registerMarkdownHelpers(requestHandler.website.handlebars)
-          let html: string
-          try {
-            html = RequestHandler.renderMarkdownWrapper(
-              requestHandler,
-              contentHtml,
-              mermaidSources,
-              frontMatter,
-              frontMatterYaml,
-            )
-          } catch (error) {
-            console.debug('Error rendering markdown: ', error)
-            console.debug('Replacing {{ and }} with &#123;&#123; and &#125;&#125;')
-            html = RequestHandler.renderMarkdownWrapper(
-              requestHandler,
-              contentHtml.replace(/{{/g, '&#123;&#123;').replace(/}}/g, '&#125;&#125;'),
-              mermaidSources,
-              frontMatter,
-              frontMatterYaml,
-            )
-          }
+          const html = renderMarkdownPage(
+            requestHandler.website.handlebars,
+            content,
+            {
+              requestInfo: requestHandler.requestInfo,
+              version: requestHandler.website.version,
+            },
+            {
+              reloadPartials:
+                requestHandler.website.env === 'development'
+                  ? () => requestHandler.website.loadPartials()
+                  : undefined,
+            },
+          )
           requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
           requestHandler.res.end(html)
           finish(`Successfully rendered markdown ${requestHandler.pathname}`)
@@ -507,40 +487,6 @@ export class RequestHandler {
       if (fs.existsSync(thalia) && fs.statSync(thalia).isFile()) return thalia
     }
     return null
-  }
-
-  private static renderMarkdownWrapper(
-    rh: RequestHandler,
-    contentHtml: string,
-    mermaidSources: string[],
-    frontMatter: Record<string, unknown> | null = null,
-    frontMatterYaml: string | null = null,
-  ): string {
-    if (rh.website.env === 'development') rh.website.loadPartials()
-    rh.website.handlebars.registerPartial('content', contentHtml)
-    const compileCtx = {
-      requestInfo: rh.requestInfo,
-      version: rh.website.version,
-      mermaidSources,
-      frontMatter,
-    }
-    const renderedBody = rh.website.handlebars.compile(contentHtml)(compileCtx)
-    const markdownTabItems = buildMarkdownDocTabItems(renderedBody, frontMatterYaml)
-    let wrapper = rh.website.handlebars.partials['markdown_wrapper'] ?? '{{> content }}'
-    wrapper = wrapper.replace('</body>', '{{> markdown_processing }}\n</body>')
-    const pageMeta =
-      frontMatter && typeof frontMatter === 'object'
-        ? {
-            title: typeof frontMatter.title === 'string' ? frontMatter.title : undefined,
-            description: typeof frontMatter.description === 'string' ? frontMatter.description : undefined,
-            author: typeof frontMatter.author === 'string' ? frontMatter.author : undefined,
-          }
-        : {}
-    return rh.website.handlebars.compile(wrapper)({
-      ...compileCtx,
-      ...pageMeta,
-      markdownTabItems,
-    })
   }
 
   /**

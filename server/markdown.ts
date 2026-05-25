@@ -1,5 +1,5 @@
 /**
- * Markdown parsing and code-block wrapping for Thalia.
+ * Markdown parsing, doc-page tabs, and HTML wrapping for Thalia.
  * Uses marked + marked-highlight (highlight.js); wraps code blocks in cards
  * and mermaid blocks in a Diagram/Source tabbed partial.
  */
@@ -7,9 +7,26 @@
 import { Marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
+import type { RequestInfo } from './server'
 
-interface HandlebarsInstance {
+/** highlight.js ships yaml and markdown; /js/vendor/highlight.*.js includes them for the browser too. */
+const HLJS_YAML = hljs.getLanguage('yaml') ? 'yaml' : 'plaintext'
+
+export interface MarkdownHandlebars {
+  registerPartial(name: string, value: string): void
   registerHelper(name: string, fn: (...args: unknown[]) => unknown): void
+  compile(template: string): (context: Record<string, unknown>) => string
+  partials: Record<string, string | undefined>
+}
+
+export type MarkdownPageContext = {
+  requestInfo: RequestInfo
+  version: string
+}
+
+export type RenderMarkdownPageOptions = {
+  /** Called in development before compiling the wrapper (reload partials). */
+  reloadPartials?: () => void
 }
 
 export function escapeHtml(s: string): string {
@@ -72,19 +89,26 @@ export type MarkdownDocTabItem = {
   active?: boolean
 }
 
+function highlightPanelSource(language: string, source: string): string {
+  const hljsLang = hljs.getLanguage(language) ? language : 'plaintext'
+  return hljs.highlight(source, { language: hljsLang }).value
+}
+
 function markdownSourcePre(language: string, source: string): string {
-  const lang = escapeHtml(language)
+  const hljsLang =
+    language === 'yaml' ? HLJS_YAML : hljs.getLanguage(language) ? language : 'plaintext'
+  const langLabel = escapeHtml(language)
   return (
     '<div class="code-card" data-language="' +
-    lang +
+    langLabel +
     '">' +
     '<div class="code-card__header"><span class="code-card__lang">' +
-    lang +
+    langLabel +
     '</span></div>' +
     '<div class="code-card__body"><pre class="mb-0"><code class="hljs language-' +
-    lang +
+    escapeHtml(hljsLang) +
     '">' +
-    escapeHtml(source) +
+    highlightPanelSource(hljsLang, source) +
     '</code></pre></div></div>'
   )
 }
@@ -163,10 +187,87 @@ export function wrapMarkdownCodeBlocks(html: string, mermaidSources: string[]): 
 }
 
 /** Register Handlebars helpers needed for markdown (e.g. mermaidCard partial). */
-export function registerMarkdownHelpers(handlebars: HandlebarsInstance): void {
+export function registerMarkdownHelpers(handlebars: MarkdownHandlebars): void {
   handlebars.registerHelper('lookup', function (obj: unknown, key: unknown) {
     if (obj == null || (typeof obj !== 'object' && typeof obj !== 'function')) return undefined
     const k = String(key)
     return Object.prototype.hasOwnProperty.call(obj, k) ? (obj as Record<string, unknown>)[k] : undefined
   } as (...args: unknown[]) => unknown)
+}
+
+function pageMetaFromFrontMatter(frontMatter: Record<string, unknown> | null): Record<string, string | undefined> {
+  if (!frontMatter || typeof frontMatter !== 'object') return {}
+  return {
+    title: typeof frontMatter.title === 'string' ? frontMatter.title : undefined,
+    description: typeof frontMatter.description === 'string' ? frontMatter.description : undefined,
+    author: typeof frontMatter.author === 'string' ? frontMatter.author : undefined,
+  }
+}
+
+function compileMarkdownPageHtml(
+  handlebars: MarkdownHandlebars,
+  contentHtml: string,
+  mermaidSources: string[],
+  frontMatter: Record<string, unknown> | null,
+  frontMatterYaml: string | null,
+  ctx: MarkdownPageContext,
+  options?: RenderMarkdownPageOptions,
+): string {
+  options?.reloadPartials?.()
+  handlebars.registerPartial('content', contentHtml)
+  const compileCtx: Record<string, unknown> = {
+    requestInfo: ctx.requestInfo,
+    version: ctx.version,
+    mermaidSources,
+    frontMatter,
+  }
+  const renderedBody = handlebars.compile(contentHtml)(compileCtx)
+  const markdownTabItems = buildMarkdownDocTabItems(renderedBody, frontMatterYaml)
+  let wrapper = handlebars.partials['markdown_wrapper'] ?? '{{> content }}'
+  wrapper = wrapper.replace('</body>', '{{> markdown_processing }}\n</body>')
+  return handlebars.compile(wrapper)({
+    ...compileCtx,
+    ...pageMetaFromFrontMatter(frontMatter),
+    markdownTabItems,
+  })
+}
+
+/**
+ * Parse markdown source and return a full HTML page (markdown_wrapper + tabs + content).
+ */
+export function renderMarkdownPage(
+  handlebars: MarkdownHandlebars,
+  markdownSource: string,
+  ctx: MarkdownPageContext,
+  options?: RenderMarkdownPageOptions,
+): string {
+  registerMarkdownHelpers(handlebars)
+  const [body, frontMatter] = parseFrontMatter(markdownSource)
+  const frontMatterYaml = extractFrontMatterYaml(markdownSource)
+  const mermaidSources: string[] = []
+  let contentHtml = wrapMarkdownCodeBlocks(parseMarkdown(body), mermaidSources)
+  try {
+    return compileMarkdownPageHtml(
+      handlebars,
+      contentHtml,
+      mermaidSources,
+      frontMatter,
+      frontMatterYaml,
+      ctx,
+      options,
+    )
+  } catch (error) {
+    console.debug('Error rendering markdown: ', error)
+    console.debug('Replacing {{ and }} with &#123;&#123; and &#125;&#125;')
+    contentHtml = contentHtml.replace(/{{/g, '&#123;&#123;').replace(/}}/g, '&#125;&#125;')
+    return compileMarkdownPageHtml(
+      handlebars,
+      contentHtml,
+      mermaidSources,
+      frontMatter,
+      frontMatterYaml,
+      ctx,
+      options,
+    )
+  }
 }

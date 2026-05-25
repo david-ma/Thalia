@@ -107,7 +107,7 @@ describe('markdown pipeline', () => {
       version: { websiteName: 'test', version: '0' },
     } as MarkdownPageContext
 
-    const withoutFm = compileMarkdownPageHtml(handlebars, '<p>Hi</p>', [], null, null, ctx)
+    const withoutFm = compileMarkdownPageHtml(handlebars, '<p>Hi</p>', [], null, null, '# Hi\n', ctx)
     expect(withoutFm).toContain('id="mdtab-rendered"')
     expect(withoutFm).toContain('<p>Hi</p>')
     expect(withoutFm).not.toContain('id="mdtab-front-matter-tab"')
@@ -118,9 +118,12 @@ describe('markdown pipeline', () => {
       [],
       { title: 'Docs' },
       'title: Docs',
+      '---\ntitle: Docs\n---\n\n# Hi\n',
       ctx,
     )
     expect(withFm).toContain('id="mdtab-front-matter-tab"')
     expect(withFm).toContain('title: Docs')
+    expect(withFm).toContain('id="markdown-raw-source"')
+    expect(withFm).toContain('# Hi')
   })
 })

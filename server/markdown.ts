@@ -222,6 +222,7 @@ export function compileMarkdownPageHtml(
   mermaidSources: string[],
   frontMatter: Record<string, unknown> | null,
   frontMatterYaml: string | null,
+  markdownSource: string,
   ctx: MarkdownPageContext,
   options?: RenderMarkdownPageOptions,
 ): string {
@@ -240,6 +241,7 @@ export function compileMarkdownPageHtml(
     ...compileCtx,
     ...pageMetaFromFrontMatter(frontMatter),
     markdownBody: renderedBody,
+    markdownRaw: markdownSource,
     markdownDocTabs: buildMarkdownDocTabs(!!frontMatterYaml),
     ...(frontMatterYaml ? { frontMatterYaml } : {}),
   }
@@ -266,6 +268,7 @@ export function renderMarkdownPage(
     mermaidSources,
     frontMatter,
     frontMatterYaml,
+    markdownSource,
     ctx,
     options,
   )

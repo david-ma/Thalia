@@ -72,7 +72,7 @@
     "start": "bun server/cli.ts",
     "pm2:start": "pm2 startOrReload pm2.config.json",
     "pm2:stop": "pm2 delete pm2.config.json",
-    "typecheck": "bunx -p typescript@5.8.3 tsc --noEmit -p tsconfig.json",
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json",
     "dev": "bun bin/develop.ts",
     "build:scss": "bun bin/build-scss.ts",
     "sitemap": "bun bin/sitemap.ts",
@@ -104,6 +104,7 @@
   "devDependencies": {
     "@types/formidable": "^3.4.5",
     "@types/nodemailer": "^6.4.17",
+    "bun-types": "1.3.3",
     "prettier": "^3.6.2"
   },
   "engines": {

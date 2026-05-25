@@ -16,6 +16,12 @@ $fa-font-path: '/fonts';
 @import 'vendor/fa-solid.scss';
 @import 'vendor/fontawesome.scss';
 
+// Bootstrap 3 scaffolding (above) sets html { font-size: 10px } so 1rem = 10px.
+// Agency / Bootstrap 5 and modern partials expect a 16px root — restore it here.
+html {
+  font-size: 16px;
+}
+
 .outlined-box {
   border: 1px solid;
   border-color: #e5e6e9 #dfe0e4 #d0d1d5;

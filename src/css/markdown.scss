@@ -1,6 +1,16 @@
-// Markdown page styles: highlight.js theme (atom-one-dark) + line numbers + code block layout.
-// Theme based on highlight.js atom-one-dark (Daniel Gamage; MIT).
-// Kept in-repo for supply-chain safety; update periodically from highlight.js if desired.
+// Markdown pages: doc tabs, rendered prose, code cards, highlight.js (atom-one-dark).
+// Loaded via /css/markdown.css on markdown doc pages and folder index views.
+
+$markdown-font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+$markdown-code-bg: #282c34;
+$markdown-code-fg: #abb2bf;
+$markdown-border: #dee2e6;
+$markdown-source-bg: #24292f;
+$markdown-source-fg: #f6f8fa;
+$markdown-prose-fg: #212529;
+$markdown-prose-muted: #6c757d;
+$markdown-link: #0d6efd;
+$markdown-radius: 6px;
 
 /* --- Atom One Dark (highlight.js) --- */
 pre code.hljs {
@@ -8,23 +18,34 @@ pre code.hljs {
   overflow-x: auto;
   padding: 1em;
 }
+
 code.hljs {
   padding: 3px 5px;
 }
+
 .hljs {
-  color: #abb2bf;
-  background: #282c34;
+  color: $markdown-code-fg;
+  background: $markdown-code-bg;
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
+
+pre code.hljs {
+  font-size: 0.875rem;
+}
+
 .hljs-comment,
 .hljs-quote {
   color: #5c6370;
   font-style: italic;
 }
+
 .hljs-doctag,
 .hljs-keyword,
 .hljs-formula {
   color: #c678dd;
 }
+
 .hljs-section,
 .hljs-name,
 .hljs-selector-tag,
@@ -32,9 +53,11 @@ code.hljs {
 .hljs-subst {
   color: #e06c75;
 }
+
 .hljs-literal {
   color: #56b6c2;
 }
+
 .hljs-string,
 .hljs-regexp,
 .hljs-addition,
@@ -42,6 +65,7 @@ code.hljs {
 .hljs-meta .hljs-string {
   color: #98c379;
 }
+
 .hljs-attr,
 .hljs-variable,
 .hljs-template-variable,
@@ -52,6 +76,7 @@ code.hljs {
 .hljs-number {
   color: #d19a66;
 }
+
 .hljs-symbol,
 .hljs-bullet,
 .hljs-link,
@@ -60,66 +85,52 @@ code.hljs {
 .hljs-title {
   color: #61aeee;
 }
+
 .hljs-built_in,
 .hljs-title.class_,
 .hljs-class .hljs-title {
   color: #e6c07b;
 }
+
 .hljs-emphasis {
   font-style: italic;
 }
+
 .hljs-strong {
   font-weight: bold;
 }
+
 .hljs-link {
   text-decoration: underline;
 }
 
-/* --- Code block layout (exclude mermaid) --- */
-pre:not(.mermaid) {
-  background: #282c34;
-  padding: 1em;
-  border-radius: 5px;
-  overflow-x: auto;
-  width: 100%;
-}
-pre.mermaid {
-  background: #eee;
-  padding: 0;
-  border-radius: 0;
-  overflow-x: auto;
-  width: 100%;
-}
-
 /* --- highlight.js-line-numbers plugin --- */
 .hljs-ln-numbers {
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
   user-select: none;
   text-align: center;
-  color: #ccc;
-  border-right: 1px solid #ccc;
+  color: #888;
+  border-right: 1px solid #555;
   vertical-align: top;
-  padding-right: 15px;
+  padding-right: 0.75em;
 }
+
 table.hljs-ln tr td.hljs-ln-numbers {
   padding-right: 0.5em;
   text-align: right;
 }
+
 table.hljs-ln tr td.hljs-ln-code {
   padding-left: 0.5em;
 }
 
-/* --- Code cards (all code blocks) --- */
+/* --- Code cards (fenced blocks + mermaid) --- */
 .code-card {
-  margin: 1rem 0;
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
+  margin: 1.25rem 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: $markdown-radius;
   overflow: hidden;
-  background: #282c34;
+  background: $markdown-code-bg;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .code-card__header {
@@ -129,26 +140,27 @@ table.hljs-ln tr td.hljs-ln-code {
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid #dee2e6;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .code-card__lang {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
-  color: #abb2bf;
+  color: $markdown-code-fg;
   text-transform: lowercase;
+  letter-spacing: 0.02em;
 }
 
 .code-card__tabs {
   display: flex;
-  gap: 0;
+  gap: 0.25rem;
 }
 
 .code-card__tab {
   padding: 0.35rem 0.75rem;
   font-size: 0.8125rem;
-  color: #abb2bf;
+  color: $markdown-code-fg;
   background: transparent;
   border: none;
   border-radius: 4px;
@@ -162,7 +174,7 @@ table.hljs-ln tr td.hljs-ln-code {
 
 .code-card__tab--active {
   color: #61aeee;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .code-card__body {
@@ -173,6 +185,11 @@ table.hljs-ln tr td.hljs-ln-code {
 .code-card__body pre {
   margin: 0;
   border-radius: 0;
+  background: $markdown-code-bg;
+}
+
+.code-card__body pre:not(.mermaid) {
+  padding: 1em;
 }
 
 .code-card__panel {
@@ -183,47 +200,275 @@ table.hljs-ln tr td.hljs-ln-code {
   display: none !important;
 }
 
-// This is for Thalia markdown pages, we should add a class to make it more specific.
-// Don't overwrite pre.hljs code
-code {
-  border: 1px solid #ccc;
-  padding: 1px;
-  border-radius: 3px;
+.code-card--mermaid .code-card__body pre.mermaid {
+  background: #fff;
+  padding: 1rem;
+  min-height: 4rem;
+}
+
+.code-card--mermaid .code-card__panel[data-tab='source'] pre {
+  padding: 1em;
+}
+
+pre:not(.mermaid):not(.code-card__body pre) {
+  background: $markdown-code-bg;
+  padding: 1em;
+  border-radius: $markdown-radius;
+  overflow-x: auto;
+}
+
+/* --- Markdown doc page (tabs + rendered body) --- */
+.markdown-doc {
+  margin-top: 0.5rem;
   font-size: 1rem;
-  font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
-  background-color: #dddd;
-  color: #333;
-  user-select: all;
-  &:hover {
-    background-color: #fff;
-    color: #000;
-    border-color: #000;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
-    transform: translateY(-1px);
-    z-index: 1;
+}
+
+.markdown-doc-tabs {
+  margin-bottom: 1rem;
+}
+
+.markdown-doc-tab-content {
+  padding-top: 0.25rem;
+}
+
+.markdown-doc-pane {
+  min-height: 2rem;
+}
+
+.markdown-source-panel {
+  margin: 0;
+  padding: 1rem;
+  overflow: auto;
+  max-height: min(70vh, 40rem);
+  background: $markdown-source-bg;
+  color: $markdown-source-fg;
+  border: 1px solid $markdown-border;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  font-family: $markdown-font-mono;
+
+  code.hljs {
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font-size: inherit;
   }
 }
 
-// This is SCSS, so we should nest things a bit.
-// Don't go overboard with nesting. Just keep things tody and easy to follow
-.folder-index {
-  .folder-index__header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
-  .folder-index__theme-toggle { background: #e8e8e8; border: 1px solid #ccc; border-radius: 6px; padding: 0.35rem 0.6rem; cursor: pointer; font-size: 1.1rem; line-height: 1; }
-  .folder-index__theme-toggle:hover { background: #ddd; }
+.markdown-raw-panel {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 
-  .folder-index__title { font-size: 1.5rem; margin: 0 0 0.5rem 0; color: #333; }
-  .folder-index__breadcrumb { margin-bottom: 1rem; color: #666; font-size: 0.95rem; }
-  .folder-index__breadcrumb a { color: #0066cc; text-decoration: none; }
-  .folder-index__breadcrumb a:hover { text-decoration: underline; }
+.markdown-doc .markdown-body {
+  max-width: none;
+  line-height: 1.65;
+  color: $markdown-prose-fg;
+  font-size: 1rem;
+
+  > :first-child {
+    margin-top: 0;
+  }
+
+  > :last-child {
+    margin-bottom: 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  h1 {
+    font-size: 2rem;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid $markdown-border;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    padding-bottom: 0.25em;
+    border-bottom: 1px solid lighten($markdown-border, 4%);
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+
+  h4 {
+    font-size: 1.1rem;
+  }
+
+  p,
+  ul,
+  ol,
+  dl,
+  blockquote,
+  pre,
+  table,
+  .code-card {
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+
+  ul,
+  ol {
+    padding-left: 1.5em;
+  }
+
+  li + li {
+    margin-top: 0.25em;
+  }
+
+  blockquote {
+    padding: 0.5rem 1rem;
+    border-left: 4px solid $markdown-border;
+    color: $markdown-prose-muted;
+    background: $markdown-source-bg;
+    border-radius: 0 $markdown-radius $markdown-radius 0;
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid $markdown-border;
+    margin: 1.5rem 0;
+  }
+
+  a {
+    color: $markdown-link;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    &:hover {
+      color: darken($markdown-link, 8%);
+    }
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: $markdown-radius;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+  }
+
+  th,
+  td {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid $markdown-border;
+    text-align: left;
+  }
+
+  th {
+    background: $markdown-source-bg;
+    color: $markdown-source-fg;
+    font-weight: 600;
+  }
+
+  tbody tr:nth-child(even) {
+    background: rgba(0, 0, 0, 0.02);
+  }
+
+  /* Inline code only — not blocks inside .code-card */
+  :not(pre) > code {
+    padding: 0.15em 0.35em;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-family: $markdown-font-mono;
+    background: #eef1f4;
+    color: #24292f;
+    border: 1px solid #d8dee4;
+    word-break: break-word;
+  }
+}
+
+/* --- Folder index (uses markdown.css) --- */
+.folder-index {
+  .folder-index__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .folder-index__theme-toggle {
+    background: #e8e8e8;
+    border: 1px solid #ccc;
+    border-radius: $markdown-radius;
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+
+    &:hover {
+      background: #ddd;
+    }
+  }
+
+  .folder-index__title {
+    font-size: 1.5rem;
+    margin: 0 0 0.5rem;
+    color: #333;
+  }
+
+  .folder-index__breadcrumb {
+    margin-bottom: 1rem;
+    color: #666;
+    font-size: 0.95rem;
+
+    a {
+      color: #0066cc;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
   .folder-index__table {
-    width: 100%; border-collapse: collapse; font-size: 1.2rem;
-    th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid #e0e0e0; }
-    th { background: #f5f5f5; font-weight: 600; color: #555; }
-    tbody tr:nth-child(even) { background: #fafafa; }
-    a { color: #0066cc; text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+
+    th,
+    td {
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    th {
+      background: #f5f5f5;
+      font-weight: 600;
+      color: #555;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    a {
+      color: #0066cc;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
 
   &.dark-mode {
@@ -231,37 +476,85 @@ code {
     color: #cdd6f4;
     padding: 1.25rem;
     border-radius: 8px;
-    font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
-    font-size: 5rem !important;
+    font-family: $markdown-font-mono;
+    font-size: 1rem;
 
-    .folder-index__theme-toggle { background: #313244; border-color: #45475a; color: #cdd6f4; }
-    .folder-index__theme-toggle:hover { background: #45475a; }
-    .folder-index__title { font-size: 1.1rem; margin-bottom: 0.5rem; color: #89b4fa; font-weight: 600; }
+    .folder-index__theme-toggle {
+      background: #313244;
+      border-color: #45475a;
+      color: #cdd6f4;
+
+      &:hover {
+        background: #45475a;
+      }
+    }
+
+    .folder-index__title {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      color: #89b4fa;
+      font-weight: 600;
+    }
+
     .folder-index__breadcrumb {
       background: #2e2e3e;
       margin-bottom: 1rem;
       color: #a6adc8;
       font-size: 0.85rem;
+
       a {
         color: #89b4fa;
         text-decoration: none;
-        &:hover { color: #b4befe; text-decoration: underline; }
+
+        &:hover {
+          color: #b4befe;
+          text-decoration: underline;
+        }
       }
     }
 
     .folder-index__table {
-      width: 100%; border-collapse: collapse;
-      th, td { padding: 0.35rem 0.75rem; text-align: left; border-bottom: 1px solid #313244; }
-      th { background: #2e2e3e; border-bottom: 3px solid #a6e3a1; color: #6c7086; font-weight: 600; font-size: 1.3rem; text-transform: uppercase; letter-spacing: 0.05em; }
-      tbody tr:hover { background: #313244; }
-      tbody tr:nth-child(even) { background: #2e2e3e; }
-      a { color: #a6e3a1; text-decoration: none; }
-      a:hover { color: #94e2d5; text-decoration: underline; }
-      td:last-child { color: #6c7086; font-size: 1.1rem; }
+      th,
+      td {
+        padding: 0.35rem 0.75rem;
+        border-bottom: 1px solid #313244;
+      }
+
+      th {
+        background: #2e2e3e;
+        border-bottom: 3px solid #a6e3a1;
+        color: #6c7086;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      tbody tr:hover {
+        background: #313244;
+      }
+
+      tbody tr:nth-child(even) {
+        background: #2e2e3e;
+      }
+
+      a {
+        color: #a6e3a1;
+        text-decoration: none;
+
+        &:hover {
+          color: #94e2d5;
+          text-decoration: underline;
+        }
+      }
+
+      td:last-child {
+        color: #6c7086;
+        font-size: 0.875rem;
+      }
     }
   }
 }
-
 
 .default-crud-styles table {
   width: 100%;
@@ -271,17 +564,22 @@ code {
   font-size: 0.9rem;
   line-height: 1.5;
   text-align: left;
-  th, td {
+
+  th,
+  td {
     padding: 0.5rem 1rem;
     border: 1px solid #ddd;
   }
+
   th {
     background-color: #f8f9fa;
     font-weight: bold;
   }
+
   tr:nth-child(even) {
     background-color: #f8f9fa;
   }
+
   tr:hover {
     background-color: #f0f0f0;
   }

@@ -605,8 +605,8 @@ export class RequestHandler {
   }
 
   /**
-   * This should work in the same way as tryTypescript, but for scss files.
-   * So it should save the file in the correct dist folder.
+   * Compile src/css/*.scss on demand for *.css requests; write to dist/ on success.
+   * On compile failure: 500 with raw SCSS body (dev-friendly; prod usually hits dist first).
    */
   private static tryScss(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
@@ -635,9 +635,10 @@ export class RequestHandler {
           requestHandler.res.end(css)
           return finish(`Successfully compiled scss file ${requestHandler.pathname}`)
         } catch (error) {
-          requestHandler.res.writeHead(200, { 'Content-Type': 'text/css' })
-          requestHandler.res.end(fs.readFileSync(target, 'utf8').toString() ?? '')
-          return finish('Error compiling scss file, serving the raw scss')
+          console.error('SCSS compile failed, serving raw source:', requestHandler.pathname, error)
+          requestHandler.res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' })
+          requestHandler.res.end(fs.readFileSync(target, 'utf8'))
+          return finish('Error compiling scss file, served raw scss with 500')
         }
       } else {
         return next(requestHandler)

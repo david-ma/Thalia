@@ -63,7 +63,7 @@ export class RequestHandler {
       .then(RequestHandler.tryScss)
       .then(RequestHandler.tryTypescript)
       .then(RequestHandler.tryHandlebars)
-      // .then(RequestHandler.tryPdf)
+      .then(RequestHandler.tryPdf)
       .then(RequestHandler.tryMarkdown)
       .then((rh) => RequestHandler.tryStaticFile('public', rh))
       .then((rh) => RequestHandler.tryStaticFile('docs', rh))
@@ -115,14 +115,18 @@ export class RequestHandler {
   private static setStaticFileHeaders(
     res: ServerResponse,
     pathname: string,
-    contentType: string
+    contentType: string,
+    servedFilename?: string,
   ): void {
     res.setHeader('Content-Type', contentType)
     if (RequestHandler.inlineContentTypes.has(contentType)) {
-      const filename = path.basename(pathname)
+      const filename = servedFilename ?? path.basename(pathname)
       res.setHeader('Content-Disposition', `inline; filename="${filename}"`)
     }
   }
+
+  /** Project folders searched for PDFs (first match wins). */
+  private static readonly pdfStaticFolders = ['public', 'data', 'dist', 'docs'] as const
 
   // TODO: Implement this
   // private setSafeHeaders(headers: Record<string, string>): void {
@@ -390,21 +394,67 @@ export class RequestHandler {
   }
 
   /**
-   * If there is a .pdf file in public, data, dist or docs, serve it inline.
-   * E.g. a visitor to /resume will get served /public/resume.pdf inline.
+   * Serve a PDF from public, data, dist, or docs without requiring `.pdf` in the URL.
+   * E.g. `/resume` → `public/resume.pdf`; `/guides/slides` → `public/guides/slides.pdf`.
+   * Future: Marp may compile matching `src/*.md` with `marp: true` front matter (not implemented).
    */
   private static tryPdf(requestHandler: RequestHandler): Promise<RequestHandler> {
-    const folders = ['public', 'data', 'dist', 'docs']
-    folders.filter(folder => fs.existsSync(path.join(requestHandler.rootPath, folder, requestHandler.pathname)))
-    .map(folder => path.join(requestHandler.rootPath, folder, requestHandler.pathname))
-    .find(path => fs.statSync(path).isFile())
-
     return new Promise((next, finish) => {
-      if (!path) return next(requestHandler)
-      requestHandler.res.writeHead(200, { 'Content-Type': 'application/pdf' })
-      requestHandler.res.end(fs.readFileSync(path))
-      return finish(`Successfully served pdf ${requestHandler.pathname}`)
+      const target = RequestHandler.resolvePdfPath(requestHandler)
+      if (!target) return next(requestHandler)
+
+      const contentType = 'application/pdf'
+      RequestHandler.setStaticFileHeaders(
+        requestHandler.res,
+        requestHandler.pathname,
+        contentType,
+        path.basename(target),
+      )
+
+      const stream = fs.createReadStream(target)
+      stream.on('error', (error) => {
+        console.error(`Error streaming pdf ${requestHandler.pathname}:`, error)
+        if (!requestHandler.res.headersSent) requestHandler.res.writeHead(500)
+        requestHandler.res.end('Internal Server Error')
+        finish('Error streaming pdf')
+      })
+      stream.on('end', () => {
+        requestHandler.res.end()
+        finish(`Successfully served pdf ${requestHandler.pathname}`)
+      })
+      stream.pipe(requestHandler.res)
     })
+  }
+
+  /**
+   * Resolve URL path to a PDF under public/data/dist/docs (same extensionless rules as markdown/hbs).
+   */
+  private static resolvePdfPath(rh: RequestHandler): string | null {
+    const p = RequestHandler.decodePathnameForFilesystemLookup(rh.pathname)
+    if (p === null) return null
+
+    const candidates: string[] = []
+    if (p.endsWith('.pdf')) {
+      candidates.push(p)
+    } else {
+      candidates.push(`${p}.pdf`)
+      candidates.push(path.join(p, 'index.pdf'))
+    }
+    if (p === 'index.html') {
+      candidates.push('index.pdf')
+    }
+
+    for (const folder of RequestHandler.pdfStaticFolders) {
+      for (const rel of candidates) {
+        const filePath = path.join(rh.rootPath, folder, rel)
+        try {
+          if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) return filePath
+        } catch {
+          continue
+        }
+      }
+    }
+    return null
   }
 
   /** Serve src/path.md or src/path/index.md via wrapper (same path rules as tryHandlebars). */

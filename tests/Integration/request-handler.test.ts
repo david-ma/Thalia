@@ -4,7 +4,7 @@
  * Exercises the handler chain (request-handler.ts) using the example projects.
  * Chain order (must stay in sync with request-handler.ts):
  *   checkPathExploit → routeGuard → tryController → tryStaticFile('dist') → tryScss
- *   → tryTypescript → tryHandlebars → tryMarkdown → tryStaticFile('public')
+ *   → tryTypescript → tryHandlebars → tryPdf → tryMarkdown → tryStaticFile('public')
  *   → tryStaticFile('docs') → tryStaticFile('data') → tryStaticFile(thalia public) → fileNotFound
  *
  * tryHandlebars path resolution (sites may rely on this):
@@ -251,6 +251,22 @@ describe('Request-handler: example-src (Handlebars, TypeScript, controller)', ()
   test('Nested controller: GET /api (only segment; node is object) falls through to 404', async () => {
     const response = await fetchFromServer('/api', port)
     expect(response.status).toBe(404)
+  })
+
+  test('tryPdf: /sample-doc serves public/sample-doc.pdf without .pdf in the URL', async () => {
+    const response = await fetchFromServer('/sample-doc', port)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('application/pdf')
+    expect(response.headers.get('content-disposition')).toContain('inline')
+    expect(response.headers.get('content-disposition')).toContain('sample-doc.pdf')
+    const head = new TextDecoder().decode((await response.arrayBuffer()).slice(0, 5))
+    expect(head).toBe('%PDF-')
+  })
+
+  test('tryPdf: /sample-doc.pdf still serves the same file via static path', async () => {
+    const response = await fetchFromServer('/sample-doc.pdf', port)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('application/pdf')
   })
 
   test('tryMarkdown: /path serves src/path.md when path.md exists (file-style)', async () => {

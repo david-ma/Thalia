@@ -1,0 +1,12 @@
+<div
+  class="tab-pane fade{{#if active}} show active{{/if}}{{#if paneClass}} {{paneClass}}{{/if}}"
+  id="{{#if tabsItemIdPrefix}}{{tabsItemIdPrefix}}{{else}}tab{{/if}}-{{idSuffix}}"
+  role="tabpanel"
+  aria-labelledby="{{#if tabsItemIdPrefix}}{{tabsItemIdPrefix}}{{else}}tab{{/if}}-{{idSuffix}}-tab"
+  tabindex="0">
+  {{#if panelPartial}}
+    {{> (lookup . 'panelPartial')}}
+  {{else}}
+    {{{content}}}
+  {{/if}}
+</div>

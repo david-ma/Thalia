@@ -18,13 +18,30 @@ import {
   wrapMarkdownCodeBlocks,
   registerMarkdownHelpers,
   extractFrontMatterYaml,
-  buildMarkdownDocTabItems,
+  buildMarkdownDocTabs,
+  compileMarkdownPageHtml,
+  prepareMarkdownBodyForCompile,
+  type MarkdownPageContext,
 } from '../../server/markdown.js'
 
 const THALIA_ROOT = path.join(import.meta.dir, '..', '..')
 const EXAMPLE_SRC = path.join(THALIA_ROOT, 'websites', 'example-src')
 const MARKDOWN_PATH = path.join(EXAMPLE_SRC, 'src', 'markdown.md')
 const MERMAID_CARD_PARTIAL_PATH = path.join(THALIA_ROOT, 'src', 'views', 'partials', 'mermaidCard.hbs')
+const PARTIALS_DIR = path.join(THALIA_ROOT, 'src', 'views', 'partials')
+
+function registerPartialsFromDir(handlebars: typeof Handlebars, folder: string): void {
+  if (!fs.existsSync(folder)) return
+  for (const entry of fs.readdirSync(folder, { withFileTypes: true })) {
+    const fullPath = path.join(folder, entry.name)
+    if (entry.isDirectory()) {
+      registerPartialsFromDir(handlebars, fullPath)
+    } else if (/\.hbs$/.test(entry.name)) {
+      const name = entry.name.replace(/\.hbs$/, '')
+      handlebars.registerPartial(name, fs.readFileSync(fullPath, 'utf8'))
+    }
+  }
+}
 
 describe('markdown pipeline', () => {
   test('parseMarkdown + wrapMarkdownCodeBlocks + Handlebars renders example-src markdown.md to stable HTML', () => {
@@ -49,14 +66,61 @@ describe('markdown pipeline', () => {
     expect(extractFrontMatterYaml(md)).toBe('title: Docs')
   })
 
-  test('buildMarkdownDocTabItems omits front matter tab when YAML absent', () => {
-    const items = buildMarkdownDocTabItems('<p>Hi</p>', null)
-    expect(items.map((i) => i.idSuffix)).toEqual(['rendered', 'raw'])
-    expect(items[0].active).toBe(true)
+  test('buildMarkdownDocTabs returns panel partial names without front matter', () => {
+    const tabs = buildMarkdownDocTabs(false)
+    expect(tabs.map((t) => t.idSuffix)).toEqual(['rendered', 'raw'])
+    expect(tabs[0].panelPartial).toBe('markdown-pane-page')
+    expect(tabs[0].active).toBe(true)
   })
 
-  test('buildMarkdownDocTabItems includes front matter tab when YAML present', () => {
-    const items = buildMarkdownDocTabItems('<p>Hi</p>', 'title: Docs')
-    expect(items.map((i) => i.idSuffix)).toEqual(['rendered', 'front-matter', 'raw'])
+  test('prepareMarkdownBodyForCompile escapes literal handlebars in code but keeps mermaid partials', () => {
+    const mermaidSources: string[] = []
+    const wrapped = wrapMarkdownCodeBlocks(
+      parseMarkdown('```handlebars\n{{> my-panel}}\n```\n\n```mermaid\ngraph TD\n  A-->B\n```'),
+      mermaidSources,
+    )
+    const prepared = prepareMarkdownBodyForCompile(wrapped)
+    expect(prepared).toContain('&#123;&#123;')
+    expect(prepared).toContain('{{> mermaidCard index=0 }}')
+    expect(prepared).not.toMatch(/\{\{>\s*my-panel/)
+
+    const handlebars = Handlebars.create()
+    registerMarkdownHelpers(handlebars)
+    handlebars.registerPartial('mermaidCard', fs.readFileSync(MERMAID_CARD_PARTIAL_PATH, 'utf8'))
+    expect(() => handlebars.compile(prepared)({ mermaidSources })).not.toThrow()
+  })
+
+  test('buildMarkdownDocTabs includes front matter tab when requested', () => {
+    const tabs = buildMarkdownDocTabs(true)
+    expect(tabs.map((t) => t.idSuffix)).toEqual(['rendered', 'front-matter', 'raw'])
+    expect(tabs[1].panelPartial).toBe('markdown-pane-frontmatter')
+  })
+
+  test('compileMarkdownPageHtml renders tab-container and pane partials', () => {
+    const handlebars = Handlebars.create()
+    registerMarkdownHelpers(handlebars)
+    registerPartialsFromDir(handlebars, PARTIALS_DIR)
+    handlebars.registerPartial('wrapper', '{{> @partial-block }}')
+
+    const ctx = {
+      requestInfo: { pathname: '/doc.md' },
+      version: { websiteName: 'test', version: '0' },
+    } as MarkdownPageContext
+
+    const withoutFm = compileMarkdownPageHtml(handlebars, '<p>Hi</p>', [], null, null, ctx)
+    expect(withoutFm).toContain('id="mdtab-rendered"')
+    expect(withoutFm).toContain('<p>Hi</p>')
+    expect(withoutFm).not.toContain('id="mdtab-front-matter-tab"')
+
+    const withFm = compileMarkdownPageHtml(
+      handlebars,
+      '<p>Hi</p>',
+      [],
+      { title: 'Docs' },
+      'title: Docs',
+      ctx,
+    )
+    expect(withFm).toContain('id="mdtab-front-matter-tab"')
+    expect(withFm).toContain('title: Docs')
   })
 })

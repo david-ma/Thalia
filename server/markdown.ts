@@ -10,9 +10,6 @@ import hljs from 'highlight.js'
 import type { RequestInfo } from './server'
 import type { WebsiteVersionInfo } from './website'
 
-/** highlight.js ships yaml and markdown; /js/vendor/highlight.*.js includes them for the browser too. */
-const HLJS_YAML = hljs.getLanguage('yaml') ? 'yaml' : 'plaintext'
-
 export interface MarkdownHandlebars {
   registerPartial(name: string, value: string): void
   registerHelper(name: string, fn: (...args: unknown[]) => unknown): void
@@ -76,75 +73,48 @@ export function parseFrontMatter(content: string): [string, Record<string, unkno
   return [content.replace(/^---([\s\S]*?)---(.*)/, ''), Bun.YAML.parse(frontMatter) as Record<string, unknown>]
 }
 
+/** Injected by wrapMarkdownCodeBlocks; must survive literal-{{ escaping below. */
+const MERMAID_PARTIAL_RE = /\{\{>\s*mermaidCard\s+index=\d+\s*\}\}/g
+const MERMAID_PLACEHOLDER_PREFIX = '\u0000THALIA_MERMAID_'
+const MERMAID_PLACEHOLDER_SUFFIX = '\u0000'
+
+function shieldMermaidPartials(html: string): { html: string; tokens: string[] } {
+  const tokens: string[] = []
+  const shielded = html.replace(MERMAID_PARTIAL_RE, (match) => {
+    const i = tokens.length
+    tokens.push(match)
+    return `${MERMAID_PLACEHOLDER_PREFIX}${i}${MERMAID_PLACEHOLDER_SUFFIX}`
+  })
+  return { html: shielded, tokens }
+}
+
+function restoreMermaidPartials(html: string, tokens: string[]): string {
+  return html.replace(
+    new RegExp(`${MERMAID_PLACEHOLDER_PREFIX}(\\d+)${MERMAID_PLACEHOLDER_SUFFIX}`, 'g'),
+    (_, index) => tokens[Number(index)] ?? '',
+  )
+}
+
+/** Escape `{{` / `}}` so docs can show Handlebars examples without breaking compile. */
+export function escapeHandlebarsLiterals(html: string): string {
+  return html.replace(/\{\{/g, '&#123;&#123;').replace(/\}\}/g, '&#125;&#125;')
+}
+
+/**
+ * Prepare compiled-markdown HTML for Handlebars (mermaid partials only).
+ * Literal `{{> my-panel}}` in code blocks is escaped; real mermaidCard calls are not.
+ */
+export function prepareMarkdownBodyForCompile(html: string): string {
+  const { html: shielded, tokens } = shieldMermaidPartials(html)
+  const escaped = escapeHandlebarsLiterals(shielded)
+  return restoreMermaidPartials(escaped, tokens)
+}
+
 /** Raw YAML between opening `---` fences (no fences), or null if absent. */
 export function extractFrontMatterYaml(content: string): string | null {
   if (!content.startsWith('---')) return null
   const yaml = content.match(/^---([\s\S]*?)---/)?.[1]
   return yaml?.trim() ? yaml.trim() : null
-}
-
-export type MarkdownDocTabItem = {
-  idSuffix: string
-  label: string
-  content: string
-  active?: boolean
-}
-
-function highlightPanelSource(language: string, source: string): string {
-  const hljsLang = hljs.getLanguage(language) ? language : 'plaintext'
-  return hljs.highlight(source, { language: hljsLang }).value
-}
-
-function markdownSourcePre(language: string, source: string): string {
-  const hljsLang =
-    language === 'yaml' ? HLJS_YAML : hljs.getLanguage(language) ? language : 'plaintext'
-  const langLabel = escapeHtml(language)
-  return (
-    '<div class="code-card" data-language="' +
-    langLabel +
-    '">' +
-    '<div class="code-card__header"><span class="code-card__lang">' +
-    langLabel +
-    '</span></div>' +
-    '<div class="code-card__body"><pre class="mb-0"><code class="hljs language-' +
-    escapeHtml(hljsLang) +
-    '">' +
-    highlightPanelSource(hljsLang, source) +
-    '</code></pre></div></div>'
-  )
-}
-
-/** Tab items for `markdown_wrapper` + `{{> tabs }}` (rendered HTML, optional YAML, raw fetch panel). */
-export function buildMarkdownDocTabItems(
-  renderedHtml: string,
-  frontMatterYaml: string | null,
-): MarkdownDocTabItem[] {
-  const items: MarkdownDocTabItem[] = [
-    {
-      idSuffix: 'rendered',
-      label: 'Page',
-      active: true,
-      content: '<div class="markdown-rendered">' + renderedHtml + '</div>',
-    },
-  ]
-  if (frontMatterYaml) {
-    items.push({
-      idSuffix: 'front-matter',
-      label: 'Front matter',
-      content: markdownSourcePre('yaml', frontMatterYaml),
-    })
-  }
-  items.push({
-    idSuffix: 'raw',
-    label: 'Raw',
-    content:
-      '<div class="markdown-raw-panel">' +
-      '<p class="text-muted small mb-2">Source <code>.md</code> file. ' +
-      '<a href="?raw=true">Open plain text</a> or view below.</p>' +
-      '<pre class="mb-0"><code class="hljs language-markdown" id="markdown-raw-source">Loading…</code></pre>' +
-      '</div>',
-  })
-  return items
 }
 
 /**
@@ -196,6 +166,46 @@ export function registerMarkdownHelpers(handlebars: MarkdownHandlebars): void {
   } as (...args: unknown[]) => unknown)
 }
 
+/** Tab descriptor for `tab-container` (data only — panels rendered via partials). */
+export type TabItem = {
+  idSuffix: string
+  label: string
+  active?: boolean
+  /** Registered Handlebars partial name for panel body. */
+  panelPartial?: string
+  /** Trusted HTML when `panelPartial` is omitted. */
+  content?: string
+  paneClass?: string
+}
+
+/** Tab list for markdown doc pages (Page / Front matter / Raw). */
+export function buildMarkdownDocTabs(hasFrontMatter: boolean): TabItem[] {
+  const tabs: TabItem[] = [
+    {
+      idSuffix: 'rendered',
+      label: 'Page',
+      active: true,
+      panelPartial: 'markdown-pane-page',
+      paneClass: 'markdown-doc-pane',
+    },
+  ]
+  if (hasFrontMatter) {
+    tabs.push({
+      idSuffix: 'front-matter',
+      label: 'Front matter',
+      panelPartial: 'markdown-pane-frontmatter',
+      paneClass: 'markdown-doc-pane',
+    })
+  }
+  tabs.push({
+    idSuffix: 'raw',
+    label: 'Raw',
+    panelPartial: 'markdown-pane-raw',
+    paneClass: 'markdown-doc-pane',
+  })
+  return tabs
+}
+
 function pageMetaFromFrontMatter(frontMatter: Record<string, unknown> | null): Record<string, string | undefined> {
   if (!frontMatter || typeof frontMatter !== 'object') return {}
   return {
@@ -205,7 +215,8 @@ function pageMetaFromFrontMatter(frontMatter: Record<string, unknown> | null): R
   }
 }
 
-function compileMarkdownPageHtml(
+/** Compile markdown body + `markdown` partial into a full HTML page. */
+export function compileMarkdownPageHtml(
   handlebars: MarkdownHandlebars,
   contentHtml: string,
   mermaidSources: string[],
@@ -223,18 +234,20 @@ function compileMarkdownPageHtml(
     mermaidSources,
     frontMatter,
   }
-  const renderedBody = handlebars.compile(contentHtml)(compileCtx)
-  const markdownTabItems = buildMarkdownDocTabItems(renderedBody, frontMatterYaml)
-  let wrapper = handlebars.partials['markdown'] ?? '{{> content }}'
-  return handlebars.compile(wrapper)({
+  const renderedBody = handlebars.compile(prepareMarkdownBodyForCompile(contentHtml))(compileCtx)
+  const markdownPartial = handlebars.partials['markdown'] ?? '{{> content }}'
+  const pageCtx: Record<string, unknown> = {
     ...compileCtx,
     ...pageMetaFromFrontMatter(frontMatter),
-    markdownTabItems,
-  })
+    markdownBody: renderedBody,
+    markdownDocTabs: buildMarkdownDocTabs(!!frontMatterYaml),
+    ...(frontMatterYaml ? { frontMatterYaml } : {}),
+  }
+  return handlebars.compile(markdownPartial)(pageCtx)
 }
 
 /**
- * Parse markdown source and return a full HTML page (markdown_wrapper + tabs + content).
+ * Parse markdown source and return a full HTML page (`markdown` partial + doc tabs).
  */
 export function renderMarkdownPage(
   handlebars: MarkdownHandlebars,
@@ -246,29 +259,14 @@ export function renderMarkdownPage(
   const [body, frontMatter] = parseFrontMatter(markdownSource)
   const frontMatterYaml = extractFrontMatterYaml(markdownSource)
   const mermaidSources: string[] = []
-  let contentHtml = wrapMarkdownCodeBlocks(parseMarkdown(body), mermaidSources)
-  try {
-    return compileMarkdownPageHtml(
-      handlebars,
-      contentHtml,
-      mermaidSources,
-      frontMatter,
-      frontMatterYaml,
-      ctx,
-      options,
-    )
-  } catch (error) {
-    console.debug('Error rendering markdown: ', error)
-    console.debug('Replacing {{ and }} with &#123;&#123; and &#125;&#125;')
-    contentHtml = contentHtml.replace(/{{/g, '&#123;&#123;').replace(/}}/g, '&#125;&#125;')
-    return compileMarkdownPageHtml(
-      handlebars,
-      contentHtml,
-      mermaidSources,
-      frontMatter,
-      frontMatterYaml,
-      ctx,
-      options,
-    )
-  }
+  const contentHtml = wrapMarkdownCodeBlocks(parseMarkdown(body), mermaidSources)
+  return compileMarkdownPageHtml(
+    handlebars,
+    contentHtml,
+    mermaidSources,
+    frontMatter,
+    frontMatterYaml,
+    ctx,
+    options,
+  )
 }

@@ -1,0 +1,36 @@
+{{!--
+  tab-container — Bootstrap 5 tabs from data (`tabItems`)
+
+  Invoke: {{> tab-container tabItems=tabItems tabsRootId="myTabs" tabsItemIdPrefix="mytab" }}
+
+  Each tab item (pass from controller / server — no HTML required):
+    idSuffix       unique id segment for this block
+    label          button text
+    active         optional; mark exactly one tab true for default panel
+    panelPartial   optional; registered partial name for panel body
+    content        optional; trusted HTML if no panelPartial
+    paneClass      optional; extra classes on the .tab-pane
+
+  Primitives: tab-button, tab-pane (override under src/partials/tabs/ on your site).
+
+  Markdown doc pages: see markdown.hbs + buildMarkdownDocTabs() in server/markdown.ts.
+--}}
+<div class="{{#if tabsRootClass}}{{tabsRootClass}}{{else}}thalia-tabs mb-4{{/if}}"
+  id="{{#if tabsRootId}}{{tabsRootId}}{{else}}thaliaTabs{{/if}}">
+  <ul class="{{#if tabsNavClass}}{{tabsNavClass}}{{else}}nav nav-tabs{{/if}}" role="tablist">
+    {{#each tabItems}}
+      {{> tab-button tabsItemIdPrefix=../tabsItemIdPrefix }}
+    {{else}}
+      {{> tab-button idSuffix="sample-1" label="Overview" active=true tabsItemIdPrefix=../tabsItemIdPrefix }}
+      {{> tab-button idSuffix="sample-2" label="Details" tabsItemIdPrefix=../tabsItemIdPrefix }}
+    {{/each}}
+  </ul>
+  <div class="tab-content{{#if tabsContentClass}} {{tabsContentClass}}{{/if}}">
+    {{#each tabItems}}
+      {{> tab-pane tabsItemIdPrefix=../tabsItemIdPrefix }}
+    {{else}}
+      {{> tab-pane idSuffix="sample-1" active=true tabsItemIdPrefix=../tabsItemIdPrefix content="<p class='mb-0'>Pass <code>tabItems</code> from your route.</p>" }}
+      {{> tab-pane idSuffix="sample-2" tabsItemIdPrefix=../tabsItemIdPrefix content="<p class='mb-0'>Second placeholder panel.</p>" }}
+    {{/each}}
+  </div>
+</div>

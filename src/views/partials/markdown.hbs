@@ -1,82 +1,24 @@
+{{!--
+  markdown.hbs — example: doc page using the tabs partial system
+
+  Server (server/markdown.ts → compileMarkdownPageHtml) passes:
+    markdownDocTabs   — from buildMarkdownDocTabs() (idSuffix, label, panelPartial, …)
+    markdownBody      — rendered .md body HTML
+    frontMatterYaml   — optional raw YAML (no --- fences)
+    title, description, author — from front matter
+
+  Override pane markup: copy markdown-pane-*.hbs into your site src/partials/.
+  Override tabs chrome: copy tabs/tab-container.hbs (or tab-button / tab-pane).
+--}}
 {{#> wrapper }}
-{{~> tabs tabItems=markdownTabItems tabsRootId="markdown-doc" tabsItemIdPrefix="mdtab" tabsRootClass="markdown-doc-tabs mb-4" }}
+<article class="markdown-doc" id="markdown-doc">
+  {{> tab-container
+      tabItems=markdownDocTabs
+      tabsRootId="markdown-doc"
+      tabsItemIdPrefix="mdtab"
+      tabsRootClass="thalia-tabs markdown-doc-tabs mb-4"
+      tabsContentClass="markdown-doc-tab-content"
+  }}
+</article>
+{{> markdown-foot }}
 {{/wrapper}}
-
-{{!-- Markdown pages: code cards (language labels), mermaid Diagram/Source tabs, Mermaid.js. --}}
-
-<link rel="stylesheet" href="/css/markdown.css">
-<script src="/js/vendor/highlight.11.7.0min.js"></script>
-<script src="/js/vendor/highlight.js-line-numbers.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
-<script>
-  (function() {
-    // Mermaid Diagram/Source tab switching
-    document.querySelectorAll('.code-card--mermaid').forEach(function(card) {
-      var tabs = card.querySelectorAll('.code-card__tab');
-      var panels = card.querySelectorAll('.code-card__panel');
-      tabs.forEach(function(tab) {
-        tab.addEventListener('click', function() {
-          var tabName = tab.getAttribute('data-tab');
-          tabs.forEach(function(t) {
-            t.classList.toggle('code-card__tab--active', t === tab);
-            t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
-          });
-          panels.forEach(function(panel) {
-            var show = panel.getAttribute('data-tab') === tabName;
-            panel.classList.toggle('code-card__panel--active', show);
-            panel.hidden = !show;
-          });
-        });
-      });
-    });
-
-    if (typeof mermaid !== 'undefined') {
-      mermaid.initialize({ startOnLoad: true });
-    }
-
-    // Markdown doc tabs: highlight YAML / raw source; lazy-load ?raw=true
-    var markdownDoc = document.getElementById('markdown-doc');
-    if (markdownDoc && typeof hljs !== 'undefined') {
-      var rawLoaded = false;
-      var rawCode = document.getElementById('markdown-raw-source');
-
-      function highlightInPanel(panelId) {
-        var panel = document.getElementById(panelId);
-        if (!panel) return;
-        panel.querySelectorAll('pre code').forEach(function(block) {
-          if (!block.classList.contains('hljs')) hljs.highlightElement(block);
-        });
-      }
-
-      function loadRawMarkdown() {
-        if (rawLoaded || !rawCode) return;
-        rawLoaded = true;
-        var url = new URL(window.location.href);
-        url.searchParams.set('raw', 'true');
-        fetch(url.pathname + url.search)
-          .then(function(res) {
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            return res.text();
-          })
-          .then(function(text) {
-            rawCode.textContent = text;
-            hljs.highlightElement(rawCode);
-          })
-          .catch(function(err) {
-            rawCode.textContent = 'Could not load raw markdown: ' + err.message;
-          });
-      }
-
-      markdownDoc.addEventListener('shown.bs.tab', function(event) {
-        var target = event.target.getAttribute('data-bs-target');
-        if (target === '#mdtab-front-matter') highlightInPanel('mdtab-front-matter');
-        if (target === '#mdtab-raw') {
-          loadRawMarkdown();
-          highlightInPanel('mdtab-raw');
-        }
-      });
-
-      highlightInPanel('mdtab-front-matter');
-    }
-  })();
-</script>

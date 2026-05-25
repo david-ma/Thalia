@@ -1,0 +1,12 @@
+<li class="nav-item" role="presentation">
+  <button type="button"
+    class="nav-link{{#if active}} active{{/if}}"
+    id="{{#if tabsItemIdPrefix}}{{tabsItemIdPrefix}}{{else}}tab{{/if}}-{{idSuffix}}-tab"
+    data-bs-toggle="tab"
+    data-bs-target="#{{#if tabsItemIdPrefix}}{{tabsItemIdPrefix}}{{else}}tab{{/if}}-{{idSuffix}}"
+    role="tab"
+    aria-controls="{{#if tabsItemIdPrefix}}{{tabsItemIdPrefix}}{{else}}tab{{/if}}-{{idSuffix}}"
+    aria-selected="{{#if active}}true{{else}}false{{/if}}">
+    {{label}}
+  </button>
+</li>

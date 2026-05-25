@@ -196,6 +196,12 @@ export function buildMarkdownDocTabs(hasFrontMatter: boolean): TabItem[] {
       panelPartial: 'markdown-pane-frontmatter',
       paneClass: 'markdown-doc-pane',
     })
+    tabs.push({
+      idSuffix: 'body',
+      label: 'Body',
+      panelPartial: 'markdown-pane-body',
+      paneClass: 'markdown-doc-pane',
+    })
   }
   tabs.push({
     idSuffix: 'raw',
@@ -223,6 +229,7 @@ export function compileMarkdownPageHtml(
   frontMatter: Record<string, unknown> | null,
   frontMatterYaml: string | null,
   markdownSource: string,
+  body: string,
   ctx: MarkdownPageContext,
   options?: RenderMarkdownPageOptions,
 ): string {
@@ -241,6 +248,7 @@ export function compileMarkdownPageHtml(
     ...compileCtx,
     ...pageMetaFromFrontMatter(frontMatter),
     markdownBody: renderedBody,
+    markdownBodyRaw: body,
     markdownRaw: markdownSource,
     markdownDocTabs: buildMarkdownDocTabs(!!frontMatterYaml),
     ...(frontMatterYaml ? { frontMatterYaml } : {}),
@@ -269,6 +277,7 @@ export function renderMarkdownPage(
     frontMatter,
     frontMatterYaml,
     markdownSource,
+    body,
     ctx,
     options,
   )

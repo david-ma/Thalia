@@ -223,12 +223,9 @@ pre:not(.mermaid):not(.code-card__body pre) {
   font-size: 1rem;
 }
 
-.markdown-doc-tabs {
-  margin-bottom: 1rem;
-}
-
+// Tab chrome lives in tabs.scss (.thalia-tabs); markdown-doc-* only tweaks doc panes.
 .markdown-doc-tab-content {
-  padding-top: 0.25rem;
+  padding-top: 0;
 }
 
 .markdown-doc-pane {
@@ -239,7 +236,7 @@ pre:not(.mermaid):not(.code-card__body pre) {
   margin: 0;
   padding: 1rem;
   overflow: auto;
-  max-height: min(70vh, 40rem);
+  // max-height: min(70vh, 40rem);
   background: $markdown-source-bg;
   color: $markdown-source-fg;
   border: 1px solid $markdown-border;

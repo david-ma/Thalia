@@ -3,7 +3,8 @@
 
   Server (server/markdown.ts → compileMarkdownPageHtml) passes:
     markdownDocTabs   — from buildMarkdownDocTabs() (idSuffix, label, panelPartial, …)
-    markdownBody      — rendered .md body HTML
+    markdownBody      — rendered .md body HTML (Page tab)
+    markdownBodyRaw   — body source only, after front matter (Body tab; when YAML present)
     markdownRaw       — full .md source (Raw tab; includes front matter fences)
     frontMatterYaml   — optional raw YAML (no --- fences)
     title, description, author — from front matter

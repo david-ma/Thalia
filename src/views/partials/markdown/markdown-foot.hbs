@@ -37,7 +37,8 @@
     });
   }
 
-  highlightOnTabShow('mdtab-front-matter-tab', '#mdtab-front-matter code.language-yaml');
+  highlightOnTabShow('mdtab-front-matter-tab', '#markdown-frontmatter-source');
+  highlightOnTabShow('mdtab-body-tab', '#markdown-body-source');
   highlightOnTabShow('mdtab-raw-tab', '#markdown-raw-source');
 
   if (typeof mermaid !== 'undefined') {

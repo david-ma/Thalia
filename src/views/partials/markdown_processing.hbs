@@ -29,5 +29,50 @@
     if (typeof mermaid !== 'undefined') {
       mermaid.initialize({ startOnLoad: true });
     }
+
+    // Markdown doc tabs: highlight YAML / raw source; lazy-load ?raw=true
+    var markdownDoc = document.getElementById('markdown-doc');
+    if (markdownDoc && typeof hljs !== 'undefined') {
+      var rawLoaded = false;
+      var rawCode = document.getElementById('markdown-raw-source');
+
+      function highlightInPanel(panelId) {
+        var panel = document.getElementById(panelId);
+        if (!panel) return;
+        panel.querySelectorAll('pre code').forEach(function(block) {
+          if (!block.classList.contains('hljs')) hljs.highlightElement(block);
+        });
+      }
+
+      function loadRawMarkdown() {
+        if (rawLoaded || !rawCode) return;
+        rawLoaded = true;
+        var url = new URL(window.location.href);
+        url.searchParams.set('raw', 'true');
+        fetch(url.pathname + url.search)
+          .then(function(res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.text();
+          })
+          .then(function(text) {
+            rawCode.textContent = text;
+            hljs.highlightElement(rawCode);
+          })
+          .catch(function(err) {
+            rawCode.textContent = 'Could not load raw markdown: ' + err.message;
+          });
+      }
+
+      markdownDoc.addEventListener('shown.bs.tab', function(event) {
+        var target = event.target.getAttribute('data-bs-target');
+        if (target === '#mdtab-front-matter') highlightInPanel('mdtab-front-matter');
+        if (target === '#mdtab-raw') {
+          loadRawMarkdown();
+          highlightInPanel('mdtab-raw');
+        }
+      });
+
+      highlightInPanel('mdtab-front-matter');
+    }
   })();
 </script>

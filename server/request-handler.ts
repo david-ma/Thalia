@@ -14,7 +14,14 @@ import { dirname } from 'path'
 import fs from 'fs'
 import * as sass from 'sass'
 import zlib from 'zlib'
-import { parseMarkdown, wrapMarkdownCodeBlocks, registerMarkdownHelpers } from './markdown'
+import {
+  parseMarkdown,
+  wrapMarkdownCodeBlocks,
+  registerMarkdownHelpers,
+  parseFrontMatter,
+  extractFrontMatterYaml,
+  buildMarkdownDocTabItems,
+} from './markdown'
 
 const GZIP_SIZE_THRESHOLD = 10 * 1024 // 10kb
 
@@ -63,6 +70,7 @@ export class RequestHandler {
       .then(RequestHandler.tryScss)
       .then(RequestHandler.tryTypescript)
       .then(RequestHandler.tryHandlebars)
+      // .then(RequestHandler.tryPdf)
       .then(RequestHandler.tryMarkdown)
       .then((rh) => RequestHandler.tryStaticFile('public', rh))
       .then((rh) => RequestHandler.tryStaticFile('docs', rh))
@@ -97,6 +105,8 @@ export class RequestHandler {
       svg: 'image/svg+xml',
       ico: 'image/x-icon',
       webp: 'image/webp',
+      pdf: 'application/pdf',
+      md: 'text/markdown',
       woff: 'font/woff',
       woff2: 'font/woff2',
       ttf: 'font/ttf',
@@ -104,6 +114,21 @@ export class RequestHandler {
       otf: 'font/otf',
     }
     return contentTypes[ext ?? ''] || 'application/octet-stream'
+  }
+
+  /** MIME types the browser should display in-page rather than download. */
+  private static inlineContentTypes = new Set(['application/pdf', 'text/markdown'])
+
+  private static setStaticFileHeaders(
+    res: ServerResponse,
+    pathname: string,
+    contentType: string
+  ): void {
+    res.setHeader('Content-Type', contentType)
+    if (RequestHandler.inlineContentTypes.has(contentType)) {
+      const filename = path.basename(pathname)
+      res.setHeader('Content-Disposition', `inline; filename="${filename}"`)
+    }
   }
 
   // TODO: Implement this
@@ -159,7 +184,12 @@ export class RequestHandler {
         if (isGzipAccepted && fs.existsSync(`${targetPath}.gz`)) {
           targetPath += '.gz'
           requestHandler.res.setHeader('Content-Encoding', 'gzip')
-          requestHandler.res.setHeader('Content-Type', RequestHandler.getContentType(targetPath))
+          const gzContentType = RequestHandler.getContentType(targetPath)
+          RequestHandler.setStaticFileHeaders(
+            requestHandler.res,
+            requestHandler.pathname,
+            gzContentType
+          )
           requestHandler.res.setHeader('Content-Length', fs.statSync(targetPath).size.toString())
 
           const stream = fs.createReadStream(targetPath)
@@ -172,7 +202,11 @@ export class RequestHandler {
       }
 
       const contentType = RequestHandler.getContentType(requestHandler.pathname)
-      requestHandler.res.setHeader('Content-Type', contentType)
+      RequestHandler.setStaticFileHeaders(
+        requestHandler.res,
+        requestHandler.pathname,
+        contentType
+      )
       const gzippable = ['text/html', 'text/css', 'text/javascript', 'application/json', 'image/svg+xml']
 
       if (fs.statSync(targetPath).isDirectory()) {
@@ -362,6 +396,24 @@ export class RequestHandler {
     return rh.website.handlebars.compile(wrapper)({ requestInfo: rh.requestInfo, version: rh.website.version, title })
   }
 
+  /**
+   * If there is a .pdf file in public, data, dist or docs, serve it inline.
+   * E.g. a visitor to /resume will get served /public/resume.pdf inline.
+   */
+  private static tryPdf(requestHandler: RequestHandler): Promise<RequestHandler> {
+    const folders = ['public', 'data', 'dist', 'docs']
+    folders.filter(folder => fs.existsSync(path.join(requestHandler.rootPath, folder, requestHandler.pathname)))
+    .map(folder => path.join(requestHandler.rootPath, folder, requestHandler.pathname))
+    .find(path => fs.statSync(path).isFile())
+
+    return new Promise((next, finish) => {
+      if (!path) return next(requestHandler)
+      requestHandler.res.writeHead(200, { 'Content-Type': 'application/pdf' })
+      requestHandler.res.end(fs.readFileSync(path))
+      return finish(`Successfully served pdf ${requestHandler.pathname}`)
+    })
+  }
+
   /** Serve src/path.md or src/path/index.md via wrapper (same path rules as tryHandlebars). */
   private static tryMarkdown(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
@@ -372,17 +424,27 @@ export class RequestHandler {
         .readFile(target, 'utf8')
         .then((content) => {
           if(requestHandler.requestInfo.query.raw === 'true') {
-            requestHandler.res.writeHead(200, { 'Content-Type': 'text/plain' })
+            requestHandler.res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
             requestHandler.res.end(content)
             return finish(`Successfully served raw markdown ${requestHandler.pathname}`)
           }
 
           const mermaidSources: string[] = []
-          const contentHtml = wrapMarkdownCodeBlocks(parseMarkdown(content), mermaidSources)
+
+          const [contentWithoutFrontMatter, frontMatter] = parseFrontMatter(content)
+          const frontMatterYaml = extractFrontMatterYaml(content)
+
+          const contentHtml = wrapMarkdownCodeBlocks(parseMarkdown(contentWithoutFrontMatter), mermaidSources)
           registerMarkdownHelpers(requestHandler.website.handlebars)
           let html: string
           try {
-            html = RequestHandler.renderMarkdownWrapper(requestHandler, contentHtml, mermaidSources)
+            html = RequestHandler.renderMarkdownWrapper(
+              requestHandler,
+              contentHtml,
+              mermaidSources,
+              frontMatter,
+              frontMatterYaml,
+            )
           } catch (error) {
             console.debug('Error rendering markdown: ', error)
             console.debug('Replacing {{ and }} with &#123;&#123; and &#125;&#125;')
@@ -390,6 +452,8 @@ export class RequestHandler {
               requestHandler,
               contentHtml.replace(/{{/g, '&#123;&#123;').replace(/}}/g, '&#125;&#125;'),
               mermaidSources,
+              frontMatter,
+              frontMatterYaml,
             )
           }
           requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
@@ -445,15 +509,37 @@ export class RequestHandler {
     return null
   }
 
-  private static renderMarkdownWrapper(rh: RequestHandler, contentHtml: string, mermaidSources: string[]): string {
+  private static renderMarkdownWrapper(
+    rh: RequestHandler,
+    contentHtml: string,
+    mermaidSources: string[],
+    frontMatter: Record<string, unknown> | null = null,
+    frontMatterYaml: string | null = null,
+  ): string {
     if (rh.website.env === 'development') rh.website.loadPartials()
     rh.website.handlebars.registerPartial('content', contentHtml)
-    let wrapper = rh.website.handlebars.partials['wrapper'] ?? '{{> content }}'
-    wrapper = wrapper.replace('</body>', '{{> markdown_processing }}\n</body>')
-    return rh.website.handlebars.compile(wrapper)({
+    const compileCtx = {
       requestInfo: rh.requestInfo,
       version: rh.website.version,
       mermaidSources,
+      frontMatter,
+    }
+    const renderedBody = rh.website.handlebars.compile(contentHtml)(compileCtx)
+    const markdownTabItems = buildMarkdownDocTabItems(renderedBody, frontMatterYaml)
+    let wrapper = rh.website.handlebars.partials['markdown_wrapper'] ?? '{{> content }}'
+    wrapper = wrapper.replace('</body>', '{{> markdown_processing }}\n</body>')
+    const pageMeta =
+      frontMatter && typeof frontMatter === 'object'
+        ? {
+            title: typeof frontMatter.title === 'string' ? frontMatter.title : undefined,
+            description: typeof frontMatter.description === 'string' ? frontMatter.description : undefined,
+            author: typeof frontMatter.author === 'string' ? frontMatter.author : undefined,
+          }
+        : {}
+    return rh.website.handlebars.compile(wrapper)({
+      ...compileCtx,
+      ...pageMeta,
+      markdownTabItems,
     })
   }
 

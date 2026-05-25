@@ -1,10 +1,17 @@
+---
+description: 
+alwaysApply: true
+---
+
 # Thalia: agent notes
 
 This repo is the **Thalia framework** plus a `websites/` folder containing example and deployed sites.
 
-If you installed Thalia via npm (`bun add thalia` / `npm install thalia`), you likely only have the **framework package files** (not the full repo and not the `websites/` examples). For the full examples, use the repo:
+If the user installed Thalia via npm (`bun add thalia` / `npm install thalia`), you likely only have the **framework package files** (not the full repo and not the `websites/` examples). For the full examples, use the repo:
 
 - `https://github.com/david-ma/Thalia`
+
+Agents should NOT install new packages. Agents should make suggestions for useful packages to the user and ask the user to `bun install` or otherwise provide the install instructions for the user to manually perform.
 
 ## What Thalia is for
 

@@ -27,7 +27,7 @@
   </ul>
   <div class="tab-content{{#if tabsContentClass}} {{tabsContentClass}}{{/if}}">
     {{#each tabItems}}
-      {{> tab-pane tabsItemIdPrefix=../tabsItemIdPrefix }}
+      {{~> tab-pane tabsItemIdPrefix=../tabsItemIdPrefix }}
     {{else}}
       {{> tab-pane idSuffix="sample-1" active=true tabsItemIdPrefix=../tabsItemIdPrefix content="<p class='mb-0'>Pass <code>tabItems</code> from your route.</p>" }}
       {{> tab-pane idSuffix="sample-2" tabsItemIdPrefix=../tabsItemIdPrefix content="<p class='mb-0'>Second placeholder panel.</p>" }}

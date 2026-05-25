@@ -5,7 +5,7 @@
   aria-labelledby="{{#if tabsItemIdPrefix}}{{tabsItemIdPrefix}}{{else}}tab{{/if}}-{{idSuffix}}-tab"
   tabindex="0">
   {{#if panelPartial}}
-    {{> (lookup . 'panelPartial')}}
+    {{~> (lookup . 'panelPartial')}}
   {{else}}
     {{{content}}}
   {{/if}}

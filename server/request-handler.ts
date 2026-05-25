@@ -6,7 +6,8 @@
  * Not using WHATWG URL, but consider in future.
  */
 
-import { IncomingMessage, request, ServerResponse } from 'http'
+import { IncomingMessage, ServerResponse } from 'http'
+import { fileURLToPath } from 'url'
 import { Website, type NestedControllerMap } from './website'
 import { RequestInfo } from './server'
 import path from 'path'
@@ -47,15 +48,15 @@ export class RequestHandler {
     this.pathname = pathnameOverride ?? requestInfo.pathname
 
     this.projectPublicPath = path.join(this.rootPath, 'public', this.pathname)
-    this.projectSourcePath = this.projectPublicPath.replace('public', 'src')
+    this.projectSourcePath = path.join(this.rootPath, 'src', this.pathname)
     this.projectDistPath = path.join(this.rootPath, 'dist', path.dirname(this.pathname))
 
-    // Might need a better way to get the thalia root
-    this.thaliaRoot = path.join(dirname(import.meta.url).replace('file://', ''), '..')
+    this.thaliaRoot = path.join(dirname(fileURLToPath(import.meta.url)), '..')
     this.thaliaSourcePath = path.join(this.thaliaRoot, 'src', this.pathname)
 
-    // Start the request handler chain
-    // Check, path exploit, route guard, controller, handlebars, static file, error
+    // Handler chain: path exploit → route guard → controller → dist → scss → ts → hbs → pdf → md
+    // → public → docs → data → thalia public → folder index (dev) → 404
+    // Same URL stem: pdf (in public/…) wins over markdown (src/…) when both exist.
     RequestHandler.checkPathExploit(this)
       .then(this.website.routeGuard.handleRequestChain.bind(this.website.routeGuard, this))
       .then(RequestHandler.tryController)
@@ -72,8 +73,9 @@ export class RequestHandler {
       .then(RequestHandler.showFolderIndex)
       .then(RequestHandler.fileNotFound)
       .catch((message) => {
-        if (typeof message === typeof Error) {
+        if (message instanceof Error) {
           this.renderError(message)
+          return
         }
 
         console.debug('Successfully finished the request handler chain:', message)
@@ -112,6 +114,11 @@ export class RequestHandler {
   /** MIME types the browser should display in-page rather than download. */
   private static inlineContentTypes = new Set(['application/pdf', 'text/markdown'])
 
+  private static contentDispositionInline(filename: string): string {
+    const escaped = filename.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+    return `inline; filename="${escaped}"`
+  }
+
   private static setStaticFileHeaders(
     res: ServerResponse,
     pathname: string,
@@ -121,12 +128,17 @@ export class RequestHandler {
     res.setHeader('Content-Type', contentType)
     if (RequestHandler.inlineContentTypes.has(contentType)) {
       const filename = servedFilename ?? path.basename(pathname)
-      res.setHeader('Content-Disposition', `inline; filename="${filename}"`)
+      res.setHeader('Content-Disposition', RequestHandler.contentDispositionInline(filename))
     }
   }
 
   /** Project folders searched for PDFs (first match wins). */
   private static readonly pdfStaticFolders = ['public', 'data', 'dist', 'docs'] as const
+
+  /** Decoded safe relative path for filesystem lookups, or null if invalid. */
+  private static filesystemRelativePath(pathname: string): string | null {
+    return RequestHandler.decodePathnameForFilesystemLookup(pathname)
+  }
 
   // TODO: Implement this
   // private setSafeHeaders(headers: Record<string, string>): void {
@@ -154,13 +166,12 @@ export class RequestHandler {
     requestHandler: RequestHandler,
     thaliaAsset: boolean = false, // If true, the path is relative to the thalia root
   ): Promise<RequestHandler> {
-    let targetPath = path.join(requestHandler.rootPath, folder, requestHandler.pathname)
-
-    if (thaliaAsset) {
-      targetPath = path.join(requestHandler.thaliaRoot, folder, requestHandler.pathname)
-    }
-
     return new Promise((next, finish) => {
+      const rel = RequestHandler.filesystemRelativePath(requestHandler.pathname)
+      if (rel === null) return next(requestHandler)
+
+      const baseRoot = thaliaAsset ? requestHandler.thaliaRoot : requestHandler.rootPath
+      let targetPath = path.join(baseRoot, folder, rel)
       // Use the server's configured node_env (same as RequestInfo), not process.env, so tests and
       // embedded servers can set behaviour without mutating global NODE_ENV.
       if (requestHandler.requestInfo.node_env === 'development' && folder === 'dist') {
@@ -236,13 +247,12 @@ export class RequestHandler {
         const stream = fs.createReadStream(targetPath)
         stream.on('error', (error) => {
           console.error('Error streaming file:', error)
-          requestHandler.res.writeHead(500)
+          if (!requestHandler.res.headersSent) requestHandler.res.writeHead(500)
           requestHandler.res.end('Internal Server Error')
-          return finish('Error streaming file')
+          finish('Error streaming file')
         })
-        stream.on('end', () => {
-          requestHandler.res.end()
-          return finish(`Successfully streamed file ${requestHandler.pathname}`)
+        requestHandler.res.on('finish', () => {
+          finish(`Successfully streamed file ${requestHandler.pathname}`)
         })
         stream.pipe(requestHandler.res)
       }
@@ -275,7 +285,10 @@ export class RequestHandler {
    */
   private static tryHandlebars(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
-      let pathname = requestHandler.pathname
+      const rel = RequestHandler.filesystemRelativePath(requestHandler.pathname)
+      if (rel === null) return next(requestHandler)
+
+      let pathname = rel
 
       // If the request is for a template in a partial folder, do not render it
       // Partials should not be rendered directly like this.
@@ -283,13 +296,15 @@ export class RequestHandler {
         return next(requestHandler)
       }
 
+      const projectIndexHbs = path.join(requestHandler.rootPath, 'src', pathname, 'index.hbs')
+      const thaliaIndexHbs = path.join(requestHandler.thaliaRoot, 'src', pathname, 'index.hbs')
+      const projectPageHbs = path.join(requestHandler.rootPath, 'src', pathname + '.hbs')
+      const thaliaPageHbs = path.join(requestHandler.thaliaRoot, 'src', pathname + '.hbs')
+
       // If pathname is a directory, try <directory>/index.html
-      if (fs.existsSync(path.join(requestHandler.rootPath, 'src', pathname, 'index.hbs'))) {
+      if (fs.existsSync(projectIndexHbs) || fs.existsSync(thaliaIndexHbs)) {
         pathname = path.join(pathname, 'index.html')
-      } else if (
-        // Or try and see if there is a <pathname>.hbs file
-        fs.existsSync(path.join(requestHandler.rootPath, 'src', pathname + '.hbs'))
-      ) {
+      } else if (fs.existsSync(projectPageHbs) || fs.existsSync(thaliaPageHbs)) {
         pathname = pathname + '.html'
       }
 
@@ -323,6 +338,14 @@ export class RequestHandler {
           })
           .then(() => {
             finish(`Successfully rendered handlebars template ${requestHandler.pathname}`)
+          })
+          .catch((error) => {
+            console.error('Error rendering handlebars template:', requestHandler.pathname, error)
+            if (!requestHandler.res.headersSent) {
+              requestHandler.res.writeHead(500)
+              requestHandler.res.end('Internal Server Error')
+            }
+            finish('Error rendering handlebars template')
           })
       } else {
         return next(requestHandler)
@@ -418,8 +441,7 @@ export class RequestHandler {
         requestHandler.res.end('Internal Server Error')
         finish('Error streaming pdf')
       })
-      stream.on('end', () => {
-        requestHandler.res.end()
+      requestHandler.res.on('finish', () => {
         finish(`Successfully served pdf ${requestHandler.pathname}`)
       })
       stream.pipe(requestHandler.res)
@@ -603,14 +625,20 @@ export class RequestHandler {
       }
 
       if (target) {
-        const css = sass.compile(target).css.toString()
-        const cssPath = path.join(requestHandler.rootPath, 'dist', requestHandler.pathname)
-        fs.mkdirSync(path.dirname(cssPath), { recursive: true })
-        fs.writeFileSync(cssPath, css)
-        console.debug('Successfully compiled scss file', requestHandler.pathname)
-        requestHandler.res.writeHead(200, { 'Content-Type': 'text/css' })
-        requestHandler.res.end(css)
-        return finish(`Successfully compiled scss file ${requestHandler.pathname}`)
+        try {
+          const css = sass.compile(target).css.toString()
+          const cssPath = path.join(requestHandler.rootPath, 'dist', requestHandler.pathname)
+          fs.mkdirSync(path.dirname(cssPath), { recursive: true })
+          fs.writeFileSync(cssPath, css)
+          console.debug('Successfully compiled scss file', requestHandler.pathname)
+          requestHandler.res.writeHead(200, { 'Content-Type': 'text/css' })
+          requestHandler.res.end(css)
+          return finish(`Successfully compiled scss file ${requestHandler.pathname}`)
+        } catch (error) {
+          requestHandler.res.writeHead(200, { 'Content-Type': 'text/css' })
+          requestHandler.res.end(fs.readFileSync(target, 'utf8').toString() ?? '')
+          return finish('Error compiling scss file, serving the raw scss')
+        }
       } else {
         return next(requestHandler)
       }

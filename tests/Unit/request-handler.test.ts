@@ -12,12 +12,16 @@ import type { IncomingMessage, ServerResponse } from 'http'
 import path from 'path'
 
 /** Narrow shape for testing a private static; do not intersect with typeof RequestHandler (private + public clash → never). */
-type RequestHandlerDecodeStub = {
+type RequestHandlerPrivateStub = {
   decodePathnameForFilesystemLookup(pathname: string): string | null
+  filesystemRelativePath(pathname: string): string | null
+  resolvePdfPath(rh: { rootPath: string; pathname: string }): string | null
 }
 
-const decodePathnameForFilesystemLookup = (RequestHandler as unknown as RequestHandlerDecodeStub)
-  .decodePathnameForFilesystemLookup.bind(RequestHandler)
+const rhPrivate = RequestHandler as unknown as RequestHandlerPrivateStub
+const decodePathnameForFilesystemLookup = rhPrivate.decodePathnameForFilesystemLookup.bind(RequestHandler)
+const filesystemRelativePath = rhPrivate.filesystemRelativePath.bind(RequestHandler)
+const resolvePdfPath = rhPrivate.resolvePdfPath.bind(RequestHandler)
 
 describe('RequestHandler decodePathnameForFilesystemLookup', () => {
   test('decodes %20 and other escapes per segment', () => {
@@ -37,6 +41,20 @@ describe('RequestHandler decodePathnameForFilesystemLookup', () => {
 
   test('invalid percent-encoding returns null', () => {
     expect(decodePathnameForFilesystemLookup('/foo%')).toBeNull()
+  })
+
+  test('filesystemRelativePath matches decodePathnameForFilesystemLookup', () => {
+    expect(filesystemRelativePath('/a%20b')).toBe('a b')
+    expect(filesystemRelativePath('/bad%')).toBeNull()
+  })
+})
+
+describe('RequestHandler resolvePdfPath', () => {
+  const rootPath = path.join(import.meta.dir, '..', '..', 'websites', 'example-src')
+
+  test('finds public/sample-doc.pdf for extensionless URL', () => {
+    const target = resolvePdfPath({ rootPath, pathname: '/sample-doc' })
+    expect(target).toBe(path.join(rootPath, 'public', 'sample-doc.pdf'))
   })
 })
 

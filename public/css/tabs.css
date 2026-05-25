@@ -1,0 +1,43 @@
+.thalia-tabs {
+  background: #eef1f5;
+  border: 1px solid #ced4da;
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.75rem 0;
+  margin-bottom: 1.25rem;
+}
+.thalia-tabs .nav-tabs {
+  border-bottom: 1px solid #ced4da;
+  gap: 0.35rem;
+  margin-bottom: 0;
+}
+.thalia-tabs .nav-link {
+  color: #495057;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  background: color-mix(in srgb, #fff 55%, #eef1f5);
+  border-color: transparent;
+  margin-bottom: -1px;
+}
+.thalia-tabs .nav-link:hover, .thalia-tabs .nav-link:focus {
+  color: #212529;
+  background: color-mix(in srgb, #fff 90%, #eef1f5);
+  border-color: #dee2e6 #dee2e6 transparent;
+}
+.thalia-tabs .nav-link.active, .nav-item.show .thalia-tabs .nav-link {
+  color: #212529;
+  font-weight: 600;
+  background: #fff;
+  border-color: #dee2e6 #dee2e6 #fff;
+}
+.thalia-tabs .tab-content {
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-top: none;
+  border-radius: 0 0 0.5rem 0.5rem;
+  margin: 0 -0.75rem;
+  padding: 1rem 1.25rem 1.25rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.thalia-tabs .tab-pane {
+  color: #212529;
+}

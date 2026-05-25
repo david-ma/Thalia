@@ -1,0 +1,25 @@
+{{!--
+  markdown.hbs — example: doc page using the tabs partial system
+
+  Server (server/markdown.ts → compileMarkdownPageHtml) passes:
+    markdownDocTabs   — from buildMarkdownDocTabs() (idSuffix, label, panelPartial, …)
+    markdownBody      — rendered .md body HTML
+    markdownRaw       — full .md source (Raw tab; includes front matter fences)
+    frontMatterYaml   — optional raw YAML (no --- fences)
+    title, description, author — from front matter
+
+  Override pane markup: copy markdown-pane-*.hbs into your site src/partials/.
+  Override tabs chrome: copy tabs/tab-container.hbs (or tab-button / tab-pane).
+--}}
+{{#> wrapper }}
+<article class="markdown-doc" id="markdown-doc">
+  {{~> tab-container
+      tabItems=markdownDocTabs
+      tabsRootId="markdown-doc"
+      tabsItemIdPrefix="mdtab"
+      tabsRootClass="thalia-tabs markdown-doc-tabs mb-4"
+      tabsContentClass="markdown-doc-tab-content"
+  }}
+</article>
+{{> markdown-foot }}
+{{/wrapper}}

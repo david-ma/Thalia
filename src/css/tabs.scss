@@ -1,0 +1,62 @@
+// Thalia tab-container partial (Bootstrap 5 nav-tabs + tab-content).
+// Loaded from wrapper.hbs as /css/tabs.css — override in your site src/css/tabs.scss.
+
+$tabs-bar-bg: #eef1f5;
+$tabs-bar-border: #ced4da;
+$tabs-inactive-fg: #495057;
+$tabs-active-fg: #212529;
+$tabs-panel-bg: #fff;
+$tabs-panel-border: #dee2e6;
+$tabs-radius: 0.5rem;
+
+.thalia-tabs {
+  background: $tabs-bar-bg;
+  border: 1px solid $tabs-bar-border;
+  border-radius: $tabs-radius;
+  padding: 0.65rem 0.75rem 0;
+  margin-bottom: 1.25rem;
+
+  .nav-tabs {
+    border-bottom: 1px solid $tabs-bar-border;
+    gap: 0.35rem;
+    margin-bottom: 0;
+  }
+
+  .nav-link {
+    color: $tabs-inactive-fg;
+    font-weight: 500;
+    font-size: 0.9375rem;
+    background: color-mix(in srgb, $tabs-panel-bg 55%, $tabs-bar-bg);
+    border-color: transparent;
+    margin-bottom: -1px;
+
+    &:hover,
+    &:focus {
+      color: $tabs-active-fg;
+      background: color-mix(in srgb, $tabs-panel-bg 90%, $tabs-bar-bg);
+      border-color: $tabs-panel-border $tabs-panel-border transparent;
+    }
+
+    &.active,
+    .nav-item.show & {
+      color: $tabs-active-fg;
+      font-weight: 600;
+      background: $tabs-panel-bg;
+      border-color: $tabs-panel-border $tabs-panel-border $tabs-panel-bg;
+    }
+  }
+
+  .tab-content {
+    background: $tabs-panel-bg;
+    border: 1px solid $tabs-panel-border;
+    border-top: none;
+    border-radius: 0 0 $tabs-radius $tabs-radius;
+    margin: 0 -0.75rem;
+    padding: 1rem 1.25rem 1.25rem;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  .tab-pane {
+    color: $tabs-active-fg;
+  }
+}

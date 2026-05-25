@@ -1,0 +1,47 @@
+{{!-- Scripts and styles for markdown doc pages (included from markdown.hbs). --}}
+<link rel="stylesheet" href="/css/markdown.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/markdown.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+(function () {
+  document.querySelectorAll('.code-card--mermaid').forEach(function (card) {
+    var tabs = card.querySelectorAll('.code-card__tab');
+    var panels = card.querySelectorAll('.code-card__panel');
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        var tabName = tab.getAttribute('data-tab');
+        tabs.forEach(function (t) {
+          t.classList.toggle('code-card__tab--active', t === tab);
+          t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
+        });
+        panels.forEach(function (panel) {
+          var show = panel.getAttribute('data-tab') === tabName;
+          panel.classList.toggle('code-card__panel--active', show);
+          panel.hidden = !show;
+        });
+      });
+    });
+  });
+
+  function highlightOnTabShow(tabId, selector) {
+    var tab = document.getElementById(tabId);
+    if (!tab) return;
+    tab.addEventListener('shown.bs.tab', function () {
+      var code = document.querySelector(selector);
+      if (code && window.hljs && !code.dataset.hljsDone) {
+        hljs.highlightElement(code);
+        code.dataset.hljsDone = '1';
+      }
+    });
+  }
+
+  highlightOnTabShow('mdtab-front-matter-tab', '#mdtab-front-matter code.language-yaml');
+  highlightOnTabShow('mdtab-raw-tab', '#markdown-raw-source');
+
+  if (typeof mermaid !== 'undefined') {
+    mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+  }
+})();
+</script>

@@ -18,7 +18,7 @@ const albums = models.albums;
 const images = models.images;
 
 import { mailTable } from 'thalia/mail';
-const mail = mailTable as MySqlTableWithColumns<any>;
+const mail = mailTable as unknown as MySqlTableWithColumns<any>;
 
 import { fruit } from './fruit';
 export { users, sessions, audits, albums, images, fruit, mail };

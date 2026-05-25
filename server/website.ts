@@ -55,6 +55,22 @@ export interface Controller {
 /** Controller config can be a single Controller (function) or a nested map of path segments to Controller | map. */
 export type NestedControllerMap = Controller | { [key: string]: NestedControllerMap }
 
+/** Build/runtime metadata exposed to Handlebars and the /version controller. */
+export interface WebsiteVersionInfo {
+  websiteName: string
+  version: string
+  gitHash: string
+  thaliaVersion: string
+  thaliaGitHash: string
+  serverMode: ServerMode
+  processStartTime: string
+  nodeVersion: string
+  NODE_ENV: string
+  hostname: string
+  platform: string
+  runtime: string
+}
+
 export class Website {
   public readonly name: string
   public readonly rootPath: string
@@ -69,20 +85,7 @@ export class Website {
   public routes: { [key: string]: RouteRule } = {}
   public routeGuard!: RouteGuard
   public db!: ThaliaDatabase
-  public version!: {
-    websiteName: string
-    version: string
-    gitHash: string
-    thaliaVersion: string
-    thaliaGitHash: string
-    serverMode: ServerMode
-    processStartTime: string
-    nodeVersion: string
-    NODE_ENV: string
-    hostname: string
-    platform: string
-    runtime: string
-  }
+  public version!: WebsiteVersionInfo
 
   /**
    * Creates a new Website instance

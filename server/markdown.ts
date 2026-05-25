@@ -8,6 +8,7 @@ import { Marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
 import type { RequestInfo } from './server'
+import type { WebsiteVersionInfo } from './website'
 
 /** highlight.js ships yaml and markdown; /js/vendor/highlight.*.js includes them for the browser too. */
 const HLJS_YAML = hljs.getLanguage('yaml') ? 'yaml' : 'plaintext'
@@ -21,7 +22,7 @@ export interface MarkdownHandlebars {
 
 export type MarkdownPageContext = {
   requestInfo: RequestInfo
-  version: string
+  version: WebsiteVersionInfo
 }
 
 export type RenderMarkdownPageOptions = {
@@ -66,13 +67,13 @@ export function parseMarkdown(content: string): string {
 /**
  * Get the yaml front matter from a markdown file.
  */
-export function parseFrontMatter(content: string): [string, Record<string, any> | null] {
+export function parseFrontMatter(content: string): [string, Record<string, unknown> | null] {
   if (!content.startsWith('---')) return [content, null]
   const frontMatter = content.match(/^---([\s\S]*?)---(.*)/)?.[1]
   if (!frontMatter) return [content, null]
   // return [content, JSON.parse(frontMatter)]
   //yaml parse frontmatter
-  return [content.replace(/^---([\s\S]*?)---(.*)/, ''), Bun.YAML.parse(frontMatter)]
+  return [content.replace(/^---([\s\S]*?)---(.*)/, ''), Bun.YAML.parse(frontMatter) as Record<string, unknown>]
 }
 
 /** Raw YAML between opening `---` fences (no fences), or null if absent. */
@@ -217,6 +218,7 @@ function compileMarkdownPageHtml(
   handlebars.registerPartial('content', contentHtml)
   const compileCtx: Record<string, unknown> = {
     requestInfo: ctx.requestInfo,
+    ...ctx.version,
     version: ctx.version,
     mermaidSources,
     frontMatter,

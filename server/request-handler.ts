@@ -94,6 +94,9 @@ export class RequestHandler {
       css: 'text/css',
       js: 'text/javascript',
       json: 'application/json',
+      log: 'text/plain',
+      csv: 'text/csv',
+      tsv: 'text/tab-separated-values',
       png: 'image/png',
       jpg: 'image/jpeg',
       gif: 'image/gif',
@@ -112,7 +115,7 @@ export class RequestHandler {
   }
 
   /** MIME types the browser should display in-page rather than download. */
-  private static inlineContentTypes = new Set(['application/pdf', 'text/markdown'])
+  private static inlineContentTypes = new Set(['application/pdf', 'text/markdown', 'text/plain', 'text/csv', 'text/tab-separated-values'])
 
   private static contentDispositionInline(filename: string): string {
     const escaped = filename.replace(/\\/g, '\\\\').replace(/"/g, '\\"')

@@ -114,6 +114,20 @@ export class RequestHandler {
     return contentTypes[ext ?? ''] || 'application/octet-stream'
   }
 
+  /** MIME type without parameters (`text/html; charset=utf-8` → `text/html`). */
+  private static mimeBaseType(contentType: string): string {
+    return contentType.split(';')[0]?.trim().toLowerCase() ?? contentType
+  }
+
+  /**
+   * Textual static assets compress well with gzip (same family as charset=utf-8 in getContentType).
+   * Skips already-compressed binary (images, fonts, video, etc.).
+   */
+  private static isGzipFriendlyMime(contentType: string): boolean {
+    const base = RequestHandler.mimeBaseType(contentType)
+    return base.startsWith('text/') || base === 'application/json' || base === 'image/svg+xml'
+  }
+
   /** MIME types the browser should display in-page rather than download. */
   private static inlineContentTypes = new Set(['application/pdf', 'text/markdown', 'text/plain', 'text/csv', 'text/tab-separated-values'])
 
@@ -129,7 +143,7 @@ export class RequestHandler {
     servedFilename?: string,
   ): void {
     res.setHeader('Content-Type', contentType)
-    if (RequestHandler.inlineContentTypes.has(contentType)) {
+    if (RequestHandler.inlineContentTypes.has(RequestHandler.mimeBaseType(contentType))) {
       const filename = servedFilename ?? path.basename(pathname)
       res.setHeader('Content-Disposition', RequestHandler.contentDispositionInline(filename))
     }
@@ -218,14 +232,12 @@ export class RequestHandler {
         requestHandler.pathname,
         contentType
       )
-      const gzippable = ['text/html', 'text/css', 'text/javascript', 'application/json', 'image/svg+xml']
-
       if (fs.statSync(targetPath).isDirectory()) {
         const indexPath = path.join(requestHandler.pathname, 'index.html')
         requestHandler.handleRequest(requestHandler.req, requestHandler.res, requestHandler.requestInfo, indexPath)
         return finish(`Redirected to ${indexPath}`)
       } else if (
-        gzippable.includes(contentType) &&
+        RequestHandler.isGzipFriendlyMime(contentType) &&
         isGzipAccepted &&
         fs.statSync(targetPath).size > GZIP_SIZE_THRESHOLD
       ) {

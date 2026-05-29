@@ -100,11 +100,9 @@ export class BasicRouteGuard extends RouteGuard {
   private routes: Record<string, RouteRule> = {}
   protected salt: number = 0
   protected routeRule!: RouteRule
-  protected website: Website
 
   constructor(website: Website) {
     super(website)
-    this.website = website
     this.salt = Math.floor(Math.random() * 999)
     this.loadRoutes()
   }
@@ -139,7 +137,7 @@ export class BasicRouteGuard extends RouteGuard {
     return rule
   }
 
-  public handleRequestChain(request: RequestHandler): Promise<RequestHandler> {
+  public override handleRequestChain(request: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
       const routeRule = this.getMatchingRoute(request)
       if (Object.keys(routeRule).length === 0) {
@@ -453,11 +451,11 @@ export class RoleRouteGuard extends BasicRouteGuard {
     super(website)
   }
 
-  protected getMatchingRoute(request: RequestHandler): RoleRouteRule {
+  protected override getMatchingRoute(request: RequestHandler): RoleRouteRule {
     return super.getMatchingRoute(request) as RoleRouteRule
   }
 
-  public handleRequestChain(request: RequestHandler): Promise<RequestHandler> {
+  public override handleRequestChain(request: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
       const routeRule = this.getMatchingRoute(request)
       // Match `BasicRouteGuard`: unknown host/path keys mean "not configured here" → pass through.

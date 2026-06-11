@@ -1,0 +1,23 @@
+{{#> wrapper }}
+<table id="csv-table"></table>
+{{/wrapper}}
+
+<script>
+  const parser = '{{{ pathname }}}'.endsWith('.tsv') ? d3.tsv : d3.csv
+
+  parser('{{{ pathname }}}?raw=true').then(data => {
+    $('#csv-table').DataTable({
+      layout: {
+        topStart: function () {
+          let container = document.createElement('div')
+          container.innerHTML = `<h1>{{{ filename }}}</h1><a href="{{{ pathname }}}?raw=true">Download</a>`
+          return container
+        },
+      },
+      paging: false,
+      info: false,
+      data: data,
+      columns: Object.keys(data[0]).map(key => ({ title: key, data: key })),
+    })
+  })
+</script>

@@ -54,7 +54,7 @@ export class RequestHandler {
     this.thaliaRoot = path.join(dirname(fileURLToPath(import.meta.url)), '..')
     this.thaliaSourcePath = path.join(this.thaliaRoot, 'src', this.pathname)
 
-    // Handler chain: path exploit → route guard → controller → dist → scss → ts → hbs → pdf → md
+    // Handler chain: path exploit → route guard → controller → dist → scss → ts → hbs → pdf → md → csv
     // → public → docs → data → thalia public → folder index (dev) → 404
     // Same URL stem: pdf (in public/…) wins over markdown (src/…) when both exist.
     RequestHandler.checkPathExploit(this)
@@ -66,6 +66,7 @@ export class RequestHandler {
       .then(RequestHandler.tryHandlebars)
       .then(RequestHandler.tryPdf)
       .then(RequestHandler.tryMarkdown)
+      .then(RequestHandler.tryCsv)
       .then((rh) => RequestHandler.tryStaticFile('public', rh))
       .then((rh) => RequestHandler.tryStaticFile('docs', rh))
       .then((rh) => RequestHandler.tryStaticFile('data', rh))
@@ -492,6 +493,47 @@ export class RequestHandler {
       }
     }
     return null
+  }
+
+  /**
+   * Similar to tryMarkdown
+   * Serve src/path.csv or src/path.tsv via csv_show.hbs
+   * Passing in raw=true will serve the raw csv/tsv file.
+   */
+  private static tryCsv(requestHandler: RequestHandler): Promise<RequestHandler> {
+    return new Promise((next, finish) => {
+      if (!requestHandler.pathname.endsWith('.csv') && !requestHandler.pathname.endsWith('.tsv')) {
+        return next(requestHandler)
+      }
+      
+      const target = requestHandler.projectSourcePath
+      if (!target) return next(requestHandler)
+      if (!fs.existsSync(target) || !fs.statSync(target).isFile()) return next(requestHandler)
+
+      fs.promises.readFile(target, 'utf8').then((content) => {
+        if(requestHandler.requestInfo.query.raw === 'true') {
+          requestHandler.res.writeHead(200, { 'Content-Type': RequestHandler.getContentType(target) })
+          requestHandler.res.end(content)
+          return finish(`Successfully served raw csv ${requestHandler.pathname}`)
+        }
+
+        const html = requestHandler.website.getContentHtml('gets-overwritten-doesnt-matter', 'csv_show')
+        const data = {
+          requestInfo: requestHandler.requestInfo,
+          version: requestHandler.website.version,
+          pathname: requestHandler.pathname,
+          filename: path.basename(target),
+        }
+        requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
+        requestHandler.res.end(html(data))
+        finish(`Successfully rendered csv ${requestHandler.pathname}`)
+      }).catch((err) => {
+        console.error(`Error serving csv ${requestHandler.pathname}:`, err)
+        requestHandler.res.writeHead(500)
+        requestHandler.res.end('Internal Server Error')
+        finish('Error serving csv file')
+      })
+    })
   }
 
   /** Serve src/path.md or src/path/index.md via wrapper (same path rules as tryHandlebars). */

@@ -4,12 +4,13 @@
  * Exercises the handler chain (request-handler.ts) using the example projects.
  * Chain order (must stay in sync with request-handler.ts):
  *   checkPathExploit → routeGuard → tryController → tryStaticFile('dist') → tryScss
- *   → tryTypescript → tryHandlebars → tryPdf → tryMarkdown → tryStaticFile('public')
+ *   → tryTypescript → tryHandlebars → tryPdf → tryMarkdown → tryCsv → tryStaticFile('public')
  *   → tryStaticFile('docs') → tryStaticFile('data') → tryStaticFile(thalia public) → fileNotFound
  *
  * tryHandlebars path resolution (sites may rely on this):
  *   For request /path: first check src/path/index.hbs, else src/path.hbs; then serve that template.
  * tryMarkdown: same logic for src/path/index.md and src/path.md.
+ * tryCsv: serves src/path.csv and src/path.tsv via csv_show.hbs; ?raw=true returns plain text.
  *
  * Fail cases: non-existent paths, folders with no index file, and missing assets all return 404.
  *
@@ -309,6 +310,56 @@ describe('Request-handler: example-src (Handlebars, TypeScript, controller)', ()
     expect(html).toContain('中文标题')
     expect(html).toContain('RQH_CJK_MD')
     expect(html).toContain('你好')
+  })
+
+  test('tryCsv: /test.csv serves csv_show HTML with DataTable shell (file-style)', async () => {
+    const response = await fetchFromServer('/test.csv', port)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('text/html')
+    const html = await response.text()
+    expect(html).toContain('id="csv-table"')
+    expect(html).toContain('d3.csv')
+    expect(html).toContain('test.csv')
+    expect(html).toContain('/test.csv?raw=true')
+  })
+
+  test('tryCsv: /blah.tsv serves csv_show HTML with d3.tsv parser', async () => {
+    const response = await fetchFromServer('/blah.tsv', port)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('text/html')
+    const html = await response.text()
+    expect(html).toContain('id="csv-table"')
+    expect(html).toContain('d3.tsv')
+    expect(html).toContain('blah.tsv')
+    expect(html).toContain('/blah.tsv?raw=true')
+  })
+
+  test('tryCsv: ?raw=true serves plain text CSV from src/test.csv', async () => {
+    const response = await fetchFromServer('/test.csv?raw=true', port)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('text/plain')
+    const body = await response.text()
+    expect(body).toContain('hello world,blah')
+    expect(body).toContain('123,4456')
+  })
+
+  test('tryCsv: ?raw=true serves plain text TSV from src/blah.tsv', async () => {
+    const response = await fetchFromServer('/blah.tsv?raw=true', port)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('text/plain')
+    const body = await response.text()
+    expect(body).toContain('hello world\tblah')
+    expect(body).toContain('123\t4456')
+  })
+
+  test('fail: non-existent .csv path returns 404', async () => {
+    const response = await fetchFromServer('/no-such-data.csv', port)
+    expect(response.status).toBe(404)
+  })
+
+  test('fail: non-existent .tsv path returns 404', async () => {
+    const response = await fetchFromServer('/no-such-data.tsv', port)
+    expect(response.status).toBe(404)
   })
 
   test('tryHandlebars: CJK characters in .hbs render in HTML (UTF-8)', async () => {

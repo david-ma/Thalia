@@ -533,7 +533,7 @@ export class Website {
       if (this.env == 'development') {
         this.loadPartials()
       }
-      let templateFile = null
+      let templateFile: string | null = null
       if (templatePath) {
         templateFile = fs.readFileSync(templatePath, 'utf8')
       } else if (template) {

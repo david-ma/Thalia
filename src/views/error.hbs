@@ -12,6 +12,7 @@
   <h1>
     500 Server Error
   </h1>
+{{#if website }}
   <pre>
 Error in Website "{{ website }}":
 {{ error }}
@@ -20,6 +21,7 @@ Error in Website "{{ website }}":
 
 {{ template }}
   </pre>
+{{/if}}
 </body>
 
 </html>

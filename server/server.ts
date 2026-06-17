@@ -14,6 +14,8 @@ import { Server as SocketServer } from 'socket.io'
 import { Socket } from 'socket.io'
 import { RequestHandler } from './request-handler'
 import { UserAuth, Permission } from './route-guard'
+import { startupElapsedMs } from './startup-timer'
+import type { AddressInfo } from 'net'
 
 export type RequestInfo = {
   host: string
@@ -38,6 +40,7 @@ export class Server extends EventEmitter {
   private socketServer!: SocketServer
   /** Track open TCP sockets so we can force-close them on stop() (keep-alive can otherwise hang httpServer.close). */
   private httpSockets: Set<import('net').Socket> = new Set()
+  private requestCount = 0
   private port: number
   private mode: ServerMode
   private nodeEnv: string
@@ -72,7 +75,14 @@ export class Server extends EventEmitter {
       'unknown-ip'
     const method: string = req.method ?? 'unknown-method'
 
-    console.log(`${new Date().toISOString()} ${ip} ${method} ${host}${urlObject.href ?? 'unknown-url'}`)
+    this.requestCount += 1
+    const requestOrdinal = this.requestCount === 1 ? ' (first request)' : ''
+    console.log(
+      `${new Date().toISOString()} ${ip} ${method} ${host}${urlObject.href ?? 'unknown-url'}${requestOrdinal}`,
+    )
+    if (this.requestCount === 1) {
+      console.log(`First HTTP request received ${Math.round(startupElapsedMs())}ms after process start`)
+    }
 
     // Normalise trailing slashes but preserve the root path as "/".
     const rawPathname = urlObject.pathname ?? '/'
@@ -166,7 +176,7 @@ export class Server extends EventEmitter {
   }
 
   public async start(): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       this.httpServer = createServer(this.handleRequest.bind(this))
       this.socketServer = Server.createSocketServer(this.httpServer, this.handleSocketConnection.bind(this))
 
@@ -178,8 +188,16 @@ export class Server extends EventEmitter {
         })
       })
 
-      this.httpServer.listen(this.port, () => {
-        console.log(`Server running at http://localhost:${this.port}`)
+      this.httpServer.on('error', (error) => {
+        console.error('HTTP server error:', error)
+        reject(error)
+      })
+
+      const bindHost = process.env.THALIA_BIND_HOST?.trim() || undefined
+      this.httpServer.listen(this.port, bindHost, () => {
+        const addr = this.httpServer.address()
+        const bindLabel = Server.formatListenAddress(addr, bindHost, this.port)
+        console.log(`Server running at http://localhost:${this.port} (listening on ${bindLabel})`)
         this.emit('started')
         resolve()
       })
@@ -244,6 +262,21 @@ export class Server extends EventEmitter {
 
   public getPort(): number {
     return this.port
+  }
+
+  private static formatListenAddress(
+    addr: string | AddressInfo | null,
+    bindHost: string | undefined,
+    port: number,
+  ): string {
+    if (typeof addr === 'string') {
+      return addr
+    }
+    if (addr && typeof addr === 'object') {
+      const host = addr.address === '::' ? '0.0.0.0 (IPv6 ::)' : addr.address
+      return `${host}:${addr.port}`
+    }
+    return bindHost ? `${bindHost}:${port}` : `0.0.0.0:${port}`
   }
 
   private parseCookies(req: IncomingMessage): Record<string, string> {

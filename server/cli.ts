@@ -25,6 +25,7 @@ import path from 'path'
 import { Thalia } from './thalia'
 import fs from 'fs'
 import { getPort } from 'get-port-please'
+import { startupMark, startupSummary } from './startup-timer'
 
 const project =
   process.argv.find((arg) => arg.startsWith('--project'))?.split('=')[1] || process.env['PROJECT'] || 'default'
@@ -36,8 +37,11 @@ if (process.env['NODE_ENV'] === 'production' && process.env['LOG_LEVEL']?.toLowe
 }
 
 async function main() {
+  startupMark('cli.begin')
+
   // Get available port (prefer 1337, or use --port if provided)
   const port = await getPort({ port: preferredPort })
+  startupMark(`cli.port:${port}`)
 
   let options: ServerOptions = {
     node_env: process.env['NODE_ENV'] || 'development',
@@ -62,9 +66,13 @@ async function main() {
   }
 
   console.log('Creating Thalia with options:', options)
+  startupMark('cli.before-init')
   Thalia.init(options)
-    .then((thalia) => {
-      thalia.start()
+    .then(async (thalia) => {
+      startupMark('cli.after-init')
+      await thalia.start()
+      startupMark('cli.after-listen')
+      startupSummary()
 
       let shuttingDown = false
 

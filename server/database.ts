@@ -22,6 +22,7 @@ import { Website } from './website'
 import { Machine } from './controllers'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import { DatabaseError } from './errors'
+import { startupMark } from './startup-timer'
 
 /** Row counts keyed by schema registration name (used at init and in tests). */
 export type SchemaRowCounts = {
@@ -233,13 +234,16 @@ export class ThaliaDatabase {
    */
   public async init(): Promise<ThaliaDatabase> {
     try {
+      startupMark(`database.${this.website.name}.import-config`)
       const drizzleConfig = await import(path.join(this.website.rootPath, 'drizzle.config.ts'))
       this.url = drizzleConfig.default.dbCredentials.url
       this.drizzle = drizzle(this.url)
 
       console.log(`Starting Drizzle database connection for ${this.website.name}`)
 
+      startupMark(`database.${this.website.name}.select-1`)
       await this.drizzle.execute(sql`SELECT 1`)
+      startupMark(`database.${this.website.name}.connected`)
 
       const dialect = inferDbDialect(drizzleConfig.default)
       const skipEstimates = process.env.THALIA_SKIP_SCHEMA_ROW_ESTIMATES === '1'
@@ -251,6 +255,7 @@ export class ThaliaDatabase {
             this.website.name,
             dialect,
           )
+      startupMark(`database.${this.website.name}.row-estimates`)
 
       if (Object.keys(counts).length > 0) {
         console.log(`Approximate row counts from the ${this.website.name} database:`, counts)
@@ -258,6 +263,7 @@ export class ThaliaDatabase {
         console.log(`Database connection OK for ${this.website.name} (no schema row estimates)`)
       }
 
+      startupMark(`database.${this.website.name}.machines`)
       Object.entries(this.machines).forEach(([name, machine]) => {
         machine.init(this.website, name)
       })

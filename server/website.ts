@@ -47,6 +47,7 @@ import {
   buildTemplateErrorDetails,
   type TemplateErrorContext,
 } from './template-errors'
+import { startupMark } from './startup-timer'
 
 interface Views {
   [key: string]: string
@@ -168,10 +169,25 @@ export class Website {
    * Given a basic website config (name & rootPath), load the website.
    */
   public static async create(config: BasicWebsiteConfig): Promise<Website> {
+    startupMark(`website.${config.name}.begin`)
     const website = new Website(config)
+    startupMark(`website.${config.name}.constructor`)
 
-    return Promise.all([website.loadPartials(), website.loadConfig(config).then(() => website.loadDatabase())]).then(
-      ([_partials]) => {
+    return Promise.all([
+      Promise.resolve().then(() => {
+        website.loadPartials()
+        startupMark(`website.${config.name}.partials`)
+      }),
+      website
+        .loadConfig(config)
+        .then(() => {
+          startupMark(`website.${config.name}.config`)
+          return website.loadDatabase()
+        })
+        .then(() => {
+          startupMark(`website.${config.name}.database`)
+        }),
+    ]).then(([_partials]) => {
         // Use configured machines — not DB init outcome — so RBAC stays `RoleRouteGuard` when MySQL is down.
         const machines = website.config.database?.machines
         if (machines?.users && machines?.sessions && machines?.audits) {
@@ -181,6 +197,7 @@ export class Website {
         } else {
           website.routeGuard = new RouteGuard(website)
         }
+        startupMark(`website.${config.name}.ready`)
         return website
       },
     )

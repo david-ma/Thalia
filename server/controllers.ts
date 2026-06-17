@@ -765,7 +765,9 @@ export class CrudFactory implements Machine {
    * - delete: DELETE /tableName/<id> (deletes the record)
    * - columns: GET /tableName/columns (returns the columns for DataTables.net)
    * - json: GET /tableName/json (returns the data for DataTables.net)
+   * - csv: GET /tableName/csv (returns the data for DataTables.net as a CSV file, takes the same parameters as json)
    * - testdata: GET /tableName/testdata (generates test data, NODE_ENV=development only)
+   * - summary: GET /tableName/summary (JSON summary of the table, quick estimate of rows, columns, size, primary keys, foreign keys, description, and schema, for LLM usage)
    */
   public controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
     const target = requestInfo.action || 'list'

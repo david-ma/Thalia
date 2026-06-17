@@ -1,5 +1,6 @@
 import { Server } from './server'
 import { ServerOptions } from './types'
+import { startupMark } from './startup-timer'
 
 export interface Thalia {
   create(options: ServerOptions): Promise<Thalia>
@@ -23,7 +24,9 @@ export class Thalia {
   // This should probably be called init
   public static async init(options: ServerOptions): Promise<Thalia> {
     try {
+      startupMark('thalia.load-websites.begin')
       const websites = await Website.loadAllWebsites(options)
+      startupMark(`thalia.load-websites.done:${websites.length}`)
       // Filter out any websites that failed to load
       const validWebsites = websites.filter((website) => website !== null && website !== undefined)
 

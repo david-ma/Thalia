@@ -242,14 +242,21 @@ export class ThaliaDatabase {
       await this.drizzle.execute(sql`SELECT 1`)
 
       const dialect = inferDbDialect(drizzleConfig.default)
-      const counts = await estimateRowsPerSchemaParallel(
-        this.drizzle,
-        this.schemas,
-        this.website.name,
-        dialect,
-      )
+      const skipEstimates = process.env.THALIA_SKIP_SCHEMA_ROW_ESTIMATES === '1'
+      const counts = skipEstimates || Object.keys(this.schemas).length === 0
+        ? {}
+        : await estimateRowsPerSchemaParallel(
+            this.drizzle,
+            this.schemas,
+            this.website.name,
+            dialect,
+          )
 
-      console.log(`Approximate row counts from the ${this.website.name} database:`, counts)
+      if (Object.keys(counts).length > 0) {
+        console.log(`Approximate row counts from the ${this.website.name} database:`, counts)
+      } else if (!skipEstimates && Object.keys(this.schemas).length > 0) {
+        console.log(`Database connection OK for ${this.website.name} (no schema row estimates)`)
+      }
 
       Object.entries(this.machines).forEach(([name, machine]) => {
         machine.init(this.website, name)

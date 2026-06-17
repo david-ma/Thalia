@@ -374,10 +374,6 @@ pre:not(.mermaid):not(.code-card__body pre) {
     font-weight: 600;
   }
 
-  tbody tr:nth-child(even) {
-    background: rgba(0, 0, 0, 0.02);
-  }
-
   /* Inline code only — not blocks inside .code-card */
   :not(pre) > code {
     padding: 0.15em 0.35em;
@@ -571,10 +567,6 @@ pre:not(.mermaid):not(.code-card__body pre) {
   th {
     background-color: #f8f9fa;
     font-weight: bold;
-  }
-
-  tr:nth-child(even) {
-    background-color: #f8f9fa;
   }
 
   tr:hover {

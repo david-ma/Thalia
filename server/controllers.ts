@@ -529,7 +529,7 @@ import { SQLiteTable } from 'drizzle-orm/sqlite-core'
 import { getTableConfig as getSqliteTableConfig } from 'drizzle-orm/sqlite-core/utils'
 import type { MySql2Database } from 'drizzle-orm/mysql2'
 
-type CrudPrimaryKeyDef = { columns: { name: string }[] }
+type CrudPrimaryKeyDef = { columns: unknown[] }
 
 /** `drizzle-orm/pg-core/utils` resolves to a subfolder; load `utils.js` explicitly. */
 function pgGetTableConfig(table: PgTable) {
@@ -548,13 +548,35 @@ function crudTablePrimaryKeyDefs(table: unknown): CrudPrimaryKeyDef[] {
   return []
 }
 
-/** Drizzle PK column names from `primaryKey({ columns: [...] })` in table extra config. */
+/** Map a Drizzle column object to its property key on the table (`dbt_no`, not `DBT_NO`). */
+function crudColumnPropertyKey(table: unknown, col: unknown): string | undefined {
+  if (col == null || table == null || typeof table !== 'object') return undefined
+  const tableObj = table as Record<string, unknown>
+  const byRef = Object.keys(tableObj).find((k) => tableObj[k] === col)
+  if (byRef) return byRef
+  const sqlName =
+    typeof col === 'object' && col !== null && 'name' in col && typeof (col as { name: unknown }).name === 'string'
+      ? (col as { name: string }).name
+      : undefined
+  if (!sqlName) return undefined
+  return Object.keys(tableObj).find((k) => {
+    const v = tableObj[k]
+    return (
+      k === sqlName ||
+      k.toLowerCase() === sqlName.toLowerCase() ||
+      (typeof v === 'object' && v !== null && 'name' in v && (v as { name: string }).name === sqlName)
+    )
+  })
+}
+
+/** Drizzle PK property keys from `primaryKey({ columns: [...] })` (JS keys, not SQL names). */
 export function crudPrimaryKeyColumnNames(table: unknown): string[] {
   try {
     const names: string[] = []
     for (const pk of crudTablePrimaryKeyDefs(table)) {
       for (const col of pk.columns) {
-        if (col.name) names.push(col.name)
+        const key = crudColumnPropertyKey(table, col)
+        if (key) names.push(key)
       }
     }
     return names
@@ -643,7 +665,9 @@ export function crudResolveColumnRenderer(
  * columns — CrudFactory uses dialect `getTableConfig`, not `column.primaryKey` alone.
  *
  * - **Single PK:** list cell links to show; `fetchCrudRecordByIdOrRespond` uses that column.
- * - **Composite PK:** list shows values; show/edit URL encoding TBD (e.g. `/show/a/b` or joined slug).
+ *   PK property keys come from the Drizzle table object (`dbt_no`), not SQL names (`DBT_NO`).
+ *   Slug is `encodeURIComponent(pkValue)` — safe for numeric and most string keys.
+ * - **Composite PK:** list shows values; show/edit URL encoding TBD (see Micronet dashboards doc).
  *
  * ## Row selection & bulk actions (future)
  *

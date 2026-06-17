@@ -271,9 +271,21 @@ const pkTestTable = mysqlTable(
   (table) => [primaryKey({ columns: [table.cat_no] })],
 )
 
+const erpStylePkTable = mysqlTable(
+  'crud_pk_erp',
+  {
+    dbt_no: varchar('DBT_NO', { length: 6 }),
+  },
+  (table) => [primaryKey({ columns: [table.dbt_no] })],
+)
+
 describe('crudPrimaryKeyColumnNames', () => {
   test('reads primaryKey from drizzle table extra config', () => {
     expect(crudPrimaryKeyColumnNames(pkTestTable)).toEqual(['cat_no'])
+  })
+
+  test('returns JS property key when SQL column name differs (Micronet ERP style)', () => {
+    expect(crudPrimaryKeyColumnNames(erpStylePkTable)).toEqual(['dbt_no'])
   })
 })
 

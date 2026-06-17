@@ -35,6 +35,7 @@ describe('CrudFactory.getAction', () => {
   test('action "columns" and "json" return read', () => {
     expect(CrudFactory.getAction(makeRequestInfo('columns'))).toBe('read')
     expect(CrudFactory.getAction(makeRequestInfo('json'))).toBe('read')
+    expect(CrudFactory.getAction(makeRequestInfo('csv'))).toBe('read')
   })
 
   test('action "new", "create", "testdata" return create', () => {

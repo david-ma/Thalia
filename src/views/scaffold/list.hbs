@@ -1,5 +1,9 @@
 <h1>{{controllerName}}{{#if readOnly}} <span class="text-muted small">(read-only)</span>{{/if}}</h1>
 
+{{#if downloadableCsv}}
+<button type="button" id="crud-download-csv" class="btn btn-sm btn-outline-secondary mb-2">Download CSV</button>
+{{/if}}
+
 <div class="datatables-table-container">
   <table id="myTable"></table>
 </div>
@@ -9,12 +13,14 @@
 {{/unless}}
 
 <script>
+  var crudTable = null;
+
   $.ajax('/{{controllerName}}/columns')
     .then(function (columns) {
 
       columns.forEach(addRenders)
 
-      $('#myTable').DataTable({
+      crudTable = $('#myTable').DataTable({
         ajax: {
           url: '/{{controllerName}}/json',
           dataSrc: 'data',
@@ -28,6 +34,14 @@
         serverSide: true,
         columns: columns
       });
+
+      {{#if downloadableCsv}}
+      document.getElementById('crud-download-csv').addEventListener('click', function () {
+        if (!crudTable) return;
+        var params = $.param(crudTable.ajax.params());
+        window.location.href = '/{{controllerName}}/csv?' + params;
+      });
+      {{/if}}
 
     })
 

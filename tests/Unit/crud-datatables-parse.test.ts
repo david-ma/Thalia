@@ -17,6 +17,9 @@ import {
   crudColumnSupportsDataTablesSearch,
   crudWrapperMainClass,
   crudWrapperPageData,
+  crudCsvEscape,
+  rowsToCrudCsv,
+  CRUD_CSV_MAX_ROWS,
   normaliseCrudDataTablesPaging,
   parseCrudDataTablesQuery,
   resolveCrudJsonOrderColumnNames,
@@ -245,5 +248,12 @@ describe('crudWrapperPageData', () => {
   test('leaves data unchanged when not fullWidth', () => {
     const data = { title: 'List', readOnly: true }
     expect(crudWrapperPageData(data, { fullWidth: false })).toBe(data)
+  })
+})
+
+describe('rowsToCrudCsv', () => {
+  test('escapes commas and quotes', () => {
+    const csv = rowsToCrudCsv(['a', 'b'], [{ a: 'hello', b: 'a,b' }, { a: 'say "hi"', b: '2' }])
+    expect(csv).toBe('a,b\nhello,"a,b"\n"say ""hi""",2\n')
   })
 })

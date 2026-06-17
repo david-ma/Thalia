@@ -280,6 +280,8 @@ type CrudOptions = {
   readOnly?: boolean
   /** Use Bootstrap `container-fluid` instead of fixed-width `container` (~1170px). */
   fullWidth?: boolean
+  /** Show Download CSV on list view; GET …/csv exports rows matching current search/sort (capped). */
+  downloadableCsv?: boolean
 }
 
 /** DataTables paging defaults for CrudFactory `GET …/json`. */
@@ -288,6 +290,8 @@ export const CRUD_DATATABLES_DEFAULT_START = 0
 export const CRUD_DATATABLES_DEFAULT_LENGTH = 10
 /** Upper bound on `length` to limit accidental large scans. */
 export const CRUD_DATATABLES_MAX_LENGTH = 500
+/** Max rows for GET …/csv exports (same filters/order as DataTables, no paging). */
+export const CRUD_CSV_MAX_ROWS = 50_000
 
 /** First scalar from a query-string value (`node` may use `string[]` for repeats). */
 export function crudFirstQueryValue(raw: string | string[] | undefined): string | undefined {
@@ -486,6 +490,29 @@ export function crudWrapperPageData<T extends Record<string, unknown>>(
   return { ...data, wrapperMainClass }
 }
 
+export function crudCsvEscape(val: unknown): string {
+  if (val == null) return ''
+  const s = typeof val === 'object' ? JSON.stringify(val) : String(val)
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`
+  return s
+}
+
+export function rowsToCrudCsv(columns: string[], rows: Record<string, unknown>[]): string {
+  const lines = [columns.join(',')]
+  for (const row of rows) {
+    lines.push(columns.map((col) => crudCsvEscape(row[col])).join(','))
+  }
+  return `${lines.join('\n')}\n`
+}
+
+export function sendCsv(res: ServerResponse, filename: string, body: string) {
+  const safeName = filename.replace(/[^\w.\-]+/g, '_')
+  res.statusCode = 200
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+  res.setHeader('Content-Disposition', `attachment; filename="${safeName}"`)
+  res.end(body)
+}
+
 // import { type LibSQLDatabase } from 'drizzle-orm/libsql'
 import { Permission } from './route-guard'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
@@ -532,12 +559,14 @@ export class CrudFactory implements Machine {
   private wrapperTemplate = 'crud_wrapper'
   private readOnly = false
   private fullWidth = false
+  private downloadableCsv = false
 
   constructor(table: MySqlTableWithColumns<any>, options?: CrudOptions | any) {
     this.table = table
     this.wrapperTemplate = options?.wrapperTemplate || 'crud_wrapper'
     this.readOnly = Boolean(options?.readOnly)
     this.fullWidth = Boolean(options?.fullWidth)
+    this.downloadableCsv = Boolean(options?.downloadableCsv)
   }
 
   private pageData<T extends Record<string, unknown>>(data: T): T & { wrapperMainClass?: string } {
@@ -561,6 +590,8 @@ export class CrudFactory implements Machine {
       case 'list':
         return 'read'
       case 'json':
+        return 'read'
+      case 'csv':
         return 'read'
       case 'new':
         return 'create'
@@ -608,6 +639,9 @@ export class CrudFactory implements Machine {
         break
       case 'json':
         this.json(res, req, website, requestInfo)
+        break
+      case 'csv':
+        this.csv(res, req, website, requestInfo)
         break
       case 'new':
         if (this.denyWriteWhenReadOnly(res)) break
@@ -942,6 +976,7 @@ export class CrudFactory implements Machine {
       tableName: this.name,
       primaryKey,
       readOnly: this.readOnly,
+      downloadableCsv: this.downloadableCsv,
       links: [],
     }
     const html = website.getContentHtml('list', this.wrapperTemplate)(this.pageData(data))
@@ -1024,6 +1059,26 @@ export class CrudFactory implements Machine {
     return q.then((rows) => rows[0]?.count ?? 0)
   }
 
+  /** Shared SELECT for `/json` and `/csv` (filters, order; optional paging). */
+  private crudJsonSelectQuery(
+    parsed: CrudParsedDataTablesQuery,
+    paging?: { limit: number; offset: number },
+  ) {
+    let dataQuery = this.db.select().from(this.table)
+    const combinedWhere = this.crudJsonCombinedWhere(parsed)
+    if (combinedWhere !== undefined) {
+      dataQuery = dataQuery.where(combinedWhere) as typeof dataQuery
+    }
+    const orderBy = this.crudJsonBuildOrderBy(parsed)
+    if (orderBy.length > 0) {
+      dataQuery = dataQuery.orderBy(...orderBy) as typeof dataQuery
+    }
+    if (paging) {
+      return dataQuery.limit(paging.limit).offset(paging.offset)
+    }
+    return dataQuery.limit(CRUD_CSV_MAX_ROWS)
+  }
+
   /**
    * Serve the data in DataTables.net json format
    * The frontend uses /columns to get the columns, and then asks for /json to get the data.
@@ -1043,17 +1098,7 @@ export class CrudFactory implements Machine {
       ? this.crudJsonCountRows(combinedWhere)
       : countTotalPromise
 
-    const dataPromise = (() => {
-      let dataQuery = this.db.select().from(this.table)
-      if (combinedWhere !== undefined) {
-        dataQuery = dataQuery.where(combinedWhere) as typeof dataQuery
-      }
-      const orderBy = this.crudJsonBuildOrderBy(parsedQuery)
-      if (orderBy.length > 0) {
-        dataQuery = dataQuery.orderBy(...orderBy) as typeof dataQuery
-      }
-      return dataQuery.limit(limit).offset(offset)
-    })()
+    const dataPromise = this.crudJsonSelectQuery(parsedQuery, { limit, offset })
 
     Promise.all([countTotalPromise, countFilteredPromise, dataPromise])
       .then(([recordsTotal, recordsFiltered, records]) => {
@@ -1070,6 +1115,34 @@ export class CrudFactory implements Machine {
         console.error('CrudFactory json:', this.name, err)
         res.writeHead(500, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: 'Unable to load table data.' }))
+      })
+  }
+
+  /**
+   * CSV export using the same search/order as DataTables (ignores page length/offset).
+   * Enabled when `downloadableCsv` is set on the CrudFactory constructor.
+   */
+  private csv(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    if (!this.downloadableCsv) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
+      res.end('CSV export is not enabled for this table.')
+      return
+    }
+
+    const query = url.parse(requestInfo.url, true).query
+    const parsedQuery = parseCrudDataTablesQuery(query)
+    const columnNames = this.colsFiltered()
+
+    this.crudJsonSelectQuery(parsedQuery)
+      .then((records) => {
+        const body = rowsToCrudCsv(columnNames, records as Record<string, unknown>[])
+        const stamp = new Date().toISOString().slice(0, 10)
+        sendCsv(res, `${this.name}-${stamp}.csv`, body)
+      })
+      .catch((err: unknown) => {
+        console.error('CrudFactory csv:', this.name, err)
+        res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' })
+        res.end('Unable to export CSV.')
       })
   }
 

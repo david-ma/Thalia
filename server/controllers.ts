@@ -278,6 +278,8 @@ type CrudOptions = {
   relationships?: CrudRelationship[]
   /** Hide create/edit UI and reject write actions (list/json/columns/show only). */
   readOnly?: boolean
+  /** Use Bootstrap `container-fluid` instead of fixed-width `container` (~1170px). */
+  fullWidth?: boolean
 }
 
 /** DataTables paging defaults for CrudFactory `GET …/json`. */
@@ -469,6 +471,21 @@ export function crudColumnSupportsDataTablesSearch(type: string): boolean {
   ]).has(type)
 }
 
+/** Bootstrap main width for CRUD pages (`wrapper.hbs` → `wrapperMainClass`). */
+export function crudWrapperMainClass(fullWidth: boolean): string | undefined {
+  return fullWidth ? 'container-fluid page py-3 px-3' : undefined
+}
+
+/** Merge CRUD page data with optional full-width wrapper class for Handlebars layouts. */
+export function crudWrapperPageData<T extends Record<string, unknown>>(
+  data: T,
+  options: { fullWidth?: boolean },
+): T & { wrapperMainClass?: string } {
+  const wrapperMainClass = crudWrapperMainClass(Boolean(options.fullWidth))
+  if (!wrapperMainClass) return data
+  return { ...data, wrapperMainClass }
+}
+
 // import { type LibSQLDatabase } from 'drizzle-orm/libsql'
 import { Permission } from './route-guard'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
@@ -514,11 +531,17 @@ export class CrudFactory implements Machine {
   ])
   private wrapperTemplate = 'crud_wrapper'
   private readOnly = false
+  private fullWidth = false
 
   constructor(table: MySqlTableWithColumns<any>, options?: CrudOptions | any) {
     this.table = table
     this.wrapperTemplate = options?.wrapperTemplate || 'crud_wrapper'
     this.readOnly = Boolean(options?.readOnly)
+    this.fullWidth = Boolean(options?.fullWidth)
+  }
+
+  private pageData<T extends Record<string, unknown>>(data: T): T & { wrapperMainClass?: string } {
+    return crudWrapperPageData(data, { fullWidth: this.fullWidth })
   }
 
   public init(website: Website, name: string) {
@@ -821,7 +844,7 @@ export class CrudFactory implements Machine {
           links: [],
         }
 
-        const html = website.getContentHtml('edit', this.wrapperTemplate)(data)
+        const html = website.getContentHtml('edit', this.wrapperTemplate)(this.pageData(data))
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
         res.end(html)
       })
@@ -855,7 +878,7 @@ export class CrudFactory implements Machine {
           links: [],
         }
 
-        const html = website.getContentHtml('show', this.wrapperTemplate)(data)
+        const html = website.getContentHtml('show', this.wrapperTemplate)(this.pageData(data))
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
         res.end(html)
       })
@@ -904,7 +927,7 @@ export class CrudFactory implements Machine {
       fields,
     }
 
-    const html = website.getContentHtml('new', this.wrapperTemplate)(data)
+    const html = website.getContentHtml('new', this.wrapperTemplate)(this.pageData(data))
 
     res.writeHead(200, { 'Content-Type': 'text/html' })
     res.end(html)
@@ -921,7 +944,7 @@ export class CrudFactory implements Machine {
       readOnly: this.readOnly,
       links: [],
     }
-    const html = website.getContentHtml('list', this.wrapperTemplate)(data)
+    const html = website.getContentHtml('list', this.wrapperTemplate)(this.pageData(data))
 
     res.writeHead(200, { 'Content-Type': 'text/html' })
     res.end(html)
@@ -1131,11 +1154,11 @@ export class CrudFactory implements Machine {
     const html = this.website.getContentHtml(
       'message',
       this.wrapperTemplate,
-    )({
+    )(this.pageData({
       state: 'Success',
       message,
       redirect,
-    })
+    }))
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
     res.end(html)
   }
@@ -1151,11 +1174,11 @@ export class CrudFactory implements Machine {
     const html = this.website.getContentHtml(
       'message',
       this.wrapperTemplate,
-    )({
+    )(this.pageData({
       state: 'Error',
       message: this.crudHumanReadableError(error),
       redirect: `/${this.name}`,
-    })
+    }))
     const status = options?.status ?? 500
     res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8' })
     res.end(html)

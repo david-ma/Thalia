@@ -15,6 +15,8 @@ import {
   hasActiveCrudGlobalSearch,
   crudColumnSupportsDataTablesOrder,
   crudColumnSupportsDataTablesSearch,
+  crudWrapperMainClass,
+  crudWrapperPageData,
   normaliseCrudDataTablesPaging,
   parseCrudDataTablesQuery,
   resolveCrudJsonOrderColumnNames,
@@ -219,5 +221,29 @@ describe('crudColumnSupportsDataTablesSearch', () => {
   test('allows text-like MySQL types only', () => {
     expect(crudColumnSupportsDataTablesSearch('MySqlVarChar')).toBe(true)
     expect(crudColumnSupportsDataTablesSearch('MySqlDouble')).toBe(false)
+  })
+})
+
+describe('crudWrapperMainClass', () => {
+  test('returns container-fluid when fullWidth', () => {
+    expect(crudWrapperMainClass(true)).toBe('container-fluid page py-3 px-3')
+  })
+
+  test('returns undefined for default boxed layout', () => {
+    expect(crudWrapperMainClass(false)).toBeUndefined()
+  })
+})
+
+describe('crudWrapperPageData', () => {
+  test('adds wrapperMainClass when fullWidth', () => {
+    expect(crudWrapperPageData({ title: 'List' }, { fullWidth: true })).toEqual({
+      title: 'List',
+      wrapperMainClass: 'container-fluid page py-3 px-3',
+    })
+  })
+
+  test('leaves data unchanged when not fullWidth', () => {
+    const data = { title: 'List', readOnly: true }
+    expect(crudWrapperPageData(data, { fullWidth: false })).toBe(data)
   })
 })

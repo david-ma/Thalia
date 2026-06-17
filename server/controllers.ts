@@ -12,7 +12,7 @@ import { IncomingMessage, ServerResponse } from 'http'
 import { Website, type Controller } from './website'
 import fs from 'fs'
 import path from 'path'
-import { and, eq, isNull, like, or, sql, type SQL } from 'drizzle-orm'
+import { and, asc, desc, eq, getTableName, isNull, like, or, sql, type SQL } from 'drizzle-orm'
 import { RequestInfo } from './server'
 import url from 'url'
 import { ParsedUrlQuery } from 'querystring'
@@ -276,6 +276,8 @@ type CrudRelationship = {
 type CrudOptions = {
   wrapperTemplate?: string
   relationships?: CrudRelationship[]
+  /** Hide create/edit UI and reject write actions (list/json/columns/show only). */
+  readOnly?: boolean
 }
 
 /** DataTables paging defaults for CrudFactory `GET …/json`. */
@@ -365,6 +367,108 @@ export function escapeCrudDataTablesLikeTerm(term: string): string {
   return term.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
 }
 
+export type CrudJsonOrderSpec = {
+  name: string
+  dir: 'asc' | 'desc'
+}
+
+/** True when DataTables global search should narrow rows (and warrants recordsFiltered count). */
+export function hasActiveCrudGlobalSearch(search: CrudParsedDataTablesSearch): boolean {
+  return Boolean(search.value?.trim())
+}
+
+/** Sorted DataTables `order[n][…]` entries (column index, optional name, direction). */
+export function getCrudDataTablesOrderEntries(
+  order: CrudParsedDataTablesQuery['order'],
+): Array<{ columnIndex?: number; name?: string; dir: 'asc' | 'desc' }> {
+  return Object.keys(order)
+    .sort((a, b) => Number(a) - Number(b))
+    .map((key) => {
+      const entry = order[key] ?? {}
+      const columnRaw = entry.column
+      const columnIndex =
+        columnRaw !== undefined && columnRaw !== '' ? parseInt(columnRaw, 10) : undefined
+      const name = entry.name?.trim() || undefined
+      const dir: 'asc' | 'desc' = entry.dir?.toLowerCase() === 'asc' ? 'asc' : 'desc'
+      return {
+        columnIndex: Number.isFinite(columnIndex) ? columnIndex : undefined,
+        name,
+        dir,
+      }
+    })
+}
+
+/**
+ * Resolve DataTables order params to Drizzle column keys on the table.
+ * Falls back to `defaultColumn` (typically PK or first column) when order is missing/invalid.
+ */
+export function resolveCrudJsonOrderColumnNames(
+  parsed: CrudParsedDataTablesQuery,
+  availableColumns: string[],
+  defaultColumn: string,
+): CrudJsonOrderSpec[] {
+  const entries = getCrudDataTablesOrderEntries(parsed.order)
+  const resolved: CrudJsonOrderSpec[] = []
+
+  for (const entry of entries) {
+    let name: string | undefined
+    if (entry.name && availableColumns.includes(entry.name)) {
+      name = entry.name
+    } else if (entry.columnIndex !== undefined && availableColumns[entry.columnIndex]) {
+      name = availableColumns[entry.columnIndex]
+    }
+    if (name) {
+      resolved.push({ name, dir: entry.dir })
+    }
+  }
+
+  if (resolved.length === 0) {
+    const fallback =
+      availableColumns.includes(defaultColumn) ? defaultColumn : (availableColumns[0] ?? defaultColumn)
+    return [{ name: fallback, dir: 'desc' }]
+  }
+
+  return resolved
+}
+
+/** Drizzle/MySQL column types eligible for DataTables server-side ORDER BY. */
+export function crudColumnSupportsDataTablesOrder(type: string): boolean {
+  if (crudColumnSupportsDataTablesSearch(type)) return true
+  return new Set([
+    'num',
+    'date',
+    'bool',
+    'MySqlInt',
+    'MySqlTinyInt',
+    'MySqlSmallInt',
+    'MySqlMediumInt',
+    'MySqlBigInt',
+    'MySqlDouble',
+    'MySqlFloat',
+    'MySqlDecimal',
+    'MySqlBoolean',
+    'MySqlDate',
+    'MySqlDateTime',
+    'MySqlTimestamp',
+    'MySqlTime',
+    'MySqlYear',
+  ]).has(type)
+}
+
+/** Drizzle/MySQL column types eligible for DataTables global search (`LIKE`). */
+export function crudColumnSupportsDataTablesSearch(type: string): boolean {
+  return new Set([
+    'string',
+    'MySqlVarChar',
+    'MySqlChar',
+    'MySqlText',
+    'MySqlTinyText',
+    'MySqlMediumText',
+    'MySqlLongText',
+    'MySqlEnum',
+  ]).has(type)
+}
+
 // import { type LibSQLDatabase } from 'drizzle-orm/libsql'
 import { Permission } from './route-guard'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
@@ -409,34 +513,20 @@ export class CrudFactory implements Machine {
     'MySqlEnum',
   ])
   private wrapperTemplate = 'crud_wrapper'
+  private readOnly = false
 
   constructor(table: MySqlTableWithColumns<any>, options?: CrudOptions | any) {
     this.table = table
     this.wrapperTemplate = options?.wrapperTemplate || 'crud_wrapper'
+    this.readOnly = Boolean(options?.readOnly)
   }
 
   public init(website: Website, name: string) {
     this.name = name
     this.website = website
     this.db = website.db.drizzle
-    // this.sqlite = sqlite
 
-    this.db
-      .select()
-      .from(this.table)
-      .then((records: any[]) => {
-        console.debug('CrudFactory', this.name, 'initialised, it has', records.length, 'records')
-
-        // console.log("Found", records.length, "records in", this.name)
-      })
-      .catch((err: unknown) => {
-        console.warn(
-          'CrudFactory',
-          this.name,
-          'init query failed (schema drift? run drizzle-kit push):',
-          err instanceof Error ? err.message : String(err),
-        )
-      })
+    console.debug('CrudFactory', this.name, 'ready for table', getTableName(this.table))
   }
 
   public static getAction(requestInfo: RequestInfo): Permission {
@@ -497,29 +587,42 @@ export class CrudFactory implements Machine {
         this.json(res, req, website, requestInfo)
         break
       case 'new':
+        if (this.denyWriteWhenReadOnly(res)) break
         this.new(res, req, website, requestInfo)
         break
       case 'create':
+        if (this.denyWriteWhenReadOnly(res)) break
         this.create(res, req, website, requestInfo)
         break
       case 'testdata':
+        if (this.denyWriteWhenReadOnly(res)) break
         this.testdata(res, req, website, requestInfo)
         break
       case 'edit':
+        if (this.denyWriteWhenReadOnly(res)) break
         this.edit(res, req, website, requestInfo)
         break
       case 'update':
+        if (this.denyWriteWhenReadOnly(res)) break
         this.update(res, req, website, requestInfo)
         break
       case 'delete':
+        if (this.denyWriteWhenReadOnly(res)) break
         this.delete(res, req, website, requestInfo)
         break
       case 'restore':
+        if (this.denyWriteWhenReadOnly(res)) break
         this.restore(res, req, website, requestInfo)
         break
       default:
         this.show(res, req, website, requestInfo)
     }
+  }
+
+  private denyWriteWhenReadOnly(res: ServerResponse): boolean {
+    if (!this.readOnly) return false
+    this.reportError(res, new Error('This table is read-only.'), { status: 403 })
+    return true
   }
 
   private testdata(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
@@ -808,17 +911,45 @@ export class CrudFactory implements Machine {
   }
 
   private list(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
+    const primaryKey =
+      this.filteredAttributes().find((attribute) => attribute.primaryKey)?.name ?? 'id'
     const data = {
       title: `List ${this.name}`,
       controllerName: this.name,
       tableName: this.name,
-      primaryKey: 'id',
+      primaryKey,
+      readOnly: this.readOnly,
       links: [],
     }
     const html = website.getContentHtml('list', this.wrapperTemplate)(data)
 
     res.writeHead(200, { 'Content-Type': 'text/html' })
     res.end(html)
+  }
+
+  /** Default sort column for `/json` when the client sends no order (PK, else first column). */
+  private crudJsonDefaultOrderColumnName(): string {
+    const cols = this.colsFiltered()
+    const pk = this.filteredAttributes().find((attribute) => attribute.primaryKey)?.name
+    if (pk && cols.includes(pk)) return pk
+    return cols[0] ?? 'id'
+  }
+
+  /** Build Drizzle `orderBy` terms from DataTables `order[n][…]` query params. */
+  private crudJsonBuildOrderBy(parsed: CrudParsedDataTablesQuery) {
+    const available = this.colsFiltered()
+    const specs = resolveCrudJsonOrderColumnNames(
+      parsed,
+      available,
+      this.crudJsonDefaultOrderColumnName(),
+    )
+    const clauses: ReturnType<typeof asc>[] = []
+    for (const spec of specs) {
+      const column = (this.table as Record<string, unknown>)[spec.name]
+      if (column == null) continue
+      clauses.push(spec.dir === 'asc' ? asc(column as Parameters<typeof asc>[0]) : desc(column as Parameters<typeof desc>[0]))
+    }
+    return clauses
   }
 
   /** Rows visible to the list scaffold (exclude soft-deleted when `deletedAt` exists). */
@@ -882,16 +1013,26 @@ export class CrudFactory implements Machine {
 
     const visibilityWhere = this.crudJsonVisibilityWhere()
     const combinedWhere = this.crudJsonCombinedWhere(parsedQuery)
+    const hasSearch = hasActiveCrudGlobalSearch(parsedQuery.search)
 
-    Promise.all([
-      this.crudJsonCountRows(visibilityWhere),
-      this.crudJsonCountRows(combinedWhere),
-      (() => {
-        const base = this.db.select().from(this.table)
-        const dataQuery = combinedWhere !== undefined ? base.where(combinedWhere) : base
-        return dataQuery.limit(limit).offset(offset)
-      })(),
-    ])
+    const countTotalPromise = this.crudJsonCountRows(visibilityWhere)
+    const countFilteredPromise = hasSearch
+      ? this.crudJsonCountRows(combinedWhere)
+      : countTotalPromise
+
+    const dataPromise = (() => {
+      let dataQuery = this.db.select().from(this.table)
+      if (combinedWhere !== undefined) {
+        dataQuery = dataQuery.where(combinedWhere) as typeof dataQuery
+      }
+      const orderBy = this.crudJsonBuildOrderBy(parsedQuery)
+      if (orderBy.length > 0) {
+        dataQuery = dataQuery.orderBy(...orderBy) as typeof dataQuery
+      }
+      return dataQuery.limit(limit).offset(offset)
+    })()
+
+    Promise.all([countTotalPromise, countFilteredPromise, dataPromise])
       .then(([recordsTotal, recordsFiltered, records]) => {
         const blob = {
           draw,
@@ -969,12 +1110,9 @@ export class CrudFactory implements Machine {
 
   // TODO: Get the types from the drizzle table?
   private mapColumns(attribute: Attribute) {
-    // const type = SequelizeDataTableTypes[value.type.key]
     const type = attribute.type
-
-    const allowedTypes = ['string', 'num', 'date', 'bool']
-    const orderable = allowedTypes.includes(type)
-    const searchable = allowedTypes.includes(type)
+    const orderable = crudColumnSupportsDataTablesOrder(type)
+    const searchable = crudColumnSupportsDataTablesSearch(type)
 
     var blob = {
       name: attribute.name,

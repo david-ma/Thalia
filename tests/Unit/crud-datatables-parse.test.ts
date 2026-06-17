@@ -11,8 +11,13 @@ import {
   CRUD_DATATABLES_MAX_LENGTH,
   crudFirstQueryValue,
   escapeCrudDataTablesLikeTerm,
+  getCrudDataTablesOrderEntries,
+  hasActiveCrudGlobalSearch,
+  crudColumnSupportsDataTablesOrder,
+  crudColumnSupportsDataTablesSearch,
   normaliseCrudDataTablesPaging,
   parseCrudDataTablesQuery,
+  resolveCrudJsonOrderColumnNames,
 } from '../../server/controllers.js'
 
 describe('escapeCrudDataTablesLikeTerm', () => {
@@ -67,6 +72,15 @@ describe('parseCrudDataTablesQuery', () => {
       'order[0][dir]': 'asc',
     })
     expect(p.order['0']).toEqual({ column: '1', dir: 'asc' })
+  })
+
+  test('parses order[n][name] for server-side column data keys', () => {
+    const p = parseCrudDataTablesQuery({
+      'order[0][column]': '0',
+      'order[0][dir]': 'desc',
+      'order[0][name]': 'dhist_created',
+    })
+    expect(p.order['0']).toEqual({ column: '0', dir: 'desc', name: 'dhist_created' })
   })
 
   test('parses search[value] and search[regex]', () => {
@@ -125,5 +139,85 @@ describe('normaliseCrudDataTablesPaging', () => {
   test('blank draw falls back to default draw', () => {
     const n = normaliseCrudDataTablesPaging(parseCrudDataTablesQuery({ draw: '' }))
     expect(n.draw).toBe(CRUD_DATATABLES_DEFAULT_DRAW)
+  })
+})
+
+describe('hasActiveCrudGlobalSearch', () => {
+  test('false for empty or whitespace search', () => {
+    expect(hasActiveCrudGlobalSearch({ value: undefined, regex: false })).toBe(false)
+    expect(hasActiveCrudGlobalSearch({ value: '   ', regex: false })).toBe(false)
+  })
+
+  test('true when search has a term', () => {
+    expect(hasActiveCrudGlobalSearch({ value: 'acme', regex: false })).toBe(true)
+  })
+})
+
+describe('resolveCrudJsonOrderColumnNames', () => {
+  const cols = ['dhist_created', 'dhist_dbtno', 'dhist_sales']
+
+  test('prefers order[name] when present', () => {
+    const parsed = parseCrudDataTablesQuery({
+      'order[0][column]': '0',
+      'order[0][dir]': 'desc',
+      'order[0][name]': 'dhist_sales',
+    })
+    expect(resolveCrudJsonOrderColumnNames(parsed, cols, 'dhist_unique')).toEqual([
+      { name: 'dhist_sales', dir: 'desc' },
+    ])
+  })
+
+  test('resolves order[column] index when name omitted', () => {
+    const parsed = parseCrudDataTablesQuery({
+      'order[0][column]': '1',
+      'order[0][dir]': 'asc',
+    })
+    expect(resolveCrudJsonOrderColumnNames(parsed, cols, 'dhist_unique')).toEqual([
+      { name: 'dhist_dbtno', dir: 'asc' },
+    ])
+  })
+
+  test('falls back to default column desc when order missing', () => {
+    expect(resolveCrudJsonOrderColumnNames(parseCrudDataTablesQuery({}), cols, 'dhist_dbtno')).toEqual([
+      { name: 'dhist_dbtno', dir: 'desc' },
+    ])
+  })
+
+  test('falls back to first available column when default not in list', () => {
+    expect(resolveCrudJsonOrderColumnNames(parseCrudDataTablesQuery({}), cols, 'missing')).toEqual([
+      { name: 'dhist_created', dir: 'desc' },
+    ])
+  })
+})
+
+describe('getCrudDataTablesOrderEntries', () => {
+  test('sorts multi-column order by index', () => {
+    const entries = getCrudDataTablesOrderEntries({
+      '1': { column: '2', dir: 'asc' },
+      '0': { column: '0', dir: 'desc' },
+    })
+    expect(entries).toEqual([
+      { columnIndex: 0, name: undefined, dir: 'desc' },
+      { columnIndex: 2, name: undefined, dir: 'asc' },
+    ])
+  })
+})
+
+describe('crudColumnSupportsDataTablesOrder', () => {
+  test('allows common MySQL Drizzle column types', () => {
+    expect(crudColumnSupportsDataTablesOrder('MySqlVarChar')).toBe(true)
+    expect(crudColumnSupportsDataTablesOrder('MySqlDate')).toBe(true)
+    expect(crudColumnSupportsDataTablesOrder('MySqlDouble')).toBe(true)
+  })
+
+  test('disallows json blobs', () => {
+    expect(crudColumnSupportsDataTablesOrder('MySqlJson')).toBe(false)
+  })
+})
+
+describe('crudColumnSupportsDataTablesSearch', () => {
+  test('allows text-like MySQL types only', () => {
+    expect(crudColumnSupportsDataTablesSearch('MySqlVarChar')).toBe(true)
+    expect(crudColumnSupportsDataTablesSearch('MySqlDouble')).toBe(false)
   })
 })

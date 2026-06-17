@@ -1,10 +1,12 @@
-<h1>{{controllerName}}</h1>
+<h1>{{controllerName}}{{#if readOnly}} <span class="text-muted small">(read-only)</span>{{/if}}</h1>
 
 <div class="datatables-table-container">
   <table id="myTable"></table>
 </div>
 
+{{#unless readOnly}}
 <button onclick="window.location.href='/{{controllerName}}/new'">Create New {{controllerName}}</button>
+{{/unless}}
 
 <script>
   $.ajax('/{{controllerName}}/columns')
@@ -48,8 +50,12 @@
     if (column.data === '{{ primaryKey }}') {
       column.render = function (data, type, row, meta) {
         const id = encodeURIComponent(String(data))
+        {{#if readOnly}}
+        return `<span>${id}</span>`
+        {{else}}
         return `<a href="/{{controllerName}}/show/${id}">${id}</a>
         <span style="float:right"><a href="/{{controllerName}}/edit/${id}" aria-label="Edit ${id}">📝</a></span>`
+        {{/if}}
       }
     }
 

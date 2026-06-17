@@ -55,7 +55,6 @@ describe('Website template errors', () => {
       rootPath: tmpDir,
       mode: 'standalone',
       port: 0,
-      node_env: 'development',
     })
 
     const res = createMockResponse()

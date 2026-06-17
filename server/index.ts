@@ -7,6 +7,7 @@
 export * from './thalia'
 
 export * from './errors'
+export * from './template-errors'
 export * from './types'
 export * from './server'
 export * from './website'

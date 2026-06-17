@@ -16,6 +16,7 @@ import fs from 'fs'
 import * as sass from 'sass'
 import zlib from 'zlib'
 import { renderMarkdownPage } from './markdown'
+import { TemplateError } from './errors'
 
 const GZIP_SIZE_THRESHOLD = 10 * 1024 // 10kb
 
@@ -346,6 +347,7 @@ export class RequestHandler {
           .asyncServeHandlebarsTemplate({
             res: requestHandler.res,
             templatePath: target,
+            route: requestHandler.pathname,
             data: {
               requestInfo: requestHandler.requestInfo,
               version: requestHandler.website.version,
@@ -356,6 +358,10 @@ export class RequestHandler {
             finish(`Successfully rendered handlebars template ${requestHandler.pathname}`)
           })
           .catch((error) => {
+            if (error instanceof TemplateError) {
+              finish(`Handlebars template error ${requestHandler.pathname}`)
+              return
+            }
             console.error('Error rendering handlebars template:', requestHandler.pathname, error)
             if (!requestHandler.res.headersSent) {
               requestHandler.res.writeHead(500)

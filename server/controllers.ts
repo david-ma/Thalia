@@ -1124,8 +1124,17 @@ export function wrap(filename: string, data: any = {}, wrapper_template: string 
  */
 export function hbs(content_template: string, data: any = {}, wrapper_template: string = 'wrapper'): Controller {
   return (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
-    const html = website.getContentHtml(content_template, wrapper_template)
-    res.end(html({ content: content_template, wrapper: wrapper_template, ...data }))
+    try {
+      const compiled = website.getContentHtml(content_template, wrapper_template)
+      const html = compiled({ content: content_template, wrapper: wrapper_template, ...data })
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+      res.end(html)
+    } catch (error) {
+      website.renderError(res, error as Error, {
+        template: content_template,
+        route: requestInfo.pathname,
+      })
+    }
   }
 }
 
@@ -1138,12 +1147,29 @@ export function hbs(content_template: string, data: any = {}, wrapper_template: 
  */
 export function md_file(filename: string, data: any = {}, wrapper_template: string = 'wrapper'): Controller {
   return (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
-    fs.promises.readFile(path.join(website.rootPath, 'src', filename), 'utf8').then((content) => {
-      website.handlebars.registerPartial('content', marked.parse(content, { async: false }))
-      const templateFile = website.handlebars.partials[wrapper_template] ?? ''
-      const html = website.handlebars.compile(templateFile)
-      res.end(html(data))
-    })
+    fs.promises
+      .readFile(path.join(website.rootPath, 'src', filename), 'utf8')
+      .then((content) => {
+        try {
+          website.handlebars.registerPartial('content', marked.parse(content, { async: false }))
+          const templateFile = website.handlebars.partials[wrapper_template] ?? ''
+          const compiled = website.handlebars.compile(templateFile)
+          const html = compiled(data)
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+          res.end(html)
+        } catch (error) {
+          website.renderError(res, error as Error, {
+            template: filename,
+            route: requestInfo.pathname,
+          })
+        }
+      })
+      .catch((error) => {
+        website.renderError(res, error as Error, {
+          template: filename,
+          route: requestInfo.pathname,
+        })
+      })
   }
 }
 

@@ -1,27 +1,161 @@
-<html>
+<html lang="en">
 
 <head>
+  <meta charset="utf-8">
+  <title>500 Server Error</title>
   <style>
     :root {
       color-scheme: light dark;
+      --error-bg: #1a1a1a;
+      --error-fg: #f2f2f2;
+      --error-muted: #b8b8b8;
+      --error-accent: #ff6b6b;
+      --error-code-bg: #111;
+      --error-border: #333;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --error-bg: #fafafa;
+        --error-fg: #1a1a1a;
+        --error-muted: #555;
+        --error-accent: #c62828;
+        --error-code-bg: #fff;
+        --error-border: #ddd;
+      }
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      line-height: 1.5;
+      margin: 0;
+      padding: 2rem;
+      background: var(--error-bg);
+      color: var(--error-fg);
+      max-width: 52rem;
+    }
+
+    h1 {
+      color: var(--error-accent);
+      font-size: 1.5rem;
+      margin: 0 0 0.5rem;
+    }
+
+    .meta {
+      color: var(--error-muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+
+    .meta code {
+      font-size: 0.9em;
+    }
+
+    h2 {
+      font-size: 1rem;
+      margin: 1.5rem 0 0.5rem;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 1.25rem;
+    }
+
+    pre,
+    .snippet {
+      background: var(--error-code-bg);
+      border: 1px solid var(--error-border);
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .snippet {
+      border-left: 4px solid var(--error-accent);
+    }
+
+    .actions {
+      margin: 1rem 0;
+    }
+
+    button {
+      font: inherit;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      border: 1px solid var(--error-border);
+      background: var(--error-code-bg);
+      color: var(--error-fg);
+      cursor: pointer;
+    }
+
+    button:hover {
+      border-color: var(--error-accent);
+    }
+
+    .stack {
+      font-size: 0.75rem;
+      color: var(--error-muted);
     }
   </style>
 </head>
 
 <body>
-  <h1>
-    500 Server Error
-  </h1>
-{{#if website }}
-  <pre>
-Error in Website "{{ website }}":
-{{ error }}
+  {{#if website}}
+  <h1>Handlebars template error</h1>
+  <p class="meta">
+    <strong>{{website}}</strong>
+    {{#if route}} · route <code>{{route}}</code>{{/if}}
+    {{#if template}} · template <code>{{template}}</code>{{/if}}
+    {{#if templatePath}} · file <code>{{templatePath}}</code>{{/if}}
+    {{#if line}} · line <strong>{{line}}</strong>{{/if}}
+  </p>
 
-{{ stack }}
+  <h2>Error</h2>
+  <pre>{{error}}</pre>
 
-{{ template }}
-  </pre>
-{{/if}}
+  {{#if snippet}}
+  <h2>Problem line</h2>
+  <pre class="snippet">{{snippet}}</pre>
+  {{/if}}
+
+  {{#if hints}}
+  <h2>Hints</h2>
+  <ul>
+    {{#each hints}}
+    <li>{{this}}</li>
+    {{/each}}
+  </ul>
+  {{/if}}
+
+  {{#if llmContext}}
+  <h2>Copy for LLM</h2>
+  <div class="actions">
+    <button type="button" id="copy-llm">Copy error context</button>
+    <span id="copy-status" class="meta"></span>
+  </div>
+  <pre id="llm-context">{{llmContext}}</pre>
+  <script>
+    document.getElementById('copy-llm')?.addEventListener('click', function () {
+      var text = document.getElementById('llm-context')?.innerText || '';
+      navigator.clipboard.writeText(text).then(function () {
+        document.getElementById('copy-status').textContent = 'Copied.';
+      }).catch(function () {
+        document.getElementById('copy-status').textContent = 'Select the text below and copy manually.';
+      });
+    });
+  </script>
+  {{/if}}
+
+  {{#if stack}}
+  <h2>Stack</h2>
+  <pre class="stack">{{stack}}</pre>
+  {{/if}}
+  {{else}}
+  <p>500 Server Error</p>
+  {{/if}}
 </body>
 
 </html>

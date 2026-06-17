@@ -43,6 +43,10 @@ import { placeholderImage, version } from './controllers'
 import { execSync } from 'child_process'
 import os from 'os'
 import { ConfigurationError, TemplateError, FileSystemError } from './errors'
+import {
+  buildTemplateErrorDetails,
+  type TemplateErrorContext,
+} from './template-errors'
 
 interface Views {
   [key: string]: string
@@ -461,28 +465,48 @@ export class Website {
     return views
   }
 
-  public renderError(res: ServerResponse, error: Error): void {
-    res.writeHead(500)
+  public renderError(res: ServerResponse, error: Error, context: TemplateErrorContext = {}): void {
+    if (res.headersSent) {
+      console.error('Cannot render error page; response already started:', error)
+      return
+    }
+
+    const details =
+      this.env == 'development' ? buildTemplateErrorDetails(error, { website: this.name, ...context }) : null
+
+    if (details) {
+      console.error('Handlebars template error:\n' + details.llmContext)
+    } else {
+      console.error('Request error:', error.message)
+    }
+
+    res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' })
     try {
       const template = this.handlebars.partials['error']
       const compiledTemplate = this.handlebars.compile(template)
 
-      let data = {}
-
-      if (this.env == 'development') {
-        data = {
-          website: this.name,
-          error: error.message,
-          stack: error.stack,
-        }
-      }
+      const data =
+        this.env == 'development' && details
+          ? {
+              website: this.name,
+              template: context.template,
+              templatePath: context.templatePath,
+              route: context.route,
+              error: details.message,
+              line: details.line,
+              snippet: details.snippet,
+              hints: details.hints,
+              llmContext: details.llmContext,
+              stack: error.stack,
+            }
+          : {}
 
       const html = compiledTemplate(data)
       res.end(html)
     } catch (newError) {
-      console.error('Error rendering error: ', newError)
-      console.error('Original Error: ', error)
-      res.end(`500 Error`)
+      console.error('Error rendering error page:', newError)
+      console.error('Original error:', error)
+      res.end('500 Server Error')
     }
   }
 
@@ -493,22 +517,25 @@ export class Website {
           template: string
           templatePath?: undefined
           data?: object
+          route?: string
         }
       | {
           res: ServerResponse
           template?: undefined
           templatePath: string
           data?: object
+          route?: string
         },
   ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        this.serveHandlebarsTemplate(options)
-        resolve()
-      } catch (error) {
-        reject(error)
-      }
-    })
+    const ok = this.serveHandlebarsTemplate(options)
+    if (!ok) {
+      throw new TemplateError('Handlebars template render failed', {
+        template: 'template' in options ? options.template : undefined,
+        templatePath: 'templatePath' in options ? options.templatePath : undefined,
+        route: options.route,
+        website: this.name,
+      })
+    }
   }
 
   public serveHandlebarsTemplate({
@@ -516,19 +543,28 @@ export class Website {
     template,
     templatePath,
     data,
+    route,
   }:
     | {
         res: ServerResponse
         template: string
         templatePath?: undefined
         data?: object
+        route?: string
       }
     | {
         res: ServerResponse
         template?: undefined
         templatePath: string
         data?: object
-      }): void {
+        route?: string
+      }): boolean {
+    const errorContext: TemplateErrorContext = {
+      template,
+      templatePath,
+      route,
+    }
+
     try {
       if (this.env == 'development') {
         this.loadPartials()
@@ -536,8 +572,16 @@ export class Website {
       let templateFile: string | null = null
       if (templatePath) {
         templateFile = fs.readFileSync(templatePath, 'utf8')
+        errorContext.source = templateFile
+        if (!template) {
+          errorContext.template = path.basename(templatePath).replace(/\.(hbs|handlebars|mustache)$/, '')
+        }
       } else if (template) {
         templateFile = this.templates()[template] ?? this.handlebars.partials[template]
+        errorContext.source = templateFile ?? undefined
+        if (!templatePath) {
+          errorContext.templatePath = this.guessTemplatePath(template)
+        }
       }
 
       if (templateFile === null) {
@@ -550,15 +594,59 @@ export class Website {
       data = data ?? {}
 
       const compiledTemplate = this.handlebars.compile(templateFile)
-      const html = compiledTemplate(data)
-
-      res.writeHead(200, { 'Content-Type': 'text/html' })
-      res.end(html)
-      return
+      return this.sendCompiledHtml(res, compiledTemplate, data, errorContext)
     } catch (error) {
-      console.error('Error serving handlebars template: ', error)
-      this.renderError(res, error as Error)
+      this.renderError(res, error as Error, errorContext)
+      return false
     }
+  }
+
+  /**
+   * Send compiled Handlebars output (shared by serveHandlebarsTemplate).
+   */
+  private sendCompiledHtml(
+    res: ServerResponse,
+    compiledTemplate: HandlebarsTemplateDelegate,
+    data: object,
+    context: TemplateErrorContext = {},
+  ): boolean {
+    try {
+      const html = compiledTemplate(data)
+      if (!res.headersSent) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+      }
+      res.end(html)
+      return true
+    } catch (error) {
+      this.renderError(res, error as Error, { website: this.name, ...context })
+      return false
+    }
+  }
+
+  /** Best-effort path hint for partials registered by basename (e.g. catalogues → src/catalogues.hbs). */
+  private guessTemplatePath(templateName: string): string | undefined {
+    const direct = path.join(this.rootPath, 'src', `${templateName}.hbs`)
+    if (fs.existsSync(direct)) {
+      return path.relative(this.rootPath, direct)
+    }
+
+    const srcRoot = path.join(this.rootPath, 'src')
+    if (!fs.existsSync(srcRoot)) return undefined
+
+    const walk = (dir: string): string | undefined => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const fullPath = path.join(dir, entry.name)
+        if (entry.isDirectory()) {
+          const found = walk(fullPath)
+          if (found) return found
+        } else if (entry.name === `${templateName}.hbs`) {
+          return path.relative(this.rootPath, fullPath)
+        }
+      }
+      return undefined
+    }
+
+    return walk(srcRoot)
   }
 
   public static async loadAllWebsites(options: ServerOptions): Promise<Website[]> {

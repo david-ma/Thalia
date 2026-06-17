@@ -1074,8 +1074,10 @@ export class CrudFactory implements Machine {
           id,
           record,
           json: JSON.stringify(record),
+          showRowsJson: JSON.stringify(this.crudShowFieldRows(record as Record<string, unknown>)),
           tableName: this.name,
           primaryKey: pkColumns[0] ?? 'id',
+          readOnly: this.readOnly,
           links: [],
         }
 
@@ -1392,6 +1394,20 @@ export class CrudFactory implements Machine {
     }
 
     return blob
+  }
+
+  /** Field metadata + values for the show template (same renderers as list /columns). */
+  private crudShowFieldRows(record: Record<string, unknown>) {
+    return this.filteredAttributes().map((attribute) => {
+      const meta = this.mapColumns(attribute)
+      return {
+        name: meta.name,
+        type: meta.type,
+        isPrimaryKey: meta.isPrimaryKey,
+        renderer: 'renderer' in meta ? (meta.renderer as CrudColumnRenderer) : undefined,
+        value: record[meta.name] ?? null,
+      }
+    })
   }
 
   private reportSuccess(res: ServerResponse, message: string, redirect: string) {

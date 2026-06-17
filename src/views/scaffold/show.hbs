@@ -1,35 +1,113 @@
-<h1>This is a Show page</h1>
+<h1>
+  <span class="text-capitalize">{{controllerName}}</span>
+  <span class="text-muted fs-5">#{{id}}</span>
+  {{#if readOnly}}<span class="text-muted small">(read-only)</span>{{/if}}
+</h1>
 
-<a href="/{{controllerName}}">Back to table {{title}}</a>
+<p class="mb-3">
+  <a href="/{{controllerName}}/list" class="btn btn-sm btn-outline-secondary">← Back to list</a>
+  {{#unless readOnly}}
+  <a href="/{{controllerName}}/edit/{{id}}" class="btn btn-sm btn-primary ms-2">Edit</a>
+  {{/unless}}
+</p>
 
-<div class="crud-table">
-  <table></table>
+<div class="table-responsive">
+  <table class="table table-sm table-bordered align-top crud-show-table">
+    <tbody id="crud-show-body"></tbody>
+  </table>
 </div>
 
-<button id="editButton" onclick="window.location.href='/{{controllerName}}/edit/{{id}}'">Edit</button>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" crossorigin="anonymous" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js" crossorigin="anonymous"></script>
 
 <script>
-  var data = {{{ json }}} || {}
+(function () {
+  var rows = {{{ showRowsJson }}} || [];
 
-  const rows = d3.select("table")
-    .selectAll("tr")
-    .data(Object.entries(data))
-    .enter()
-    .append("tr")
+  function crudEscHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
 
-  rows.append("td").text(function ([key]) { return String(key) })
-
-  rows.append("td").each(function ([key, value]) {
-    const cell = d3.select(this)
-    if (value && (key === 'image' || key === 'photo')) {
-      cell.append('img').attr('src', String(value))
-      return
+  function crudJsonText(value) {
+    if (value == null || value === '') return '';
+    var parsed = value;
+    if (typeof value === 'string') {
+      try { parsed = JSON.parse(value); } catch (e) { parsed = value; }
     }
-    if (typeof value === 'object') {
-      cell.text(JSON.stringify(value))
-      return
-    }
-    cell.text(value == null ? '' : String(value))
-  })
+    return typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2);
+  }
 
+  function renderShowCell(row) {
+    var value = row.value;
+    if (value == null || value === '') {
+      var empty = document.createElement('span');
+      empty.className = 'text-muted';
+      empty.textContent = '—';
+      return empty;
+    }
+
+    if (row.renderer === 'json' || (value !== null && typeof value === 'object')) {
+      var pre = document.createElement('pre');
+      pre.className = 'crud-json-panel crud-show-json mb-0';
+      var code = document.createElement('code');
+      code.className = 'language-json';
+      code.textContent = crudJsonText(value);
+      pre.appendChild(code);
+      if (window.hljs) window.hljs.highlightElement(code);
+      return pre;
+    }
+
+    if (row.renderer === 'date') {
+      var d = new Date(value);
+      var span = document.createElement('span');
+      span.textContent = Number.isNaN(d.getTime())
+        ? String(value)
+        : d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
+      return span;
+    }
+
+    if (row.renderer === 'image' || row.name === 'image' || row.name === 'photo') {
+      var img = document.createElement('img');
+      img.src = String(value);
+      img.alt = row.name;
+      img.className = 'crud-show-image img-fluid';
+      return img;
+    }
+
+    var text = document.createElement('span');
+    text.className = 'crud-show-text';
+    text.textContent = String(value);
+    return text;
+  }
+
+  var tbody = document.getElementById('crud-show-body');
+  rows.forEach(function (row) {
+    var tr = document.createElement('tr');
+    if (row.isPrimaryKey) tr.classList.add('table-light');
+
+    var th = document.createElement('th');
+    th.scope = 'row';
+    th.className = 'text-muted font-monospace small text-nowrap';
+    th.textContent = row.name;
+    if (row.isPrimaryKey) {
+      th.appendChild(document.createTextNode(' '));
+      var badge = document.createElement('span');
+      badge.className = 'badge text-bg-secondary fw-normal';
+      badge.textContent = 'PK';
+      th.appendChild(badge);
+    }
+
+    var td = document.createElement('td');
+    td.appendChild(renderShowCell(row));
+
+    tr.appendChild(th);
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+  });
+})();
 </script>

@@ -139,6 +139,29 @@ div.default-crud-styles {
     code {
       white-space: pre;
     }
+
+    &.crud-show-json {
+      max-width: 48rem;
+      max-height: 24rem;
+    }
+  }
+
+  .crud-show-table {
+    th {
+      width: 12rem;
+      vertical-align: top;
+      background: color-mix(in srgb, $crud-surface-2 60%, transparent);
+    }
+
+    td {
+      word-break: break-word;
+    }
+  }
+
+  img.crud-show-image {
+    max-height: 12rem;
+    border-radius: 0.35rem;
+    border: 1px solid $crud-border;
   }
 
   table {

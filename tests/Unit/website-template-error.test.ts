@@ -50,25 +50,35 @@ describe('Website template errors', () => {
   })
 
   test('serveHandlebarsTemplate returns false and renders developer error page', async () => {
-    const website = await Website.create({
-      name: 'template-error-test',
-      rootPath: tmpDir,
-      mode: 'standalone',
-      port: 0,
-    })
+    const prevNodeEnv = process.env.NODE_ENV
+    process.env.NODE_ENV = 'development'
+    try {
+      const website = await Website.create({
+        name: 'template-error-test',
+        rootPath: tmpDir,
+        mode: 'standalone',
+        port: 0,
+      })
 
-    const res = createMockResponse()
-    const ok = website.serveHandlebarsTemplate({
-      res: res as any,
-      templatePath: brokenPath,
-      route: '/broken',
-    })
+      const res = createMockResponse()
+      const ok = website.serveHandlebarsTemplate({
+        res: res as any,
+        templatePath: brokenPath,
+        route: '/broken',
+      })
 
-    expect(ok).toBe(false)
-    expect(res.statusCode).toBe(500)
-    expect(res.body).toContain('Handlebars template error')
-    expect(res.body).toContain('broken-if')
-    expect(res.body).toContain('Copy for LLM')
-    expect(res.body).toContain('Route: /broken')
+      expect(ok).toBe(false)
+      expect(res.statusCode).toBe(500)
+      expect(res.body).toContain('Handlebars template error')
+      expect(res.body).toContain('broken-if')
+      expect(res.body).toContain('Copy for LLM')
+      expect(res.body).toContain('Route: /broken')
+    } finally {
+      if (prevNodeEnv === undefined) {
+        delete process.env.NODE_ENV
+      } else {
+        process.env.NODE_ENV = prevNodeEnv
+      }
+    }
   })
 })

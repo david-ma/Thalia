@@ -71,11 +71,28 @@ div.default-crud-styles {
 
   div.datatables-table-container {
     width: 100%;
+    max-width: 100%;
     overflow-x: auto;
     margin-bottom: 1rem;
     border-radius: $crud-radius;
     border: 1px solid $crud-border;
     background: color-mix(in srgb, $crud-surface 92%, #fff);
+
+    .dt-container {
+      max-width: 100%;
+      min-width: 0;
+    }
+
+  // DataTables 2: scroll the grid only; layout bars (search, paging, CSV) stay full width
+    .dt-layout-cell.dt-layout-full {
+      overflow-x: auto;
+      max-width: 100%;
+    }
+
+    table.dataTable {
+      width: max-content !important;
+      min-width: 100%;
+    }
 
     .dt-layout-cell {
       padding: 0.5rem 0.75rem;
@@ -101,6 +118,27 @@ div.default-crud-styles {
     padding: 0.75rem 1rem;
     border-radius: 0.4rem;
     border: 1px solid $crud-border;
+  }
+
+  .crud-json-toggle {
+    white-space: nowrap;
+  }
+
+  pre.crud-json-panel {
+    margin: 0.35rem 0 0;
+    max-width: 28rem;
+    max-height: 14rem;
+    overflow: auto;
+    font-size: 0.72rem;
+    line-height: 1.35;
+    border-radius: 0.35rem;
+    border: 1px solid $crud-border;
+    background: color-mix(in srgb, $crud-surface-2 70%, #fff);
+    padding: 0.5rem 0.65rem;
+
+    code {
+      white-space: pre;
+    }
   }
 
   table {

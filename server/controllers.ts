@@ -273,7 +273,10 @@ type CrudRelationship = {
   localColumn: string
 }
 
-type CrudOptions = {
+/** DataTables list cell renderer id (`list.hbs` dispatches to JS helpers). */
+export type CrudColumnRenderer = 'json' | 'date' | 'money' | 'number' | 'image' | 'boolean'
+
+export type CrudOptions = {
   wrapperTemplate?: string
   relationships?: CrudRelationship[]
   /** Hide create/edit UI and reject write actions (list/json/columns/show only). */
@@ -282,6 +285,8 @@ type CrudOptions = {
   fullWidth?: boolean
   /** Show Download CSV on list view; GET …/csv exports rows matching current search/sort (capped). */
   downloadableCsv?: boolean
+  /** Per-column renderer; overrides {@link crudInferColumnRenderer} for that column. */
+  columnRenderers?: Partial<Record<string, CrudColumnRenderer>>
 }
 
 /** DataTables paging defaults for CrudFactory `GET …/json`. */
@@ -513,28 +518,137 @@ export function sendCsv(res: ServerResponse, filename: string, body: string) {
   res.end(body)
 }
 
-// import { type LibSQLDatabase } from 'drizzle-orm/libsql'
+import { createRequire } from 'module'
+import { dirname, join } from 'path'
 import { Permission } from './route-guard'
-import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
+import { is } from 'drizzle-orm'
+import { MySqlTable, type MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
+import { getTableConfig as getMysqlTableConfig } from 'drizzle-orm/mysql-core/utils'
+import { PgTable } from 'drizzle-orm/pg-core'
+import { SQLiteTable } from 'drizzle-orm/sqlite-core'
+import { getTableConfig as getSqliteTableConfig } from 'drizzle-orm/sqlite-core/utils'
 import type { MySql2Database } from 'drizzle-orm/mysql2'
 
+type CrudPrimaryKeyDef = { columns: { name: string }[] }
+
+/** `drizzle-orm/pg-core/utils` resolves to a subfolder; load `utils.js` explicitly. */
+function pgGetTableConfig(table: PgTable) {
+  const require = createRequire(import.meta.url)
+  const drizzleRoot = dirname(require.resolve('drizzle-orm/package.json'))
+  const pgUtils = require(join(drizzleRoot, 'pg-core/utils.js')) as {
+    getTableConfig: (t: PgTable) => { primaryKeys: CrudPrimaryKeyDef[] }
+  }
+  return pgUtils.getTableConfig(table)
+}
+
+function crudTablePrimaryKeyDefs(table: unknown): CrudPrimaryKeyDef[] {
+  if (is(table, MySqlTable)) return getMysqlTableConfig(table).primaryKeys
+  if (is(table, PgTable)) return pgGetTableConfig(table).primaryKeys
+  if (is(table, SQLiteTable)) return getSqliteTableConfig(table).primaryKeys
+  return []
+}
+
+/** Drizzle PK column names from `primaryKey({ columns: [...] })` in table extra config. */
+export function crudPrimaryKeyColumnNames(table: unknown): string[] {
+  try {
+    const names: string[] = []
+    for (const pk of crudTablePrimaryKeyDefs(table)) {
+      for (const col of pk.columns) {
+        if (col.name) names.push(col.name)
+      }
+    }
+    return names
+  } catch {
+    return []
+  }
+}
+
+const CRUD_JSON_COLUMN_TYPES = new Set<string>([
+  'json',
+  'MySqlJson',
+  'PgJson',
+  'PgJsonb',
+  'SQLiteTextJson',
+  'SQLiteBlobJson',
+])
+
+const CRUD_DATE_COLUMN_TYPES = new Set<string>([
+  'date',
+  'MySqlDate',
+  'MySqlDateTime',
+  'MySqlTimestamp',
+  'MySqlTime',
+  'MySqlYear',
+  'PgDate',
+  'PgDateString',
+  'PgTimestamp',
+  'PgTimestampString',
+  'SQLiteTimestamp',
+  'SQLiteTimestampMillis',
+  'SQLiteTimestampSeconds',
+])
+
+/** Infer cell renderer from Drizzle `columnType` / mapped type (no site-specific column names). */
+export function crudInferColumnRenderer(attribute: { name: string; type: string }): CrudColumnRenderer | undefined {
+  if (CRUD_JSON_COLUMN_TYPES.has(attribute.type)) return 'json'
+  if (CRUD_DATE_COLUMN_TYPES.has(attribute.type)) return 'date'
+  return undefined
+}
+
+/** Explicit `columnRenderers` win; else {@link crudInferColumnRenderer}. */
+export function crudResolveColumnRenderer(
+  attribute: { name: string; type: string },
+  columnRenderers?: Partial<Record<string, CrudColumnRenderer>>,
+): CrudColumnRenderer | undefined {
+  const explicit = columnRenderers?.[attribute.name]
+  if (explicit) return explicit
+  return crudInferColumnRenderer(attribute)
+}
+
 /**
- * A Machine is a singleton that needs to be initialised by Thalia.
- * They provide controllers.
- * CrudFactories are Machines.
- * MailService is a Machine.
+ * # CrudFactory — roadmap & design notes
  *
- * Type definition: {@link Machine} in `./types.js`.
+ * ## Implemented (2026-06)
+ * - Server-side DataTables (`/json`, `/columns`, `/list`) with MySQL column typing
+ * - `readOnly`, `fullWidth`, `downloadableCsv` options
+ * - PK column detection via Drizzle `getTableConfig` (not only `column.primaryKey` flag)
+ * - PK cells link to `/show/:id` when table has a **single** PK column
+ * - `renderer: 'json'` — collapsible JSON blob toggle + hljs (`MySqlJson`, `PgJson`, …)
+ * - Horizontal scroll on wide grids (`crud.scss` → `.dt-layout-full`) without moving layout bars
  *
- * The CrudFactory is a class that generates a CRUD controller for a given table.
- * CrudFactory is a Machine, which means it has an init method, and provides a controller method.
+ * ## Column renderers
  *
- * The views are mainly in src/views/scaffold, and can be overwritten by the website's views.
- * Custom views can also be passed in to the CrudFactory constructor. (TODO)
+ * Sites declare per-column renderers on `CrudFactory` options; Thalia infers from Drizzle
+ * `columnType` when not overridden (`crudInferColumnRenderer` — dialect-aware, no hard-coded names).
  *
- * Currently very tightly coupled with SQLite, but should be extended to work with MariaDB. (TODO)
+ * | Renderer   | Use case |
+ * |------------|----------|
+ * | `json`     | JSON columns — toggle + highlighted `<pre>` |
+ * | `date`     | Locale date/time instead of raw ISO strings |
+ * | `money`    | Currency formatting (locale + decimals) |
+ * | `number`   | Thousands separators; raw in CSV/sort |
+ * | `image`    | Thumbnail + link to full asset |
+ * | `boolean`  | Yes/No or icons |
  *
- * Uses DataTables.net for the list view.
+ * ```ts
+ * new CrudFactory(table, {
+ *   columnRenderers: { metadata: 'json', amount: 'money' },
+ * })
+ * ```
+ * `/columns` echoes `renderer` on each column; `list.hbs` dispatches to shared JS helpers.
+ *
+ * ## Primary keys
+ *
+ * Drizzle schemas often declare PKs in `primaryKey({ columns: [...] })`, not on individual
+ * columns — CrudFactory uses dialect `getTableConfig`, not `column.primaryKey` alone.
+ *
+ * - **Single PK:** list cell links to show; `fetchCrudRecordByIdOrRespond` uses that column.
+ * - **Composite PK:** list shows values; show/edit URL encoding TBD (e.g. `/show/a/b` or joined slug).
+ *
+ * ## Row selection & bulk actions (future)
+ *
+ * - DataTables checkbox column + `layout.topStart` action buttons
+ * - Tie actions to selected PKs (export subset, tag, delete) — needs write permissions + API
  */
 export class CrudFactory implements Machine {
   public name!: string
@@ -560,6 +674,7 @@ export class CrudFactory implements Machine {
   private readOnly = false
   private fullWidth = false
   private downloadableCsv = false
+  private columnRenderers: Partial<Record<string, CrudColumnRenderer>> = {}
 
   constructor(table: MySqlTableWithColumns<any>, options?: CrudOptions | any) {
     this.table = table
@@ -567,6 +682,7 @@ export class CrudFactory implements Machine {
     this.readOnly = Boolean(options?.readOnly)
     this.fullWidth = Boolean(options?.fullWidth)
     this.downloadableCsv = Boolean(options?.downloadableCsv)
+    this.columnRenderers = options?.columnRenderers ?? {}
   }
 
   private pageData<T extends Record<string, unknown>>(data: T): T & { wrapperMainClass?: string } {
@@ -834,26 +950,51 @@ export class CrudFactory implements Machine {
    * Select by primary key for `show` / `edit`: one row, or `reportError` and `null`.
    */
   private fetchCrudRecordByIdOrRespond(res: ServerResponse, id: string): Promise<any | null> {
-    return this.db
-      .select(this.table)
-      .from(this.table)
-      .where(eq(this.table.id, id))
-      .then((records: any[]) => {
-        if (records.length === 0) {
-          this.reportError(res, new Error('That record could not be found.'), { status: 404 })
-          return null
-        }
-        if (records.length > 1) {
-          console.error('CrudFactory fetch by id:', this.name, 'multiple rows for ID', id)
-          this.reportError(
-            res,
-            new Error('More than one row matched that ID. Please raise this with your administrator.'),
-            { status: 500 },
-          )
-          return null
-        }
-        return records[0]
-      })
+    const decodedId = decodeURIComponent(id)
+    const pkCols = crudPrimaryKeyColumnNames(this.table)
+
+    const runSelect = (where: ReturnType<typeof eq>) =>
+      this.db
+        .select()
+        .from(this.table)
+        .where(where)
+        .then((records: any[]) => {
+          if (records.length === 0) {
+            this.reportError(res, new Error('That record could not be found.'), { status: 404 })
+            return null
+          }
+          if (records.length > 1) {
+            console.error('CrudFactory fetch by id:', this.name, 'multiple rows for ID', id)
+            this.reportError(
+              res,
+              new Error('More than one row matched that ID. Please raise this with your administrator.'),
+              { status: 500 },
+            )
+            return null
+          }
+          return records[0]
+        })
+
+    if (pkCols.length === 1) {
+      const pk = pkCols[0]!
+      const column = (this.table as Record<string, unknown>)[pk]
+      if (column == null) {
+        this.reportError(res, new Error('Primary key column is not configured.'), { status: 500 })
+        return Promise.resolve(null)
+      }
+      return runSelect(eq(column as Parameters<typeof eq>[0], decodedId))
+    }
+
+    if ((this.table as Record<string, unknown>).id) {
+      return runSelect(eq(this.table.id, decodedId))
+    }
+
+    this.reportError(
+      res,
+      new Error('Show and edit are not supported for composite primary keys yet.'),
+      { status: 501 },
+    )
+    return Promise.resolve(null)
   }
 
   private edit(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
@@ -867,6 +1008,7 @@ export class CrudFactory implements Machine {
 
         const isNotDeleted = record.deletedAt === null
 
+        const pkColumns = crudPrimaryKeyColumnNames(this.table)
         const data = {
           controllerName: this.name,
           id,
@@ -874,7 +1016,7 @@ export class CrudFactory implements Machine {
           isNotDeleted,
           json: JSON.stringify(record),
           tableName: this.name,
-          primaryKey: 'id',
+          primaryKey: pkColumns[0] ?? 'id',
           links: [],
         }
 
@@ -901,6 +1043,7 @@ export class CrudFactory implements Machine {
       .then((record) => {
         if (record === null) return
 
+        const pkColumns = crudPrimaryKeyColumnNames(this.table)
         const data = {
           title: `Show ${this.name} ${id}`,
           controllerName: this.name,
@@ -908,7 +1051,7 @@ export class CrudFactory implements Machine {
           record,
           json: JSON.stringify(record),
           tableName: this.name,
-          primaryKey: 'id',
+          primaryKey: pkColumns[0] ?? 'id',
           links: [],
         }
 
@@ -968,13 +1111,14 @@ export class CrudFactory implements Machine {
   }
 
   private list(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    const primaryKey =
-      this.filteredAttributes().find((attribute) => attribute.primaryKey)?.name ?? 'id'
+    const pkColumns = crudPrimaryKeyColumnNames(this.table)
+    const primaryKey = pkColumns[0] ?? this.filteredAttributes().find((a) => a.primaryKey)?.name ?? 'id'
     const data = {
       title: `List ${this.name}`,
       controllerName: this.name,
       tableName: this.name,
       primaryKey,
+      primaryKeyLinkEnabled: pkColumns.length === 1,
       readOnly: this.readOnly,
       downloadableCsv: this.downloadableCsv,
       links: [],
@@ -988,6 +1132,8 @@ export class CrudFactory implements Machine {
   /** Default sort column for `/json` when the client sends no order (PK, else first column). */
   private crudJsonDefaultOrderColumnName(): string {
     const cols = this.colsFiltered()
+    const pkCols = crudPrimaryKeyColumnNames(this.table)
+    if (pkCols.length === 1 && cols.includes(pkCols[0]!)) return pkCols[0]!
     const pk = this.filteredAttributes().find((attribute) => attribute.primaryKey)?.name
     if (pk && cols.includes(pk)) return pk
     return cols[0] ?? 'id'
@@ -1158,6 +1304,7 @@ export class CrudFactory implements Machine {
       updatedAt: 'date',
       deletedAt: 'date',
     }
+    const pkSet = new Set(crudPrimaryKeyColumnNames(this.table))
 
     return this.cols().map((column) => {
       var data: Attribute = {
@@ -1166,7 +1313,7 @@ export class CrudFactory implements Machine {
         default: this.table[column].default,
         required: this.table[column].notNull,
         unique: this.table[column].unique,
-        primaryKey: this.table[column].primaryKey,
+        primaryKey: pkSet.has(column) || Boolean(this.table[column].primaryKey),
         foreignKey: this.table[column].foreignKey,
         references: this.table[column].references,
       }
@@ -1197,18 +1344,17 @@ export class CrudFactory implements Machine {
    * Used with DataTables.net
    */
   private columns(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {
-    const columns = this.filteredAttributes().map(this.mapColumns)
-    // TODO: Get the types/attributes?
+    const columns = this.filteredAttributes().map((attribute) => this.mapColumns(attribute))
 
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(columns))
   }
 
-  // TODO: Get the types from the drizzle table?
   private mapColumns(attribute: Attribute) {
     const type = attribute.type
     const orderable = crudColumnSupportsDataTablesOrder(type)
     const searchable = crudColumnSupportsDataTablesSearch(type)
+    const renderer = crudResolveColumnRenderer(attribute, this.columnRenderers)
 
     var blob = {
       name: attribute.name,
@@ -1217,6 +1363,8 @@ export class CrudFactory implements Machine {
       orderable,
       searchable,
       type,
+      isPrimaryKey: attribute.primaryKey,
+      ...(renderer ? { renderer } : {}),
     }
 
     return blob

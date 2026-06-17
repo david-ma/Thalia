@@ -4,12 +4,16 @@
  */
 
 import { describe, expect, test } from 'bun:test'
+import { json, mysqlTable, primaryKey, varchar } from 'drizzle-orm/mysql-core'
 import {
   CRUD_DATATABLES_DEFAULT_DRAW,
   CRUD_DATATABLES_DEFAULT_LENGTH,
   CRUD_DATATABLES_DEFAULT_START,
   CRUD_DATATABLES_MAX_LENGTH,
   crudFirstQueryValue,
+  crudInferColumnRenderer,
+  crudPrimaryKeyColumnNames,
+  crudResolveColumnRenderer,
   escapeCrudDataTablesLikeTerm,
   getCrudDataTablesOrderEntries,
   hasActiveCrudGlobalSearch,
@@ -255,5 +259,52 @@ describe('rowsToCrudCsv', () => {
   test('escapes commas and quotes', () => {
     const csv = rowsToCrudCsv(['a', 'b'], [{ a: 'hello', b: 'a,b' }, { a: 'say "hi"', b: '2' }])
     expect(csv).toBe('a,b\nhello,"a,b"\n"say ""hi""",2\n')
+  })
+})
+
+const pkTestTable = mysqlTable(
+  'crud_pk_test',
+  {
+    cat_no: varchar('cat_no', { length: 6 }),
+    additional_data: json('additional_data'),
+  },
+  (table) => [primaryKey({ columns: [table.cat_no] })],
+)
+
+describe('crudPrimaryKeyColumnNames', () => {
+  test('reads primaryKey from drizzle table extra config', () => {
+    expect(crudPrimaryKeyColumnNames(pkTestTable)).toEqual(['cat_no'])
+  })
+})
+
+describe('crudInferColumnRenderer', () => {
+  test('maps drizzle json column types', () => {
+    expect(crudInferColumnRenderer({ name: 'meta', type: 'MySqlJson' })).toBe('json')
+    expect(crudInferColumnRenderer({ name: 'payload', type: 'PgJsonb' })).toBe('json')
+    expect(crudInferColumnRenderer({ name: 'data', type: 'SQLiteTextJson' })).toBe('json')
+  })
+
+  test('does not infer from column name alone', () => {
+    expect(crudInferColumnRenderer({ name: 'additional_data', type: 'MySqlLongText' })).toBeUndefined()
+  })
+
+  test('maps date types across dialects', () => {
+    expect(crudInferColumnRenderer({ name: 'cat_created', type: 'MySqlDate' })).toBe('date')
+    expect(crudInferColumnRenderer({ name: 'created', type: 'PgTimestamp' })).toBe('date')
+  })
+})
+
+describe('crudResolveColumnRenderer', () => {
+  test('explicit columnRenderers override inference', () => {
+    expect(
+      crudResolveColumnRenderer(
+        { name: 'additional_data', type: 'MySqlLongText' },
+        { additional_data: 'json' },
+      ),
+    ).toBe('json')
+  })
+
+  test('falls back to inference when no override', () => {
+    expect(crudResolveColumnRenderer({ name: 'meta', type: 'MySqlJson' })).toBe('json')
   })
 })

@@ -8,8 +8,20 @@
 <button onclick="window.location.href='/{{controllerName}}/new'">Create New {{controllerName}}</button>
 {{/unless}}
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" crossorigin="anonymous" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js" crossorigin="anonymous"></script>
+
 <script>
   var crudTable = null;
+
+  function crudEscHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
 
   function crudDownloadCsv() {
     if (!crudTable) return;
@@ -28,38 +40,42 @@
     return actions;
   }
 
-  $.ajax('/{{controllerName}}/columns')
-    .then(function (columns) {
+  function crudRenderPrimaryKey(data, type) {
+    if (type !== 'display') return data;
+    if (data == null || data === '') return '—';
+    var id = encodeURIComponent(String(data));
+    var label = crudEscHtml(data);
+    {{#if primaryKeyLinkEnabled}}
+    return '<a href="/{{controllerName}}/show/' + id + '">' + label + '</a>' +
+      {{#unless readOnly}}
+      ' <span style="float:right"><a href="/{{controllerName}}/edit/' + id + '" aria-label="Edit">📝</a></span>' +
+      {{/unless}}
+      '';
+    {{else}}
+    return '<span>' + label + '</span>';
+    {{/if}}
+  }
 
-      columns.forEach(addRenders)
+  function crudRenderJson(data, type) {
+    if (type !== 'display') return data;
+    if (data == null || data === '') return '—';
+    var parsed = data;
+    if (typeof data === 'string') {
+      try { parsed = JSON.parse(data); } catch (e) { parsed = data; }
+    }
+    var text = typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2);
+    var panelId = 'crud-json-' + Math.random().toString(36).slice(2, 10);
+    return '<button type="button" class="btn btn-sm btn-outline-secondary crud-json-toggle" data-target="' + panelId + '">JSON</button>' +
+      '<pre class="crud-json-panel d-none" id="' + panelId + '"><code class="language-json">' + crudEscHtml(text) + '</code></pre>';
+  }
 
-      var tableOptions = {
-        ajax: {
-          url: '/{{controllerName}}/json',
-          dataSrc: 'data',
-          data: function (d) {
-            delete d.columns;
-            return d
-          }
-        },
-        order: [[0, 'desc']],
-        processing: true,
-        serverSide: true,
-        columns: columns
-      };
-
-      {{#if downloadableCsv}}
-      tableOptions.layout = {
-        topStart: ['pageLength', crudLayoutActions],
-        topEnd: 'search',
-        bottomStart: 'info',
-        bottomEnd: 'paging',
-      };
-      {{/if}}
-
-      crudTable = $('#myTable').DataTable(tableOptions);
-
-    })
+  function crudRenderDate(data, type) {
+    if (type !== 'display') return data;
+    if (data == null || data === '') return '—';
+    var d = new Date(data);
+    if (Number.isNaN(d.getTime())) return crudEscHtml(data);
+    return crudEscHtml(d.toLocaleDateString() + ' ' + d.toLocaleTimeString());
+  }
 
   function addRenders(column) {
     const links = []
@@ -77,32 +93,60 @@
       }
     })
 
-    if (column.data === '{{ primaryKey }}') {
-      column.render = function (data, type, row, meta) {
-        const id = encodeURIComponent(String(data))
-        {{#if readOnly}}
-        return `<span>${id}</span>`
-        {{else}}
-        return `<a href="/{{controllerName}}/show/${id}">${id}</a>
-        <span style="float:right"><a href="/{{controllerName}}/edit/${id}" aria-label="Edit ${id}">📝</a></span>`
-        {{/if}}
-      }
-    }
-
-    if (column.type === 'object') {
-      column.render = function (data, type, row, meta) {
-        return `<p class="blob">${JSON.stringify(data)}</p>`
-      }
-    }
-
-    if (column.type === 'date') {
-      column.render = function (data, type, row, meta) {
-
-        let time = new Date(data).toLocaleTimeString()
-        let date = new Date(data).toLocaleDateString()
-        return `${time} ${date}`
-      }
+    if (column.isPrimaryKey) {
+      column.render = crudRenderPrimaryKey;
+    } else if (column.renderer === 'json') {
+      column.render = crudRenderJson;
+    } else if (column.renderer === 'date' || column.type === 'date') {
+      column.render = crudRenderDate;
+    } else if (column.type === 'object') {
+      column.render = crudRenderJson;
     }
   }
+
+  $.ajax('/{{controllerName}}/columns')
+    .then(function (columns) {
+      columns.forEach(addRenders);
+
+      var tableOptions = {
+        ajax: {
+          url: '/{{controllerName}}/json',
+          dataSrc: 'data',
+          data: function (d) {
+            delete d.columns;
+            return d
+          }
+        },
+        order: [[0, 'desc']],
+        processing: true,
+        serverSide: true,
+        columns: columns,
+        scrollX: true
+      };
+
+      {{#if downloadableCsv}}
+      tableOptions.layout = {
+        topStart: ['pageLength', crudLayoutActions],
+        topEnd: 'search',
+        bottomStart: 'info',
+        bottomEnd: 'paging',
+      };
+      {{/if}}
+
+      crudTable = $('#myTable').DataTable(tableOptions);
+
+      document.querySelector('.datatables-table-container').addEventListener('click', function (event) {
+        var btn = event.target.closest('.crud-json-toggle');
+        if (!btn) return;
+        var panel = document.getElementById(btn.dataset.target);
+        if (!panel) return;
+        panel.classList.toggle('d-none');
+        if (!panel.classList.contains('d-none') && window.hljs) {
+          panel.querySelectorAll('code').forEach(function (el) {
+            window.hljs.highlightElement(el);
+          });
+        }
+      });
+    })
 
 </script>

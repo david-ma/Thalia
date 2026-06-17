@@ -1,9 +1,5 @@
 <h1>{{controllerName}}{{#if readOnly}} <span class="text-muted small">(read-only)</span>{{/if}}</h1>
 
-{{#if downloadableCsv}}
-<button type="button" id="crud-download-csv" class="btn btn-sm btn-outline-secondary mb-2">Download CSV</button>
-{{/if}}
-
 <div class="datatables-table-container">
   <table id="myTable"></table>
 </div>
@@ -15,12 +11,29 @@
 <script>
   var crudTable = null;
 
+  function crudDownloadCsv() {
+    if (!crudTable) return;
+    window.location.href = '/{{controllerName}}/csv?' + $.param(crudTable.ajax.params());
+  }
+
+  function crudLayoutActions() {
+    var actions = document.createElement('div');
+    actions.className = 'dt-crud-actions d-inline-flex gap-2 align-items-center ms-2';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-sm btn-outline-secondary';
+    btn.textContent = 'Download CSV';
+    btn.addEventListener('click', crudDownloadCsv);
+    actions.appendChild(btn);
+    return actions;
+  }
+
   $.ajax('/{{controllerName}}/columns')
     .then(function (columns) {
 
       columns.forEach(addRenders)
 
-      crudTable = $('#myTable').DataTable({
+      var tableOptions = {
         ajax: {
           url: '/{{controllerName}}/json',
           dataSrc: 'data',
@@ -33,15 +46,18 @@
         processing: true,
         serverSide: true,
         columns: columns
-      });
+      };
 
       {{#if downloadableCsv}}
-      document.getElementById('crud-download-csv').addEventListener('click', function () {
-        if (!crudTable) return;
-        var params = $.param(crudTable.ajax.params());
-        window.location.href = '/{{controllerName}}/csv?' + params;
-      });
+      tableOptions.layout = {
+        topStart: ['pageLength', crudLayoutActions],
+        topEnd: 'search',
+        bottomStart: 'info',
+        bottomEnd: 'paging',
+      };
       {{/if}}
+
+      crudTable = $('#myTable').DataTable(tableOptions);
 
     })
 

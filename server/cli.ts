@@ -27,6 +27,23 @@ import fs from 'fs'
 import { getPort } from 'get-port-please'
 import { startupMark, startupSummary } from './startup-timer'
 
+async function probeLocalHttp(port: number): Promise<void> {
+  const url = `http://127.0.0.1:${port}/version`
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 5000)
+  try {
+    const res = await fetch(url, { signal: controller.signal })
+    console.debug(`Startup probe OK: GET ${url} → HTTP ${res.status}`)
+  } catch (error) {
+    console.error(
+      `Startup probe FAILED: GET ${url} — process is up but not accepting HTTP locally.`,
+      error instanceof Error ? error.message : error,
+    )
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 const project =
   process.argv.find((arg) => arg.startsWith('--project'))?.split('=')[1] || process.env['PROJECT'] || 'default'
 const portArg = process.argv.find((arg) => arg.startsWith('--port'))?.split('=')[1] || process.env['PORT']
@@ -73,6 +90,12 @@ async function main() {
       await thalia.start()
       startupMark('cli.after-listen')
       startupSummary()
+
+      if (process.env.THALIA_STARTUP_PROBE === '1') {
+        await probeLocalHttp(port)
+      }
+
+      console.debug('Ready — waiting for HTTP requests (no further output until a request arrives).')
 
       let shuttingDown = false
 

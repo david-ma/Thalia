@@ -183,6 +183,11 @@ export class Server extends EventEmitter {
       // Track sockets to make shutdown deterministic in tests.
       this.httpServer.on('connection', (socket) => {
         this.httpSockets.add(socket)
+        if (process.env.THALIA_STARTUP_TIMING === '1') {
+          console.log(
+            `[tcp] accepted ${socket.remoteAddress ?? '?'}:${socket.remotePort ?? '?'} → :${this.port}`,
+          )
+        }
         socket.on('close', () => {
           this.httpSockets.delete(socket)
         })
@@ -197,7 +202,11 @@ export class Server extends EventEmitter {
       this.httpServer.listen(this.port, bindHost, () => {
         const addr = this.httpServer.address()
         const bindLabel = Server.formatListenAddress(addr, bindHost, this.port)
-        console.log(`Server running at http://localhost:${this.port} (listening on ${bindLabel})`)
+        const listening = this.httpServer.listening ? 'yes' : 'no'
+        console.debug(
+          `Server running at http://localhost:${this.port} (pid=${process.pid}, listening=${listening}, bind=${bindLabel})`,
+        )
+        console.debug(`Probe from this host: curl -v http://127.0.0.1:${this.port}/version`)
         this.emit('started')
         resolve()
       })

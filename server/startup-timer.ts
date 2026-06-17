@@ -28,7 +28,7 @@ export function startupMark(label: string): void {
   marks.push({ label, elapsedMs, deltaMs })
 
   if (startupTimingVerbose()) {
-    console.log(
+    console.debug(
       `[startup +${Math.round(elapsedMs)}ms, Δ${Math.round(deltaMs)}ms] ${label}`,
     )
   }

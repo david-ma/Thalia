@@ -428,10 +428,6 @@ export class Website {
       return new Date(date).toLocaleDateString('en-AU', { year: 'numeric', month: '2-digit', day: '2-digit' })
     })
 
-    this.handlebars.registerHelper('json', function (value) {
-      return JSON.stringify(value)
-    })
-
     // DEBUG: This does not always load reliably? Standalone mode vs multiplex mode?
     if (this.config && this.config.handlebarsHelpers) {
       for (const [name, helper] of Object.entries(this.config.handlebarsHelpers)) {

@@ -18,6 +18,17 @@ In `Website.create`, the framework picks a guard:
 - Else if `config.routes.length > 0` → **`BasicRouteGuard`** (password/proxy style rules only).
 - Else → **`RouteGuard`** (no-op pass-through).
 
+### BasicRouteGuard (`password` routes)
+
+For sites without the security database, `config.routes` entries may use **`password`**, **`proxyTarget`**, or both. Optional modifiers (not used by `RoleRouteGuard`):
+
+| Field | Effect |
+| ----- | ------ |
+| `node_env` | Enforce `password` only when `RequestInfo.node_env` matches (e.g. `'production'`). Other environments skip the login gate. |
+| `ip_whitelist` | Comma-separated IPv4 addresses or CIDR blocks (e.g. `192.168.0.0/24`) that skip `password` — useful for LAN access while keeping a password in production. |
+
+`proxyTarget` still applies in **all** environments when the route matches, even if `password` is skipped.
+
 So enabling **`ThaliaSecurity.securityConfig()`** (which registers those machines) is what **turns on** `RoleRouteGuard`, not importing the class yourself.
 
 ## Request pipeline (where RBAC runs)

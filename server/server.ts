@@ -14,6 +14,7 @@ import { Server as SocketServer } from 'socket.io'
 import { Socket } from 'socket.io'
 import { RequestHandler } from './request-handler'
 import { UserAuth, Permission } from './route-guard'
+import { resolveClientIp } from './client-ip'
 import { startupElapsedMs } from './startup-timer'
 import type { AddressInfo } from 'net'
 
@@ -66,13 +67,7 @@ export class Server extends EventEmitter {
       'unknown-host'
     const domain: string = host.split(':')[0] ?? 'unknown-domain'
     const urlObject: url.UrlWithParsedQuery = url.parse(req.url ?? '', true)
-    const ip: string =
-      (req.headers['true-client-ip'] as string) ??
-      (req.headers['cf-connecting-ip'] as string) ??
-      (req.headers['x-real-ip'] as string) ??
-      (req.headers['x-forwarded-for'] as string) ??
-      req.socket.remoteAddress ??
-      'unknown-ip'
+    const ip: string = resolveClientIp(req.headers, req.socket.remoteAddress)
     const method: string = req.method ?? 'unknown-method'
 
     this.requestCount += 1
@@ -140,12 +135,7 @@ export class Server extends EventEmitter {
     const website = this.router.getWebsite(domain ?? this.project)
     const clientInfo: ClientInfo = {
       socketId: socket.id,
-      ip:
-        (socket.handshake.headers['true-client-ip'] as string) ??
-        (socket.handshake.headers['cf-connecting-ip'] as string) ??
-        (socket.handshake.headers['x-real-ip'] as string) ??
-        (socket.handshake.headers['x-forwarded-for'] as string) ??
-        socket.handshake.address,
+      ip: resolveClientIp(socket.handshake.headers, socket.handshake.address),
       userAgent: (socket.handshake.headers['user-agent'] as string) ?? 'unknown',
       cookies: (socket.handshake.headers['cookie'] as string) ?? 'unknown',
       domain: domain ?? this.project,

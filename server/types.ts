@@ -37,6 +37,10 @@ export interface RouteRule {
   domains?: string[] // Which domains this rule applies to
   path?: string // The subpath to match (e.g., '/api' or '/admin')
   password?: string // If set, requires this password
+  /** When set, `password` is enforced only in this environment (`RequestInfo.node_env`). */
+  node_env?: string
+  /** Comma-separated IPv4 addresses or CIDR blocks (e.g. `192.168.0.0/24`) that skip `password`. */
+  ip_whitelist?: string
   proxyTarget?: {
     // If set, proxy the request to this target
     host?: string // Default: localhost

@@ -1,6 +1,17 @@
 import { IncomingMessage, ServerResponse } from 'http'
 import http from 'http'
 import { RouteRule } from './types'
+import { ipMatchesWhitelist, normaliseClientIp } from './client-ip.js'
+
+export { ipMatchesWhitelist, normaliseClientIp } from './client-ip.js'
+
+/** BasicRouteGuard only: whether `password` should be enforced for this request. */
+export function basicPasswordAuthRequired(routeRule: RouteRule, nodeEnv: string, clientIp: string): boolean {
+  if (!routeRule.password) return false
+  if (routeRule.node_env !== undefined && routeRule.node_env !== nodeEnv) return false
+  if (routeRule.ip_whitelist && ipMatchesWhitelist(clientIp, routeRule.ip_whitelist)) return false
+  return true
+}
 import { Website } from './website'
 import formidable, { Fields } from 'formidable'
 import { RequestInfo } from './server'
@@ -146,6 +157,14 @@ export class BasicRouteGuard extends RouteGuard {
       this.routeRule = routeRule
 
       if (routeRule.password) {
+        if (!basicPasswordAuthRequired(routeRule, request.requestInfo.node_env, request.requestInfo.ip)) {
+          if (routeRule.proxyTarget) {
+            this.handleProxy(request.req, request.res, routeRule)
+            return finish('Proxy request')
+          }
+          return next(request)
+        }
+
         const correctPassword = this.saltPassword(routeRule.password)
         const cookies = request.requestInfo.cookies
         const cookieName = `auth_${this.website.name}${routeRule.path}`
@@ -330,6 +349,14 @@ export class BasicRouteGuard extends RouteGuard {
     if (Object.keys(matchingRoute).length > 0) {
       // Check security if required
       if (matchingRoute?.password) {
+        if (!basicPasswordAuthRequired(matchingRoute, requestInfo.node_env, requestInfo.ip)) {
+          if (matchingRoute.proxyTarget) {
+            this.handleProxy(req, res, matchingRoute)
+            return true
+          }
+          return false
+        }
+
         const correctPassword = this.saltPassword(matchingRoute.password)
         const cookies = requestInfo.cookies
         const cookieName = `auth_${website.name}${matchingRoute.path}`

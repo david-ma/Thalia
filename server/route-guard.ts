@@ -2,7 +2,7 @@ import { IncomingMessage, ServerResponse } from 'http'
 import http from 'http'
 import { RouteRule } from './types'
 import { Website } from './website'
-import formidable from 'formidable'
+import formidable, { Fields } from 'formidable'
 import { RequestInfo } from './server'
 import { RequestHandler } from './request-handler'
 import { CrudFactory } from './controllers'
@@ -168,7 +168,7 @@ export class BasicRouteGuard extends RouteGuard {
 
         if (request.req.method === 'POST') {
           const form = formidable({ multiples: false })
-          form.parse(request.req, (err, fields) => {
+          form.parse(request.req, (err: Error | null, fields: Fields) => {
             if (err) {
               return finish('Error parsing form data')
             }
@@ -346,7 +346,7 @@ export class BasicRouteGuard extends RouteGuard {
           // Check if they're posting
           try {
             const form = formidable({ multiples: false })
-            form.parse(req, (err, fields) => {
+            form.parse(req, (err: Error | null, fields: Fields) => {
               if (err) {
                 console.error('Error parsing form data:', err)
                 res.writeHead(400, { 'Content-Type': 'text/html' })

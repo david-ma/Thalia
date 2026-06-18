@@ -1,4 +1,4 @@
-import nodemailer, { SendMailOptions, Transporter } from 'nodemailer'
+import nodemailer, { SendMailOptions, SentMessageInfo, Transporter } from 'nodemailer'
 import { Machine } from './controllers'
 import { mysqlTable, text } from 'drizzle-orm/mysql-core'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
@@ -85,7 +85,7 @@ export class MailService implements Machine {
       }
       const mailOptions: SendMailOptions = recursiveObjectMerge(this.defaultSendMailOptions, sendMailOptions)
       return new Promise<string>((resolve) => {
-        this.transporter.sendMail(mailOptions, (error, info) => {
+        this.transporter.sendMail(mailOptions, (error: Error | null, info: SentMessageInfo) => {
           if (error) {
             console.trace('Error', error)
             resolve('We had an error sending mail, mailserver probably offline')

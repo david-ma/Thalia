@@ -192,7 +192,7 @@ export function parseForm(res: ServerResponse, req: IncomingMessage): Promise<Pa
     }
 
     const form = formidable({ multiples: false })
-    form.parse(req, (err, fields, files) => {
+    form.parse(req, (err: Error | null, fields: formidable.Fields<string>, files: formidable.Files<string>) => {
       if (err) {
         console.error('Error', err)
         res.writeHead(400, { 'Content-Type': 'text/html' })

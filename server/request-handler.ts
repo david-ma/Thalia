@@ -20,6 +20,16 @@ import { TemplateError } from './errors'
 
 const GZIP_SIZE_THRESHOLD = 10 * 1024 // 10kb
 
+const THALIA_SASS_OPTIONS = {
+  silenceDeprecations: Array.from([
+    'import',
+    'global-builtin',
+    'color-functions',
+    'if-function',
+    'slash-div',
+  ]),
+} as sass.Options<"sync">;
+
 export class RequestHandler {
   constructor(public website: Website) {
     this.rootPath = this.website.rootPath
@@ -689,7 +699,7 @@ export class RequestHandler {
 
       if (target) {
         try {
-          const css = sass.compile(target).css.toString()
+          const css = sass.compile(target, THALIA_SASS_OPTIONS).css.toString()
           const cssPath = path.join(requestHandler.rootPath, 'dist', requestHandler.pathname)
           fs.mkdirSync(path.dirname(cssPath), { recursive: true })
           fs.writeFileSync(cssPath, css)

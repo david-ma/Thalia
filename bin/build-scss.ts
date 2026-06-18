@@ -67,8 +67,18 @@ for (const scssFile of scssFiles) {
       fs.mkdirSync(cssDir, { recursive: true })
     }
 
+    const THALIA_SASS_OPTIONS = {
+      silenceDeprecations: [
+        'import',
+        'global-builtin',
+        'color-functions',
+        'if-function',
+        'slash-div',
+      ],
+    } as sass.Options<"sync">;
+
     // Compile SCSS
-    const result = sass.compile(scssFile)
+    const result = sass.compile(scssFile, THALIA_SASS_OPTIONS)
     fs.writeFileSync(cssPath, result.css)
     
     console.log(`  ✓ ${relativePath} → ${path.relative(projectRoot, cssPath)}`)

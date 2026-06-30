@@ -5,6 +5,7 @@
 import { Thalia } from '../../server/thalia.js'
 import { ServerOptions } from '../../server/types.js'
 import { getPort } from 'get-port-please'
+import fs from 'fs'
 import path from 'path'
 
 let testServers: Map<string, { thalia: Thalia; port: number }> = new Map()
@@ -19,6 +20,37 @@ export type StartTestServerOpts = {
    * Use for suites that need a clean HTTP stack (e.g. auth) after another describe reused the site.
    */
   fresh?: boolean
+  /**
+   * Site directory (contains `config/`). When omitted, resolves `websites/<project>`
+   * in the Thalia monorepo, else `process.cwd()` for standalone site repos.
+   */
+  rootPath?: string
+}
+
+function siteConfigDir(rootPath: string): string {
+  return path.join(rootPath, 'config')
+}
+
+/** Resolve site root for monorepo (`websites/foo`) or standalone repos (cwd). */
+export function resolveSiteRootPath(project: string, opts?: Pick<StartTestServerOpts, 'rootPath'>): string {
+  if (opts?.rootPath) {
+    return path.resolve(opts.rootPath)
+  }
+
+  const thaliaPackageRoot = path.resolve(import.meta.dirname, '../..')
+  const monorepoSite = path.join(thaliaPackageRoot, 'websites', project)
+  if (fs.existsSync(siteConfigDir(monorepoSite))) {
+    return monorepoSite
+  }
+
+  const cwdSite = process.cwd()
+  if (fs.existsSync(siteConfigDir(cwdSite))) {
+    return cwdSite
+  }
+
+  throw new Error(
+    `Cannot resolve site root for "${project}". Pass opts.rootPath (directory containing config/).`,
+  )
 }
 
 function testServerCacheKey(project: string, node_env: string): string {
@@ -53,12 +85,7 @@ export async function startTestServer(
   // could bind the wrong site to the port waitForServerHttp() observed (CI flake).
   const testPort = opts?.port ?? (await getPort({ random: true }))
 
-  // Resolve Thalia repo root from this file (tests/Integration/helpers.ts) so tests
-  // work the same whether run from repo root or from a website dir (e.g. websites/kras).
-  // Otherwise process.cwd() when run from websites/kras would yield rootPath
-  // websites/kras/websites/kras and tryScss would write dist/css/main.css there.
-  const thaliaRoot = path.resolve(import.meta.dirname, '../..')
-  const rootPath = path.join(thaliaRoot, 'websites', project)
+  const rootPath = resolveSiteRootPath(project, opts)
 
   const options: ServerOptions = {
     node_env,

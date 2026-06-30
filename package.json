@@ -51,6 +51,14 @@
     "./util": {
       "import": "./server/util.ts",
       "types": "./server/util.ts"
+    },
+    "./testing": {
+      "import": "./tests/Integration/helpers.ts",
+      "types": "./tests/Integration/helpers.ts"
+    },
+    "./tests/Integration/helpers": {
+      "import": "./tests/Integration/helpers.ts",
+      "types": "./tests/Integration/helpers.ts"
     }
   },
   "bin": {
@@ -64,6 +72,7 @@
     "bin/**/*",
     "public/**/*",
     "src/**/*",
+    "tests/Integration/helpers.ts",
     "AGENTS.md",
     "README.md",
     "LICENSE"

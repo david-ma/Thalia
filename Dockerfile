@@ -1,25 +1,42 @@
-FROM zenika/alpine-chrome:with-puppeteer as base
-ENV DISTRO=alpine
+# Thalia runtime image — Bun-first, with Chromium for sites that still use Puppeteer.
+#
+# Site images typically extend this (set PROJECT to the site folder name):
+#   FROM frostickle/thalia:<version>
+#   COPY . /usr/app/Thalia/websites/my-site
+#   ENV PROJECT=my-site
+#   CMD ["bun", "thalia"]
+#
+# Without PROJECT, the server runs in multiplex mode (all sites under websites/).
+# Override at runtime: docker run -e PROJECT=my-site ...
+#
+# Build (multi-arch):
+#   docker buildx build --push --platform linux/arm64,linux/amd64 \
+#     --progress=plain --tag frostickle/thalia:1.1.2 .
 
-USER root
-
-RUN apk update
-RUN apk upgrade
-RUN npm install -g typescript
-RUN npm install -g pnpm
-
-WORKDIR /usr/app
-
-ADD https://api.github.com/repos/david-ma/Thalia/git/refs/heads/master Thalia_version.json
-RUN git clone --depth=1 https://github.com/david-ma/Thalia.git
+FROM oven/bun:1.3.14-debian AS base
 WORKDIR /usr/app/Thalia
-RUN pnpm install --ignore-scripts --prod
-RUN pnpm install --prod
 
-USER chrome
+# Chromium for headless browser / Puppeteer. Thalia core does not depend on puppeteer;
+# remove this stage when no deployed site needs it.
+FROM base AS chromium
+USER root
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    chromium \
+    fonts-liberation \
+    ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
-CMD ["/usr/app/Thalia/start.sh"]
+FROM chromium AS install
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile --production
 
+FROM chromium AS release
+COPY --from=install /usr/app/Thalia/node_modules ./node_modules
+COPY . .
 
-# To build for multiple platforms:
-# docker buildx build --push --platform linux/arm64/v8,linux/amd64 --progress=plain --tag frostickle/thalia:1.1.1 .
+USER bun
+EXPOSE 1337
+CMD ["bun", "thalia"]

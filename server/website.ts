@@ -40,7 +40,7 @@ import { Socket } from 'socket.io'
 import { RequestInfo } from './server'
 import { ThaliaDatabase } from './database'
 import { placeholderImage, version } from './controllers'
-import { execSync } from 'child_process'
+import { findThaliaRoot, resolveThaliaGitHash, resolveWebsiteGitHash } from './git-hash'
 import os from 'os'
 import { ConfigurationError, TemplateError, FileSystemError } from './errors'
 import {
@@ -121,47 +121,19 @@ export class Website {
     }
 
     try {
-      // Find Thalia root directory by looking for package.json
-      // Start from current file location and go up until we find it
-      let thaliaRoot = import.meta.dirname
-      while (thaliaRoot !== path.dirname(thaliaRoot)) {
-        const packageJsonPath = path.join(thaliaRoot, 'package.json')
-        if (fs.existsSync(packageJsonPath)) {
-          // Check if this is actually Thalia's package.json (has "name": "thalia")
-          try {
-            const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
-            if (pkg.name === 'thalia') {
-              break
-            }
-          } catch {
-            // Not valid JSON, continue searching
-          }
-        }
-        thaliaRoot = path.dirname(thaliaRoot)
-      }
-
+      const thaliaRoot = findThaliaRoot(import.meta.dirname)
       const thaliaPackageJson = path.join(thaliaRoot, 'package.json')
       if (fs.existsSync(thaliaPackageJson)) {
         this.version.thaliaVersion = JSON.parse(fs.readFileSync(thaliaPackageJson, 'utf8')).version
-        this.version.thaliaGitHash = execSync('git rev-parse --short HEAD', { cwd: thaliaRoot }).toString().trim()
       }
+      this.version.thaliaGitHash = resolveThaliaGitHash(thaliaRoot, this.rootPath)
 
       if (fs.existsSync(path.join(this.rootPath, 'package.json'))) {
         this.version.version = JSON.parse(fs.readFileSync(path.join(this.rootPath, 'package.json'), 'utf8')).version
       }
-      if (fs.existsSync(path.join(this.rootPath, '.git'))) {
-        try {
-          this.version.gitHash = execSync('git rev-parse --short HEAD', {
-            cwd: this.rootPath,
-          })
-            .toString()
-            .trim()
-        } catch (error) {
-          this.version.gitHash = 'unknown'
-        }
-      }
-    } catch (error) {
-      console.error('Error loading version:', error)
+      this.version.gitHash = resolveWebsiteGitHash(this.rootPath)
+    } catch {
+      // Version metadata is best-effort; resolve helpers fall back to 'unknown'.
     }
   }
 

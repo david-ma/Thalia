@@ -106,6 +106,7 @@ export class RequestHandler {
       css: 'text/css; charset=utf-8',
       js: 'text/javascript; charset=utf-8',
       json: 'application/json; charset=utf-8',
+      err: 'text/plain; charset=utf-8',
       log: 'text/plain; charset=utf-8',
       csv: 'text/csv; charset=utf-8',
       tsv: 'text/tab-separated-values; charset=utf-8',
@@ -141,7 +142,14 @@ export class RequestHandler {
   }
 
   /** MIME types the browser should display in-page rather than download. */
-  private static inlineContentTypes = new Set(['application/pdf', 'text/markdown', 'text/plain', 'text/csv', 'text/tab-separated-values'])
+  private static inlineContentTypes = new Set([
+    'application/json',
+    'application/pdf',
+    'text/markdown',
+    'text/plain',
+    'text/csv',
+    'text/tab-separated-values',
+  ])
 
   private static contentDispositionInline(filename: string): string {
     const escaped = filename.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
@@ -221,11 +229,12 @@ export class RequestHandler {
         if (isGzipAccepted && fs.existsSync(`${targetPath}.gz`)) {
           targetPath += '.gz'
           requestHandler.res.setHeader('Content-Encoding', 'gzip')
-          const gzContentType = RequestHandler.getContentType(targetPath)
+          // MIME from the logical URL (e.g. .json), not the on-disk .gz name (would be octet-stream).
+          const logicalContentType = RequestHandler.getContentType(requestHandler.pathname)
           RequestHandler.setStaticFileHeaders(
             requestHandler.res,
             requestHandler.pathname,
-            gzContentType
+            logicalContentType,
           )
           requestHandler.res.setHeader('Content-Length', fs.statSync(targetPath).size.toString())
 

@@ -23,8 +23,11 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
-import { startTestServer, stopTestServer, fetchFromServer, waitForServerHttp } from './helpers.js'
+import { startTestServer, stopTestServer, fetchFromServer, waitForServerHttp, resolveSiteRootPath } from './helpers.js'
 import { deleteExampleAuthUserByEmail } from './helpers-example-auth-db.js'
+import fs from 'fs'
+import path from 'path'
+import zlib from 'zlib'
 
 describe('Request-handler: example-minimal (static, 404, path exploit)', () => {
   let port: number
@@ -72,6 +75,29 @@ describe('Request-handler: example-minimal (static, 404, path exploit)', () => {
     const response = await fetchFromServer('/js/app.js', port)
     expect(response.status).toBe(200)
     expect(response.headers.get('content-type')).toContain('javascript')
+  })
+
+  test('healthchecks/*.json from .json.gz sibling is application/json (browser inline, not download)', async () => {
+    const fixtureDir = path.join(resolveSiteRootPath(PROJECT), 'data', 'healthchecks', 'gzip-fixture')
+    fs.mkdirSync(fixtureDir, { recursive: true })
+    const gzPath = path.join(fixtureDir, 'sample.json.gz')
+    fs.writeFileSync(gzPath, zlib.gzipSync(Buffer.from('{"hello":"world"}', 'utf8')))
+    try {
+      const response = await fetchFromServer('/healthchecks/gzip-fixture/sample.json', port, {
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(response.status).toBe(200)
+      expect(response.headers.get('content-type')).toContain('application/json')
+      const disposition = response.headers.get('content-disposition') ?? ''
+      if (disposition) expect(disposition).toContain('inline')
+      const text = await response.text()
+      expect(text).toContain('"hello"')
+    } finally {
+      fs.rmSync(path.join(resolveSiteRootPath(PROJECT), 'data', 'healthchecks', 'gzip-fixture'), {
+        recursive: true,
+        force: true,
+      })
+    }
   })
 
   test('non-existent path returns 404 (fileNotFound)', async () => {

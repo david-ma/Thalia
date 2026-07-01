@@ -173,21 +173,16 @@ export class Website {
     const website = new Website(config)
     startupMark(`website.${config.name}.constructor`)
 
-    return Promise.all([
-      Promise.resolve().then(() => {
+    return website
+      .loadConfig(config)
+      .then(() => {
+        startupMark(`website.${config.name}.config`)
         website.loadPartials()
         startupMark(`website.${config.name}.partials`)
-      }),
-      website
-        .loadConfig(config)
-        .then(() => {
-          startupMark(`website.${config.name}.config`)
-          return website.loadDatabase()
-        })
-        .then(() => {
-          startupMark(`website.${config.name}.database`)
-        }),
-    ]).then(([_partials]) => {
+        return website.loadDatabase()
+      })
+      .then(() => {
+        startupMark(`website.${config.name}.database`)
         // Use configured machines — not DB init outcome — so RBAC stays `RoleRouteGuard` when MySQL is down.
         const machines = website.config.database?.machines
         if (machines?.users && machines?.sessions && machines?.audits) {
@@ -199,8 +194,7 @@ export class Website {
         }
         startupMark(`website.${config.name}.ready`)
         return website
-      },
-    )
+      })
   }
 
   /**
@@ -240,6 +234,7 @@ export class Website {
             }
 
             this.config = recursiveObjectMerge(this.config, configFile.config) as WebsiteConfig
+            this.registerHandlebarsHelpers()
           },
           (err) => {
             if (fs.existsSync(configPath)) {
@@ -329,7 +324,79 @@ export class Website {
    *
    * The order is important, because later paths will override earlier paths.
    */
+  /**
+   * Register built-in and site-configured Handlebars helpers.
+   * Called after config merge and again when partials reload in development.
+   */
+  public registerHandlebarsHelpers() {
+    /**
+     * Helper to get the value of a field from the blob or the root
+     * Prioritises the root
+     */
+    this.handlebars.registerHelper('getValue', function (field, options) {
+      if (!options || !options.data || !options.data.root) {
+        return ''
+      }
+      if (options.data.root[field]) {
+        return options.data.root[field]
+      }
+      if (!options.data.root.blob) {
+        return ''
+      }
+      return options.data.root.blob[field] || ''
+    })
+
+    this.handlebars.registerHelper('formatDate', function (date, format) {
+      if (!date) {
+        return ''
+      }
+      return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    })
+
+    this.handlebars.registerHelper('eq', function (a, b) {
+      return a === b
+    })
+
+    this.handlebars.registerHelper('add', function (a, b) {
+      return a + b
+    })
+
+    this.handlebars.registerHelper('subtract', function (a, b) {
+      return a - b
+    })
+
+    this.handlebars.registerHelper('formatDate', function (date, format) {
+      return new Date(date).toLocaleDateString('en-AU', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    })
+
+    /**
+     * For the dropdown partial
+     * Might be useful for radio buttons or checkboxes too
+     */
+    this.handlebars.registerHelper('isSelected', function (field, value, options) {
+      if (!options || !options.data || !options.data.root) {
+        return ''
+      }
+      if (options.data.root[field] === value) {
+        return 'selected'
+      }
+      if (options.data.root.blob && options.data.root.blob[field] === value) {
+        return 'selected'
+      }
+      return ''
+    })
+
+    // Register site-specific handlebars helpers
+    if (this.config?.handlebarsHelpers) {
+      for (const [name, helper] of Object.entries(this.config.handlebarsHelpers)) {
+        this.handlebars.registerHelper(name, helper)
+      }
+    }
+  }
+
   public loadPartials() {
+    this.registerHandlebarsHelpers()
+
     const paths = [
       path.join(cwd(), 'node_modules', 'thalia', 'src', 'views'),
       path.join(cwd(), 'src', 'views'),
@@ -404,70 +471,6 @@ export class Website {
     this.handlebars.registerPartial('styles', '')
     this.handlebars.registerPartial('scripts', '')
     this.handlebars.registerPartial('content', '')
-
-    /**
-     * Helper to get the value of a field from the blob or the root
-     * Prioritises the root
-     */
-    this.handlebars.registerHelper('getValue', function (field, options) {
-      if (!options || !options.data || !options.data.root) {
-        return ''
-      }
-      if (options.data.root[field]) {
-        return options.data.root[field]
-      }
-      if (!options.data.root.blob) {
-        return ''
-      }
-      return options.data.root.blob[field] || ''
-    })
-
-    this.handlebars.registerHelper('formatDate', function (date, format) {
-      if (!date) {
-        return ''
-      }
-      return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
-    })
-
-    this.handlebars.registerHelper('eq', function (a, b) {
-      return a === b
-    })
-
-    this.handlebars.registerHelper('add', function (a, b) {
-      return a + b
-    })
-
-    this.handlebars.registerHelper('subtract', function (a, b) {
-      return a - b
-    })
-
-    this.handlebars.registerHelper('formatDate', function (date, format) {
-      return new Date(date).toLocaleDateString('en-AU', { year: 'numeric', month: '2-digit', day: '2-digit' })
-    })
-
-    // DEBUG: This does not always load reliably? Standalone mode vs multiplex mode?
-    if (this.config && this.config.handlebarsHelpers) {
-      for (const [name, helper] of Object.entries(this.config.handlebarsHelpers)) {
-        this.handlebars.registerHelper(name, helper)
-      }
-    }
-
-    /**
-     * For the dropdown partial
-     * Might be useful for radio buttons or checkboxes too
-     */
-    this.handlebars.registerHelper('isSelected', function (field, value, options) {
-      if (!options || !options.data || !options.data.root) {
-        return ''
-      }
-      if (options.data.root[field] === value) {
-        return 'selected'
-      }
-      if (options.data.root.blob && options.data.root.blob[field] === value) {
-        return 'selected'
-      }
-      return ''
-    })
 
     try {
       const entries = fs.readdirSync(folder, { withFileTypes: true })

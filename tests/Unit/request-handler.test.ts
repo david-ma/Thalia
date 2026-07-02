@@ -82,6 +82,7 @@ describe('RequestHandler getContentType', () => {
     expect(getContentType('/data.json')).toBe('application/json; charset=utf-8')
     expect(getContentType('/readme.md')).toBe('text/markdown; charset=utf-8')
     expect(getContentType('/export.csv')).toBe('text/csv; charset=utf-8')
+    expect(getContentType('/robots.txt')).toBe('text/plain; charset=utf-8')
   })
 
   test('binary extensions omit charset', () => {

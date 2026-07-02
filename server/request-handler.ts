@@ -78,11 +78,11 @@ export class RequestHandler {
       .then(RequestHandler.tryPdf)
       .then(RequestHandler.tryMarkdown)
       .then(RequestHandler.tryCsv)
+      .then(RequestHandler.showFolderIndex)
       .then((rh) => RequestHandler.tryStaticFile('public', rh))
       .then((rh) => RequestHandler.tryStaticFile('docs', rh))
       .then((rh) => RequestHandler.tryStaticFile('data', rh))
       .then((rh) => RequestHandler.tryStaticFile('public', rh, true)) // Serve assets from the thalia root
-      .then(RequestHandler.showFolderIndex)
       .then(RequestHandler.fileNotFound)
       .catch((message) => {
         if (message instanceof Error) {
@@ -106,6 +106,7 @@ export class RequestHandler {
       css: 'text/css; charset=utf-8',
       js: 'text/javascript; charset=utf-8',
       json: 'application/json; charset=utf-8',
+      txt: 'text/plain; charset=utf-8',
       err: 'text/plain; charset=utf-8',
       log: 'text/plain; charset=utf-8',
       csv: 'text/csv; charset=utf-8',
@@ -394,7 +395,7 @@ export class RequestHandler {
     })
   }
 
-  /** When no index is found and path is a directory under src/, render folder listing (development only). */
+  /** When no index is found and path is a directory under src/ or docs/, render folder listing (development only). */
   private static showFolderIndex(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
       // console.debug("showFolderIndex: We are at this path: ", requestHandler.pathname)
@@ -428,8 +429,18 @@ export class RequestHandler {
     parentPath: string
     title: string
   } | null {
-    const dirPath = path.join(rh.rootPath, 'src', RequestHandler.decodePathnameForFilesystemLookup(rh.pathname) ?? '')
-    if (!fs.existsSync(dirPath) || !fs.statSync(dirPath).isDirectory()) return null
+    const rel = RequestHandler.decodePathnameForFilesystemLookup(rh.pathname) ?? ''
+    const dirPath = ['docs', 'src']
+      .map((folder) => path.join(rh.rootPath, folder, rel))
+      .find((candidate) => {
+        try {
+          return fs.statSync(candidate).isDirectory()
+        } catch {
+          return false
+        }
+      })
+    if (!dirPath) return null
+
     let names: string[]
     try {
       names = fs.readdirSync(dirPath).filter((n) => n !== '.DS_Store')
@@ -643,6 +654,12 @@ export class RequestHandler {
       const thalia = path.join(rh.thaliaRoot, 'src', mdPath)
       if (fs.existsSync(project) && fs.statSync(project).isFile()) return project
       if (fs.existsSync(thalia) && fs.statSync(thalia).isFile()) return thalia
+
+      // If development, serve from /docs as well
+      if (rh.website.env === 'development') {
+        const docs = path.join(rh.rootPath, 'docs', mdPath)
+        if (fs.existsSync(docs) && fs.statSync(docs).isFile()) return docs
+      }
     }
     return null
   }

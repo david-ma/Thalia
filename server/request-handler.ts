@@ -404,10 +404,14 @@ export class RequestHandler {
       const data = RequestHandler.resolveFolderIndexData(requestHandler)
       if (!data) return next(requestHandler)
 
-      const partialPath = path.join(requestHandler.thaliaRoot, 'src', 'views', 'partials', 'show_folder_index.hbs')
-      if (!fs.existsSync(partialPath)) return next(requestHandler)
+      if (requestHandler.website.env === 'development') {
+        requestHandler.website.loadPartials()
+      }
 
-      const contentHtml = requestHandler.website.handlebars.compile(fs.readFileSync(partialPath, 'utf8'))(data)
+      const partialTemplate = requestHandler.website.handlebars.partials['show_folder_index']
+      if (!partialTemplate) return next(requestHandler)
+
+      const contentHtml = requestHandler.website.handlebars.compile(partialTemplate)(data)
       const html = RequestHandler.renderFolderIndexWrapper(requestHandler, contentHtml, data.title)
       requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
       requestHandler.res.end(html)

@@ -30,6 +30,19 @@ const THALIA_SASS_OPTIONS = {
   ]),
 } as sass.Options<"sync">;
 
+type FolderIndexEntry = {
+  name: string
+  isDirectory: boolean
+}
+
+type FolderIndexData = {
+  pathname: string
+  basePath: string
+  entries: FolderIndexEntry[]
+  parentPath: string
+  title: string
+}
+
 export class RequestHandler {
   constructor(public website: Website) {
     this.rootPath = this.website.rootPath
@@ -172,6 +185,9 @@ export class RequestHandler {
 
   /** Project folders searched for PDFs (first match wins). */
   private static readonly pdfStaticFolders = ['public', 'data', 'dist', 'docs'] as const
+
+  /** Project folders eligible for development directory listings (first match wins). */
+  private static readonly folderIndexFolders = ['docs', 'src'] as const
 
   /** Decoded safe relative path for filesystem lookups, or null if invalid. */
   private static filesystemRelativePath(pathname: string): string | null {
@@ -405,10 +421,6 @@ export class RequestHandler {
       const data = RequestHandler.resolveFolderIndexData(requestHandler)
       if (!data) return next(requestHandler)
 
-      if (requestHandler.website.env === 'development') {
-        requestHandler.website.loadPartials()
-      }
-
       const partialTemplate = requestHandler.website.handlebars.partials['show_folder_index']
       if (!partialTemplate) return next(requestHandler)
 
@@ -420,17 +432,22 @@ export class RequestHandler {
     })
   }
 
-  private static resolveFolderIndexData(
-    rh: RequestHandler,
-  ): {
-    pathname: string
-    basePath: string
-    entries: { name: string; isDirectory: boolean }[]
-    parentPath: string
-    title: string
-  } | null {
-    const rel = RequestHandler.decodePathnameForFilesystemLookup(rh.pathname) ?? ''
-    const dirPath = ['docs', 'src']
+  private static isFolderIndexEntryVisible(name: string): boolean {
+    return !name.startsWith('.')
+  }
+
+  private static compareFolderIndexEntries(a: FolderIndexEntry, b: FolderIndexEntry): number {
+    return (
+      Number(b.isDirectory) - Number(a.isDirectory) ||
+      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+    )
+  }
+
+  private static resolveFolderIndexData(rh: RequestHandler): FolderIndexData | null {
+    const rel = RequestHandler.decodePathnameForFilesystemLookup(rh.pathname)
+    if (rel === null) return null
+
+    const dirPath = RequestHandler.folderIndexFolders
       .map((folder) => path.join(rh.rootPath, folder, rel))
       .find((candidate) => {
         try {
@@ -441,27 +458,22 @@ export class RequestHandler {
       })
     if (!dirPath) return null
 
-    let names: string[]
+    let entries: FolderIndexEntry[]
     try {
-      names = fs.readdirSync(dirPath).filter((n) => n !== '.DS_Store')
+      entries = fs
+        .readdirSync(dirPath, { withFileTypes: true })
+        .filter((d) => RequestHandler.isFolderIndexEntryVisible(d.name))
+        .map((d) => ({ name: d.name, isDirectory: d.isDirectory() }))
+        .sort(RequestHandler.compareFolderIndexEntries)
     } catch {
       return null
     }
-    const pathname = rh.pathname.replace(/\/$/, '') || ''
-    const basePath = pathname ? pathname + '/' : ''
-    const entries = names
-      .map((name) => ({ name, isDirectory: fs.statSync(path.join(dirPath, name)).isDirectory() }))
-      .sort((a, b) =>
-        a.isDirectory !== b.isDirectory
-          ? a.isDirectory
-            ? -1
-            : 1
-          : a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
-      )
 
-    // Very unix centric. Might have unexpected behaviour on Windows.
-    const parentPath = pathname.includes('/') ? pathname.replace(/\/[^/]*$/, '') : ''
-    const title = dirPath.split('/').pop() ?? ''
+    const pathname = rh.pathname.replace(/\/$/, '') || ''
+    const basePath = pathname ? `${pathname}/` : ''
+    const segments = pathname.split('/').filter(Boolean)
+    const parentPath = segments.length > 1 ? segments.slice(0, -1).join('/') : ''
+    const title = path.basename(dirPath)
     return { pathname, basePath, entries, parentPath, title }
   }
 

@@ -5,11 +5,13 @@
  * Run from Thalia root: bun test tests/Unit/request-handler.test.ts
  */
 
-import { describe, test, expect } from 'bun:test'
+import { describe, test, expect, afterEach } from 'bun:test'
 import { RequestHandler } from '../../server/request-handler.js'
 import type { RequestInfo } from '../../server/server.js'
 import type { IncomingMessage, ServerResponse } from 'http'
 import path from 'path'
+import fs from 'fs'
+import os from 'os'
 
 /** Narrow shape for testing private statics; do not intersect with typeof RequestHandler (clash → never). */
 type RequestHandlerPrivateStub = {
@@ -25,6 +27,13 @@ type RequestHandlerPrivateStub = {
     contentType: string,
     servedFilename?: string,
   ): void
+  resolveFolderIndexData(rh: { rootPath: string; pathname: string }): {
+    pathname: string
+    basePath: string
+    entries: { name: string; isDirectory: boolean }[]
+    parentPath: string
+    title: string
+  } | null
 }
 
 const rhPrivate = RequestHandler as unknown as RequestHandlerPrivateStub
@@ -35,6 +44,7 @@ const getContentType = rhPrivate.getContentType.bind(RequestHandler)
 const mimeBaseType = rhPrivate.mimeBaseType.bind(RequestHandler)
 const isGzipFriendlyMime = rhPrivate.isGzipFriendlyMime.bind(RequestHandler)
 const setStaticFileHeaders = rhPrivate.setStaticFileHeaders.bind(RequestHandler)
+const resolveFolderIndexData = rhPrivate.resolveFolderIndexData.bind(RequestHandler)
 
 function mockResponse(): ServerResponse & { headers: Record<string, string | number> } {
   const headers: Record<string, string | number> = {}
@@ -158,6 +168,65 @@ describe('RequestHandler resolvePdfPath', () => {
   test('finds public/sample-doc.pdf for extensionless URL', () => {
     const target = resolvePdfPath({ rootPath, pathname: '/sample-doc' })
     expect(target).toBe(path.join(rootPath, 'public', 'sample-doc.pdf'))
+  })
+})
+
+describe('RequestHandler resolveFolderIndexData', () => {
+  let tmpRoot = ''
+
+  afterEach(() => {
+    if (tmpRoot) {
+      fs.rmSync(tmpRoot, { recursive: true, force: true })
+      tmpRoot = ''
+    }
+  })
+
+  test('returns null for invalid percent-encoding', () => {
+    tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'thalia-folder-index-'))
+    expect(resolveFolderIndexData({ rootPath: tmpRoot, pathname: '/bad%' })).toBeNull()
+  })
+
+  test('prefers docs/ over src/ when both directories exist', () => {
+    tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'thalia-folder-index-'))
+    const rel = 'topic'
+    fs.mkdirSync(path.join(tmpRoot, 'docs', rel), { recursive: true })
+    fs.mkdirSync(path.join(tmpRoot, 'src', rel), { recursive: true })
+    fs.writeFileSync(path.join(tmpRoot, 'docs', rel, 'from-docs.txt'), '')
+    fs.writeFileSync(path.join(tmpRoot, 'src', rel, 'from-src.txt'), '')
+
+    const data = resolveFolderIndexData({ rootPath: tmpRoot, pathname: `/${rel}` })
+    expect(data?.entries.map((e) => e.name)).toEqual(['from-docs.txt'])
+  })
+
+  test('lists visible entries with directories first', () => {
+    tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'thalia-folder-index-'))
+    const guidesDir = path.join(tmpRoot, 'docs', 'guides')
+    fs.mkdirSync(path.join(guidesDir, 'chapter'), { recursive: true })
+    fs.writeFileSync(path.join(guidesDir, 'readme.md'), '# hi')
+    fs.writeFileSync(path.join(guidesDir, '.hidden'), 'secret')
+
+    const data = resolveFolderIndexData({ rootPath: tmpRoot, pathname: '/guides' })
+    expect(data).toEqual({
+      pathname: '/guides',
+      basePath: '/guides/',
+      entries: [
+        { name: 'chapter', isDirectory: true },
+        { name: 'readme.md', isDirectory: false },
+      ],
+      parentPath: '',
+      title: 'guides',
+    })
+  })
+
+  test('computes parent path and title for nested directories', () => {
+    tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'thalia-folder-index-'))
+    fs.mkdirSync(path.join(tmpRoot, 'src', 'guides', 'chapter'), { recursive: true })
+
+    const data = resolveFolderIndexData({ rootPath: tmpRoot, pathname: '/guides/chapter/' })
+    expect(data?.pathname).toBe('/guides/chapter')
+    expect(data?.basePath).toBe('/guides/chapter/')
+    expect(data?.parentPath).toBe('guides')
+    expect(data?.title).toBe('chapter')
   })
 })
 

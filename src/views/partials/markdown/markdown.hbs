@@ -13,6 +13,15 @@
   Override tabs chrome: copy tabs/tab-container.hbs (or tab-button / tab-pane).
 --}}
 {{#> wrapper }}
+
+{{#if frontMatter.hide_tabs }}
+<style>
+  ul.nav.nav-tabs {
+    display: none;
+  }
+</style>
+{{/if}}
+
 <article class="markdown-doc" id="markdown-doc">
   {{~> tab-container
       tabItems=markdownDocTabs

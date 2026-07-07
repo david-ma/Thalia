@@ -72,16 +72,16 @@ describe('resolveClientIp', () => {
     ).toBe('203.0.113.99')
   })
 
-  test('ignores spoofed CF-Connecting-IP when peer is not Cloudflare', () => {
+  test('trusts CF-Connecting-IP when peer is loopback (nginx on same host)', () => {
     expect(
       resolveClientIp(
         {
           'x-real-ip': '203.0.113.10',
-          'cf-connecting-ip': '192.168.0.50',
+          'cf-connecting-ip': '198.51.100.20',
         },
         '127.0.0.1',
       ),
-    ).toBe('203.0.113.10')
+    ).toBe('198.51.100.20')
   })
 
   test('ignores forgeable headers when exposed directly (non-loopback socket)', () => {
@@ -94,6 +94,24 @@ describe('resolveClientIp', () => {
         '203.0.113.10',
       ),
     ).toBe('203.0.113.10')
+  })
+
+  test('trusts nginx X-Real-IP when peer is a Docker bridge gateway', () => {
+    expect(
+      resolveClientIp({ 'x-real-ip': '203.0.113.10' }, '172.21.0.1'),
+    ).toBe('203.0.113.10')
+  })
+
+  test('trusts CF-Connecting-IP when peer is a Docker bridge gateway', () => {
+    expect(
+      resolveClientIp(
+        {
+          'x-real-ip': '104.16.0.42',
+          'cf-connecting-ip': '203.0.113.99',
+        },
+        '172.21.0.1',
+      ),
+    ).toBe('203.0.113.99')
   })
 })
 

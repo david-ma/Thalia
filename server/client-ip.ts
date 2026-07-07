@@ -19,6 +19,21 @@ export const CLOUDFLARE_IPV4_CIDRS = [
   '131.0.72.0/22',
 ] as const
 
+/** Loopback + RFC1918 — typical nginx-on-host → Docker bridge peers (e.g. 172.21.0.1). */
+const DEFAULT_TRUSTED_PROXY_CIDRS = [
+  '10.0.0.0/8',
+  '172.16.0.0/12',
+  '192.168.0.0/16',
+] as const
+
+function trustedProxyCidrs(): readonly string[] {
+  const env = process.env.THALIA_TRUSTED_PROXY_CIDRS
+  if (env?.trim()) {
+    return env.split(',').map((s) => s.trim()).filter(Boolean)
+  }
+  return DEFAULT_TRUSTED_PROXY_CIDRS
+}
+
 /** First IP in `X-Forwarded-For` chains; strips IPv4-mapped IPv6 prefix. */
 export function normaliseClientIp(ip: string): string {
   const first = ip.split(',')[0]?.trim() ?? ip.trim()
@@ -77,11 +92,15 @@ function headerString(value: string | string[] | undefined): string | undefined 
   return undefined
 }
 
-/** Same-host TCP peer (typically nginx); safe to trust proxy headers nginx sets. I.e. x-real-ip */
-function isLoopbackSocket(socketAddress: string | undefined): boolean {
+/**
+ * Same-host or private-network TCP peer (nginx on localhost, or Docker bridge gateway).
+ * Safe to trust proxy headers the reverse proxy sets (e.g. X-Real-IP).
+ */
+function isTrustedProxySocket(socketAddress: string | undefined): boolean {
   if (!socketAddress) return false
   const ip = normaliseClientIp(socketAddress)
-  return ip === '127.0.0.1' || ip === '::1'
+  if (ip === '127.0.0.1' || ip === '::1') return true
+  return ipMatchesAnyCidr(ip, trustedProxyCidrs())
 }
 
 /**
@@ -90,7 +109,7 @@ function isLoopbackSocket(socketAddress: string | undefined): boolean {
  */
 function peerIpForTrust(headers: IncomingHttpHeaders, socketAddress: string | undefined): string {
   const socket = normaliseClientIp(socketAddress ?? '')
-  if (isLoopbackSocket(socketAddress)) {
+  if (isTrustedProxySocket(socketAddress)) {
     return normaliseClientIp(headerString(headers['x-real-ip']) ?? socket)
   }
   return socket
@@ -98,17 +117,21 @@ function peerIpForTrust(headers: IncomingHttpHeaders, socketAddress: string | un
 
 /**
  * Resolve the client IP from proxy headers.
- * Trust `CF-Connecting-IP` only when the immediate peer is a Cloudflare edge address.
+ * Trust `CF-Connecting-IP` when the immediate peer is Cloudflare or a trusted reverse proxy.
  */
 export function resolveClientIp(headers: IncomingHttpHeaders, socketAddress?: string): string {
   const cfConnectingIp = headerString(headers['cf-connecting-ip'])
   const peerIp = peerIpForTrust(headers, socketAddress)
 
-  if (cfConnectingIp && peerIp && ipMatchesAnyCidr(peerIp, CLOUDFLARE_IPV4_CIDRS)) {
+  if (
+    cfConnectingIp &&
+    peerIp &&
+    (ipMatchesAnyCidr(peerIp, CLOUDFLARE_IPV4_CIDRS) || isTrustedProxySocket(socketAddress))
+  ) {
     return normaliseClientIp(cfConnectingIp)
   }
 
-  if (isLoopbackSocket(socketAddress)) {
+  if (isTrustedProxySocket(socketAddress)) {
     const raw =
       headerString(headers['x-real-ip']) ??
       headerString(headers['x-forwarded-for']) ??

@@ -341,6 +341,10 @@ export class Website {
       return new Date(date).toLocaleDateString('en-AU', { year: 'numeric', month: '2-digit', day: '2-digit' })
     })
 
+    this.handlebars.registerHelper('json', function (object) {
+      return JSON.stringify(object, null, 2)
+    })
+
     /**
      * For the dropdown partial
      * Might be useful for radio buttons or checkboxes too

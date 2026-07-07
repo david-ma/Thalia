@@ -155,10 +155,24 @@ describe('RequestHandler setStaticFileHeaders', () => {
     expect(res2.headers['content-disposition']).toBe('inline; filename="log.txt"')
   })
 
-  test('no Content-Disposition inline for css', () => {
+  test('inline for css and javascript', () => {
     const res = mockResponse()
     setStaticFileHeaders(res, '/css/main.css', 'text/css; charset=utf-8')
+    expect(res.headers['content-disposition']).toBe('inline; filename="main.css"')
+
+    const res2 = mockResponse()
+    setStaticFileHeaders(res2, '/app.js', 'text/javascript; charset=utf-8')
+    expect(res2.headers['content-disposition']).toBe('inline; filename="app.js"')
+  })
+
+  test('no Content-Disposition for binary assets', () => {
+    const res = mockResponse()
+    setStaticFileHeaders(res, '/images/photo.png', 'image/png')
     expect(res.headers['content-disposition']).toBeUndefined()
+
+    const res2 = mockResponse()
+    setStaticFileHeaders(res2, '/fonts/icon.woff2', 'font/woff2')
+    expect(res2.headers['content-disposition']).toBeUndefined()
   })
 })
 

@@ -575,6 +575,7 @@ export class RequestHandler {
           version: requestHandler.website.version,
           pathname: requestHandler.pathname,
           filename: path.basename(target),
+          title: path.basename(target),
         }
         requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
         requestHandler.res.end(html(data))

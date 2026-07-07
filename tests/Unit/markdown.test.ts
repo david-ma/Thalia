@@ -17,7 +17,7 @@ import {
   parseMarkdown,
   wrapMarkdownCodeBlocks,
   registerMarkdownHelpers,
-  extractFrontMatterYaml,
+  parseFrontMatter,
   buildMarkdownDocTabs,
   compileMarkdownPageHtml,
   prepareMarkdownBodyForCompile,
@@ -61,9 +61,29 @@ describe('markdown pipeline', () => {
     expect(rendered).toMatchSnapshot()
   })
 
-  test('extractFrontMatterYaml returns inner YAML without fences', () => {
+  test('parseFrontMatter returns body, parsed front matter, and raw YAML', () => {
     const md = '---\ntitle: Docs\n---\n\n# Hello\n'
-    expect(extractFrontMatterYaml(md)).toBe('title: Docs')
+    expect(parseFrontMatter(md)).toEqual(['# Hello\n', { title: 'Docs' }, 'title: Docs'])
+  })
+
+  test('parseFrontMatter returns original content when no closing fence', () => {
+    const md = '---\ntitle: Docs\n'
+    expect(parseFrontMatter(md)).toEqual([md, null, null])
+  })
+
+  test('parseFrontMatter returns original content when file has no front matter', () => {
+    const md = '# Hello\n'
+    expect(parseFrontMatter(md)).toEqual([md, null, null])
+  })
+
+  test('parseFrontMatter returns original content when YAML is invalid', () => {
+    const md = '---\ntitle: [invalid\n---\n\n# Hello\n'
+    expect(parseFrontMatter(md)).toEqual([md, null, null])
+  })
+
+  test('parseFrontMatter returns original content when YAML is not a mapping', () => {
+    const md = '---\njust a string\n---\n\n# Hello\n'
+    expect(parseFrontMatter(md)).toEqual([md, null, null])
   })
 
   test('buildMarkdownDocTabs returns panel partial names without front matter', () => {
@@ -129,7 +149,7 @@ describe('markdown pipeline', () => {
       { title: 'Docs' },
       'title: Docs',
       '---\ntitle: Docs\n---\n\n# Hi\n',
-      '\n# Hi\n',
+      '# Hi\n',
       ctx,
     )
     expect(withFm).toContain('id="mdtab-front-matter-tab"')

@@ -61,16 +61,35 @@ export function parseMarkdown(content: string): string {
 }
 
 
+/** Jekyll-style `---` YAML fences; body is everything after the closing fence. */
+const FRONT_MATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/
+
 /**
  * Get the yaml front matter from a markdown file.
+ * Returns [body, frontMatter, frontMatterYaml]. Body has leading blank lines after the closing `---` removed.
+ * If there is no front matter, returns [content, null, null].
+ * If the YAML is not valid, returns [content, null, null].
  */
-export function parseFrontMatter(content: string): [string, Record<string, unknown> | null] {
-  if (!content.startsWith('---')) return [content, null]
-  const frontMatter = content.match(/^---([\s\S]*?)---(.*)/)?.[1]
-  if (!frontMatter) return [content, null]
-  // return [content, JSON.parse(frontMatter)]
-  //yaml parse frontmatter
-  return [content.replace(/^---([\s\S]*?)---(.*)/, ''), Bun.YAML.parse(frontMatter) as Record<string, unknown>]
+export function parseFrontMatter(content: string): [string, Record<string, unknown>, string] | [string, null, null] {
+  if (!content.startsWith('---')) return [content, null, null]
+  const match = content.match(FRONT_MATTER_REGEX)
+  if (!match) return [content, null, null]
+
+  const frontMatterYaml = match[1].trim()
+  if (!frontMatterYaml) return [content, null, null]
+
+  let parsed: unknown
+  try {
+    parsed = Bun.YAML.parse(frontMatterYaml)
+  } catch {
+    return [content, null, null]
+  }
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return [content, null, null]
+  }
+
+  const body = match[2].replace(/^(?:\r?\n)+/, '')
+  return [body, parsed as Record<string, unknown>, frontMatterYaml]
 }
 
 /** Injected by wrapMarkdownCodeBlocks; must survive literal-{{ escaping below. */
@@ -108,13 +127,6 @@ export function prepareMarkdownBodyForCompile(html: string): string {
   const { html: shielded, tokens } = shieldMermaidPartials(html)
   const escaped = escapeHandlebarsLiterals(shielded)
   return restoreMermaidPartials(escaped, tokens)
-}
-
-/** Raw YAML between opening `---` fences (no fences), or null if absent. */
-export function extractFrontMatterYaml(content: string): string | null {
-  if (!content.startsWith('---')) return null
-  const yaml = content.match(/^---([\s\S]*?)---/)?.[1]
-  return yaml?.trim() ? yaml.trim() : null
 }
 
 /**
@@ -266,8 +278,7 @@ export function renderMarkdownPage(
   options?: RenderMarkdownPageOptions,
 ): string {
   registerMarkdownHelpers(handlebars)
-  const [body, frontMatter] = parseFrontMatter(markdownSource)
-  const frontMatterYaml = extractFrontMatterYaml(markdownSource)
+  const [body, frontMatter, frontMatterYaml] = parseFrontMatter(markdownSource)
   const mermaidSources: string[] = []
   const contentHtml = wrapMarkdownCodeBlocks(parseMarkdown(body), mermaidSources)
   return compileMarkdownPageHtml(

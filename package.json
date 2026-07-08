@@ -9,56 +9,69 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
+      "types": "./server/index.ts",
       "import": "./server/index.ts",
-      "types": "./server/index.ts"
+      "default": "./server/index.ts"
     },
     "./cli": {
+      "types": "./server/cli.ts",
       "import": "./server/cli.ts",
-      "types": "./server/cli.ts"
+      "default": "./server/cli.ts"
     },
     "./types": {
+      "types": "./server/types.ts",
       "import": "./server/types.ts",
-      "types": "./server/types.ts"
+      "default": "./server/types.ts"
     },
     "./server": {
+      "types": "./server/server.ts",
       "import": "./server/server.ts",
-      "types": "./server/server.ts"
+      "default": "./server/server.ts"
     },
     "./website": {
+      "types": "./server/website.ts",
       "import": "./server/website.ts",
-      "types": "./server/website.ts"
+      "default": "./server/website.ts"
     },
     "./models": {
+      "types": "./models/index.ts",
       "import": "./models/index.ts",
-      "types": "./models/index.ts"
+      "default": "./models/index.ts"
     },
     "./security-models": {
+      "types": "./models/security-models.ts",
       "import": "./models/security-models.ts",
-      "types": "./models/security-models.ts"
+      "default": "./models/security-models.ts"
     },
     "./security": {
+      "types": "./server/security/index.ts",
       "import": "./server/security/index.ts",
-      "types": "./server/security/index.ts"
+      "default": "./server/security/index.ts"
     },
     "./controllers": {
+      "types": "./server/controllers.ts",
       "import": "./server/controllers.ts",
-      "types": "./server/controllers.ts"
+      "default": "./server/controllers.ts"
     },
     "./mail": {
+      "types": "./server/mail.ts",
       "import": "./server/mail.ts",
-      "types": "./server/mail.ts"
+      "default": "./server/mail.ts"
     },
     "./util": {
+      "types": "./server/util.ts",
       "import": "./server/util.ts",
-      "types": "./server/util.ts"
+      "default": "./server/util.ts"
     },
     "./testing": {
+      "types": "./tests/Integration/helpers.ts",
       "import": "./tests/Integration/helpers.ts",
-      "types": "./tests/Integration/helpers.ts"
+      "default": "./tests/Integration/helpers.ts"
     },
     "./tests/Integration/helpers": {
+      "types": "./tests/Integration/helpers.ts",
       "import": "./tests/Integration/helpers.ts",
-      "types": "./tests/Integration/helpers.ts"
+      "default": "./tests/Integration/helpers.ts"
     }
   },
   "bin": {

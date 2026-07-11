@@ -9,6 +9,7 @@ import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
 import type { RequestInfo } from './server'
 import type { WebsiteVersionInfo } from './website'
+import { escapeHtml } from './util.js'
 
 export interface MarkdownHandlebars {
   registerPartial(name: string, value: string): void
@@ -25,14 +26,6 @@ export type MarkdownPageContext = {
 export type RenderMarkdownPageOptions = {
   /** Called in development before compiling the wrapper (reload partials). */
   reloadPartials?: () => void
-}
-
-export function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
 }
 
 function decodeHtml(s: string): string {

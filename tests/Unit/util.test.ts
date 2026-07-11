@@ -67,7 +67,7 @@ describe('recursiveObjectMerge', () => {
 })
 
 
-import { asyncForEach } from '../../server/util.js'
+import { asyncForEach, escapeHtml, sanitiseFormFields, sanitiseFormText } from '../../server/util.js'
 
 describe('test asyncForEach', () => {
   // TODO: Think of a way to test this
@@ -78,6 +78,57 @@ describe('test asyncForEach', () => {
       expect(item).toBe(array[index])
       done()
     })
+  })
+})
+
+describe('sanitiseFormText', () => {
+  test('null and undefined become empty string', () => {
+    expect(sanitiseFormText(null)).toBe('')
+    expect(sanitiseFormText(undefined)).toBe('')
+  })
+
+  test('arrays are mapped and joined with comma-space', () => {
+    expect(sanitiseFormText(['a', 'b'])).toBe('a, b')
+    expect(sanitiseFormText([1, 2])).toBe('1, 2')
+  })
+
+  test('other values are stringified', () => {
+    expect(sanitiseFormText('hello')).toBe('hello')
+    expect(sanitiseFormText(42)).toBe('42')
+    expect(sanitiseFormText(true)).toBe('true')
+  })
+
+  test('backticks are stripped', () => {
+    expect(sanitiseFormText('`code`')).toBe('code')
+    expect(sanitiseFormText(['`a`', '`b`'])).toBe('a, b')
+  })
+})
+
+describe('sanitiseFormFields', () => {
+  test('maps all entries through sanitiseFormText', () => {
+    expect(
+      sanitiseFormFields({
+        message: '`hi`',
+        tags: ['a', 'b'],
+        count: 3,
+        empty: null,
+      }),
+    ).toEqual({
+      message: 'hi',
+      tags: 'a, b',
+      count: '3',
+      empty: '',
+    })
+  })
+})
+
+describe('escapeHtml', () => {
+  test('escapes HTML metacharacters', () => {
+    expect(escapeHtml('a & b <c> "d"')).toBe('a &amp; b &lt;c&gt; &quot;d&quot;')
+  })
+
+  test('leaves safe text unchanged', () => {
+    expect(escapeHtml('plain text')).toBe('plain text')
   })
 })
 

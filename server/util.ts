@@ -206,5 +206,42 @@ export function parseForm(res: ServerResponse, req: IncomingMessage): Promise<Pa
   })
 }
 
+/**
+ * Escape a string for safe interpolation into HTML text nodes and attributes.
+ * Complements Handlebars `{{value}}` auto-escaping when emitting raw HTML fragments
+ * (error pages, markdown tooling, etc.). Does not sanitise for storage — use
+ * {@link sanitiseFormText} on ingest.
+ */
+export function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+/**
+ * Normalise a single untrusted form field value before persistence (DB rows, JSON blobs).
+ * Not a substitute for {@link escapeHtml} at render time — storage sanitisation and HTML
+ * escaping are separate concerns.
+ *
+ * Backticks are stripped because several Thalia contact-form sites store debounced draft
+ * JSON in `form_data`; backticks can break downstream templating or logging that wraps
+ * values in backtick-delimited strings.
+ */
+export function sanitiseFormText(value: unknown): string {
+  if (value == null) return ''
+  if (Array.isArray(value)) return value.map(sanitiseFormText).join(', ')
+  return String(value).replace(/`/g, '')
+}
+
+/**
+ * Normalise all entries in a flat form field map for safe storage.
+ * Useful after {@link parseForm} or when coercing websocket/JSON payloads.
+ */
+export function sanitiseFormFields(fields: Record<string, unknown>): Record<string, string> {
+  return Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, sanitiseFormText(value)]))
+}
+
 // Export the models utils?
 export * from '../models/util'

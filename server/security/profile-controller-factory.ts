@@ -4,6 +4,7 @@ import type { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import type { Controller, Website } from '../website.js'
 import type { Machine } from '../types.js'
 import type { RequestInfo } from '../server.js'
+import { escapeHtml } from '../util.js'
 import { users as defaultUsersTable, type User } from '../../models/security-models.js'
 
 const DEFAULT_CONTENT_TEMPLATE = 'profile_content'
@@ -246,10 +247,6 @@ export function parseProfileUpdatePayload(
   return { ok: true, patch }
 }
 
-function escapeHtmlText(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-}
-
 type ReadJsonBodyResult =
   | { ok: true; body: string }
   | { ok: false; status: 400; error: string; code: ProfileJsonErrorCode }
@@ -461,7 +458,7 @@ export class ProfileControllerFactory implements Machine {
         res.statusCode = 500
         res.setHeader('Content-Type', 'text/html; charset=utf-8')
         const msg = err instanceof Error ? err.message : String(err)
-        res.end(`<h1>Error</h1><p>${escapeHtmlText(msg)}</p>`)
+        res.end(`<h1>Error</h1><p>${escapeHtml(msg)}</p>`)
       }
       return
     }

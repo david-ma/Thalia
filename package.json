@@ -63,6 +63,11 @@
       "import": "./server/util.ts",
       "default": "./server/util.ts"
     },
+    "./images": {
+      "types": "./server/images/index.ts",
+      "import": "./server/images/index.ts",
+      "default": "./server/images/index.ts"
+    },
     "./testing": {
       "types": "./tests/Integration/helpers.ts",
       "import": "./tests/Integration/helpers.ts",

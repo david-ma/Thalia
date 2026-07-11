@@ -21,6 +21,7 @@
       "thalia/models": ["models/index.ts"],
       "thalia/mail": ["server/mail.ts"],
       "thalia/util": ["server/util.ts"],
+      "thalia/images": ["server/images/index.ts"],
       "thalia/cli": ["server/cli.ts"],
       "thalia/security-models": ["models/security-models.ts"]
     }

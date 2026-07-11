@@ -2,6 +2,21 @@
 
 Framework module: `server/images/`. Sites import **`ThaliaImageUploader`** from `thalia/controllers`.
 
+For **lower-level** SmugMug / remote-fetch helpers (custom `photos` tables, UploadThing → SmugMug pipelines), import from **`thalia/images`**:
+
+```ts
+import {
+  fetchRemoteHttpsImageBytes,
+  pickRemoteFileUrl,
+  SmugMugClient,
+  normalizeSmugMugAlbumUri,
+  smugmugBundleAuthorization,
+  parseSmugMugMultipartUploadResponse,
+  parseSmugMugVerbosityAlbumImage,
+  requestHttpsUtf8,
+} from 'thalia/images'
+```
+
 ## Quick start
 
 ```ts

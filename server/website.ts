@@ -325,8 +325,15 @@ export class Website {
       return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
     })
 
+    // Handlebars helper to check if two values are equal
     this.handlebars.registerHelper('eq', function (a, b) {
       return a === b
+    })
+
+    // Handlebars helper to conditionally render a block if two values are equal
+    // First used in homelab dashboard-panel.hbs
+    this.handlebars.registerHelper('ifeq', function (this: unknown, a: unknown, b: unknown, options: { fn: (ctx: unknown) => string; inverse: (ctx: unknown) => string }) {
+      return a === b ? options.fn(this) : options.inverse(this)
     })
 
     this.handlebars.registerHelper('add', function (a, b) {

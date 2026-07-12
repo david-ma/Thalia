@@ -25,9 +25,9 @@ export type RequestInfo = {
   ip: string
   method: string
   pathname: string
-  controller: string
-  action: string
-  slug: string
+  controller: string // First part of the pathname
+  action: string // Second part of the pathname
+  slug: string // Last part of the pathname
   cookies: Record<string, string>
   userAuth?: UserAuth
   permissions?: Permission[]

@@ -4,11 +4,11 @@ import { routeFullpathMatchesMappedKey } from '../../server/route-guard.js'
 describe('routeFullpathMatchesMappedKey', () => {
   const host = 'example.test:1234'
 
-  test('root key matches only the homepage fullpath, not deeper paths', () => {
+  test('root key matches the homepage and all deeper paths', () => {
     const root = `${host}/`
     expect(routeFullpathMatchesMappedKey(`${host}/`, root)).toBe(true)
-    expect(routeFullpathMatchesMappedKey(`${host}/fruit`, root)).toBe(false)
-    expect(routeFullpathMatchesMappedKey(`${host}/profile/1`, root)).toBe(false)
+    expect(routeFullpathMatchesMappedKey(`${host}/fruit`, root)).toBe(true)
+    expect(routeFullpathMatchesMappedKey(`${host}/profile/1`, root)).toBe(true)
   })
 
   test('nested route key matches itself and children', () => {

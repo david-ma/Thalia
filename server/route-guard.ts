@@ -23,8 +23,16 @@ import { and, eq, gt, or, isNull } from 'drizzle-orm'
  * True when `fullpath` is exactly this route key, or when it continues with another path segment
  * under that key. Avoids treating the root map key (`host/`) as a match for `host/fruit`, which
  * would otherwise require fragile "longest path first" ordering.
+ *
+ * Special case: when the route key ends with `/` (i.e. the root path `/`), any fullpath that
+ * starts with the key prefix (the host portion) is a match — `startsWith(routeKey + "/")` would
+ * produce a double-slash and never match sub-paths like `host/david`.
  */
 export function routeFullpathMatchesMappedKey(fullpath: string, routeKey: string): boolean {
+  if (routeKey.endsWith('/')) {
+    // Root route: matches the key exactly OR any path beneath it
+    return fullpath === routeKey || fullpath.startsWith(routeKey)
+  }
   return fullpath === routeKey || fullpath.startsWith(`${routeKey}/`)
 }
 

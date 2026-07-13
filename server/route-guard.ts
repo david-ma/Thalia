@@ -6,7 +6,8 @@ import { ipMatchesWhitelist, normaliseClientIp } from './client-ip.js'
 export { ipMatchesWhitelist, normaliseClientIp } from './client-ip.js'
 
 /** BasicRouteGuard only: whether `password` should be enforced for this request. */
-export function basicPasswordAuthRequired(routeRule: RouteRule, nodeEnv: string, clientIp: string): boolean {
+export function basicPasswordAuthRequired(routeRule: RouteRule, nodeEnv: string, clientIp: string, pathname: string): boolean {
+  if (routeRule.path_whitelist && routeRule.path_whitelist.find((p) => pathname.startsWith(p))) return false
   if (!routeRule.password) return false
   if (routeRule.node_env !== undefined && routeRule.node_env !== nodeEnv) return false
   if (routeRule.ip_whitelist && ipMatchesWhitelist(clientIp, routeRule.ip_whitelist)) return false
@@ -165,7 +166,7 @@ export class BasicRouteGuard extends RouteGuard {
       this.routeRule = routeRule
 
       if (routeRule.password) {
-        if (!basicPasswordAuthRequired(routeRule, request.requestInfo.node_env, request.requestInfo.ip)) {
+        if (!basicPasswordAuthRequired(routeRule, request.requestInfo.node_env, request.requestInfo.ip, request.pathname)) {
           if (routeRule.proxyTarget) {
             this.handleProxy(request.req, request.res, routeRule)
             return finish('Proxy request')
@@ -357,7 +358,7 @@ export class BasicRouteGuard extends RouteGuard {
     if (Object.keys(matchingRoute).length > 0) {
       // Check security if required
       if (matchingRoute?.password) {
-        if (!basicPasswordAuthRequired(matchingRoute, requestInfo.node_env, requestInfo.ip)) {
+        if (!basicPasswordAuthRequired(matchingRoute, requestInfo.node_env, requestInfo.ip, requestInfo.pathname)) {
           if (matchingRoute.proxyTarget) {
             this.handleProxy(req, res, matchingRoute)
             return true

@@ -41,6 +41,7 @@ export interface RouteRule {
   node_env?: string
   /** Comma-separated IPv4 addresses or CIDR blocks (e.g. `192.168.0.0/24`) that skip `password`. */
   ip_whitelist?: string
+  path_whitelist?: string[] // List of paths that are whitelisted from password protection
   proxyTarget?: {
     // If set, proxy the request to this target
     host?: string // Default: localhost

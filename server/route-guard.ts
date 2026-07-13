@@ -54,6 +54,9 @@ const ALWAYS_ALLOW_PATHS: string[] = [
   '/sitemap.xml',
   '/manifest.json',
   '/site.webmanifest',
+  '/sw.js',
+  '/serviceWorkerActivate.js',
+  '/manifest.webmanifest',
 
   // Security routes
   '/logon',
@@ -72,6 +75,7 @@ const ALWAYS_ALLOW_PATHS: string[] = [
   '/img',
   '/fonts',
   '/assets',
+  '/version',
 ]
 const ALWAYS_ALLOW_PERMISSIONS: Record<Role, Permission[]> = {
   guest: ['read'],

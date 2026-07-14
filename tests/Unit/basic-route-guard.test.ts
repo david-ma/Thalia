@@ -124,18 +124,18 @@ describe('basicPasswordAuthRequired', () => {
   }
 
   test('requires password in the configured environment for non-whitelisted IPs', () => {
-    expect(basicPasswordAuthRequired(protectedRoute, 'production', '203.0.113.1')).toBe(true)
+    expect(basicPasswordAuthRequired(protectedRoute, 'production', '203.0.113.1', '/protected')).toBe(true)
   })
 
   test('skips password outside the configured environment', () => {
-    expect(basicPasswordAuthRequired(protectedRoute, 'development', '203.0.113.1')).toBe(false)
+    expect(basicPasswordAuthRequired(protectedRoute, 'development', '203.0.113.1', '/protected')).toBe(false)
   })
 
   test('skips password for whitelisted IPs even in production', () => {
-    expect(basicPasswordAuthRequired(protectedRoute, 'production', '192.168.0.50')).toBe(false)
+    expect(basicPasswordAuthRequired(protectedRoute, 'production', '192.168.0.50', '/protected')).toBe(false)
   })
 
   test('returns false when no password is configured', () => {
-    expect(basicPasswordAuthRequired({ path: '/open' }, 'production', '203.0.113.1')).toBe(false)
+    expect(basicPasswordAuthRequired({ path: '/open' }, 'production', '203.0.113.1', '/open')).toBe(false)
   })
 })

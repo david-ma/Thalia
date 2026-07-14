@@ -2,7 +2,11 @@
 <head>
 <title>Login</title>
 <style>
+body {
+  background-color: #042343;
+}
 div {
+    font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     text-align: center;
     width: 300px;
     margin: 200px auto;
@@ -16,7 +20,8 @@ div {
 <div>
     <h1>Enter Password</h1>
     <form action="{{ route }}" method="post">
-        <input type="password" placeholder="Enter Password" name="password" autofocus required>
+        <input type="text" name="username" value="user" autocomplete="username" style="display: none;">
+        <input type="password" placeholder="Enter Password" name="password" autocomplete="current-password" autofocus required>
         <button type="submit">Login</button>
         {{#if message}}
             <p style="color: red;">{{ message }}</p>

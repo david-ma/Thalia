@@ -243,5 +243,7 @@ export function sanitiseFormFields(fields: Record<string, unknown>): Record<stri
   return Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, sanitiseFormText(value)]))
 }
 
+export * from './util/rate-limit.js'
+
 // Export the models utils?
 export * from '../models/util'

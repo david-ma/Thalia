@@ -74,6 +74,7 @@ export interface WebsiteVersionInfo {
   hostname: string
   platform: string
   runtime: string
+  pid: number
 }
 
 export class Website {
@@ -118,6 +119,7 @@ export class Website {
       platform: process.platform,
       // node, bun, deno, etc
       runtime: process.versions.node,
+      pid: process.pid,
     }
 
     try {
@@ -415,7 +417,12 @@ export class Website {
     this.handlebars.registerPartial('content', '')
     this.handlebars.registerPartial('content', contentFile)
 
-    return this.handlebars.compile(templateFile)
+    // Handlebars may already have replaced a partial string with a compiled
+    // template function after earlier renders — never pass that to compile().
+    if (typeof templateFile === 'function') {
+      return templateFile as HandlebarsTemplateDelegate<any>
+    }
+    return this.handlebars.compile(typeof templateFile === 'string' ? templateFile : String(templateFile ?? ''))
   }
 
   /**
@@ -502,7 +509,10 @@ export class Website {
     res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' })
     try {
       const template = this.handlebars.partials['error']
-      const compiledTemplate = this.handlebars.compile(template)
+      const compiledTemplate =
+        typeof template === 'function'
+          ? (template as HandlebarsTemplateDelegate<any>)
+          : this.handlebars.compile(typeof template === 'string' ? template : '')
 
       const data =
         this.env == 'development' && details
@@ -588,7 +598,7 @@ export class Website {
       if (this.env == 'development') {
         this.loadPartials()
       }
-      let templateFile: string | null = null
+      let templateFile: string | HandlebarsTemplateDelegate<any> | null = null
       if (templatePath) {
         templateFile = fs.readFileSync(templatePath, 'utf8')
         errorContext.source = templateFile
@@ -597,13 +607,13 @@ export class Website {
         }
       } else if (template) {
         templateFile = this.templates()[template] ?? this.handlebars.partials[template]
-        errorContext.source = templateFile ?? undefined
+        errorContext.source = typeof templateFile === 'string' ? templateFile : undefined
         if (!templatePath) {
           errorContext.templatePath = this.guessTemplatePath(template)
         }
       }
 
-      if (templateFile === null) {
+      if (templateFile === null || templateFile === undefined) {
         throw new TemplateError(`Template ${template} not found`, {
           template,
           website: this.name,
@@ -611,6 +621,21 @@ export class Website {
       }
 
       data = data ?? {}
+
+      if (typeof templateFile === 'function') {
+        return this.sendCompiledHtml(
+          res,
+          templateFile as HandlebarsTemplateDelegate<any>,
+          data,
+          errorContext,
+        )
+      }
+      if (typeof templateFile !== 'string') {
+        throw new TemplateError(`Template ${template} is not a string or compiled template`, {
+          template,
+          website: this.name,
+        })
+      }
 
       const compiledTemplate = this.handlebars.compile(templateFile)
       return this.sendCompiledHtml(res, compiledTemplate, data, errorContext)

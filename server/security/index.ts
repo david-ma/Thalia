@@ -8,6 +8,7 @@ export type { UserDetails } from './security-service.js'
 export { SecurityService } from './security-service.js'
 export type { ThaliaSecurityConstructorOptions } from './thalia-security.js'
 export { ThaliaSecurity, SnipeSecurity } from './thalia-security.js'
+export { authLoginNavFlags, withAuthLoginNavFlags, sendAuthHtml } from './auth-response-helpers.js'
 export type {
   ProfileControllerFactoryOptions,
   ProfileEmailVisibility,

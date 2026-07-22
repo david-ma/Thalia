@@ -53,7 +53,8 @@ const mailAuthPath = path.join(import.meta.dirname, 'mailAuth.js');
  */
 const security = new ThaliaSecurity({
     mailAuthPath,
-    // disableSelfRegistration: true, // removes self-serve /newUser + /createNewUser from defaults
+    // disableSelfRegistration: true, // removes self-serve /newUser + /createNewUser; hides create link on login
+    // disablePasswordReset: true, // hides “Forgot password?” on login (use when mail is not configured)
     // sessionMaxAgeSeconds: 60 * 60 * 24 * 14,
 });
 

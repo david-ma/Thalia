@@ -61,6 +61,7 @@ export class ThaliaSecurity implements Machine {
   public defaultThaliaAuthOptions(): ThaliaAuthOptions {
     return {
       disableSelfRegistration: this.securityCtorOptions.disableSelfRegistration ?? false,
+      disablePasswordReset: this.securityCtorOptions.disablePasswordReset ?? false,
       sessionMaxAgeSeconds: this.securityCtorOptions.sessionMaxAgeSeconds ?? DEFAULT_THALIA_SESSION_MAX_AGE_SECONDS,
     }
   }

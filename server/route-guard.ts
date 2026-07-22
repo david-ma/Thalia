@@ -19,6 +19,7 @@ import { RequestInfo } from './server'
 import { RequestHandler } from './request-handler'
 import { CrudFactory } from './controllers'
 import { and, eq, gt, or, isNull } from 'drizzle-orm'
+import { withAuthLoginNavFlags } from './security/auth-response-helpers.js'
 
 /**
  * True when `fullpath` is exactly this route key, or when it continues with another path segment
@@ -527,9 +528,11 @@ export class RoleRouteGuard extends BasicRouteGuard {
               //   route: request.pathname,
               // })
 
-              const login_html = this.website.getContentHtml('userLogin')({
-                route: request.pathname,
-              })
+              const login_html = this.website.getContentHtml('userLogin')(
+                withAuthLoginNavFlags(this.website, {
+                  route: request.pathname,
+                }),
+              )
 
               // console.log('Sending Login page', login_html)
               request.res.writeHead(401, { 'Content-Type': 'text/html; charset=utf-8' })

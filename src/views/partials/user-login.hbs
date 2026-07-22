@@ -1,6 +1,10 @@
 <div class="login">
   <h2 class="h4 mb-1">Log in</h2>
+  {{#if userCreateAllowed}}
+  <p class="text-muted small mb-3">Sign in with your account email and password. New users can register below.</p>
+  {{else}}
   <p class="text-muted small mb-3">Sign in with your account email and password.</p>
+  {{/if}}
 
   {{#if message}}
     <p class="message" role="status">{{message}}</p>
@@ -17,8 +21,12 @@
   </form>
 
   <ul class="auth-links small">
+    {{#if userCreateAllowed}}
     <li><a href="/newUser">Create an account</a></li>
+    {{/if}}
+    {{#if passwordResetAllowed}}
     <li><a href="/forgotPassword">Forgot password?</a></li>
+    {{/if}}
   </ul>
 </div>
 

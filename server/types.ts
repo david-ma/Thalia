@@ -131,6 +131,11 @@ export type SitemapUrl = {
 export type ThaliaAuthOptions = {
   /** When true, omit `newUser` / `createNewUser` controllers and drop them from the auth allow-path list */
   disableSelfRegistration?: boolean
+  /**
+   * When true, hide the “Forgot password?” link on the login page.
+   * Prefer this over trying to detect a working mail transport (mail init is async and may fail later).
+   */
+  disablePasswordReset?: boolean
   /** Cookie + DB `sessions.expires` TTL (seconds). Default 7 days */
   sessionMaxAgeSeconds?: number
 }

@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  authRateLimitMessage,
+  authThrottleKeyHash,
   BAD_PASSWORD_WINDOW_MS,
   createMemoryLoginThrottleRepository,
+  isRequestAuthenticated,
   isTemporarilyLocked,
   loginThrottleKeyHash,
   MAX_BAD_PASSWORD_ATTEMPTS,
@@ -11,21 +14,43 @@ import {
   TEMPORARY_LOCK_MS,
 } from '../../server/security/login-throttle.js'
 
-describe('login throttle policy (IP-keyed)', () => {
+describe('login throttle policy (IP + action keyed)', () => {
   test('constants encode five failures / fifteen minutes / six hours', () => {
     expect(MAX_BAD_PASSWORD_ATTEMPTS).toBe(5)
     expect(BAD_PASSWORD_WINDOW_MS).toBe(15 * 60 * 1000)
     expect(TEMPORARY_LOCK_MS).toBe(6 * 60 * 60 * 1000)
   })
 
-  test('normalises email for lookup; throttle key hashes IP', () => {
+  test('normalises email for lookup; throttle key hashes action + IP', () => {
     expect(normaliseLoginIdentity(' Jenny@Example.TEST ')).toBe('jenny@example.test')
     const hash = loginThrottleKeyHash('203.0.113.10')
     expect(hash).toHaveLength(64)
-    expect(hash).toBe(loginThrottleKeyHash('203.0.113.10'))
+    expect(hash).toBe(authThrottleKeyHash('203.0.113.10', 'logon'))
     expect(hash).toBe(loginThrottleKeyHash('::ffff:203.0.113.10'))
     expect(hash).not.toBe(loginThrottleKeyHash('203.0.113.11'))
+    expect(hash).not.toBe(authThrottleKeyHash('203.0.113.10', 'forgotPassword'))
     expect(hash).not.toContain('203')
+  })
+
+  test('actions use independent buckets for the same IP', async () => {
+    const repo = createMemoryLoginThrottleRepository()
+    const logon = authThrottleKeyHash('203.0.113.10', 'logon')
+    const forgot = authThrottleKeyHash('203.0.113.10', 'forgotPassword')
+    const start = new Date('2026-07-17T00:00:00.000Z')
+    for (let i = 0; i < 5; i++) {
+      await repo.recordFailure(logon, new Date(start.getTime() + i * 1_000))
+    }
+    expect(isTemporarilyLocked(await repo.get(logon), start)).toBe(true)
+    expect(await repo.get(forgot)).toBeNull()
+  })
+
+  test('guest vs authenticated rate-limit messages', () => {
+    expect(isRequestAuthenticated({})).toBe(false)
+    expect(isRequestAuthenticated({ userAuth: { role: 'guest' } })).toBe(false)
+    expect(isRequestAuthenticated({ userAuth: { userId: 3, role: 'admin' } })).toBe(true)
+    expect(authRateLimitMessage(false, 'logon')).toContain('failed sign-in')
+    expect(authRateLimitMessage(false, 'forgotPassword')).toBe('Too many attempts. Try again later.')
+    expect(authRateLimitMessage(true, 'createNewUser')).toContain('another administrator')
   })
 
   test('fifth rolling-window failure creates a six-hour lock', async () => {

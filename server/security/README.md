@@ -106,7 +106,7 @@ Project routes from **`config.routes`** are merged after that list (via `concat`
 | Hostnames | `config.domains`: must include hosts you actually use; matching uses `requestInfo.host` (see `X-Forwarded-Host` handling in `server/server.ts`) |
 | Session / signup tuning | `config.thaliaAuth` (defaults from `ThaliaSecurity.defaultThaliaAuthOptions()`): e.g. `disableSelfRegistration`, `disablePasswordReset`, `sessionMaxAgeSeconds` |
 | Mail-backed flows | `ThaliaSecurity` constructor options such as `mailAuthPath` |
-| Login throttle | Default on `/logon` POST: **5** failures per client IP in **15 minutes** → **6 hour** ban (`auth_login_throttles`). Keyed by IP (not email) so attackers cannot lock a victim account. Schema is included in `securityConfig()` — run your site migrations / `drizzle-kit push` after upgrading. |
+| Login throttle | Default on auth POSTs: **5** attempts per client IP per action in **15 minutes** → **6 hour** ban (`auth_login_throttles`). Actions: `logon` (failed passwords only), `forgotPassword` / `resetPassword` / `setup` / `createNewUser` (every POST). Keyed by IP+action so attackers cannot lock a victim account. Signed-in users see a clearer message; guests get a short one. Schema is in `securityConfig()` — migrate / `drizzle-kit push` after upgrading. |
 | Types | Import `RoleRouteRule` from `thalia/security` (re-exported from `server/route-guard.ts`) |
 
 ## Public API surface

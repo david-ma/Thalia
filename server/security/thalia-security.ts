@@ -40,10 +40,15 @@ import { default_routes } from './security-default-routes.js'
 import { AuditMachine, SessionMachine, UserMachine } from './security-machines.js'
 import {
   DUMMY_PASSWORD_HASH,
+  authRateLimitMessage,
+  checkAuthThrottleLimited,
+  clearAuthThrottle,
+  isRequestAuthenticated,
   isTemporarilyLocked,
   loginThrottleKeyHash,
   loginThrottleRepositoryForWebsite,
   normaliseLoginIdentity,
+  recordAuthThrottleAttempt,
   type LoginThrottleRepository,
 } from './login-throttle.js'
 
@@ -125,20 +130,14 @@ export class ThaliaSecurity implements Machine {
     const throttleRepo: LoginThrottleRepository | null = loginThrottleRepositoryForWebsite(website)
     const throttleKey = loginThrottleKeyHash(String(requestInfo.ip ?? 'unknown-ip'))
     const attemptTime = new Date()
+    const limitMsg = () =>
+      authRateLimitMessage(isRequestAuthenticated(requestInfo), 'logon')
 
     try {
-      if (throttleRepo) {
-        try {
-          const current = await throttleRepo.get(throttleKey)
-          if (isTemporarilyLocked(current, attemptTime)) {
-            sendAuthHtml(res, website, 'userLogin', {
-              error: 'Too many failed sign-in attempts. Try again later or reset your password.',
-            })
-            return
-          }
-        } catch (err) {
-          console.error('login throttle get failed (continuing without lock check):', err)
-        }
+      const blocked = await checkAuthThrottleLimited(website, requestInfo, 'logon', attemptTime)
+      if (blocked) {
+        sendAuthHtml(res, website, 'userLogin', { error: blocked })
+        return
       }
 
       const form = await parseForm(res, req)
@@ -164,9 +163,7 @@ export class ThaliaSecurity implements Machine {
           }
         }
         sendAuthHtml(res, website, 'userLogin', {
-          error: lockedNow
-            ? 'Too many failed sign-in attempts. Try again later or reset your password.'
-            : 'Invalid email or password',
+          error: lockedNow ? limitMsg() : 'Invalid email or password',
         })
         return
       }
@@ -176,13 +173,7 @@ export class ThaliaSecurity implements Machine {
         return
       }
 
-      if (throttleRepo) {
-        try {
-          await throttleRepo.clear(throttleKey)
-        } catch (err) {
-          console.error('login throttle clear failed:', err)
-        }
-      }
+      await clearAuthThrottle(website, String(requestInfo.ip ?? 'unknown-ip'), 'logon')
 
       const sessionTable = website.db!.machines.sessions.table
       const sessionId = crypto.randomBytes(16).toString('hex')
@@ -262,9 +253,30 @@ export class ThaliaSecurity implements Machine {
     const method = requestInfo.method
     if (method === 'GET') {
       sendAuthHtml(res, website, 'forgotPassword', {})
-    } else if (method === 'POST') {
-      parseForm(res, req).then((form) => {
-        if (!requireDbConnection(res, website)) return
+      return
+    }
+    if (method !== 'POST') {
+      res.statusCode = 405
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+      res.end('Method not allowed')
+      return
+    }
+
+    void (async () => {
+      if (!requireDbConnection(res, website)) return
+      const blocked = await checkAuthThrottleLimited(website, requestInfo, 'forgotPassword')
+      if (blocked) {
+        sendAuthHtml(res, website, 'forgotPassword', { error: blocked })
+        return
+      }
+      const limited = await recordAuthThrottleAttempt(website, requestInfo, 'forgotPassword')
+      if (limited) {
+        sendAuthHtml(res, website, 'forgotPassword', { error: limited })
+        return
+      }
+
+      try {
+        const form = await parseForm(res, req)
         if (!form.fields.email) {
           sendAuthHtml(res, website, 'forgotPassword', { error: 'Email is required' })
           return
@@ -280,68 +292,57 @@ export class ThaliaSecurity implements Machine {
         const db = website.db!.drizzle
         const email = String(form.fields.email).trim().toLowerCase()
 
-        db.select()
-          .from(usersTable)
-          .where(eq(usersTable.email, email))
-          .then((rows) => {
-            const user = rows[0] as User | undefined
-            if (user) {
-              const token = crypto.randomBytes(32).toString('hex')
-              const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
-              const protocol =
-                (req.headers['x-forwarded-proto'] as string) || (website.env === 'production' ? 'https' : 'http')
-              const resetUrl = `${protocol}://${requestInfo.host}/resetPassword?token=${token}`
+        const rows = await db.select().from(usersTable).where(eq(usersTable.email, email))
+        const user = rows[0] as User | undefined
+        if (user) {
+          const token = crypto.randomBytes(32).toString('hex')
+          const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+          const protocol =
+            (req.headers['x-forwarded-proto'] as string) || (website.env === 'production' ? 'https' : 'http')
+          const resetUrl = `${protocol}://${requestInfo.host}/resetPassword?token=${token}`
 
-              return db
-                .update(usersTable)
-                .set({
-                  passwordResetToken: token,
-                  passwordResetExpires: expires,
-                })
-                .where(eq(usersTable.id, user.id))
-                .then(() => {
-                  const partialTemplate = website.handlebars.partials['passwordResetEmail']
-                  const siteLabel = (website.name && String(website.name).trim()) || ''
-                  const preheader = siteLabel
-                    ? `${siteLabel} — use the link below to set a new password. Expires in 1 hour.`
-                    : 'Use the link below to set a new password. Expires in 1 hour.'
-                  const html = partialTemplate
-                    ? website.handlebars.compile(partialTemplate)({
-                        resetUrl,
-                        siteName: website.name,
-                        email: user.email,
-                        preheader,
-                      })
-                    : `<p>Reset your password: <a href="${resetUrl}">${resetUrl}</a></p>`
-                  const text = siteLabel
-                    ? `${siteLabel} — Reset your password: ${resetUrl}\n\nThis link expires in 1 hour. If you did not request this, you can ignore this email.`
-                    : `Reset your password: ${resetUrl}\n\nThis link expires in 1 hour. If you did not request this, you can ignore this email.`
-
-                  mailService.sendEmail({
-                    to: user.email,
-                    subject: 'Reset your password',
-                    text,
-                    html,
-                  })
-                })
-            }
-          })
-          .then(() => {
-            sendAuthHtml(res, website, 'forgotPassword', {
-              message:
-                "If that email is registered, we've sent a link to reset your password. Check your inbox and spam folder.",
+          await db
+            .update(usersTable)
+            .set({
+              passwordResetToken: token,
+              passwordResetExpires: expires,
             })
+            .where(eq(usersTable.id, user.id))
+
+          const partialTemplate = website.handlebars.partials['passwordResetEmail']
+          const siteLabel = (website.name && String(website.name).trim()) || ''
+          const preheader = siteLabel
+            ? `${siteLabel} — use the link below to set a new password. Expires in 1 hour.`
+            : 'Use the link below to set a new password. Expires in 1 hour.'
+          const html = partialTemplate
+            ? website.handlebars.compile(partialTemplate)({
+                resetUrl,
+                siteName: website.name,
+                email: user.email,
+                preheader,
+              })
+            : `<p>Reset your password: <a href="${resetUrl}">${resetUrl}</a></p>`
+          const text = siteLabel
+            ? `${siteLabel} — Reset your password: ${resetUrl}\n\nThis link expires in 1 hour. If you did not request this, you can ignore this email.`
+            : `Reset your password: ${resetUrl}\n\nThis link expires in 1 hour. If you did not request this, you can ignore this email.`
+
+          mailService.sendEmail({
+            to: user.email,
+            subject: 'Reset your password',
+            text,
+            html,
           })
-          .catch((err: unknown) => {
-            console.error('forgotPassword error:', err)
-            sendAuthHtml(res, website, 'forgotPassword', { error: 'Something went wrong. Please try again.' })
-          })
-      })
-    } else {
-      res.statusCode = 405
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8')
-      res.end('Method not allowed')
-    }
+        }
+
+        sendAuthHtml(res, website, 'forgotPassword', {
+          message:
+            "If that email is registered, we've sent a link to reset your password. Check your inbox and spam folder.",
+        })
+      } catch (err: unknown) {
+        console.error('forgotPassword error:', err)
+        sendAuthHtml(res, website, 'forgotPassword', { error: 'Something went wrong. Please try again.' })
+      }
+    })()
   }
 
   private resetPasswordController(
@@ -392,76 +393,92 @@ export class ThaliaSecurity implements Machine {
     }
 
     if (method === 'POST') {
-      parseForm(res, req).then((form) => {
-        const resetToken = (form.fields?.token ?? requestInfo.query?.token ?? '').toString().trim()
-        const password = form.fields?.password ?? form.fields?.Password ?? ''
-        const confirmPassword = form.fields?.confirmPassword ?? form.fields?.ConfirmPassword ?? ''
-
-        if (!resetToken) {
+      void (async () => {
+        const blocked = await checkAuthThrottleLimited(website, requestInfo, 'resetPassword')
+        if (blocked) {
           sendAuthHtml(res, website, 'resetPassword', {
             title: 'Reset Password',
-            error: 'Invalid or expired reset link. Please request a new one.',
+            error: blocked,
             forgotPasswordUrl: '/forgotPassword',
           })
           return
         }
-        if (!password || password.length < 6) {
+        const limited = await recordAuthThrottleAttempt(website, requestInfo, 'resetPassword')
+        if (limited) {
           sendAuthHtml(res, website, 'resetPassword', {
             title: 'Reset Password',
-            token: resetToken,
-            error: 'Password must be at least 6 characters.',
-          })
-          return
-        }
-        if (password !== confirmPassword) {
-          sendAuthHtml(res, website, 'resetPassword', {
-            title: 'Reset Password',
-            token: resetToken,
-            error: 'Passwords do not match.',
+            error: limited,
+            forgotPasswordUrl: '/forgotPassword',
           })
           return
         }
 
-        db.select()
-          .from(usersTable)
-          .where(and(eq(usersTable.passwordResetToken, resetToken), gt(usersTable.passwordResetExpires, new Date())))
-          .then((rows) => {
-            const user = rows[0] as User | undefined
-            if (!user || user.id == null) {
-              sendAuthHtml(res, website, 'resetPassword', {
-                title: 'Reset Password',
-                error: 'Invalid or expired reset link. Please request a new one.',
-                forgotPasswordUrl: '/forgotPassword',
-              })
-              return
-            }
-            const userId = user.id
-            return ThaliaSecurity.hashPassword(password)
-              .then((hashedPassword) =>
-                db
-                  .update(usersTable)
-                  .set({
-                    password: hashedPassword,
-                    passwordResetToken: null,
-                    passwordResetExpires: null,
-                  })
-                  .where(eq(usersTable.id, userId)),
-              )
-              .then(() => this.deleteSessionsForUser(website, userId))
-              .then(() => {
-                res.writeHead(302, { Location: '/logon?message=Password+reset.+You+can+log+in+now.' })
-                res.end()
-              })
-          })
-          .catch((err: unknown) => {
-            console.error('resetPassword POST error:', err)
+        try {
+          const form = await parseForm(res, req)
+          const resetToken = (form.fields?.token ?? requestInfo.query?.token ?? '').toString().trim()
+          const password = form.fields?.password ?? form.fields?.Password ?? ''
+          const confirmPassword = form.fields?.confirmPassword ?? form.fields?.ConfirmPassword ?? ''
+
+          if (!resetToken) {
             sendAuthHtml(res, website, 'resetPassword', {
               title: 'Reset Password',
-              error: 'Something went wrong. Please try again.',
+              error: 'Invalid or expired reset link. Please request a new one.',
               forgotPasswordUrl: '/forgotPassword',
             })
+            return
+          }
+          if (!password || password.length < 6) {
+            sendAuthHtml(res, website, 'resetPassword', {
+              title: 'Reset Password',
+              token: resetToken,
+              error: 'Password must be at least 6 characters.',
+            })
+            return
+          }
+          if (password !== confirmPassword) {
+            sendAuthHtml(res, website, 'resetPassword', {
+              title: 'Reset Password',
+              token: resetToken,
+              error: 'Passwords do not match.',
+            })
+            return
+          }
+
+          const rows = await db
+            .select()
+            .from(usersTable)
+            .where(and(eq(usersTable.passwordResetToken, resetToken), gt(usersTable.passwordResetExpires, new Date())))
+          const user = rows[0] as User | undefined
+          if (!user || user.id == null) {
+            sendAuthHtml(res, website, 'resetPassword', {
+              title: 'Reset Password',
+              error: 'Invalid or expired reset link. Please request a new one.',
+              forgotPasswordUrl: '/forgotPassword',
+            })
+            return
+          }
+          const userId = user.id
+          const hashedPassword = await ThaliaSecurity.hashPassword(password)
+          await db
+            .update(usersTable)
+            .set({
+              password: hashedPassword,
+              passwordResetToken: null,
+              passwordResetExpires: null,
+            })
+            .where(eq(usersTable.id, userId))
+          await this.deleteSessionsForUser(website, userId)
+          res.writeHead(302, { Location: '/logon?message=Password+reset.+You+can+log+in+now.' })
+          res.end()
+        } catch (err: unknown) {
+          console.error('resetPassword POST error:', err)
+          sendAuthHtml(res, website, 'resetPassword', {
+            title: 'Reset Password',
+            error: 'Something went wrong. Please try again.',
+            forgotPasswordUrl: '/forgotPassword',
           })
-      })
+        }
+      })()
       return
     }
 
@@ -500,59 +517,59 @@ export class ThaliaSecurity implements Machine {
     if (method === 'POST') {
       if (!requireDbConnection(res, website)) return
 
-      const drizzle = website.db!.drizzle
+      void (async () => {
+        const blocked = await checkAuthThrottleLimited(website, requestInfo, 'setup')
+        if (blocked) {
+          sendAuthHtml(res, website, 'setup', { error: blocked })
+          return
+        }
+        const limited = await recordAuthThrottleAttempt(website, requestInfo, 'setup')
+        if (limited) {
+          sendAuthHtml(res, website, 'setup', { error: limited })
+          return
+        }
 
-      this.firstAdminExists(website)
-        .then((exists) => {
+        const drizzle = website.db!.drizzle
+        try {
+          const exists = await this.firstAdminExists(website)
           if (exists) {
             sendAuthHtml(res, website, 'setup', { error: 'Setup is no longer available.', setupClosed: true })
             return
           }
-          return parseForm(res, req)
-        })
-        .then((form) => {
-          if (form === undefined) return undefined
+          const form = await parseForm(res, req)
           const name = (form.fields?.Name ?? form.fields?.name ?? '').trim()
           const email = (form.fields?.Email ?? form.fields?.email ?? '').trim().toLowerCase()
           const password = form.fields?.Password ?? form.fields?.password ?? ''
           const confirm = form.fields?.ConfirmPassword ?? form.fields?.confirmPassword ?? ''
           if (!name || !email || !password) {
             sendAuthHtml(res, website, 'setup', { error: 'Name, email and password are required.' })
-            return undefined
+            return
           }
           if (password.length < 8) {
             sendAuthHtml(res, website, 'setup', { error: 'Password must be at least 8 characters.' })
-            return undefined
+            return
           }
           if (password !== confirm) {
             sendAuthHtml(res, website, 'setup', { error: 'Passwords do not match.' })
-            return undefined
+            return
           }
-          return ThaliaSecurity.hashPassword(password).then((hashedPassword) =>
-            drizzle
-              .insert(users)
-              .values({
-                name,
-                email,
-                password: hashedPassword,
-                role: 'admin',
-                locked: false,
-                verified: true,
-              })
-              .$returningId(),
-          )
-        })
-        .then((insertId) => {
-          if (insertId === undefined) return
+          await drizzle.insert(users).values({
+            name,
+            email,
+            password: await ThaliaSecurity.hashPassword(password),
+            role: 'admin',
+            locked: false,
+            verified: true,
+          })
           res.writeHead(302, { Location: '/logon?message=Administrator+created.+You+can+sign+in+now.' })
           res.end()
-        })
-        .catch((err: unknown) => {
+        } catch (err: unknown) {
           console.error('setup POST:', err)
           sendAuthHtml(res, website, 'setup', {
             error: 'Could not create administrator. The email may already be in use.',
           })
-        })
+        }
+      })()
       return
     }
 
@@ -568,51 +585,58 @@ export class ThaliaSecurity implements Machine {
     res: ServerResponse,
     req: IncomingMessage,
     website: Website,
-    _requestInfo: RequestInfo,
+    requestInfo: RequestInfo,
   ): void {
     if (req.method !== 'POST') {
       res.writeHead(302, { Location: '/newUser' })
       res.end()
       return
     }
-    parseForm(res, req)
-      .then((form) => {
-        if (!requireDbConnection(res, website)) return undefined
+
+    void (async () => {
+      if (!requireDbConnection(res, website)) return
+      const blocked = await checkAuthThrottleLimited(website, requestInfo, 'createNewUser')
+      if (blocked) {
+        sendAuthHtml(res, website, 'newUser', { error: blocked })
+        return
+      }
+      const limited = await recordAuthThrottleAttempt(website, requestInfo, 'createNewUser')
+      if (limited) {
+        sendAuthHtml(res, website, 'newUser', { error: limited })
+        return
+      }
+
+      try {
+        const form = await parseForm(res, req)
         const name = (form.fields?.Name ?? '').trim()
         const email = (form.fields?.Email ?? '').trim().toLowerCase()
         const password = form.fields?.Password ?? ''
         if (!name || !email || !password) {
           sendAuthHtml(res, website, 'newUser', { error: 'Name, email and password are required.' })
-          return undefined
+          return
         }
         if (password.length < 8) {
           sendAuthHtml(res, website, 'newUser', { error: 'Password must be at least 8 characters.' })
-          return undefined
+          return
         }
-        return ThaliaSecurity.hashPassword(password).then((hashedPassword) =>
-          website
-            .db!.drizzle.insert(users)
-            .values({
-              name,
-              email,
-              password: hashedPassword,
-              role: 'user',
-              locked: false,
-              verified: false,
-            })
-            .$returningId(),
-        )
-      })
-      .then((id) => {
-        if (id === undefined) return
+        const id = await website
+          .db!.drizzle.insert(users)
+          .values({
+            name,
+            email,
+            password: await ThaliaSecurity.hashPassword(password),
+            role: 'user',
+            locked: false,
+            verified: false,
+          })
+          .$returningId()
         if (id != null) {
           res.writeHead(302, { Location: '/logon' })
           res.end()
         } else {
           sendAuthHtml(res, website, 'newUser', { error: 'An error occurred. That email may already be in use.' })
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error('createNewUser error:', err)
         sendAuthHtml(res, website, 'newUser', {
           error:
@@ -620,7 +644,8 @@ export class ThaliaSecurity implements Machine {
               ? 'Invalid request.'
               : 'An error occurred. That email may already be in use.',
         })
-      })
+      }
+    })()
   }
 
   public securityConfig(): RawWebsiteConfig {

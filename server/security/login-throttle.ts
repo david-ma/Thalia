@@ -1,9 +1,10 @@
 /**
- * Persistent failed-password throttle (IP-keyed).
+ * Persistent auth-endpoint throttle (IP + action keyed).
  *
- * Five failures in a rolling 15-minute window temporarily block that client IP
- * for six hours. Manual account locking remains `users.locked` — an attacker
- * cannot lock a victim's account by spraying their email from another IP.
+ * Five attempts in a rolling 15-minute window temporarily block that client IP
+ * for that action for six hours. Manual account locking remains `users.locked`.
+ * Login failures use action `logon`; other POSTs (forgot/reset/setup/signup)
+ * count every submission so mail/token spam is limited without locking accounts.
  */
 import crypto from 'crypto'
 import { eq, sql } from 'drizzle-orm'
@@ -18,7 +19,14 @@ export const TEMPORARY_LOCK_MS = 6 * 60 * 60 * 1000
 export const DUMMY_PASSWORD_HASH =
   '$2b$10$V2A3ITlNGh7CjFv.NLE7vOYSiQ8dHb/hPvAuSL/pwOvjauOzZ5eUq'
 
-/** Row key in `auth_login_throttles.identity_hash` (sha256 hex of normalised IP). */
+export type AuthThrottleAction =
+  | 'logon'
+  | 'forgotPassword'
+  | 'resetPassword'
+  | 'setup'
+  | 'createNewUser'
+
+/** Row key in `auth_login_throttles.identity_hash` (sha256 hex of action + IP). */
 export type LoginThrottleState = {
   identityHash: string
   failureTimestamps: Date[]
@@ -36,10 +44,38 @@ export function normaliseLoginIdentity(email: string): string {
   return email.trim().toLowerCase()
 }
 
-/** Normalise client IP then sha256 — stored as `identity_hash`. */
-export function loginThrottleKeyHash(clientIp: string): string {
+/** Hash of `action` + normalised IP — stored as `identity_hash`. */
+export function authThrottleKeyHash(clientIp: string, action: AuthThrottleAction): string {
   const ip = normaliseClientIp(clientIp || 'unknown-ip') || 'unknown-ip'
-  return crypto.createHash('sha256').update(ip).digest('hex')
+  return crypto.createHash('sha256').update(`${action}\0${ip}`).digest('hex')
+}
+
+/** Logon bucket for this IP (same as `authThrottleKeyHash(ip, 'logon')`). */
+export function loginThrottleKeyHash(clientIp: string): string {
+  return authThrottleKeyHash(clientIp, 'logon')
+}
+
+export function isRequestAuthenticated(requestInfo: {
+  userAuth?: { userId?: number; role?: string } | null
+}): boolean {
+  const auth = requestInfo.userAuth
+  if (!auth) return false
+  if (auth.userId != null) return true
+  return Boolean(auth.role && auth.role !== 'guest')
+}
+
+/** Guest messages stay terse; signed-in operators get a clearer explanation. */
+export function authRateLimitMessage(
+  authenticated: boolean,
+  action: AuthThrottleAction = 'logon',
+): string {
+  if (authenticated) {
+    return 'Too many attempts from this network. Please wait a few hours and try again, or ask another administrator if you need help sooner.'
+  }
+  if (action === 'logon') {
+    return 'Too many failed sign-in attempts. Try again later or reset your password.'
+  }
+  return 'Too many attempts. Try again later.'
 }
 
 export function pruneFailureTimestamps(timestamps: readonly Date[], now: Date): Date[] {
@@ -180,4 +216,70 @@ export function loginThrottleRepositoryForWebsite(website: {
 }): LoginThrottleRepository | null {
   if (!website?.db?.drizzle) return null
   return createDrizzleLoginThrottleRepository(website.db.drizzle)
+}
+
+export type AuthThrottleRequestInfo = {
+  ip?: string
+  userAuth?: { userId?: number; role?: string } | null
+}
+
+/**
+ * If this IP is already locked for `action`, return the user-facing error string.
+ * Fail-open (null) when the throttle table is missing or errors.
+ */
+export async function checkAuthThrottleLimited(
+  website: { db?: { drizzle?: unknown } | null },
+  requestInfo: AuthThrottleRequestInfo,
+  action: AuthThrottleAction,
+  now = new Date(),
+): Promise<string | null> {
+  const repo = loginThrottleRepositoryForWebsite(website)
+  if (!repo) return null
+  try {
+    const key = authThrottleKeyHash(String(requestInfo.ip ?? 'unknown-ip'), action)
+    const current = await repo.get(key)
+    if (!isTemporarilyLocked(current, now)) return null
+    return authRateLimitMessage(isRequestAuthenticated(requestInfo), action)
+  } catch (err) {
+    console.error(`auth throttle check failed (${action}):`, err)
+    return null
+  }
+}
+
+/**
+ * Record one attempt for `action`. Returns an error string if the IP is now locked
+ * (including the attempt that crossed the threshold). Fail-open on repo errors.
+ */
+export async function recordAuthThrottleAttempt(
+  website: { db?: { drizzle?: unknown } | null },
+  requestInfo: AuthThrottleRequestInfo,
+  action: AuthThrottleAction,
+  now = new Date(),
+): Promise<string | null> {
+  const repo = loginThrottleRepositoryForWebsite(website)
+  if (!repo) return null
+  try {
+    const key = authThrottleKeyHash(String(requestInfo.ip ?? 'unknown-ip'), action)
+    const state = await repo.recordFailure(key, now)
+    if (!isTemporarilyLocked(state, now)) return null
+    return authRateLimitMessage(isRequestAuthenticated(requestInfo), action)
+  } catch (err) {
+    console.error(`auth throttle record failed (${action}):`, err)
+    return null
+  }
+}
+
+/** Clear a bucket after a successful action (typically logon). */
+export async function clearAuthThrottle(
+  website: { db?: { drizzle?: unknown } | null },
+  clientIp: string,
+  action: AuthThrottleAction,
+): Promise<void> {
+  const repo = loginThrottleRepositoryForWebsite(website)
+  if (!repo) return
+  try {
+    await repo.clear(authThrottleKeyHash(clientIp, action))
+  } catch (err) {
+    console.error(`auth throttle clear failed (${action}):`, err)
+  }
 }

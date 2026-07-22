@@ -14,6 +14,7 @@ import type { MySqlTableWithColumns } from 'drizzle-orm/mysql-core';
 const users = models.users;
 const sessions = models.sessions;
 const audits = models.audits;
+const authLoginThrottles = models.authLoginThrottles;
 const albums = models.albums;
 const images = models.images;
 
@@ -21,4 +22,4 @@ import { mailTable } from 'thalia/mail';
 const mail = mailTable as unknown as MySqlTableWithColumns<any>;
 
 import { fruit } from './fruit';
-export { users, sessions, audits, albums, images, fruit, mail };
+export { users, sessions, audits, authLoginThrottles, albums, images, fruit, mail };

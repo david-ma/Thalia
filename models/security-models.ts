@@ -48,6 +48,21 @@ export const audits = mysqlTable('audits', {
 export type Audit = InferSelectModel<typeof audits>
 export type NewAudit = InferInsertModel<typeof audits>
 
+/**
+ * Failed-password throttle (IP-keyed). One row per client IP hash.
+ * `identity_hash` = sha256(normalised IP); `failure_timestamps` is a bounded JSON array
+ * for the rolling window. Manual account locks remain on `users.locked`.
+ */
+export const authLoginThrottles = mysqlTable('auth_login_throttles', {
+  ...baseTableConfig,
+  identityHash: vc('identity_hash', 64).notNull().unique(),
+  failureTimestamps: json('failure_timestamps').$type<string[]>().notNull(),
+  lockedUntil: timestamp('locked_until'),
+})
+
+export type AuthLoginThrottle = InferSelectModel<typeof authLoginThrottles>
+export type NewAuthLoginThrottle = InferInsertModel<typeof authLoginThrottles>
+
 // Factory functions (reserved for per-site table config; currently returns shared schema tables.)
 export function UserFactory(_config: typeof baseTableConfig) {
   return users

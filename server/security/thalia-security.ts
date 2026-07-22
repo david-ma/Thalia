@@ -25,7 +25,7 @@ import type { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import type { NestedControllerMap, Website } from '../website.js'
 import type { Machine } from '../controllers.js'
 import { MailService, mailTable } from '../mail.js'
-import { users, sessions, audits, type User } from '../../models/security-models.js'
+import { users, sessions, audits, authLoginThrottles, type User } from '../../models/security-models.js'
 import type { RawWebsiteConfig, ThaliaAuthOptions } from '../types.js'
 import { RequestInfo } from '../server.js'
 import { parseForm } from '../util.js'
@@ -38,6 +38,14 @@ import {
 } from './session-cookie.js'
 import { default_routes } from './security-default-routes.js'
 import { AuditMachine, SessionMachine, UserMachine } from './security-machines.js'
+import {
+  DUMMY_PASSWORD_HASH,
+  isTemporarilyLocked,
+  loginThrottleKeyHash,
+  loginThrottleRepositoryForWebsite,
+  normaliseLoginIdentity,
+  type LoginThrottleRepository,
+} from './login-throttle.js'
 
 /**
  * Security Factory, imported to config.ts and used to create the security config which can be recursively merged with the website config.
@@ -85,9 +93,6 @@ export class ThaliaSecurity implements Machine {
   private logonController(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void {
     if (!requireDbConnection(res, website)) return
 
-    const drizzle = website.db!.drizzle
-    const usersTable = website.db!.machines.users.table
-
     const method = requestInfo.method
     if (method === 'GET') {
       const message = requestInfo.query?.message
@@ -97,71 +102,106 @@ export class ThaliaSecurity implements Machine {
         'userLogin',
         message ? { message: typeof message === 'string' ? decodeURIComponent(message.replace(/\+/g, ' ')) : '' } : {},
       )
-    } else if (method === 'POST') {
-      parseForm(res, req).then((form) => {
-        console.debug('Login attempt:', form)
-        if (!form.fields.Email || !form.fields.Password) {
-          console.debug('Email and password are required')
-          sendAuthHtml(res, website, 'userLogin', { error: 'Email and password are required' })
-          return
-        }
-
-        drizzle
-          .select()
-          .from(usersTable)
-          .where(eq(usersTable.email, form.fields.Email))
-          .then((rows) => {
-            const user = rows[0] as User | undefined
-            if (!user) {
-              sendAuthHtml(res, website, 'userLogin', { error: 'Invalid email or password' })
-              return
-            }
-
-            return ThaliaSecurity.verifyPassword(form.fields.Password, user.password).then((isValidPassword) => {
-              if (!isValidPassword) {
-                sendAuthHtml(res, website, 'userLogin', { error: 'Invalid email or password' })
-                return null
-              }
-
-              if (user.locked) {
-                sendAuthHtml(res, website, 'userLogin', { error: 'Account is locked' })
-                return null
-              }
-
-              return user
-            })
-          })
-          .then((user: User | null | undefined) => {
-            if (!user) return
-
-            const sessionTable = website.db.machines.sessions.table
-            const sessionId = crypto.randomBytes(16).toString('hex')
-            const maxAge = sessionMaxAgeSecondsForWebsite(website)
-            const expiresAt = new Date(Date.now() + maxAge * 1000)
-            return drizzle
-              .insert(sessionTable)
-              .values({
-                sid: sessionId,
-                userId: user.id,
-                expires: expiresAt,
-              })
-              .then(() => {
-                if (!res.headersSent) {
-                  res.setHeader('Set-Cookie', buildSessionCookieValue(sessionId, maxAge, req, website))
-                }
-                res.writeHead(302, { Location: '/' })
-                res.end()
-              })
-          })
-          .catch((error: unknown) => {
-            console.error('Error logging in:', error)
-            sendAuthHtml(res, website, 'userLogin', { error: 'An error occurred' })
-          })
-      })
-    } else {
+      return
+    }
+    if (method !== 'POST') {
       res.statusCode = 405
       res.setHeader('Content-Type', 'text/plain; charset=utf-8')
       res.end('Method not allowed')
+      return
+    }
+
+    void this.handleLogonPost(res, req, website, requestInfo)
+  }
+
+  private async handleLogonPost(
+    res: ServerResponse,
+    req: IncomingMessage,
+    website: Website,
+    requestInfo: RequestInfo,
+  ): Promise<void> {
+    const drizzle = website.db!.drizzle
+    const usersTable = website.db!.machines.users.table
+    const throttleRepo: LoginThrottleRepository | null = loginThrottleRepositoryForWebsite(website)
+    const throttleKey = loginThrottleKeyHash(String(requestInfo.ip ?? 'unknown-ip'))
+    const attemptTime = new Date()
+
+    try {
+      if (throttleRepo) {
+        try {
+          const current = await throttleRepo.get(throttleKey)
+          if (isTemporarilyLocked(current, attemptTime)) {
+            sendAuthHtml(res, website, 'userLogin', {
+              error: 'Too many failed sign-in attempts. Try again later or reset your password.',
+            })
+            return
+          }
+        } catch (err) {
+          console.error('login throttle get failed (continuing without lock check):', err)
+        }
+      }
+
+      const form = await parseForm(res, req)
+      const email = normaliseLoginIdentity(form.fields.Email ?? form.fields.email ?? '')
+      const password = form.fields.Password ?? form.fields.password ?? ''
+      if (!email || !password) {
+        sendAuthHtml(res, website, 'userLogin', { error: 'Email and password are required' })
+        return
+      }
+
+      const rows = await drizzle.select().from(usersTable).where(eq(usersTable.email, email))
+      const user = rows[0] as User | undefined
+      const validPassword = await ThaliaSecurity.verifyPassword(password, user?.password ?? DUMMY_PASSWORD_HASH)
+
+      if (!user || !validPassword) {
+        let lockedNow = false
+        if (throttleRepo) {
+          try {
+            const state = await throttleRepo.recordFailure(throttleKey, attemptTime)
+            lockedNow = isTemporarilyLocked(state, attemptTime)
+          } catch (err) {
+            console.error('login throttle recordFailure failed:', err)
+          }
+        }
+        sendAuthHtml(res, website, 'userLogin', {
+          error: lockedNow
+            ? 'Too many failed sign-in attempts. Try again later or reset your password.'
+            : 'Invalid email or password',
+        })
+        return
+      }
+
+      if (user.locked) {
+        sendAuthHtml(res, website, 'userLogin', { error: 'Account is locked' })
+        return
+      }
+
+      if (throttleRepo) {
+        try {
+          await throttleRepo.clear(throttleKey)
+        } catch (err) {
+          console.error('login throttle clear failed:', err)
+        }
+      }
+
+      const sessionTable = website.db!.machines.sessions.table
+      const sessionId = crypto.randomBytes(16).toString('hex')
+      const maxAge = sessionMaxAgeSecondsForWebsite(website)
+      const expiresAt = new Date(attemptTime.getTime() + maxAge * 1000)
+      await drizzle.insert(sessionTable).values({
+        sid: sessionId,
+        userId: user.id,
+        expires: expiresAt,
+      })
+      if (!res.headersSent) {
+        res.setHeader('Set-Cookie', buildSessionCookieValue(sessionId, maxAge, req, website))
+      }
+      res.writeHead(302, { Location: '/' })
+      res.end()
+    } catch (error: unknown) {
+      if (res.writableEnded) return
+      console.error('Error logging in:', error)
+      sendAuthHtml(res, website, 'userLogin', { error: 'An error occurred' })
     }
   }
 
@@ -620,6 +660,7 @@ export class ThaliaSecurity implements Machine {
           users,
           sessions,
           audits,
+          authLoginThrottles,
           mail: mailTable,
         },
         machines: {

@@ -9,6 +9,21 @@ export { SecurityService } from './security-service.js'
 export type { ThaliaSecurityConstructorOptions } from './thalia-security.js'
 export { ThaliaSecurity, SnipeSecurity } from './thalia-security.js'
 export { authLoginNavFlags, withAuthLoginNavFlags, sendAuthHtml } from './auth-response-helpers.js'
+export type { LoginThrottleRepository, LoginThrottleState } from './login-throttle.js'
+export {
+  MAX_BAD_PASSWORD_ATTEMPTS,
+  BAD_PASSWORD_WINDOW_MS,
+  TEMPORARY_LOCK_MS,
+  DUMMY_PASSWORD_HASH,
+  normaliseLoginIdentity,
+  loginThrottleKeyHash,
+  pruneFailureTimestamps,
+  isTemporarilyLocked,
+  nextFailureState,
+  createDrizzleLoginThrottleRepository,
+  createMemoryLoginThrottleRepository,
+  loginThrottleRepositoryForWebsite,
+} from './login-throttle.js'
 export type {
   ProfileControllerFactoryOptions,
   ProfileEmailVisibility,

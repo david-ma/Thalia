@@ -6,11 +6,11 @@
  */
 
 // Import models
-import { users, sessions, audits, type User, type NewUser, type Session, type NewSession, type Audit, type NewAudit } from './security-models'
+import { users, sessions, audits, authLoginThrottles, type User, type NewUser, type Session, type NewSession, type Audit, type NewAudit, type AuthLoginThrottle, type NewAuthLoginThrottle } from './security-models'
 import { albums, images, type Album, type NewAlbum, type Image, type NewImage } from './images'
 
 // Export types
-export type { User, NewUser, Session, NewSession, Audit, NewAudit }
+export type { User, NewUser, Session, NewSession, Audit, NewAudit, AuthLoginThrottle, NewAuthLoginThrottle }
 export type { Album, NewAlbum, Image, NewImage }
 export type { SeqObject, SecurityObject, SmugmugObject } from './types'
 
@@ -19,6 +19,7 @@ export const models = {
   users,
   sessions,
   audits,
+  authLoginThrottles,
   albums,
   images,
 }

@@ -9,7 +9,7 @@ import {
   security,
   util as modelsUtil,
 } from '../../models/index.js'
-import { users, sessions, audits } from '../../models/security-models.js'
+import { users, sessions, audits, authLoginThrottles } from '../../models/security-models.js'
 import { albums, images } from '../../models/images.js'
 import { baseTableConfig, vc } from '../../models/util.js'
 import type { SecurityObject, SmugmugObject, SeqObject } from '../../models/types.js'
@@ -39,6 +39,7 @@ describe('models/index registry', () => {
     expect(models.users).toBe(users)
     expect(models.sessions).toBe(sessions)
     expect(models.audits).toBe(audits)
+    expect(models.authLoginThrottles).toBe(authLoginThrottles)
     expect(models.albums).toBe(albums)
     expect(models.images).toBe(images)
   })
@@ -47,10 +48,18 @@ describe('models/index registry', () => {
     expect(security.users).toBe(users)
     expect(security.sessions).toBe(sessions)
     expect(security.audits).toBe(audits)
+    expect(security.authLoginThrottles).toBe(authLoginThrottles)
   })
 
   test('models registry keys stay stable for consumers', () => {
-    expect(Object.keys(models)).toEqual(['users', 'sessions', 'audits', 'albums', 'images'])
+    expect(Object.keys(models)).toEqual([
+      'users',
+      'sessions',
+      'audits',
+      'authLoginThrottles',
+      'albums',
+      'images',
+    ])
   })
 
   test('table factories return shared schema instances', () => {

@@ -1,6 +1,10 @@
 /**
  * Thalia role-based security (`ThaliaSecurity`, `RoleRouteGuard`, session cookies, auth HTML).
  * Implementation is split under this directory; this file is the **public barrel** for `thalia/security`.
+ *
+ * Rate limiting: auth lockouts live here (`login-throttle`). For public forms / APIs use
+ * `IpRateLimiter` from `thalia/util` (shared sliding-window math). Controllers are the
+ * insertion point — `RoleRouteGuard` does RBAC only, not rate limits.
  */
 export type { SecurityConfig, RoleRouteRule } from '../route-guard.js'
 export { DEFAULT_THALIA_SESSION_MAX_AGE_SECONDS, sessionMaxAgeSecondsForWebsite } from './session-cookie.js'
@@ -30,6 +34,13 @@ export {
   recordAuthThrottleAttempt,
   clearAuthThrottle,
 } from './login-throttle.js'
+/** Re-export so security consumers discover the util without hunting `thalia/util`. */
+export {
+  IpRateLimiter,
+  pruneSlidingWindowTimestamps,
+  recordSlidingWindowHit,
+} from '../util/rate-limit.js'
+export type { IpRateLimitOptions, IpRateLimitResult } from '../util/rate-limit.js'
 export type {
   ProfileControllerFactoryOptions,
   ProfileEmailVisibility,

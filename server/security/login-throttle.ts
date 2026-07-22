@@ -1,6 +1,10 @@
 /**
  * Persistent auth-endpoint throttle (IP + action keyed).
  *
+ * Uses the same sliding-window prune helpers as `IpRateLimiter` in `thalia/util`
+ * (`pruneSlidingWindowTimestamps`). Prefer that util for public forms; use this
+ * module for auth lockouts (DB + `lockedUntil`).
+ *
  * Five attempts in a rolling 15-minute window temporarily block that client IP
  * for that action for six hours. Manual account locking remains `users.locked`.
  * Login failures use action `logon`; other POSTs (forgot/reset/setup/signup)
@@ -9,6 +13,7 @@
 import crypto from 'crypto'
 import { eq, sql } from 'drizzle-orm'
 import { normaliseClientIp } from '../client-ip.js'
+import { pruneSlidingWindowTimestamps } from '../util/rate-limit.js'
 import { authLoginThrottles } from '../../models/security-models.js'
 
 export const MAX_BAD_PASSWORD_ATTEMPTS = 5
@@ -78,15 +83,23 @@ export function authRateLimitMessage(
   return 'Too many attempts. Try again later.'
 }
 
+/** @deprecated Prefer `pruneSlidingWindowTimestamps` from `thalia/util` for new code. */
 export function pruneFailureTimestamps(timestamps: readonly Date[], now: Date): Date[] {
-  const cutoff = now.getTime() - BAD_PASSWORD_WINDOW_MS
-  return timestamps.filter((stamp) => stamp.getTime() > cutoff && stamp.getTime() <= now.getTime())
+  return pruneSlidingWindowTimestamps(
+    timestamps.map((stamp) => stamp.getTime()),
+    now.getTime(),
+    BAD_PASSWORD_WINDOW_MS,
+  ).map((ms) => new Date(ms))
 }
 
 export function isTemporarilyLocked(state: LoginThrottleState | null, now: Date): boolean {
   return Boolean(state?.lockedUntil && state.lockedUntil.getTime() > now.getTime())
 }
 
+/**
+ * Record one attempt, then hard-ban when the shared sliding window is full.
+ * Same prune math as `IpRateLimiter` (`thalia/util`); auth always appends (unlike soft 429).
+ */
 export function nextFailureState(
   identityHash: string,
   current: LoginThrottleState | null,
@@ -94,16 +107,26 @@ export function nextFailureState(
 ): LoginThrottleState {
   if (isTemporarilyLocked(current, now)) return { ...current! }
 
-  const failureTimestamps = [
-    ...pruneFailureTimestamps(current?.failureTimestamps ?? [], now),
-    now,
+  const nowMs = now.getTime()
+  const failureTimestampsMs = [
+    ...pruneSlidingWindowTimestamps(
+      (current?.failureTimestamps ?? []).map((stamp) => stamp.getTime()),
+      nowMs,
+      BAD_PASSWORD_WINDOW_MS,
+    ),
+    nowMs,
   ].slice(-MAX_BAD_PASSWORD_ATTEMPTS)
+
   const lockedUntil =
-    failureTimestamps.length >= MAX_BAD_PASSWORD_ATTEMPTS
-      ? new Date(now.getTime() + TEMPORARY_LOCK_MS)
+    failureTimestampsMs.length >= MAX_BAD_PASSWORD_ATTEMPTS
+      ? new Date(nowMs + TEMPORARY_LOCK_MS)
       : null
 
-  return { identityHash, failureTimestamps, lockedUntil }
+  return {
+    identityHash,
+    failureTimestamps: failureTimestampsMs.map((ms) => new Date(ms)),
+    lockedUntil,
+  }
 }
 
 function mapThrottleRow(row: any): LoginThrottleState {

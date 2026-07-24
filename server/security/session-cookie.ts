@@ -2,7 +2,8 @@ import type { IncomingMessage } from 'http'
 import type { Website } from '../website.js'
 
 /** Default cookie + DB session lifetime when `config.thaliaAuth.sessionMaxAgeSeconds` is unset */
-export const DEFAULT_THALIA_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
+// Default is 60 days
+export const DEFAULT_THALIA_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 60
 
 export function sessionMaxAgeSecondsForWebsite(website: Website): number {
   return website.config.thaliaAuth?.sessionMaxAgeSeconds ?? DEFAULT_THALIA_SESSION_MAX_AGE_SECONDS
@@ -24,7 +25,7 @@ export function buildSessionCookieValue(
     `sessionId=${sessionId}`,
     'Path=/',
     'HttpOnly',
-    'SameSite=Strict',
+    // 'SameSite=Strict',
     `Max-Age=${Math.floor(maxAgeSeconds)}`,
   ]
   if (cookieIsSecureHttps(req, website)) parts.push('Secure')
@@ -37,7 +38,7 @@ export function buildClearedSessionCookie(req: IncomingMessage, website: Website
     'sessionId=',
     'Path=/',
     'HttpOnly',
-    'SameSite=Strict',
+    // 'SameSite=Strict',
     'Max-Age=0',
     'Expires=Thu, 01 Jan 1970 00:00:00 GMT',
   ]

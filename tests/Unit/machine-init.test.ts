@@ -86,4 +86,24 @@ describe('initialiseMachines', () => {
     expect(report.machines.find((m) => m.name === 'soft')?.status).toBe('degraded')
     expect(report.machines.find((m) => m.name === 'ok')?.status).toBe('ok')
   })
+
+  test('throws a clear error when init returns undefined', async () => {
+    const broken: Machine = {
+      table: stubTable,
+      controller: () => {},
+      // @ts-expect-error intentional bad return for regression
+      async init() {
+        return undefined
+      },
+      async health(): Promise<MachineReport> {
+        return { name: 'x', status: 'ok' }
+      },
+    }
+
+    await expect(
+      initialiseMachines(fakeWebsite(), { broken }),
+    ).rejects.toMatchObject({
+      message: expect.stringContaining('did not return a MachineReport'),
+    })
+  })
 })

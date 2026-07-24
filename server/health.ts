@@ -9,10 +9,19 @@
  * - Valid → 200 (ok) or 503 (!ok)
  *
  * Auth: `Authorization: Bearer <token>` or `X-Thalia-Health-Token: <token>`
+ *
+ * Snapshot includes count-based drizzle migration lag (`migrations`) when the
+ * site has `drizzle.config.ts` + an `out` migrations directory. No hash/journal
+ * set-diff — see `drizzle-migration-status.ts`.
  */
 
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { sql } from 'drizzle-orm'
+import {
+  migrationsFailHealth,
+  probeWebsiteMigrations,
+  type WebsiteHealthMigrationsStatus,
+} from './drizzle-migration-status.js'
 import type { RequestInfo } from './server.js'
 import type { DatabaseInitReport, MachineReport } from './types.js'
 import type { Website, Controller } from './website.js'
@@ -30,12 +39,16 @@ export type WebsiteHealthConfigStatus = {
   error?: string
 }
 
+export type { WebsiteHealthMigrationsStatus }
+
 export type WebsiteHealthSnapshot = {
   ok: boolean
   website: string
   checkedAt: string
   config: WebsiteHealthConfigStatus
   db: WebsiteHealthDbStatus
+  /** Count-based drizzle lag; skipped when no migrations dir / no DB. */
+  migrations: WebsiteHealthMigrationsStatus
   machines: MachineReport[]
   lastInit: DatabaseInitReport | null
 }
@@ -111,9 +124,17 @@ export async function buildWebsiteHealth(website: Website): Promise<WebsiteHealt
     }),
   )
 
+  const migrations = await probeWebsiteMigrations({
+    rootPath: website.rootPath,
+    drizzle: connected ? website.db?.drizzle : null,
+  })
+
   const lastInit = website.db?.lastInitReport ?? null
   const ok =
-    config.loaded && connected && machines.every((m) => m.status !== 'error')
+    config.loaded &&
+    connected &&
+    machines.every((m) => m.status !== 'error') &&
+    !migrationsFailHealth(migrations)
 
   return {
     ok,
@@ -121,6 +142,7 @@ export async function buildWebsiteHealth(website: Website): Promise<WebsiteHealt
     checkedAt,
     config,
     db: { connected },
+    migrations,
     machines,
     lastInit,
   }

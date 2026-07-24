@@ -43,8 +43,20 @@ export async function initialiseMachines(
   const machineEntries: MachineInitEntry[] = await Promise.all(
     Object.entries(machines).map(async ([name, machine]) => {
       const t0 = performance.now()
+      if (typeof machine?.init !== 'function') {
+        throw new DatabaseError(
+          `Machine "${name}" on ${website.name} has no init() — is node_modules/thalia stale?`,
+          { website: website.name, originalError: `missing init on ${name}` },
+        )
+      }
       const report = await machine.init(website, name)
       const durationMs = performance.now() - t0
+      if (report == null || typeof report !== 'object' || typeof (report as { status?: unknown }).status !== 'string') {
+        throw new DatabaseError(
+          `Machine "${name}" on ${website.name} init() did not return a MachineReport (got ${report === undefined ? 'undefined' : typeof report}). Update the machine or refresh node_modules/thalia.`,
+          { website: website.name, originalError: `bad init return from ${name}` },
+        )
+      }
       console.debug(
         `Machine init ${website.name}/${name} completed in ${durationMs.toFixed(1)}ms (${report.status})`,
       )

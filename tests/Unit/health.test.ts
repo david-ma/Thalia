@@ -88,6 +88,7 @@ describe('buildWebsiteHealth', () => {
 
     const website = {
       name: 'demo',
+      rootPath: '/tmp/thalia-health-demo-no-drizzle',
       configStatus: { loaded: true, source: 'file' },
       db: {
         machines: { m1: machine },
@@ -104,6 +105,7 @@ describe('buildWebsiteHealth', () => {
     expect(snap.config).toEqual({ loaded: true, source: 'file' })
     expect(snap.db.connected).toBe(false)
     expect(snap.ok).toBe(false)
+    expect(snap.migrations).toEqual({ checked: false, reason: 'no-db' })
     expect(snap.machines).toEqual([{ name: 'm1', status: 'ok', detail: 'ready' }])
     expect(snap.lastInit?.wallMs).toBe(12)
   })
@@ -111,6 +113,7 @@ describe('buildWebsiteHealth', () => {
   test('config load failure forces ok false even with no machines', async () => {
     const website = {
       name: 'smugmug',
+      rootPath: '/tmp/thalia-health-smugmug-no-drizzle',
       configStatus: {
         loaded: false,
         source: 'error',
@@ -124,7 +127,52 @@ describe('buildWebsiteHealth', () => {
     expect(snap.config.loaded).toBe(false)
     expect(snap.config.source).toBe('error')
     expect(snap.config.error).toContain('SmugMugUploader')
+    expect(snap.migrations).toEqual({ checked: false, reason: 'no-db' })
     expect(snap.machines).toEqual([])
     expect(snap.lastInit).toBeNull()
+  })
+
+  test('pending migrations force ok false when db connected', async () => {
+    const fs = await import('node:fs')
+    const os = await import('node:os')
+    const path = await import('node:path')
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'thalia-health-mig-'))
+    try {
+      fs.writeFileSync(
+        path.join(root, 'drizzle.config.ts'),
+        `export default { dialect: 'mysql', out: './drizzle', schema: './m.ts', dbCredentials: { url: 'mysql://x' } }\n`,
+      )
+      fs.mkdirSync(path.join(root, 'drizzle'), { recursive: true })
+      fs.writeFileSync(path.join(root, 'drizzle', '0000_a.sql'), '--')
+
+      let execCalls = 0
+      const website = {
+        name: 'mig-demo',
+        rootPath: root,
+        configStatus: { loaded: true, source: 'file' },
+        db: {
+          drizzle: {
+            execute: async () => {
+              execCalls += 1
+              // First call is SELECT 1 connectivity probe
+              if (execCalls === 1) return [[]]
+              throw new Error("Table '__drizzle_migrations' doesn't exist")
+            },
+          },
+          machines: {},
+          lastInitReport: null,
+        },
+      } as unknown as Website
+
+      const snap = await buildWebsiteHealth(website)
+      expect(snap.db.connected).toBe(true)
+      expect(snap.migrations.checked).toBe(true)
+      if (snap.migrations.checked) {
+        expect(snap.migrations.pending).toBe(1)
+      }
+      expect(snap.ok).toBe(false)
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true })
+    }
   })
 })

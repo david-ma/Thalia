@@ -88,6 +88,7 @@ describe('buildWebsiteHealth', () => {
 
     const website = {
       name: 'demo',
+      configStatus: { loaded: true, source: 'file' },
       db: {
         machines: { m1: machine },
         lastInitReport: {
@@ -100,9 +101,30 @@ describe('buildWebsiteHealth', () => {
 
     const snap = await buildWebsiteHealth(website)
     expect(snap.website).toBe('demo')
+    expect(snap.config).toEqual({ loaded: true, source: 'file' })
     expect(snap.db.connected).toBe(false)
     expect(snap.ok).toBe(false)
     expect(snap.machines).toEqual([{ name: 'm1', status: 'ok', detail: 'ready' }])
     expect(snap.lastInit?.wallMs).toBe(12)
+  })
+
+  test('config load failure forces ok false even with no machines', async () => {
+    const website = {
+      name: 'smugmug',
+      configStatus: {
+        loaded: false,
+        source: 'error',
+        error: "Export named 'SmugMugUploader' not found",
+      },
+      db: undefined,
+    } as unknown as Website
+
+    const snap = await buildWebsiteHealth(website)
+    expect(snap.ok).toBe(false)
+    expect(snap.config.loaded).toBe(false)
+    expect(snap.config.source).toBe('error')
+    expect(snap.config.error).toContain('SmugMugUploader')
+    expect(snap.machines).toEqual([])
+    expect(snap.lastInit).toBeNull()
   })
 })

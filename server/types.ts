@@ -80,12 +80,43 @@ export interface BasicWebsiteConfig {
   port: number
 }
 
+/** Readiness for a Machine after `init` / for future gated `/health`. */
+export type MachineStatus = 'ok' | 'degraded' | 'error'
+
+/**
+ * Cheap, non-sensitive machine readiness snapshot.
+ * `durationMs` is attached by {@link DatabaseInitReport}, not by `health()` itself.
+ */
+export type MachineReport = {
+  name: string
+  status: MachineStatus
+  /** Short note safe for logs — never secrets or connection strings */
+  detail?: string
+  /** When status is `error` (or degraded with a hard cause) */
+  error?: string
+}
+
+/** One machine’s boot result including orchestrator-measured duration. */
+export type MachineInitEntry = MachineReport & { durationMs: number }
+
+/** Aggregate from `ThaliaDatabase.init` machine phase (smoke / trend baselines). */
+export type DatabaseInitReport = {
+  website: string
+  /** Wall time of `Promise.all` (parallel), not sum of durations */
+  wallMs: number
+  machines: MachineInitEntry[]
+}
+
 /**
  * A Machine is a singleton that needs to be initialised by Thalia.
  * They provide controllers. CrudFactories are Machines; ThaliaImageUploader is a Machine.
+ *
+ * `init` must finish required setup then `return this.health()`.
+ * `health` is cheap, read-only, and idempotent (safe to call again later).
  */
 export type Machine = {
-  init: (website: Website, name: string) => void
+  init: (website: Website, name: string) => Promise<MachineReport>
+  health: () => Promise<MachineReport>
   controller: Controller
   table: MySqlTableWithColumns<any>
 }

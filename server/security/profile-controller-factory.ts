@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'http'
 import { eq, sql } from 'drizzle-orm'
 import type { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import type { Controller, Website } from '../website.js'
-import type { Machine } from '../types.js'
+import type { Machine, MachineReport } from '../types.js'
 import type { RequestInfo } from '../server.js'
 import { escapeHtml } from '../util.js'
 import { users as defaultUsersTable, type User } from '../../models/security-models.js'
@@ -304,11 +304,19 @@ export class ProfileControllerFactory implements Machine {
     this.resolved = resolveOptions(options)
   }
 
-  public init(website: Website, name: string): void {
+  public async init(website: Website, name: string): Promise<MachineReport> {
     this.name = name
     if (website.db?.machines?.users?.table) {
       this.table = website.db.machines.users.table
     }
+    return this.health()
+  }
+
+  public async health(): Promise<MachineReport> {
+    if (!this.name) {
+      return { name: 'profile', status: 'error', error: 'ProfileControllerFactory not initialised' }
+    }
+    return { name: this.name, status: 'ok', detail: 'profile factory ready' }
   }
 
   /** Subclasses may override to tighten or loosen read access (default uses {@link ProfileControllerFactoryOptions.profileReadScope}). */

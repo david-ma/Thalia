@@ -19,7 +19,7 @@ import { drizzle, type MySql2Database } from 'drizzle-orm/mysql2'
 import { getTableName, sql } from 'drizzle-orm'
 import path from 'path'
 import { Website } from './website'
-import { Machine } from './controllers'
+import type { DatabaseInitReport, Machine, MachineInitEntry } from './types'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import { DatabaseError } from './errors'
 import { startupMark } from './startup-timer'
@@ -27,6 +27,55 @@ import { startupMark } from './startup-timer'
 /** Row counts keyed by schema registration name (used at init and in tests). */
 export type SchemaRowCounts = {
   [key: string]: number
+}
+
+export type { DatabaseInitReport, MachineInitEntry, MachineReport, MachineStatus } from './types'
+
+/**
+ * Run all machine `init` hooks in parallel, measure durations, build a boot report.
+ * Throws {@link DatabaseError} if any machine reports `status: 'error'`.
+ */
+export async function initialiseMachines(
+  website: Website,
+  machines: Record<string, Machine>,
+): Promise<DatabaseInitReport> {
+  const tWall = performance.now()
+  const machineEntries: MachineInitEntry[] = await Promise.all(
+    Object.entries(machines).map(async ([name, machine]) => {
+      const t0 = performance.now()
+      const report = await machine.init(website, name)
+      const durationMs = performance.now() - t0
+      console.debug(
+        `Machine init ${website.name}/${name} completed in ${durationMs.toFixed(1)}ms (${report.status})`,
+      )
+      return { ...report, name, durationMs }
+    }),
+  )
+
+  const report: DatabaseInitReport = {
+    website: website.name,
+    wallMs: performance.now() - tWall,
+    machines: machineEntries,
+  }
+
+  for (const entry of machineEntries) {
+    if (entry.status === 'degraded') {
+      console.warn(
+        `Machine ${website.name}/${entry.name} degraded: ${entry.detail ?? entry.error ?? 'unknown'}`,
+      )
+    }
+  }
+
+  const failed = machineEntries.filter((m) => m.status === 'error')
+  if (failed.length > 0) {
+    const summary = failed.map((m) => `${m.name}: ${m.error ?? m.detail ?? 'error'}`).join('; ')
+    throw new DatabaseError(`Machine init failed for ${website.name}: ${summary}`, {
+      website: website.name,
+      originalError: summary,
+    })
+  }
+
+  return report
 }
 
 export type DbDialect = 'mysql' | 'postgresql' | 'sqlite' | 'unknown'
@@ -191,6 +240,8 @@ export class ThaliaDatabase {
   public drizzle!: MySql2Database<any>
   public schemas: { [key: string]: MySqlTableWithColumns<any> } = {}
   public machines: { [key: string]: Machine } = {}
+  /** Last machine-init aggregate (timings + health reports). Set after successful machine phase. */
+  public lastInitReport: DatabaseInitReport | null = null
 
   constructor(website: Website) {
     console.log('Creating database connection for', website.rootPath)
@@ -264,14 +315,14 @@ export class ThaliaDatabase {
       }
 
       startupMark(`database.${this.website.name}.machines`)
-      Object.entries(this.machines).forEach(([name, machine]) => {
-        machine.init(this.website, name)
-      })
+      this.lastInitReport = await initialiseMachines(this.website, this.machines)
+      startupMark(`database.${this.website.name}.machines-done`)
 
       return this
     } catch (error) {
       await this.closeMysqlPool()
       console.error(`Unable to connect to the ${this.website.name} database:`, error)
+      if (error instanceof DatabaseError) throw error
       throw new DatabaseError(`Failed to connect to database for ${this.website.name}`, {
         website: this.website.name,
         originalError: error instanceof Error ? error.message : String(error),

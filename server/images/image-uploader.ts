@@ -5,7 +5,7 @@ import path from 'node:path'
 import { desc } from 'drizzle-orm'
 import type { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import { images } from '../../models/images.js'
-import type { Machine } from '../types.js'
+import type { Machine, MachineReport } from '../types.js'
 import type { Role } from '../route-guard.js'
 import { parseForm, type ParsedForm } from '../util.js'
 import type { RequestInfo } from '../server.js'
@@ -109,6 +109,9 @@ export class ThaliaImageUploader implements Machine {
   private album = ''
   private tokens: SmugMugTokenSet | null = null
   private client: SmugMugClient | null = null
+  /** Adapter requested at init (before soft fallbacks). */
+  private intendedAdapter: ImageUploaderAdapterName = 'local-disk'
+
   /**
    * Resolves once `config/secrets.js` has been imported (or has failed to load).
    * Never rejects — errors are caught and logged internally.
@@ -200,7 +203,7 @@ export class ThaliaImageUploader implements Machine {
     })
   }
 
-  public init(website: Website, name: string): void {
+  public async init(website: Website, name: string): Promise<MachineReport> {
     this.website = website
     this.name = name
     this.table = images
@@ -216,170 +219,210 @@ export class ThaliaImageUploader implements Machine {
     this.album = envAlbum || cfgAlbum || ''
 
     const adapter = ThaliaImageUploader.resolveConfiguredAdapter(this.options)
+    this.intendedAdapter = adapter
     this.adapterName = adapter
 
     if (adapter === 'local-disk') {
       this.installLocalDiskAdapter()
       this.initPromise = Promise.resolve()
-      return
+      return this.health()
     }
 
     if (adapter === 'uploadthing') {
       this.installUploadThingAdapter()
       this.initPromise = Promise.resolve()
-      return
+      return this.health()
     }
 
     const secretsPath = path.join(this.website.rootPath, 'config', 'secrets.js')
 
-    this.initPromise = import(secretsPath)
-      .then((mod: { smugmug?: Partial<SmugMugTokenSet> & { album?: string } }) => {
-        const smug = mod.smugmug
-        if (!smug) {
-          smugmugLogLine({
-            service: 'smugmug',
-            level: 'warn',
-            operation: 'init_no_smug_export',
-            website: website.name,
-            msg: 'config/secrets.js has no smugmug export; falling back to local-disk.',
-          })
-          this.installLocalDiskAdapter()
-          return
-        }
+    this.initPromise = this.loadSmugMugSecrets(secretsPath, website.name)
+    await this.initPromise
+    return this.health()
+  }
 
-        this.tokens = {
-          consumer_key: String(smug.consumer_key ?? process.env.SMUGMUG_CONSUMER_KEY ?? ''),
-          consumer_secret: String(smug.consumer_secret ?? process.env.SMUGMUG_CONSUMER_SECRET ?? ''),
-          oauth_token: String(smug.oauth_token ?? process.env.SMUGMUG_OAUTH_TOKEN ?? ''),
-          oauth_token_secret: String(smug.oauth_token_secret ?? process.env.SMUGMUG_OAUTH_TOKEN_SECRET ?? ''),
-        }
+  public async health(): Promise<MachineReport> {
+    const name = this.name || 'imageUpload'
+    if (!this.adapter) {
+      return {
+        name,
+        status: 'error',
+        error: `image adapter not ready (intended=${this.intendedAdapter})`,
+      }
+    }
+    if (this.intendedAdapter !== this.adapterName) {
+      return {
+        name,
+        status: 'degraded',
+        detail: `intended=${this.intendedAdapter}; using=${this.adapterName}`,
+      }
+    }
+    return {
+      name,
+      status: 'ok',
+      detail: `adapter=${this.adapterName}`,
+    }
+  }
 
-        const secretAlbum = typeof smug.album === 'string' ? smug.album.trim() : ''
-        if (secretAlbum) {
-          this.album = secretAlbum
-        }
-
-        if (!this.tokens.consumer_key || !this.tokens.consumer_secret) {
-          smugmugLogLine({
-            service: 'smugmug',
-            level: 'warn',
-            operation: 'init_missing_consumer',
-            website: website.name,
-            msg: 'consumer_key/consumer_secret missing; falling back to local-disk.',
-          })
-          this.client = null
-          this.installLocalDiskAdapter()
-          return
-        }
-
-        this.client = new SmugMugClient(this.tokens)
-        this.adapter = new SmugMugAdapter(this.website, this.client, this.tokens, this.album)
-        this.adapterName = 'smugmug'
+  /** Load SmugMug secrets and install adapter (or soft-fallback to local-disk). */
+  private async loadSmugMugSecrets(secretsPath: string, websiteName: string): Promise<void> {
+    try {
+      const mod = (await import(secretsPath)) as {
+        smugmug?: Partial<SmugMugTokenSet> & { album?: string }
+      }
+      const smug = mod.smugmug
+      if (!smug) {
         smugmugLogLine({
           service: 'smugmug',
-          level: 'info',
-          operation: 'init_adapter_ready',
-          website: website.name,
-          msg: 'SmugMug adapter ready.',
+          level: 'warn',
+          operation: 'init_no_smug_export',
+          website: websiteName,
+          msg: 'config/secrets.js has no smugmug export; falling back to local-disk.',
         })
+        this.installLocalDiskAdapter()
+        return
+      }
 
-        if (this.tokens.oauth_token && this.tokens.oauth_token_secret) {
-          return
-        }
+      this.tokens = {
+        consumer_key: String(smug.consumer_key ?? process.env.SMUGMUG_CONSUMER_KEY ?? ''),
+        consumer_secret: String(smug.consumer_secret ?? process.env.SMUGMUG_CONSUMER_SECRET ?? ''),
+        oauth_token: String(smug.oauth_token ?? process.env.SMUGMUG_OAUTH_TOKEN ?? ''),
+        oauth_token_secret: String(smug.oauth_token_secret ?? process.env.SMUGMUG_OAUTH_TOKEN_SECRET ?? ''),
+      }
 
-        const requestParams: Record<string, string> = {
-          oauth_callback: 'oob',
-          oauth_consumer_key: this.tokens.consumer_key,
-          oauth_nonce: Math.random().toString().replace('0.', ''),
-          oauth_signature_method: 'HMAC-SHA1',
-          oauth_timestamp: String(Math.floor(Date.now() / 1000)),
-          oauth_version: '1.0',
-        }
+      const secretAlbum = typeof smug.album === 'string' ? smug.album.trim() : ''
+      if (secretAlbum) {
+        this.album = secretAlbum
+      }
 
-        const sortedParams = smugmugSortParams(requestParams)
-        const escapedParams = smugmugOauthEscape(smugmugExpandParams(sortedParams))
-        const signatureBaseString = `GET&${smugmugOauthEscape(this.client.requestTokenUrl)}&${escapedParams}`
+      if (!this.tokens.consumer_key || !this.tokens.consumer_secret) {
+        smugmugLogLine({
+          service: 'smugmug',
+          level: 'warn',
+          operation: 'init_missing_consumer',
+          website: websiteName,
+          msg: 'consumer_key/consumer_secret missing; falling back to local-disk.',
+        })
+        this.client = null
+        this.installLocalDiskAdapter()
+        return
+      }
 
-        requestParams.oauth_signature = smugmugB64HmacSha1(
-          `${this.tokens.consumer_secret}&`,
-          signatureBaseString,
+      this.client = new SmugMugClient(this.tokens)
+      this.adapter = new SmugMugAdapter(this.website, this.client, this.tokens, this.album)
+      this.adapterName = 'smugmug'
+      smugmugLogLine({
+        service: 'smugmug',
+        level: 'info',
+        operation: 'init_adapter_ready',
+        website: websiteName,
+        msg: 'SmugMug adapter ready.',
+      })
+
+      if (this.tokens.oauth_token && this.tokens.oauth_token_secret) {
+        return
+      }
+
+      // Request-token fetch is post-ready (warm-style); do not block init.
+      this.beginOauthRequestToken(websiteName)
+    } catch (error: unknown) {
+      if (ThaliaImageUploader.isMissingSecretsModule(error)) {
+        smugmugLogLine({
+          service: 'smugmug',
+          level: 'warn',
+          operation: 'init_secrets_missing',
+          website: websiteName,
+          msg: 'config/secrets.js not found or unreadable; falling back to local-disk.',
+        })
+      } else {
+        smugmugLogLine({
+          service: 'smugmug',
+          level: 'error',
+          operation: 'init_secrets_load_failed',
+          website: websiteName,
+          msg: error instanceof Error ? error.message : String(error),
+        })
+      }
+      this.installLocalDiskAdapter()
+    }
+  }
+
+  /** Fire-and-forget OAuth request-token (not part of machine readiness). */
+  private beginOauthRequestToken(websiteName: string): void {
+    if (!this.client || !this.tokens) return
+
+    const requestParams: Record<string, string> = {
+      oauth_callback: 'oob',
+      oauth_consumer_key: this.tokens.consumer_key,
+      oauth_nonce: Math.random().toString().replace('0.', ''),
+      oauth_signature_method: 'HMAC-SHA1',
+      oauth_timestamp: String(Math.floor(Date.now() / 1000)),
+      oauth_version: '1.0',
+    }
+
+    const sortedParams = smugmugSortParams(requestParams)
+    const escapedParams = smugmugOauthEscape(smugmugExpandParams(sortedParams))
+    const signatureBaseString = `GET&${smugmugOauthEscape(this.client.requestTokenUrl)}&${escapedParams}`
+
+    requestParams.oauth_signature = smugmugB64HmacSha1(
+      `${this.tokens.consumer_secret}&`,
+      signatureBaseString,
+    )
+
+    const requestOptions = {
+      hostname: 'api.smugmug.com',
+      port: 443,
+      path: '/services/oauth/1.0a/getRequestToken?' + new URLSearchParams(requestParams).toString(),
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+    }
+
+    const req = https.request(requestOptions, (res: any) => {
+      let data = ''
+      res.on('data', (chunk: any) => {
+        data += chunk
+      })
+
+      res.on('end', () => {
+        const response = data.split('&').reduce(
+          (acc, item) => {
+            const [key, value] = item.split('=')
+            acc[key] = value
+            return acc
+          },
+          {} as Record<string, string>,
         )
 
-        const requestOptions = {
-          hostname: 'api.smugmug.com',
-          port: 443,
-          path: '/services/oauth/1.0a/getRequestToken?' + new URLSearchParams(requestParams).toString(),
-          method: 'GET',
-          headers: {
-            Accept: 'application/json',
-          },
-        }
-
-        const req = https.request(requestOptions, (res: any) => {
-          let data = ''
-          res.on('data', (chunk: any) => {
-            data += chunk
-          })
-
-          res.on('end', () => {
-            const response = data.split('&').reduce(
-              (acc, item) => {
-                const [key, value] = item.split('=')
-                acc[key] = value
-                return acc
-              },
-              {} as Record<string, string>,
-            )
-
-            if (response && response.oauth_callback_confirmed == 'true') {
-              this.tokens!.oauth_token = response.oauth_token
-              this.tokens!.oauth_token_secret = response.oauth_token_secret
-            } else {
-              smugmugLogLine({
-                service: 'smugmug',
-                level: 'error',
-                operation: 'oauth_request_token_failed',
-                website: website.name,
-                hostname: 'api.smugmug.com',
-                msg: 'Request token response not confirmed.',
-              })
-            }
-          })
-        })
-
-        req.on('error', (e: unknown) => {
-          smugmugLogLine({
-            service: 'smugmug',
-            level: 'error',
-            operation: 'oauth_request_token_http',
-            website: website.name,
-            hostname: 'api.smugmug.com',
-            msg: e instanceof Error ? e.message : String(e),
-          })
-        })
-
-        req.end()
-      })
-      .catch((error: unknown) => {
-        if (ThaliaImageUploader.isMissingSecretsModule(error)) {
-          smugmugLogLine({
-            service: 'smugmug',
-            level: 'warn',
-            operation: 'init_secrets_missing',
-            website: website.name,
-            msg: 'config/secrets.js not found or unreadable; falling back to local-disk.',
-          })
+        if (response && response.oauth_callback_confirmed == 'true') {
+          this.tokens!.oauth_token = response.oauth_token
+          this.tokens!.oauth_token_secret = response.oauth_token_secret
         } else {
           smugmugLogLine({
             service: 'smugmug',
             level: 'error',
-            operation: 'init_secrets_load_failed',
-            website: website.name,
-            msg: error instanceof Error ? error.message : String(error),
+            operation: 'oauth_request_token_failed',
+            website: websiteName,
+            hostname: 'api.smugmug.com',
+            msg: 'Request token response not confirmed.',
           })
         }
-        this.installLocalDiskAdapter()
       })
+    })
+
+    req.on('error', (e: unknown) => {
+      smugmugLogLine({
+        service: 'smugmug',
+        level: 'error',
+        operation: 'oauth_request_token_http',
+        website: websiteName,
+        hostname: 'api.smugmug.com',
+        msg: e instanceof Error ? e.message : String(e),
+      })
+    })
+
+    req.end()
   }
 
   private static isMissingSecretsModule(error: unknown): boolean {

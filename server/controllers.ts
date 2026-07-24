@@ -17,10 +17,10 @@ import { RequestInfo } from './server'
 import url from 'url'
 import { ParsedUrlQuery } from 'querystring'
 import crypto from 'crypto'
-import type { Machine } from './types.js'
+import type { Machine, MachineReport } from './types.js'
 import { parseForm } from './util.js'
 
-export type { Machine } from './types.js'
+export type { Machine, MachineReport, MachineStatus, DatabaseInitReport, MachineInitEntry } from './types.js'
 
 /**
  * Read the latest 10 logs from the log directory
@@ -713,12 +713,28 @@ export class CrudFactory implements Machine {
     return crudWrapperPageData(data, { fullWidth: this.fullWidth })
   }
 
-  public init(website: Website, name: string) {
+  public async init(website: Website, name: string): Promise<MachineReport> {
     this.name = name
     this.website = website
     this.db = website.db.drizzle
 
     console.debug('CrudFactory', this.name, 'ready for table', getTableName(this.table))
+    return this.health()
+  }
+
+  public async health(): Promise<MachineReport> {
+    if (!this.name || !this.db) {
+      return {
+        name: this.name ?? 'crud',
+        status: 'error',
+        error: 'CrudFactory not initialised',
+      }
+    }
+    return {
+      name: this.name,
+      status: 'ok',
+      detail: `table=${getTableName(this.table)}`,
+    }
   }
 
   public static getAction(requestInfo: RequestInfo): Permission {

@@ -23,7 +23,7 @@ import bcrypt from 'bcryptjs'
 import { and, eq, gt } from 'drizzle-orm'
 import type { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import type { NestedControllerMap, Website } from '../website.js'
-import type { Machine } from '../controllers.js'
+import type { Machine, MachineReport } from '../controllers.js'
 import { MailService, mailTable } from '../mail.js'
 import { users, sessions, audits, authLoginThrottles, type User } from '../../models/security-models.js'
 import type { RawWebsiteConfig, ThaliaAuthOptions } from '../types.js'
@@ -63,6 +63,7 @@ export class ThaliaSecurity implements Machine {
   public table!: MySqlTableWithColumns<any>
   private mailService: MailService
   private website!: Website
+  private name = 'security'
   private readonly securityCtorOptions: ThaliaSecurityConstructorOptions
 
   constructor(options: ThaliaSecurityConstructorOptions = {}) {
@@ -79,8 +80,17 @@ export class ThaliaSecurity implements Machine {
     }
   }
 
-  public init(website: Website, _name: string) {
+  public async init(website: Website, name: string): Promise<MachineReport> {
     this.website = website
+    this.name = name
+    return this.health()
+  }
+
+  public async health(): Promise<MachineReport> {
+    if (!this.website) {
+      return { name: this.name, status: 'error', error: 'ThaliaSecurity not initialised' }
+    }
+    return { name: this.name, status: 'ok', detail: 'website wired' }
   }
 
   public controller(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo): void {

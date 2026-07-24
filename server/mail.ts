@@ -1,5 +1,5 @@
 import nodemailer, { SendMailOptions, SentMessageInfo, Transporter } from 'nodemailer'
-import { Machine } from './controllers'
+import type { Machine, MachineReport } from './types.js'
 import { mysqlTable, text } from 'drizzle-orm/mysql-core'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import { IncomingMessage, ServerResponse } from 'http'
@@ -28,29 +28,42 @@ export class MailService implements Machine {
     this.defaultSendMailOptions = defaultSendMailOptions
   }
 
-  public init(website: Website, name: string) {
+  public async init(website: Website, name: string): Promise<MachineReport> {
     console.log('Initialising MailService for', website.name)
     this.website = website
     this.name = name
 
-    this.safeImport(this.authPath).then(({ mailAuth, transport }) => {
-      if (transport) {
-        this.transporter = nodemailer.createTransport(transport)
-        this.isInitialized = true
-        console.log('Mail transporter initialized successfully using transport config')
-      } else if (mailAuth) {
-        this.transporter = nodemailer.createTransport({
-          host: 'smtp.gmail.com',
-          port: 587,
-          secure: false,
-          auth: mailAuth,
-        })
-        this.isInitialized = true
-        console.log('Mail transporter initialized successfully using mailAuth config')
-      } else {
-        console.error('No mailAuth found in mailAuth.js')
-      }
-    })
+    const { mailAuth, transport } = await this.safeImport(this.authPath)
+    if (transport) {
+      this.transporter = nodemailer.createTransport(transport)
+      this.isInitialized = true
+      console.log('Mail transporter initialized successfully using transport config')
+    } else if (mailAuth) {
+      this.transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: mailAuth,
+      })
+      this.isInitialized = true
+      console.log('Mail transporter initialized successfully using mailAuth config')
+    } else {
+      console.error('No mailAuth found in mailAuth.js')
+    }
+
+    return this.health()
+  }
+
+  public async health(): Promise<MachineReport> {
+    const name = this.name || 'mail'
+    if (this.isInitialized && this.transporter) {
+      return { name, status: 'ok', detail: 'transporter ready' }
+    }
+    return {
+      name,
+      status: 'degraded',
+      detail: 'mail transporter not ready (missing or invalid mailAuth)',
+    }
   }
 
   public controller(res: ServerResponse, _req: IncomingMessage, _website: Website, requestInfo: RequestInfo) {

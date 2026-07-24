@@ -21,10 +21,20 @@ export type WebsiteHealthDbStatus = {
   connected: boolean
 }
 
+/** Non-machine config load status (hollow boot when loaded=false). */
+export type WebsiteHealthConfigStatus = {
+  loaded: boolean
+  /** How config was obtained */
+  source: 'file' | 'defaults' | 'error'
+  /** Short error when source is `error` — no stack traces */
+  error?: string
+}
+
 export type WebsiteHealthSnapshot = {
   ok: boolean
   website: string
   checkedAt: string
+  config: WebsiteHealthConfigStatus
   db: WebsiteHealthDbStatus
   machines: MachineReport[]
   lastInit: DatabaseInitReport | null
@@ -77,6 +87,14 @@ export async function buildWebsiteHealth(website: Website): Promise<WebsiteHealt
   const checkedAt = new Date().toISOString()
   const connected = await probeDbConnected(website)
 
+  const config: WebsiteHealthConfigStatus = website.configStatus
+    ? {
+        loaded: website.configStatus.loaded,
+        source: website.configStatus.source,
+        ...(website.configStatus.error ? { error: website.configStatus.error } : {}),
+      }
+    : { loaded: true, source: 'defaults' }
+
   const machinesMap = website.db?.machines ?? {}
   const machines: MachineReport[] = await Promise.all(
     Object.entries(machinesMap).map(async ([name, machine]) => {
@@ -94,12 +112,14 @@ export async function buildWebsiteHealth(website: Website): Promise<WebsiteHealt
   )
 
   const lastInit = website.db?.lastInitReport ?? null
-  const ok = connected && machines.every((m) => m.status !== 'error')
+  const ok =
+    config.loaded && connected && machines.every((m) => m.status !== 'error')
 
   return {
     ok,
     website: website.name,
     checkedAt,
+    config,
     db: { connected },
     machines,
     lastInit,

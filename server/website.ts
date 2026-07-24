@@ -93,6 +93,17 @@ export class Website {
   public routeGuard!: RouteGuard
   public db!: ThaliaDatabase
   public version!: WebsiteVersionInfo
+  /**
+   * Result of loading `config/config.ts`.
+   * - `loaded: true`, `source: 'file'` — site config merged
+   * - `loaded: true`, `source: 'defaults'` — no config.ts (intentional bare site)
+   * - `loaded: false`, `source: 'error'` — config.ts existed but failed to import (hollow listen)
+   */
+  public configStatus: {
+    loaded: boolean
+    source: 'file' | 'defaults' | 'error'
+    error?: string
+  } = { loaded: true, source: 'defaults' }
 
   /**
    * Creates a new Website instance
@@ -211,12 +222,19 @@ export class Website {
 
             this.config = recursiveObjectMerge(this.config, configFile.config) as WebsiteConfig
             this.registerHandlebarsHelpers()
+            this.configStatus = { loaded: true, source: 'file' }
           },
           (err) => {
             if (fs.existsSync(configPath)) {
+              const message = err instanceof Error ? err.message : String(err)
+              this.configStatus = { loaded: false, source: 'error', error: message }
               console.error('config.ts failed to load for', this.name)
               console.error(err)
+              console.error(
+                `[thalia] website "${this.name}" is listening WITHOUT site config — /health will report config.loaded=false`,
+              )
             } else {
+              this.configStatus = { loaded: true, source: 'defaults' }
               console.error(`Website "${this.name}" does not have a config.ts file`)
             }
           },

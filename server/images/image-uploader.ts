@@ -111,6 +111,8 @@ export class ThaliaImageUploader implements Machine {
   private client: SmugMugClient | null = null
   /** Adapter requested at init (before soft fallbacks). */
   private intendedAdapter: ImageUploaderAdapterName = 'local-disk'
+  /** Set when soft-falling back (e.g. missing secrets); surfaced in `health()`. */
+  private fallbackReason: string | null = null
 
   /**
    * Resolves once `config/secrets.js` has been imported (or has failed to load).
@@ -221,6 +223,7 @@ export class ThaliaImageUploader implements Machine {
     const adapter = ThaliaImageUploader.resolveConfiguredAdapter(this.options)
     this.intendedAdapter = adapter
     this.adapterName = adapter
+    this.fallbackReason = null
 
     if (adapter === 'local-disk') {
       this.installLocalDiskAdapter()
@@ -251,10 +254,11 @@ export class ThaliaImageUploader implements Machine {
       }
     }
     if (this.intendedAdapter !== this.adapterName) {
+      const reason = this.fallbackReason ? `; reason=${this.fallbackReason}` : ''
       return {
         name,
         status: 'degraded',
-        detail: `intended=${this.intendedAdapter}; using=${this.adapterName}`,
+        detail: `intended=${this.intendedAdapter}; using=${this.adapterName}${reason}`,
       }
     }
     return {
@@ -279,6 +283,7 @@ export class ThaliaImageUploader implements Machine {
           website: websiteName,
           msg: 'config/secrets.js has no smugmug export; falling back to local-disk.',
         })
+        this.fallbackReason = 'secrets.js has no smugmug export'
         this.installLocalDiskAdapter()
         return
       }
@@ -304,6 +309,7 @@ export class ThaliaImageUploader implements Machine {
           msg: 'consumer_key/consumer_secret missing; falling back to local-disk.',
         })
         this.client = null
+        this.fallbackReason = 'missing consumer_key/consumer_secret'
         this.installLocalDiskAdapter()
         return
       }
@@ -334,6 +340,7 @@ export class ThaliaImageUploader implements Machine {
           website: websiteName,
           msg: 'config/secrets.js not found or unreadable; falling back to local-disk.',
         })
+        this.fallbackReason = 'config/secrets.js missing'
       } else {
         smugmugLogLine({
           service: 'smugmug',
@@ -342,6 +349,7 @@ export class ThaliaImageUploader implements Machine {
           website: websiteName,
           msg: error instanceof Error ? error.message : String(error),
         })
+        this.fallbackReason = 'secrets.js load failed'
       }
       this.installLocalDiskAdapter()
     }
@@ -448,9 +456,9 @@ export class ThaliaImageUploader implements Machine {
 
   /** Sites without `config.database` never run `machine.init()` — wire the machine on first request. */
   private ensureWebsiteInit(website: Website): void {
-    if (!this.website) {
-      this.init(website, 'imageUpload')
-    }
+    if (this.website) return
+    // Keep initPromise gated on full init (including health) for early requests.
+    this.initPromise = this.init(website, 'imageUpload').then(() => undefined)
   }
 
   public oauthCallback(res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) {

@@ -152,7 +152,7 @@ const imageUploaderAdapter =
     imageUploaderAdapterEnv === 'uploadthing' ||
     imageUploaderAdapterEnv === 'smugmug'
         ? imageUploaderAdapterEnv
-        : 'smugmug';
+        : 'local-disk';
 
 const imageUploader = new ThaliaImageUploader({
     adapter: imageUploaderAdapter,

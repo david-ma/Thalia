@@ -20,8 +20,7 @@ function getDbUrl(): string {
         "From Thalia root run: cd websites/example-auth && docker compose up -d, or set DATABASE_URL."
     );
   }
-  const yaml = require("js-yaml");
-  const dockerComposeYaml = yaml.load(fs.readFileSync(dockerPath, "utf8"));
+const dockerComposeYaml = JSON.parse(fs.readFileSync(dockerPath, "utf8"));
   const db = dockerComposeYaml?.services?.db;
   if (!db?.environment) {
     throw new Error(

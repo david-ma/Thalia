@@ -77,6 +77,7 @@ const ALWAYS_ALLOW_PATHS: string[] = [
   '/fonts',
   '/assets',
   '/version',
+  '/health',
 ]
 const ALWAYS_ALLOW_PERMISSIONS: Record<Role, Permission[]> = {
   guest: ['read'],

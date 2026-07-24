@@ -40,6 +40,7 @@ import { Socket } from 'socket.io'
 import { RequestInfo } from './server'
 import { ThaliaDatabase } from './database'
 import { placeholderImage, version } from './controllers'
+import { health } from './health'
 import { findThaliaRoot, resolveThaliaGitHash, resolveWebsiteGitHash } from './git-hash'
 import os from 'os'
 import { ConfigurationError, TemplateError, FileSystemError } from './errors'
@@ -181,6 +182,7 @@ export class Website {
       domains: [],
       controllers: {
         version,
+        health,
         'placeholder-image': placeholderImage,
       },
       routes: [],

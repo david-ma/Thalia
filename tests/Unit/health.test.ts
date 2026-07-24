@@ -5,7 +5,6 @@ import {
   buildWebsiteHealth,
   evaluateHealthTokenGate,
   extractHealthToken,
-  healthTokensEqual,
   thaliaHealthTokenFromEnv,
 } from '../../server/health.js'
 import type { Machine, MachineReport } from '../../server/types.js'
@@ -50,17 +49,6 @@ describe('extractHealthToken', () => {
         }),
       ),
     ).toBe('from-header')
-  })
-})
-
-describe('healthTokensEqual', () => {
-  test('matches equal tokens', () => {
-    expect(healthTokensEqual('a', 'a')).toBe(true)
-  })
-
-  test('rejects different length or value', () => {
-    expect(healthTokensEqual('ab', 'a')).toBe(false)
-    expect(healthTokensEqual('ab', 'ac')).toBe(false)
   })
 })
 

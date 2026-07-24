@@ -16,7 +16,6 @@ import { and, asc, desc, eq, getTableName, isNull, like, or, sql, type SQL } fro
 import { RequestInfo } from './server'
 import url from 'url'
 import { ParsedUrlQuery } from 'querystring'
-import crypto from 'crypto'
 import type { Machine, MachineReport } from './types.js'
 import { parseForm } from './util.js'
 
@@ -196,17 +195,6 @@ export function latestDataFolder(
         console.error(`Error in ${website.name}/latestDataFolder: ${err.message}`)
         res.end('500')
       })
-  }
-}
-
-export const version = async (res: ServerResponse, _req: IncomingMessage, website: Website) => {
-  try {
-    res.writeHead(200, { 'Content-Type': 'application/json' })
-    res.end(JSON.stringify(website.version))
-  } catch (error) {
-    console.error(`Error in ${website.name}/version: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    res.writeHead(500, { 'Content-Type': 'text/html' })
-    res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 

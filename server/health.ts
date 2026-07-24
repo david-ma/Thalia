@@ -1,15 +1,16 @@
 /**
- * Operator health snapshot for Thalia sites.
+ * Public /version and gated /health JSON endpoints.
  *
- * HTTP: GET /health — gated by env `THALIA_HEALTH_TOKEN`.
- * - Token unset/empty → 404 (route appears absent)
+ * GET /version — benign build/runtime metadata (public).
+ *
+ * GET /health — operator readiness snapshot, gated by `THALIA_HEALTH_TOKEN`.
+ * - Token unset/empty → 404
  * - Missing/wrong token → 401
- * - Valid token → 200 (ok) or 503 (!ok) with JSON body
+ * - Valid → 200 (ok) or 503 (!ok)
  *
  * Auth: `Authorization: Bearer <token>` or `X-Thalia-Health-Token: <token>`
  */
 
-import crypto from 'node:crypto'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { sql } from 'drizzle-orm'
 import type { RequestInfo } from './server.js'
@@ -29,23 +30,17 @@ export type WebsiteHealthSnapshot = {
   lastInit: DatabaseInitReport | null
 }
 
-/** Read expected token from env (trim). Empty / unset → health HTTP disabled. */
-export function thaliaHealthTokenFromEnv(
-  env: NodeJS.ProcessEnv = process.env,
-): string | null {
+/** Expected health token from env (trim). Empty / unset → /health disabled. */
+export function thaliaHealthTokenFromEnv(env: NodeJS.ProcessEnv = process.env): string | null {
   const raw = env.THALIA_HEALTH_TOKEN?.trim()
   return raw ? raw : null
 }
 
-/** Extract bearer or X-Thalia-Health-Token from the request. */
+/** Bearer or X-Thalia-Health-Token from the request. */
 export function extractHealthToken(req: IncomingMessage): string | null {
   const headerToken = req.headers['x-thalia-health-token']
-  if (typeof headerToken === 'string' && headerToken.trim()) {
-    return headerToken.trim()
-  }
-  if (Array.isArray(headerToken) && headerToken[0]?.trim()) {
-    return headerToken[0].trim()
-  }
+  if (typeof headerToken === 'string' && headerToken.trim()) return headerToken.trim()
+  if (Array.isArray(headerToken) && headerToken[0]?.trim()) return headerToken[0].trim()
 
   const auth = req.headers.authorization
   if (typeof auth === 'string') {
@@ -55,20 +50,7 @@ export function extractHealthToken(req: IncomingMessage): string | null {
   return null
 }
 
-/** Constant-time string compare (length mismatch → false). */
-export function healthTokensEqual(expected: string, provided: string): boolean {
-  const a = Buffer.from(expected, 'utf8')
-  const b = Buffer.from(provided, 'utf8')
-  if (a.length !== b.length) return false
-  return crypto.timingSafeEqual(a, b)
-}
-
-/**
- * Gate result for /health:
- * - `disabled` → respond 404
- * - `unauthorized` → respond 401
- * - `ok` → proceed
- */
+/** Gate: disabled (no env token) | unauthorized | ok */
 export function evaluateHealthTokenGate(
   req: IncomingMessage,
   env: NodeJS.ProcessEnv = process.env,
@@ -76,22 +58,21 @@ export function evaluateHealthTokenGate(
   const expected = thaliaHealthTokenFromEnv(env)
   if (!expected) return 'disabled'
   const provided = extractHealthToken(req)
-  if (!provided || !healthTokensEqual(expected, provided)) return 'unauthorized'
+  if (!provided || provided !== expected) return 'unauthorized'
   return 'ok'
 }
 
 async function probeDbConnected(website: Website): Promise<boolean> {
   const drizzle = website.db?.drizzle
   if (!drizzle) return false
-  try {
-    await drizzle.execute(sql`SELECT 1`)
-    return true
-  } catch {
-    return false
-  }
+
+  return drizzle
+    .execute(sql`SELECT 1`)
+    .then(() => true)
+    .catch(() => false)
 }
 
-/** Build a non-sensitive health snapshot (safe for gated /health JSON). */
+/** Non-sensitive readiness snapshot for gated /health. */
 export async function buildWebsiteHealth(website: Website): Promise<WebsiteHealthSnapshot> {
   const checkedAt = new Date().toISOString()
   const connected = await probeDbConnected(website)
@@ -133,19 +114,26 @@ function endJson(res: ServerResponse, statusCode: number, body: unknown): void {
   res.end(JSON.stringify(body))
 }
 
-/**
- * GET /health — operator readiness JSON.
- * Registered by default on every Website; gated by `THALIA_HEALTH_TOKEN`.
- */
+/** GET /version — public build/runtime metadata. */
+export const version: Controller = (res, _req, website) => {
+  try {
+    endJson(res, 200, website.version)
+  } catch (error) {
+    console.error(`Error in ${website.name}/version: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    if (!res.headersSent) {
+      res.statusCode = 500
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+      res.end('Internal Server Error')
+    }
+  }
+}
+
+/** GET /health — operator readiness; gated by THALIA_HEALTH_TOKEN. */
 export const health: Controller = (res, req, website, _requestInfo: RequestInfo) => {
   void handleHealth(res, req, website)
 }
 
-async function handleHealth(
-  res: ServerResponse,
-  req: IncomingMessage,
-  website: Website,
-): Promise<void> {
+async function handleHealth(res: ServerResponse, req: IncomingMessage, website: Website): Promise<void> {
   try {
     const gate = evaluateHealthTokenGate(req)
     if (gate === 'disabled') {
@@ -160,9 +148,7 @@ async function handleHealth(
     const snapshot = await buildWebsiteHealth(website)
     endJson(res, snapshot.ok ? 200 : 503, snapshot)
   } catch (error) {
-    console.error(
-      `Error in ${website.name}/health: ${error instanceof Error ? error.message : 'Unknown error'}`,
-    )
+    console.error(`Error in ${website.name}/health: ${error instanceof Error ? error.message : 'Unknown error'}`)
     endJson(res, 500, { error: 'Internal Server Error' })
   }
 }

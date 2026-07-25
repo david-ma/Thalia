@@ -88,6 +88,8 @@ Thalia’s request handler is a chain. In broad strokes it tries:
 - `public/`, then `docs/`, then `data/`
 - framework `public/` + directory index + 404
 
+Built-in Markdown serving only resolves under project/framework `src/`. For Markdown elsewhere (e.g. generated files under `data/`), import helpers from **`thalia/markdown`** (`renderMarkdownPage`, `parseFrontMatter`, …) in your own controller and keep path allow-lists in the site.
+
 ## Tests
 
 ```bash

@@ -27,7 +27,7 @@ It’s designed so you can start with something tangible quickly, then grow it i
 
 ## Common ways to use Thalia (choose the simplest that works)
 
-- **Static-ish site**: serve Handlebars + Markdown + static assets (`public/`). Great for landing pages, documentation, and “show me something now”.
+- **Static-ish site**: serve Handlebars + Markdown + static assets (`public/`). Great for landing pages, documentation, and “show me something now”. Built-in `.md` serving is `src/`-only; for Markdown outside `src/` (e.g. `data/`), call **`renderMarkdownPage`** from **`thalia/markdown`** in a custom controller.
 - **Controllers for dynamic pages**: add route handlers for forms, API calls, redirects, light dynamic behaviour.
 - **DB-backed internal tool**: add Drizzle schemas + queries, then build pages/controllers around them.
 - **CRUD-first admin UI**: register CrudFactory machines for quick admin interfaces, then replace/augment with custom controllers as needs evolve.

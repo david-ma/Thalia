@@ -109,6 +109,23 @@ describe('RequestHandler getContentType', () => {
     expect(getContentType('/font.woff2')).toBe('font/woff2')
   })
 
+  test('audio extensions return correct MIME', () => {
+    expect(getContentType('/clip.wav')).toBe('audio/wav')
+    expect(getContentType('/track.mp3')).toBe('audio/mpeg')
+    expect(getContentType('/recording.m4a')).toBe('audio/mp4')
+    expect(getContentType('/voice.aac')).toBe('audio/aac')
+    expect(getContentType('/podcast.ogg')).toBe('audio/ogg')
+    expect(getContentType('/podcast.oga')).toBe('audio/ogg')
+    expect(getContentType('/lossless.flac')).toBe('audio/flac')
+    expect(getContentType('/speech.opus')).toBe('audio/opus')
+  })
+
+  test('video extensions return correct MIME', () => {
+    expect(getContentType('/video.mp4')).toBe('video/mp4')
+    expect(getContentType('/video.webm')).toBe('video/webm')
+    expect(getContentType('/clip.mov')).toBe('video/quicktime')
+  })
+
   test('unknown extension is application/octet-stream', () => {
     expect(getContentType('/file.unknown')).toBe('application/octet-stream')
   })

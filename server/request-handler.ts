@@ -146,6 +146,17 @@ export class RequestHandler {
       ttf: 'font/ttf',
       eot: 'font/eot',
       otf: 'font/otf',
+      wav: 'audio/wav',
+      mp3: 'audio/mpeg',
+      m4a: 'audio/mp4',
+      aac: 'audio/aac',
+      ogg: 'audio/ogg',
+      oga: 'audio/ogg',
+      flac: 'audio/flac',
+      opus: 'audio/opus',
+      webm: 'video/webm',
+      mp4: 'video/mp4',
+      mov: 'video/quicktime',
     }
     return contentTypes[ext ?? ''] || 'application/octet-stream'
   }

@@ -200,6 +200,27 @@ describe('Request-handler: example-minimal (static, 404, path exploit)', () => {
     }
   })
 
+  test('static Range: .wav returns 206 with Content-Type audio/wav', async () => {
+    const fixtureDir = path.join(resolveSiteRootPath(PROJECT), 'data', 'healthchecks', 'range-fixture')
+    fs.mkdirSync(fixtureDir, { recursive: true })
+    // Minimal RIFF/WAV header to make a valid-looking file
+    const body = Buffer.alloc(100, 0)
+    body.write('RIFF', 0, 'ascii')
+    body.write('WAVE', 8, 'ascii')
+    fs.writeFileSync(path.join(fixtureDir, 'clip.wav'), body)
+    try {
+      const response = await fetchFromServer('/healthchecks/range-fixture/clip.wav', port, {
+        headers: { Range: 'bytes=0-9' },
+      })
+      expect(response.status).toBe(206)
+      expect(response.headers.get('content-type')).toBe('audio/wav')
+      expect(response.headers.get('accept-ranges')).toBe('bytes')
+      expect(response.headers.get('content-range')).toBe('bytes 0-9/100')
+    } finally {
+      fs.rmSync(fixtureDir, { recursive: true, force: true })
+    }
+  })
+
   test('non-existent path returns 404 (fileNotFound)', async () => {
     const response = await fetchFromServer('/nonexistent.html', port)
     expect(response.status).toBe(404)

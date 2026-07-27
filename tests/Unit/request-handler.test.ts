@@ -21,6 +21,13 @@ type RequestHandlerPrivateStub = {
   getContentType(filePath: string): string
   mimeBaseType(contentType: string): string
   isGzipFriendlyMime(contentType: string): boolean
+  parseBytesRange(
+    rangeHeader: string | string[] | undefined,
+    size: number,
+  ):
+    | { kind: 'none' }
+    | { kind: 'partial'; start: number; end: number }
+    | { kind: 'unsatisfiable' }
   setStaticFileHeaders(
     res: ServerResponse,
     pathname: string,
@@ -43,6 +50,7 @@ const resolvePdfPath = rhPrivate.resolvePdfPath.bind(RequestHandler)
 const getContentType = rhPrivate.getContentType.bind(RequestHandler)
 const mimeBaseType = rhPrivate.mimeBaseType.bind(RequestHandler)
 const isGzipFriendlyMime = rhPrivate.isGzipFriendlyMime.bind(RequestHandler)
+const parseBytesRange = rhPrivate.parseBytesRange.bind(RequestHandler)
 const setStaticFileHeaders = rhPrivate.setStaticFileHeaders.bind(RequestHandler)
 const resolveFolderIndexData = rhPrivate.resolveFolderIndexData.bind(RequestHandler)
 
@@ -129,6 +137,51 @@ describe('RequestHandler isGzipFriendlyMime', () => {
     expect(isGzipFriendlyMime('font/woff2')).toBe(false)
     expect(isGzipFriendlyMime('application/pdf')).toBe(false)
     expect(isGzipFriendlyMime('application/octet-stream')).toBe(false)
+  })
+})
+
+describe('RequestHandler parseBytesRange', () => {
+  test('no header → none', () => {
+    expect(parseBytesRange(undefined, 100)).toEqual({ kind: 'none' })
+    expect(parseBytesRange('', 100)).toEqual({ kind: 'none' })
+  })
+
+  test('bytes=0-1023 → partial of length 1024', () => {
+    expect(parseBytesRange('bytes=0-1023', 5000)).toEqual({
+      kind: 'partial',
+      start: 0,
+      end: 1023,
+    })
+  })
+
+  test('bytes=100- → partial through EOF', () => {
+    expect(parseBytesRange('bytes=100-', 500)).toEqual({
+      kind: 'partial',
+      start: 100,
+      end: 499,
+    })
+  })
+
+  test('end past EOF is clamped', () => {
+    expect(parseBytesRange('bytes=10-9999', 100)).toEqual({
+      kind: 'partial',
+      start: 10,
+      end: 99,
+    })
+  })
+
+  test('start past EOF → unsatisfiable', () => {
+    expect(parseBytesRange('bytes=100-', 100)).toEqual({ kind: 'unsatisfiable' })
+    expect(parseBytesRange('bytes=500-600', 100)).toEqual({ kind: 'unsatisfiable' })
+  })
+
+  test('empty resource → unsatisfiable for any bytes range', () => {
+    expect(parseBytesRange('bytes=0-', 0)).toEqual({ kind: 'unsatisfiable' })
+  })
+
+  test('multipart and suffix forms ignored (v1)', () => {
+    expect(parseBytesRange('bytes=0-1,4-5', 100)).toEqual({ kind: 'none' })
+    expect(parseBytesRange('bytes=-500', 1000)).toEqual({ kind: 'none' })
   })
 })
 

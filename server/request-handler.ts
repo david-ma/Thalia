@@ -43,6 +43,12 @@ type FolderIndexData = {
   title: string
 }
 
+/** Result of parsing `Range: bytes=…` for a known resource size (v1: single contiguous range). */
+type ParsedByteRange =
+  | { kind: 'none' }
+  | { kind: 'partial'; start: number; end: number }
+  | { kind: 'unsatisfiable' }
+
 export class RequestHandler {
   constructor(public website: Website) {
     this.rootPath = this.website.rootPath
@@ -191,6 +197,103 @@ export class RequestHandler {
     }
   }
 
+  /**
+   * Parse a single `Range: bytes=start-end` or `bytes=start-` for a resource of `size` bytes.
+   * Multipart ranges and suffix forms (`bytes=-N`) are ignored in v1 (treated as no range).
+   * @see https://www.rfc-editor.org/rfc/rfc9110#name-range-requests
+   */
+  private static parseBytesRange(
+    rangeHeader: string | string[] | undefined,
+    size: number,
+  ): ParsedByteRange {
+    if (rangeHeader == null) return { kind: 'none' }
+    const raw = Array.isArray(rangeHeader) ? rangeHeader[0] : rangeHeader
+    if (!raw || typeof raw !== 'string') return { kind: 'none' }
+
+    const match = /^bytes=(\d+)-(\d*)$/i.exec(raw.trim())
+    if (!match) return { kind: 'none' }
+
+    const start = Number(match[1])
+    const endToken = match[2]
+    if (!Number.isFinite(start) || size === 0 || start >= size) {
+      return { kind: 'unsatisfiable' }
+    }
+
+    const end =
+      endToken === '' ? size - 1 : Math.min(Number(endToken), size - 1)
+    if (!Number.isFinite(end) || end < start) {
+      return { kind: 'unsatisfiable' }
+    }
+
+    return { kind: 'partial', start, end }
+  }
+
+  /** True when the client sent a Range header (skip on-the-fly gzip; Range + gzip is messy). */
+  private static hasRangeHeader(req: IncomingMessage): boolean {
+    const range = req.headers['range']
+    if (range == null) return false
+    if (Array.isArray(range)) return range.length > 0 && Boolean(range[0])
+    return range.length > 0
+  }
+
+  /**
+   * Stream an uncompressed file, honouring a single byte Range when present.
+   * Sets Accept-Ranges: bytes on 200/206.
+   * Unsatisfiable ranges → 416 with Content-Range bytes star-slash-size (RFC 9110).
+   */
+  private static streamStaticFile(
+    requestHandler: RequestHandler,
+    targetPath: string,
+    finish: (message: string) => void,
+    successLabel: string,
+  ): void {
+    const size = fs.statSync(targetPath).size
+    const range = RequestHandler.parseBytesRange(requestHandler.req.headers['range'], size)
+
+    requestHandler.res.setHeader('Accept-Ranges', 'bytes')
+
+    if (range.kind === 'unsatisfiable') {
+      requestHandler.res.setHeader('Content-Range', `bytes */${size}`)
+      requestHandler.res.writeHead(416)
+      requestHandler.res.end()
+      finish(`Range not satisfiable for ${requestHandler.pathname}`)
+      return
+    }
+
+    let streamStart: number | undefined
+    let streamEnd: number | undefined
+    if (range.kind === 'partial') {
+      streamStart = range.start
+      streamEnd = range.end
+      const length = streamEnd - streamStart + 1
+      requestHandler.res.setHeader(
+        'Content-Range',
+        `bytes ${streamStart}-${streamEnd}/${size}`,
+      )
+      requestHandler.res.setHeader('Content-Length', length.toString())
+      requestHandler.res.writeHead(206)
+    } else {
+      requestHandler.res.setHeader('Content-Length', size.toString())
+    }
+
+    const stream = fs.createReadStream(
+      targetPath,
+      streamStart !== undefined && streamEnd !== undefined
+        ? { start: streamStart, end: streamEnd }
+        : undefined,
+    )
+    stream.on('error', (error) => {
+      console.error(`Error streaming ${successLabel}:`, error)
+      if (!requestHandler.res.headersSent) requestHandler.res.writeHead(500)
+      requestHandler.res.end('Internal Server Error')
+      finish(`Error streaming ${successLabel}`)
+    })
+    requestHandler.res.on('finish', () => {
+      finish(`Successfully streamed ${successLabel}`)
+    })
+    stream.pipe(requestHandler.res)
+  }
+
   /** Project folders searched for PDFs (first match wins). */
   private static readonly pdfStaticFolders = ['public', 'data', 'dist', 'docs'] as const
 
@@ -249,6 +352,10 @@ export class RequestHandler {
 
       const acceptedEncoding = requestHandler.req.headers['accept-encoding'] ?? ''
       const isGzipAccepted = acceptedEncoding.includes('gzip')
+      // Range + gzip is messy: skip on-the-fly gzip when Range is present.
+      // Precompressed `.gz` sidecars: if only the sidecar exists, ignore Range and serve the full
+      // gzip body (current behaviour). Range applies only to uncompressed on-disk files.
+      const wantsRange = RequestHandler.hasRangeHeader(requestHandler.req)
 
       if (!fs.existsSync(targetPath)) {
         if (isGzipAccepted && fs.existsSync(`${targetPath}.gz`)) {
@@ -283,6 +390,7 @@ export class RequestHandler {
         requestHandler.handleRequest(requestHandler.req, requestHandler.res, requestHandler.requestInfo, indexPath)
         return finish(`Redirected to ${indexPath}`)
       } else if (
+        !wantsRange &&
         RequestHandler.isGzipFriendlyMime(contentType) &&
         isGzipAccepted &&
         fs.statSync(targetPath).size > GZIP_SIZE_THRESHOLD
@@ -305,17 +413,12 @@ export class RequestHandler {
           return finish(`Successfully gzipped file ${requestHandler.pathname}`)
         })
       } else {
-        const stream = fs.createReadStream(targetPath)
-        stream.on('error', (error) => {
-          console.error('Error streaming file:', error)
-          if (!requestHandler.res.headersSent) requestHandler.res.writeHead(500)
-          requestHandler.res.end('Internal Server Error')
-          finish('Error streaming file')
-        })
-        requestHandler.res.on('finish', () => {
-          finish(`Successfully streamed file ${requestHandler.pathname}`)
-        })
-        stream.pipe(requestHandler.res)
+        RequestHandler.streamStaticFile(
+          requestHandler,
+          targetPath,
+          finish,
+          `file ${requestHandler.pathname}`,
+        )
       }
     })
   }
@@ -510,17 +613,12 @@ export class RequestHandler {
         path.basename(target),
       )
 
-      const stream = fs.createReadStream(target)
-      stream.on('error', (error) => {
-        console.error(`Error streaming pdf ${requestHandler.pathname}:`, error)
-        if (!requestHandler.res.headersSent) requestHandler.res.writeHead(500)
-        requestHandler.res.end('Internal Server Error')
-        finish('Error streaming pdf')
-      })
-      requestHandler.res.on('finish', () => {
-        finish(`Successfully served pdf ${requestHandler.pathname}`)
-      })
-      stream.pipe(requestHandler.res)
+      RequestHandler.streamStaticFile(
+        requestHandler,
+        target,
+        finish,
+        `pdf ${requestHandler.pathname}`,
+      )
     })
   }
 

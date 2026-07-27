@@ -100,6 +100,106 @@ describe('Request-handler: example-minimal (static, 404, path exploit)', () => {
     }
   })
 
+  test('static Range: full GET is 200 with Accept-Ranges and Content-Length', async () => {
+    const fixtureDir = path.join(resolveSiteRootPath(PROJECT), 'data', 'healthchecks', 'range-fixture')
+    fs.mkdirSync(fixtureDir, { recursive: true })
+    const body = Buffer.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') // 36 bytes
+    const filePath = path.join(fixtureDir, 'clip.bin')
+    fs.writeFileSync(filePath, body)
+    try {
+      const response = await fetchFromServer('/healthchecks/range-fixture/clip.bin', port)
+      expect(response.status).toBe(200)
+      expect(response.headers.get('accept-ranges')).toBe('bytes')
+      expect(response.headers.get('content-length')).toBe(String(body.length))
+      expect(Buffer.from(await response.arrayBuffer())).toEqual(body)
+    } finally {
+      fs.rmSync(fixtureDir, { recursive: true, force: true })
+    }
+  })
+
+  test('static Range: bytes=0-1023 → 206 with matching length and body', async () => {
+    const fixtureDir = path.join(resolveSiteRootPath(PROJECT), 'data', 'healthchecks', 'range-fixture')
+    fs.mkdirSync(fixtureDir, { recursive: true })
+    const body = Buffer.alloc(2048, 0)
+    for (let i = 0; i < body.length; i++) body[i] = i % 256
+    fs.writeFileSync(path.join(fixtureDir, 'clip.bin'), body)
+    try {
+      const response = await fetchFromServer('/healthchecks/range-fixture/clip.bin', port, {
+        headers: { Range: 'bytes=0-1023' },
+      })
+      expect(response.status).toBe(206)
+      expect(response.headers.get('accept-ranges')).toBe('bytes')
+      expect(response.headers.get('content-range')).toBe('bytes 0-1023/2048')
+      expect(response.headers.get('content-length')).toBe('1024')
+      expect(Buffer.from(await response.arrayBuffer())).toEqual(body.subarray(0, 1024))
+    } finally {
+      fs.rmSync(fixtureDir, { recursive: true, force: true })
+    }
+  })
+
+  test('static Range: bytes=100- → 206 from offset to EOF', async () => {
+    const fixtureDir = path.join(resolveSiteRootPath(PROJECT), 'data', 'healthchecks', 'range-fixture')
+    fs.mkdirSync(fixtureDir, { recursive: true })
+    const body = Buffer.alloc(200, 0)
+    for (let i = 0; i < body.length; i++) body[i] = i % 256
+    fs.writeFileSync(path.join(fixtureDir, 'clip.bin'), body)
+    try {
+      const response = await fetchFromServer('/healthchecks/range-fixture/clip.bin', port, {
+        headers: { Range: 'bytes=100-' },
+      })
+      expect(response.status).toBe(206)
+      expect(response.headers.get('content-range')).toBe('bytes 100-199/200')
+      expect(response.headers.get('content-length')).toBe('100')
+      expect(Buffer.from(await response.arrayBuffer())).toEqual(body.subarray(100))
+    } finally {
+      fs.rmSync(fixtureDir, { recursive: true, force: true })
+    }
+  })
+
+  test('static Range: unsatisfiable start past EOF → 416', async () => {
+    const fixtureDir = path.join(resolveSiteRootPath(PROJECT), 'data', 'healthchecks', 'range-fixture')
+    fs.mkdirSync(fixtureDir, { recursive: true })
+    const body = Buffer.from('short')
+    fs.writeFileSync(path.join(fixtureDir, 'clip.bin'), body)
+    try {
+      const response = await fetchFromServer('/healthchecks/range-fixture/clip.bin', port, {
+        headers: { Range: 'bytes=999-' },
+      })
+      expect(response.status).toBe(416)
+      expect(response.headers.get('content-range')).toBe(`bytes */${body.length}`)
+    } finally {
+      fs.rmSync(fixtureDir, { recursive: true, force: true })
+    }
+  })
+
+  test('static Range skips on-the-fly gzip even when Accept-Encoding: gzip', async () => {
+    const fixtureDir = path.join(resolveSiteRootPath(PROJECT), 'data', 'healthchecks', 'range-fixture')
+    fs.mkdirSync(fixtureDir, { recursive: true })
+    // Above GZIP_SIZE_THRESHOLD (10kb) and gzip-friendly MIME (json)
+    const body = Buffer.from('{"pad":"' + 'x'.repeat(12 * 1024) + '"}')
+    fs.writeFileSync(path.join(fixtureDir, 'large.json'), body)
+    try {
+      const fullGzip = await fetchFromServer('/healthchecks/range-fixture/large.json', port, {
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(fullGzip.status).toBe(200)
+      expect(fullGzip.headers.get('content-encoding')).toBe('gzip')
+
+      const ranged = await fetchFromServer('/healthchecks/range-fixture/large.json', port, {
+        headers: {
+          'Accept-Encoding': 'gzip',
+          Range: 'bytes=0-1023',
+        },
+      })
+      expect(ranged.status).toBe(206)
+      expect(ranged.headers.get('content-encoding')).toBeNull()
+      expect(ranged.headers.get('content-length')).toBe('1024')
+      expect(Buffer.from(await ranged.arrayBuffer())).toEqual(body.subarray(0, 1024))
+    } finally {
+      fs.rmSync(fixtureDir, { recursive: true, force: true })
+    }
+  })
+
   test('non-existent path returns 404 (fileNotFound)', async () => {
     const response = await fetchFromServer('/nonexistent.html', port)
     expect(response.status).toBe(404)

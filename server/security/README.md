@@ -45,6 +45,16 @@ So the guard applies to **anything** that reaches that pipeline: pages, APIs ser
 - **`guest`** means no valid session (or no session cookie), locked user treated as guest, or database unavailable for session resolution (no `db` / Drizzle).
 - **`user` / `admin`** come from the **`users.role`** column joined via **`sessions`** for the `sessionId` cookie.
 
+### Ending sessions (logout / password reset)
+
+Session rows are **credentials**, not CRUD soft-delete records. Auth validity (`RoleRouteGuard`) requires `logged_out = false` and an unexpired `expires`.
+
+**Never hard-DELETE session rows** from application code. `audits.session_id` references `sessions.sid` (`ON DELETE NO ACTION`), so a DELETE fails with MySQL errno 1451 when any audit still points at that `sid`. Worse: password reset updates the password hash *before* session cleanup — a failed DELETE leaves the new password stored while the user sees a generic error.
+
+**Soft-revoke instead:** set `logged_out = true` (helpers in `session-revoke.ts`: `revokeSessionBySid`, `revokeSessionsForUser`). The row remains so audits keep a real FK target; the cookie stops authenticating. Do not add a parallel `deleted_at` on sessions for this — keep one invalidation signal (`logged_out` + `expires`).
+
+Site code that ends sessions after a password change should call the same soft-revoke pattern (not `DELETE FROM sessions`).
+
 The guard attaches **`requestInfo.userAuth`** and **`requestInfo.permissions`** (the permission array for the matched route + role) before later stages run.
 
 ## What `read`, `create`, `update`, `delete` (and `manage`) mean
@@ -121,4 +131,5 @@ Import from **`thalia/security`** (`server/security/index.ts`): `ThaliaSecurity`
 - `server/server.ts` — `RequestInfo` (including `action` from the URL).
 - `server/controllers.ts` — `CrudFactory.getAction`.
 - `server/security/thalia-security.ts` — `securityConfig()` and auth controllers.
+- `server/security/session-revoke.ts` — soft-revoke helpers (`logged_out = true`; never hard-DELETE sessions).
 - `server/security/security-default-routes.ts` — default `RoleRouteRule`s for admin tooling.

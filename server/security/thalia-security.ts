@@ -36,6 +36,7 @@ import {
   DEFAULT_THALIA_SESSION_MAX_AGE_SECONDS,
   sessionMaxAgeSecondsForWebsite,
 } from './session-cookie.js'
+import { revokeSessionBySid, revokeSessionsForUser } from './session-revoke.js'
 import { default_routes } from './security-default-routes.js'
 import { AuditMachine, SessionMachine, UserMachine } from './security-machines.js'
 import {
@@ -206,7 +207,7 @@ export class ThaliaSecurity implements Machine {
     }
   }
 
-  /** Clear server session + expiry cookie (`/` path). Alias: `logoff`. */
+  /** Soft-revoke server session + clear cookie (`/` path). Alias: `logoff`. */
   private logoutController(
     res: ServerResponse,
     req: IncomingMessage,
@@ -226,23 +227,12 @@ export class ThaliaSecurity implements Machine {
       finish()
       return
     }
-    website.db.drizzle
-      .delete(sessionsTbl)
-      .where(eq(sessionsTbl.sid, sid))
+    revokeSessionBySid(website.db.drizzle, sessionsTbl, sid)
       .then(finish)
       .catch((err: unknown) => {
-        console.error('logout delete session:', err)
+        console.error('logout revoke session:', err)
         finish()
       })
-  }
-
-  private deleteSessionsForUser(website: Website, userId: number): Promise<void> {
-    const sessionsTbl = website.db?.machines?.sessions?.table
-    if (!sessionsTbl || !website.db?.drizzle) return Promise.resolve()
-    return website.db.drizzle
-      .delete(sessionsTbl)
-      .where(eq(sessionsTbl.userId, userId))
-      .then((): void => {})
   }
 
   private firstAdminExists(website: Website): Promise<boolean> {
@@ -477,7 +467,10 @@ export class ThaliaSecurity implements Machine {
               passwordResetExpires: null,
             })
             .where(eq(usersTable.id, userId))
-          await this.deleteSessionsForUser(website, userId)
+          const sessionsTbl = website.db?.machines?.sessions?.table
+          if (sessionsTbl) {
+            await revokeSessionsForUser(db, sessionsTbl, userId)
+          }
           res.writeHead(302, { Location: '/logon?message=Password+reset.+You+can+log+in+now.' })
           res.end()
         } catch (err: unknown) {

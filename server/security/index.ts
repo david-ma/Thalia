@@ -8,6 +8,8 @@
  */
 export type { SecurityConfig, RoleRouteRule } from '../route-guard.js'
 export { DEFAULT_THALIA_SESSION_MAX_AGE_SECONDS, sessionMaxAgeSecondsForWebsite } from './session-cookie.js'
+export { revokeSessionBySid, revokeSessionsForUser } from './session-revoke.js'
+export type { SessionRevokeDrizzle } from './session-revoke.js'
 export type { UserDetails } from './security-service.js'
 export { SecurityService } from './security-service.js'
 export type { ThaliaSecurityConstructorOptions } from './thalia-security.js'

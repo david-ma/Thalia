@@ -24,7 +24,7 @@
 
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
 import { startTestServer, stopTestServer, fetchFromServer, waitForServerHttp, resolveSiteRootPath } from './helpers.js'
-import { deleteExampleAuthUserByEmail } from './helpers-example-auth-db.js'
+import { deleteExampleAuthUserByEmail, getExampleAuthSessionLoggedOut, insertExampleAuthAuditForSession } from './helpers-example-auth-db.js'
 import fs from 'fs'
 import path from 'path'
 import zlib from 'zlib'
@@ -902,6 +902,13 @@ test('auth flow: password reset via MailCatcher works end-to-end (example-auth)'
   // If user already exists, controller returns 200 with an error; either is fine for this flow.
   expect([200, 302, 303]).toContain(createResp.status)
 
+  // 1b. Login so we have a live session, then insert an audits row pointing at it
+  // (hard DELETE of sessions would hit errno 1451 — soft-revoke must succeed instead).
+  const preResetCookie = await loginExampleAuth(port, TEST_EMAIL, OLD_PASSWORD)
+  expect(preResetCookie).not.toBeNull()
+  const preResetSid = preResetCookie!.replace(/^sessionId=/, '')
+  await insertExampleAuthAuditForSession(TEST_EMAIL, preResetSid)
+
   // 2. Trigger forgotPassword
   const forgotBody = new URLSearchParams({ email: TEST_EMAIL }).toString()
   const forgotResp = await fetchFromServer('/forgotPassword', port, {
@@ -948,6 +955,12 @@ test('auth flow: password reset via MailCatcher works end-to-end (example-auth)'
   expect([302, 303]).toContain(resetPostResp.status)
   const loc = resetPostResp.headers.get('location') ?? ''
   expect(loc).toMatch(/\/logon\?message=Password\+reset/i)
+
+  // Soft-revoke: session row remains (audit FK), but logged_out and cookie are invalid.
+  expect(await getExampleAuthSessionLoggedOut(preResetSid)).toBe(true)
+  const staleHeaders = new Headers({ Cookie: preResetCookie! })
+  const staleProfile = await fetchFromServer('/profile', port, { headers: staleHeaders, redirect: 'manual' })
+  expect([401, 302, 303]).toContain(staleProfile.status)
 
   // 7. Login with old password should fail
   const oldCookie = await loginExampleAuth(port, TEST_EMAIL, OLD_PASSWORD)

@@ -51,11 +51,37 @@ Session rows are **credentials**, not CRUD soft-delete records. Auth validity (`
 
 **Never hard-DELETE session rows** from application code. `audits.session_id` references `sessions.sid` (`ON DELETE NO ACTION`), so a DELETE fails with MySQL errno 1451 when any audit still points at that `sid`. Worse: password reset updates the password hash *before* session cleanup — a failed DELETE leaves the new password stored while the user sees a generic error.
 
-**Soft-revoke instead:** set `logged_out = true` (helpers in `session-revoke.ts`: `revokeSessionBySid`, `revokeSessionsForUser`). The row remains so audits keep a real FK target; the cookie stops authenticating. Do not add a parallel `deleted_at` on sessions for this — keep one invalidation signal (`logged_out` + `expires`).
+**Soft-revoke instead:** set `logged_out = true` (helpers in `session-revoke.ts`: `revokeSessionBySid`, `revokeSessionsForUser`, `revokeOtherSessionsForUser`). The row remains so audits keep a real FK target; the cookie stops authenticating. Do not add a parallel `deleted_at` on sessions for this — keep one invalidation signal (`logged_out` + `expires`).
 
 Site code that ends sessions after a password change should call the same soft-revoke pattern (not `DELETE FROM sessions`).
 
 The guard attaches **`requestInfo.userAuth`** and **`requestInfo.permissions`** (the permission array for the matched route + role) before later stages run.
+
+## Profile + password change (supported path)
+
+**Supported profile UI:** site Handlebars partial (e.g. `profile_content.hbs`) served by **`ProfileControllerFactory`** from `thalia/security`. The framework file **`src/views/security/profile.hbs`** is a **legacy demo only** — not wired by `ThaliaSecurity` or the factory.
+
+| Surface | How |
+| ------- | --- |
+| GET/PATCH profile (name, photo) | `ProfileControllerFactory.controller` at `/profile/:id` (site wires the factory) |
+| Change password (signed-in) | **`POST /api/profile/password`** — registered by **`security.securityConfig()`** by default |
+| Forgot / reset (email token) | `ThaliaSecurity` `/forgotPassword` → `/resetPassword` |
+
+### `POST /api/profile/password`
+
+**On by default** when you merge `security.securityConfig()` (controller + `/api/profile` route, no guest). Opt out with `new ThaliaSecurity({ disablePasswordChange: true })` or `thaliaAuth.disablePasswordChange`.
+
+Body: `{ currentPassword, newPassword, confirmPassword }` (8–1024 chars for new password).
+
+- Identity from **session only** (`userAuth.userId`). Body fields `userId` / `email` / `username` → **`IDENTITY_NOT_ALLOWED`**.
+- Verifies current password; updates hash; clears reset tokens; sets `verified: true`.
+- Soft-revokes **other** sessions (`revokeOtherSessionsForUser`); keeps the current cookie.
+- Same-origin CSRF check (`assertSameOriginMutation`).
+- Success: `{ ok: true, otherSessionsRevoked: boolean }`. Errors: `{ error, code }` (`ProfilePasswordJsonErrorCode`).
+
+Sites only need a UI that posts to the endpoint (see **example-auth** `profile_content.hbs`). Advanced overrides: `createProfilePasswordController` / `profilePasswordControllerTree` from `thalia/security`.
+
+Homelab sites with a local `profile-password-api.ts` should switch to the framework endpoint after upgrading `thalia`.
 
 ## What `read`, `create`, `update`, `delete` (and `manage`) mean
 
@@ -114,7 +140,7 @@ Project routes from **`config.routes`** are merged after that list (via `concat`
 | Extra tables / controllers | Your own `database`, `controllers`, etc. merged into `config` |
 | **Path RBAC** | `config.routes`: `RoleRouteRule[]` with `path` + `permissions` per role |
 | Hostnames | `config.domains`: must include hosts you actually use; matching uses `requestInfo.host` (see `X-Forwarded-Host` handling in `server/server.ts`) |
-| Session / signup tuning | `config.thaliaAuth` (defaults from `ThaliaSecurity.defaultThaliaAuthOptions()`): e.g. `disableSelfRegistration`, `disablePasswordReset`, `sessionMaxAgeSeconds` |
+| Session / signup tuning | `config.thaliaAuth` (defaults from `ThaliaSecurity.defaultThaliaAuthOptions()`): e.g. `disableSelfRegistration`, `disablePasswordReset`, `disablePasswordChange`, `sessionMaxAgeSeconds` |
 | Mail-backed flows | `ThaliaSecurity` constructor options such as `mailAuthPath` |
 | Login throttle | Default on auth POSTs: **5** attempts per client IP per action in **15 minutes** → **6 hour** ban (`auth_login_throttles`). Actions: `logon` (failed passwords only), `forgotPassword` / `resetPassword` / `setup` / `createNewUser` (every POST). Keyed by IP+action so attackers cannot lock a victim account. Signed-in users see a clearer message; guests get a short one. Schema is in `securityConfig()` — migrate / `drizzle-kit push` after upgrading. Sliding-window math is shared with `IpRateLimiter` in `thalia/util` (also re-exported from `thalia/security`). |
 | Public form / API rate limit | Use **`IpRateLimiter`** from `thalia/util` (or `thalia/security`) in your **controller** — module-scoped instance + `check(requestInfo.ip)`. Example: UBC `contactUbcController`. Not wired into `RoleRouteGuard` (RBAC only); auth lockouts stay in `login-throttle`. |
@@ -132,4 +158,6 @@ Import from **`thalia/security`** (`server/security/index.ts`): `ThaliaSecurity`
 - `server/controllers.ts` — `CrudFactory.getAction`.
 - `server/security/thalia-security.ts` — `securityConfig()` and auth controllers.
 - `server/security/session-revoke.ts` — soft-revoke helpers (`logged_out = true`; never hard-DELETE sessions).
+- `server/security/profile-password.ts` — authenticated `POST /api/profile/password`.
+- `server/security/same-origin.ts` — `assertSameOriginMutation` for cookie mutations.
 - `server/security/security-default-routes.ts` — default `RoleRouteRule`s for admin tooling.

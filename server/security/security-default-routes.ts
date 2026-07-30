@@ -2,6 +2,15 @@ import type { Permission, RoleRouteRule } from '../route-guard.js'
 
 export const ALL_PERMISSIONS: Permission[] = ['create', 'read', 'update', 'delete']
 
+/** Authenticated self-service password change (`POST /api/profile/password`). No guest. */
+export const profilePasswordRoute: RoleRouteRule = {
+  path: '/api/profile',
+  permissions: {
+    admin: ['read', 'create', 'update'],
+    user: ['read', 'create', 'update'],
+  },
+}
+
 export const default_routes: RoleRouteRule[] = [
   {
     path: '/admin',
@@ -29,4 +38,5 @@ export const default_routes: RoleRouteRule[] = [
       admin: ALL_PERMISSIONS,
     },
   },
+  profilePasswordRoute,
 ]

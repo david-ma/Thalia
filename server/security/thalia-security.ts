@@ -37,8 +37,12 @@ import {
   sessionMaxAgeSecondsForWebsite,
 } from './session-cookie.js'
 import { revokeSessionBySid, revokeSessionsForUser } from './session-revoke.js'
-import { default_routes } from './security-default-routes.js'
+import { default_routes, profilePasswordRoute } from './security-default-routes.js'
 import { AuditMachine, SessionMachine, UserMachine } from './security-machines.js'
+import {
+  createProfilePasswordController,
+  profilePasswordControllerTree,
+} from './profile-password.js'
 import {
   DUMMY_PASSWORD_HASH,
   authRateLimitMessage,
@@ -77,6 +81,7 @@ export class ThaliaSecurity implements Machine {
     return {
       disableSelfRegistration: this.securityCtorOptions.disableSelfRegistration ?? false,
       disablePasswordReset: this.securityCtorOptions.disablePasswordReset ?? false,
+      disablePasswordChange: this.securityCtorOptions.disablePasswordChange ?? false,
       sessionMaxAgeSeconds: this.securityCtorOptions.sessionMaxAgeSeconds ?? DEFAULT_THALIA_SESSION_MAX_AGE_SECONDS,
     }
   }
@@ -654,6 +659,7 @@ export class ThaliaSecurity implements Machine {
   public securityConfig(): RawWebsiteConfig {
     const thaliaAuth = this.defaultThaliaAuthOptions()
     const signupEnabled = !thaliaAuth.disableSelfRegistration
+    const passwordChangeEnabled = !thaliaAuth.disablePasswordChange
 
     const logoutHandler = this.logoutController.bind(this)
     const coreControllers: Record<string, NestedControllerMap> = {
@@ -682,6 +688,14 @@ export class ThaliaSecurity implements Machine {
       coreControllers.createNewUser = this.createNewUserController.bind(this)
     }
 
+    const routes = passwordChangeEnabled
+      ? default_routes
+      : default_routes.filter((r) => r.path !== profilePasswordRoute.path)
+
+    if (passwordChangeEnabled) {
+      Object.assign(coreControllers, profilePasswordControllerTree(createProfilePasswordController()))
+    }
+
     return {
       database: {
         schemas: {
@@ -700,7 +714,7 @@ export class ThaliaSecurity implements Machine {
         },
       },
       controllers: coreControllers as RawWebsiteConfig['controllers'],
-      routes: default_routes,
+      routes,
       thaliaAuth,
     }
   }

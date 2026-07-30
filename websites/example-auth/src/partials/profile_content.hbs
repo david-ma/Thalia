@@ -116,6 +116,61 @@
           {{/if}}
         </div>
       </div>
+
+      {{#if isOwnProfile}}
+      <div class="card border-0 shadow-sm mt-4" id="profile-password-card">
+        <div class="card-body p-4">
+          <h2 class="h5 text-uppercase text-muted mb-3">Change password</h2>
+          <p class="small text-muted mb-3">
+            Enter your current password, then choose a new one (8–1024 characters).
+            Other devices are signed out; this session stays signed in.
+          </p>
+          <div class="row g-3">
+            {{!-- Autocomplete hint only; never trusted by /api/profile/password (session userId is SoT). --}}
+            <input type="text" name="username" value="{{profileEmail}}" autocomplete="username" class="visually-hidden" tabindex="-1" aria-hidden="true" />
+            <div class="col-12">
+              <label for="profile-password-current" class="form-label small text-muted mb-1">Current password</label>
+              <input
+                type="password"
+                class="form-control"
+                id="profile-password-current"
+                autocomplete="current-password"
+                minlength="1"
+                maxlength="1024"
+              />
+            </div>
+            <div class="col-12 col-md-6">
+              <label for="profile-password-new" class="form-label small text-muted mb-1">New password</label>
+              <input
+                type="password"
+                class="form-control"
+                id="profile-password-new"
+                autocomplete="new-password"
+                minlength="8"
+                maxlength="1024"
+              />
+            </div>
+            <div class="col-12 col-md-6">
+              <label for="profile-password-confirm" class="form-label small text-muted mb-1">Confirm new password</label>
+              <input
+                type="password"
+                class="form-control"
+                id="profile-password-confirm"
+                autocomplete="new-password"
+                minlength="8"
+                maxlength="1024"
+              />
+            </div>
+            <div class="col-12 col-md-4">
+              <button type="button" class="btn btn-outline-primary w-100" id="profile-password-btn">
+                Update password
+              </button>
+            </div>
+          </div>
+          <p class="small mt-3 mb-0" id="profile-password-status" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+      {{/if}}
     </div>
   </div>
 </div>
@@ -123,29 +178,105 @@
 <script>
   (function () {
     var root = document.getElementById('profile-root')
-    if (!root || root.getAttribute('data-can-edit') !== '1') return
-    var id = root.getAttribute('data-profile-id')
-    var nameInput = document.getElementById('profile-name-input')
-    var photoInput = document.getElementById('profile-photo-input')
-    var btn = document.getElementById('profile-save-btn')
-    var statusEl = document.getElementById('profile-save-status')
-    if (!id || !nameInput || !photoInput || !btn || !statusEl) return
-    function setStatus(msg, kind) {
-      statusEl.textContent = msg
-      statusEl.className = 'small mt-3 mb-0'
-      if (kind === 'ok') statusEl.classList.add('text-success')
-      else if (kind === 'err') statusEl.classList.add('text-danger')
-      else statusEl.classList.add('text-muted')
+    if (root && root.getAttribute('data-can-edit') === '1') {
+      var id = root.getAttribute('data-profile-id')
+      var nameInput = document.getElementById('profile-name-input')
+      var photoInput = document.getElementById('profile-photo-input')
+      var btn = document.getElementById('profile-save-btn')
+      var statusEl = document.getElementById('profile-save-status')
+      if (id && nameInput && photoInput && btn && statusEl) {
+        function setStatus(msg, kind) {
+          statusEl.textContent = msg
+          statusEl.className = 'small mt-3 mb-0'
+          if (kind === 'ok') statusEl.classList.add('text-success')
+          else if (kind === 'err') statusEl.classList.add('text-danger')
+          else statusEl.classList.add('text-muted')
+        }
+        btn.addEventListener('click', function () {
+          var name = (nameInput.value || '').trim()
+          var photo = (photoInput.value || '').trim()
+          setStatus('Saving…', '')
+          btn.disabled = true
+          fetch('/profile/' + id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name, photo: photo }),
+          })
+            .then(function (r) {
+              return r.text().then(function (t) {
+                return { r: r, t: t }
+              })
+            })
+            .then(function (ctx) {
+              var r = ctx.r
+              var t = ctx.t
+              var data = {}
+              try {
+                data = t ? JSON.parse(t) : {}
+              } catch (e) {}
+              if (!r.ok) {
+                setStatus(data.error || 'Could not save (' + r.status + ').', 'err')
+                return
+              }
+              if (data.error) {
+                setStatus(String(data.error), 'err')
+                return
+              }
+              setStatus('Saved. Refresh the page to see your name and photo everywhere.', 'ok')
+            })
+            .catch(function () {
+              setStatus('Network error. Try again.', 'err')
+            })
+            .finally(function () {
+              btn.disabled = false
+            })
+        })
+      }
     }
-    btn.addEventListener('click', function () {
-      var name = (nameInput.value || '').trim()
-      var photo = (photoInput.value || '').trim()
-      setStatus('Saving…', '')
-      btn.disabled = true
-      fetch('/profile/' + id, {
-        method: 'PUT',
+
+    var pwBtn = document.getElementById('profile-password-btn')
+    if (!pwBtn) return
+    var currentInput = document.getElementById('profile-password-current')
+    var newInput = document.getElementById('profile-password-new')
+    var confirmInput = document.getElementById('profile-password-confirm')
+    var pwStatus = document.getElementById('profile-password-status')
+    if (!currentInput || !newInput || !confirmInput || !pwStatus) return
+
+    function setPwStatus(msg, kind) {
+      pwStatus.textContent = msg
+      pwStatus.className = 'small mt-3 mb-0'
+      if (kind === 'ok') pwStatus.classList.add('text-success')
+      else if (kind === 'err') pwStatus.classList.add('text-danger')
+      else pwStatus.classList.add('text-muted')
+    }
+
+    pwBtn.addEventListener('click', function () {
+      var currentPassword = currentInput.value || ''
+      var newPassword = newInput.value || ''
+      var confirmPassword = confirmInput.value || ''
+      if (!currentPassword) {
+        setPwStatus('Enter your current password.', 'err')
+        return
+      }
+      if (newPassword.length < 8 || newPassword.length > 1024) {
+        setPwStatus('New password must be between 8 and 1024 characters.', 'err')
+        return
+      }
+      if (newPassword !== confirmPassword) {
+        setPwStatus('New passwords do not match.', 'err')
+        return
+      }
+      setPwStatus('Updating…', '')
+      pwBtn.disabled = true
+      fetch('/api/profile/password', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, photo: photo }),
+        body: JSON.stringify({
+          currentPassword: currentPassword,
+          newPassword: newPassword,
+          confirmPassword: confirmPassword,
+        }),
+        credentials: 'same-origin',
       })
         .then(function (r) {
           return r.text().then(function (t) {
@@ -153,27 +284,24 @@
           })
         })
         .then(function (ctx) {
-          var r = ctx.r
-          var t = ctx.t
           var data = {}
           try {
-            data = t ? JSON.parse(t) : {}
+            data = ctx.t ? JSON.parse(ctx.t) : {}
           } catch (e) {}
-          if (!r.ok) {
-            setStatus(data.error || 'Could not save (' + r.status + ').', 'err')
+          if (!ctx.r.ok) {
+            setPwStatus(data.error || 'Could not update password (' + ctx.r.status + ').', 'err')
             return
           }
-          if (data.error) {
-            setStatus(String(data.error), 'err')
-            return
-          }
-          setStatus('Saved. Refresh the page to see your name and photo everywhere.', 'ok')
+          currentInput.value = ''
+          newInput.value = ''
+          confirmInput.value = ''
+          setPwStatus('Password updated.', 'ok')
         })
         .catch(function () {
-          setStatus('Network error. Try again.', 'err')
+          setPwStatus('Network error. Try again.', 'err')
         })
         .finally(function () {
-          btn.disabled = false
+          pwBtn.disabled = false
         })
     })
   })()

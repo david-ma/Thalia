@@ -167,6 +167,11 @@ export type ThaliaAuthOptions = {
    * Prefer this over trying to detect a working mail transport (mail init is async and may fail later).
    */
   disablePasswordReset?: boolean
+  /**
+   * When true, omit authenticated `POST /api/profile/password` from `securityConfig()`
+   * (default false — password change is on whenever security is merged).
+   */
+  disablePasswordChange?: boolean
   /** Cookie + DB `sessions.expires` TTL (seconds). Default 7 days */
   sessionMaxAgeSeconds?: number
 }

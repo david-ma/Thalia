@@ -17,6 +17,8 @@
  * keep enforcing them inside the controller (see **`ProfileControllerFactory`** in `thalia/security`).
  * **`GET /profile`** (no id) redirects to **`/profile/<session user id>`** by default; set **`profileIndexRedirect: false`** on the factory to keep a **400** instead.
  * **`profileEmailVisibility: 'owner_or_admin_only'`** hides other users’ **`email`** on GET (see **`profileRevealEmailForGet`**); example-auth enables this.
+ * Authenticated password change is **on by default** via `security.securityConfig()` (`POST /api/profile/password`);
+ * the own-profile password card in `profile_content.hbs` posts to that endpoint. Opt out with `disablePasswordChange: true`.
  *
  * ### `config.thaliaAuth`
  *

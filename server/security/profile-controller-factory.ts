@@ -294,6 +294,9 @@ function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<ReadJsonB
  *
  * Prefer a **site** Handlebars partial (e.g. `websites/.../src/partials/profile_content.hbs`). The framework file
  * **`src/views/security/profile.hbs`** is a legacy demo scaffold, not wired to this factory.
+ *
+ * Authenticated password change lives on {@link ThaliaSecurity.securityConfig}
+ * (`POST /api/profile/password` by default). This factory is HTML + name/photo only.
  */
 export class ProfileControllerFactory implements Machine {
   public table: MySqlTableWithColumns<any> = defaultUsersTable as MySqlTableWithColumns<any>

@@ -8,8 +8,18 @@
  */
 export type { SecurityConfig, RoleRouteRule } from '../route-guard.js'
 export { DEFAULT_THALIA_SESSION_MAX_AGE_SECONDS, sessionMaxAgeSecondsForWebsite } from './session-cookie.js'
-export { revokeSessionBySid, revokeSessionsForUser } from './session-revoke.js'
+export { revokeSessionBySid, revokeSessionsForUser, revokeOtherSessionsForUser } from './session-revoke.js'
 export type { SessionRevokeDrizzle } from './session-revoke.js'
+export { assertSameOriginMutation } from './same-origin.js'
+export {
+  createProfilePasswordController,
+  profilePasswordControllerTree,
+  PROFILE_PASSWORD_MIN_LEN,
+  PROFILE_PASSWORD_MAX_LEN,
+  PROFILE_PASSWORD_MAX_BODY_BYTES,
+  PROFILE_PASSWORD_AUDIT_ACTION,
+} from './profile-password.js'
+export type { ProfilePasswordApiDeps, ProfilePasswordJsonErrorCode } from './profile-password.js'
 export type { UserDetails } from './security-service.js'
 export { SecurityService } from './security-service.js'
 export type { ThaliaSecurityConstructorOptions } from './thalia-security.js'

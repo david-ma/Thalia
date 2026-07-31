@@ -6,9 +6,9 @@ import type { NestedControllerMap } from '../website.js'
  * **after** `securityConfig()` via `recursiveObjectMerge` — an object replaces the
  * framework function (see `recursiveObjectMerge`).
  *
- * Prefer listing pages with `wrap()` / `hbs()` / custom controllers so config readers
+ * Prefer listing pages with **`wrap('….hbs')`** (or a custom controller) so config readers
  * can see what lives under `/admin`. Pure HBS fallthrough after `admin: {}` still works
- * but is harder to audit.
+ * but is harder to audit. (`hbs` / `md_file` are lower-level backends used by `wrap`.)
  *
  * @example
  * ```ts

@@ -1518,13 +1518,21 @@ export class MarkdownViewerFactory {
 }
 
 /**
- * Why not just use getContentHtml?
+ * Preferred helper: serve a content file inside Thalia’s wrapper (default `wrapper`).
  *
- * This controller serves a hbs or md file inside of a wrapper
- * @param filename - A hbs or md file to serve
- * @param data - Data to pass to the content template
- * @param wrapper_template - The wrapper template to use, default is 'wrapper'
- * @returns Controller function that serves the content inside of a wrapper
+ * Pass a filename **with extension** under the site’s content roots:
+ * - `wrap('admin_overview.hbs')` → {@link hbs}
+ * - `wrap('docs/note.md')` → {@link md_file}
+ * - anything else → controller that responds `404 Not Found`
+ *
+ * Template data matches Handlebars fallthrough: injects **`requestInfo`** and
+ * **`version`** (`website.version`), then spreads `data` (static keys win on clash).
+ *
+ * Prefer this over calling {@link hbs} / {@link md_file} directly in site `config.ts`.
+ *
+ * @param filename - e.g. `admin_overview.hbs` or `notes/intro.md`
+ * @param data - Extra locals (`title`, …); overrides injected defaults on key clash
+ * @param wrapper_template - Wrapper partial name (default `wrapper`)
  */
 export function wrap(filename: string, data: any = {}, wrapper_template: string = 'wrapper'): Controller {
   // TODO: Check that wrapper_template exists
@@ -1544,17 +1552,28 @@ export function wrap(filename: string, data: any = {}, wrapper_template: string 
 }
 
 /**
- * This is a simple Handlebars wrapper server, that serves content instide of a wrapper
- * @param content_template - Put in the name of a handlebars template, that you want wrapped and served
- * @param data - Data to pass to the content template
- * @param wrapper_template - The wrapper template to use, default is 'wrapper'
- * @returns Controller function that serves the content inside of a wrapper
+ * Lower-level: render a Handlebars **content partial** inside a wrapper.
+ *
+ * Prefer {@link wrap}(`'name.hbs'`) in site config. Call `hbs` only when you already
+ * have a partial name **without** `.hbs` (or when implementing another helper).
+ *
+ * Same context as fallthrough / {@link wrap}: **`requestInfo`**, **`version`**, then `...data`.
+ *
+ * @param content_template - Partial name as registered by Thalia (no `.hbs` suffix)
+ * @param data - Extra locals; overrides injected defaults on key clash
+ * @param wrapper_template - Wrapper partial name (default `wrapper`)
  */
 export function hbs(content_template: string, data: any = {}, wrapper_template: string = 'wrapper'): Controller {
   return (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
     try {
       const compiled = website.getContentHtml(content_template, wrapper_template)
-      const html = compiled({ content: content_template, wrapper: wrapper_template, ...data })
+      const html = compiled({
+        content: content_template,
+        wrapper: wrapper_template,
+        requestInfo,
+        version: website.version,
+        ...data,
+      })
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
       res.end(html)
     } catch (error) {
@@ -1567,11 +1586,16 @@ export function hbs(content_template: string, data: any = {}, wrapper_template: 
 }
 
 /**
- * This controller serves a markdown file inside of a wrapper
- * @param filename - The filename of the markdown file to serve, <PROJECT>/src/$filename.md
- * @param data - Data to pass to the content template
- * @param wrapper_template - The wrapper template to use, default is 'wrapper'
- * @returns Controller function that serves the markdown file inside of a wrapper
+ * Lower-level: render a Markdown file from `src/` inside a wrapper.
+ *
+ * Prefer {@link wrap}(`'path/note.md'`) in site config. Call `md_file` only when you
+ * already know it is Markdown (or when implementing another helper).
+ *
+ * Same context as {@link hbs} / {@link wrap}: **`requestInfo`**, **`version`**, then `...data`.
+ *
+ * @param filename - Path under `<PROJECT>/src/` including `.md` (e.g. `docs/note.md`)
+ * @param data - Extra locals; overrides injected defaults on key clash
+ * @param wrapper_template - Wrapper partial name (default `wrapper`)
  */
 export function md_file(filename: string, data: any = {}, wrapper_template: string = 'wrapper'): Controller {
   return (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
@@ -1582,7 +1606,13 @@ export function md_file(filename: string, data: any = {}, wrapper_template: stri
           website.handlebars.registerPartial('content', marked.parse(content, { async: false }))
           const templateFile = website.handlebars.partials[wrapper_template] ?? ''
           const compiled = website.handlebars.compile(templateFile)
-          const html = compiled(data)
+          const html = compiled({
+            content: filename,
+            wrapper: wrapper_template,
+            requestInfo,
+            version: website.version,
+            ...data,
+          })
           res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
           res.end(html)
         } catch (error) {

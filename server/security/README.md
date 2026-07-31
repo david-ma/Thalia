@@ -142,7 +142,7 @@ Path segments walk `controllers` until a **function** runs. Remaining segments a
 
 ### Taking over `/admin` (preferred pattern)
 
-Merge an **object** over the framework function ( `recursiveObjectMerge` replaces a function with an object). List pages explicitly with **`wrap()` / `hbs()`** from `thalia/controllers`, or custom controllers — no new Handlebars renderer:
+Merge an **object** over the framework function (`recursiveObjectMerge` replaces a function with an object). List pages explicitly with **`wrap()`** from `thalia/controllers` (or a custom controller) — no new Handlebars renderer:
 
 ```ts
 import { wrap } from 'thalia/controllers'
@@ -158,6 +158,7 @@ controllers: {
 - **`claimAdminNamespace`** is a readability helper (returns the map; documents intent).
 - With an object at `admin`, **`/admin`** (no further segment) falls through to **`tryHandlebars`** (`src/admin.hbs` or `src/admin/index.hbs`) if you do not register an index controller.
 - **`admin: {}` alone** still clears the leaf so raw `src/admin/*.hbs` fallthrough works, but config readers cannot see which admin pages exist — prefer the explicit map for powerful UI.
+- **`wrap('….hbs' | '….md')`** is the preferred config helper: extension picks Handlebars vs Markdown rendering and injects **`requestInfo`** + **`version`** (`website.version`) — same core context as Handlebars fallthrough. Static `data` overrides those keys when both set. Prefer `wrap` over calling `hbs` / `md_file` directly.
 
 See **`websites/example-auth`**: hub at `/admin` (`src/admin.hbs`) + `/admin/overview` via `wrap('admin_overview.hbs')`.  
 See **`websites/example-src`**: `src/admin/index.hbs` at `/admin` with **no** Security — open to everyone (contrast).

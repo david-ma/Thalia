@@ -127,6 +127,50 @@ Project routes from **`config.routes`** are merged after that list (via `concat`
 
 `securityConfig()` includes `routes: default_routes` from `server/security/security-default-routes.ts` (e.g. `/admin` admin-only, `/users` mostly admin, users get `read`, `/sessions`, `/audits`). Your site should **`recursiveObjectMerge`** its own `RoleRouteRule[]` **after** `securityConfig()` so you extend `/`, `/profile`, feature paths, etc. (see `websites/example-auth/config/config.ts`).
 
+## Reserved `/admin` (when Security is on)
+
+Activating **`securityConfig()`** does **two** things to `/admin`:
+
+1. **Auth** — `default_routes` grants `/admin` to the **admin** role only (`RoleRouteGuard`). Guests get 401; other users get 403. This is the real security boundary.
+2. **Controller claim** — `controllers.admin` is registered as a **leaf function** that serves a short framework scaffold (`src/views/security/admin.hbs`). `RequestHandler.tryController` stops at the first function, so **`/admin` and `/admin/*` all hit that scaffold** until the site takes over. Keep that scaffold generic; teaching copy and worked examples live in **`websites/example-auth`** (and unprotected `/admin` in **`websites/example-src`**).
+
+That reservation is intentional: enabling auth is a good moment to move powerful pages, or to re-serve them deliberately under `/admin`. It is **not** the same as “HBS under `/admin` is unsafe” — site templates under `/admin` remain behind the same route rule.
+
+### Controller walk (short)
+
+Path segments walk `controllers` until a **function** runs. Remaining segments are **not** nested controller keys. One function must handle catalog + detail when needed (e.g. `/admin/deck` and `/admin/deck/:id`).
+
+### Taking over `/admin` (preferred pattern)
+
+Merge an **object** over the framework function ( `recursiveObjectMerge` replaces a function with an object). List pages explicitly with **`wrap()` / `hbs()`** from `thalia/controllers`, or custom controllers — no new Handlebars renderer:
+
+```ts
+import { wrap } from 'thalia/controllers'
+import { claimAdminNamespace } from 'thalia/security'
+
+controllers: {
+  admin: claimAdminNamespace({
+    overview: wrap('admin_overview.hbs'),
+  }),
+}
+```
+
+- **`claimAdminNamespace`** is a readability helper (returns the map; documents intent).
+- With an object at `admin`, **`/admin`** (no further segment) falls through to **`tryHandlebars`** (`src/admin.hbs` or `src/admin/index.hbs`) if you do not register an index controller.
+- **`admin: {}` alone** still clears the leaf so raw `src/admin/*.hbs` fallthrough works, but config readers cannot see which admin pages exist — prefer the explicit map for powerful UI.
+
+See **`websites/example-auth`**: hub at `/admin` (`src/admin.hbs`) + `/admin/overview` via `wrap('admin_overview.hbs')`.  
+See **`websites/example-src`**: `src/admin/index.hbs` at `/admin` with **no** Security — open to everyone (contrast).
+
+### Other reserved prefixes from `securityConfig()`
+
+| Prefix | Default intent |
+| ------ | -------------- |
+| `/admin` | Admin-only UI namespace (scaffold until claimed) |
+| `/users` | User CRUD machine (do not use as a password UI) |
+| `/sessions`, `/audits` | Admin-oriented CRUD |
+| Auth pages (`/logon`, `/setup`, …) | Allow-listed for guests where needed |
+
 ## Deny behaviour
 
 - **`guest`** without the required permission → **401** and the login HTML (`website.getContentHtml('userLogin')`).
@@ -148,7 +192,7 @@ Project routes from **`config.routes`** are merged after that list (via `concat`
 
 ## Public API surface
 
-Import from **`thalia/security`** (`server/security/index.ts`): `ThaliaSecurity`, `SecurityService`, `ProfileControllerFactory`, session helpers, and `RoleRouteRule` types. Implementation files under `server/security/` are split for maintenance; the barrel is the supported import path for apps.
+Import from **`thalia/security`** (`server/security/index.ts`): `ThaliaSecurity`, `SecurityService`, `ProfileControllerFactory`, `claimAdminNamespace`, session helpers, and `RoleRouteRule` types. Implementation files under `server/security/` are split for maintenance; the barrel is the supported import path for apps.
 
 ## Related files
 
@@ -161,3 +205,4 @@ Import from **`thalia/security`** (`server/security/index.ts`): `ThaliaSecurity`
 - `server/security/profile-password.ts` — authenticated `POST /api/profile/password`.
 - `server/security/same-origin.ts` — `assertSameOriginMutation` for cookie mutations.
 - `server/security/security-default-routes.ts` — default `RoleRouteRule`s for admin tooling.
+- `server/security/claim-admin-namespace.ts` — `claimAdminNamespace` for explicit `/admin` takeover.

@@ -64,6 +64,17 @@ describe('recursiveObjectMerge', () => {
     expect(result.routes[1]).toEqual({ path: '/admin' })
     expect(result.routes[2]).toEqual({ path: '/fruit' })
   })
+
+  // Controllers: object over function replaces (admin takeover after securityConfig)
+  test('should replace a function with an object (admin namespace takeover)', () => {
+    const leaf = () => {}
+    const overview = () => {}
+    const base: any = { controllers: { admin: leaf } }
+    const extra: any = { controllers: { admin: { overview } } }
+    const result = recursiveObjectMerge(base, extra)
+    expect(typeof result.controllers.admin).toBe('object')
+    expect(result.controllers.admin.overview).toBe(overview)
+  })
 })
 
 

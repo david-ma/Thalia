@@ -7,6 +7,7 @@ Example Thalia project with **ThaliaSecurity**, **RoleRouteGuard**, and a DB-bac
 - **ThaliaSecurity** (mail auth, users/sessions/audits)
 - **RoleRouteGuard** with `config.routes` (path + permissions for admin/user/guest)
 - **`config/config.ts`** — start here: the file header documents how to merge `securityConfig()`, optional modules, and typed `RoleRouteRule[]` routes
+- **Admin namespace takeover** — `claimAdminNamespace` + `wrap('admin_overview.hbs')` (hub `src/admin.hbs` at `/admin`, page at `/admin/overview`). Pattern for sites that outgrow the framework scaffold.
 - **Fruit** CRUD (CrudFactory) at `/fruit` with route rule allowing guest **read** only (create/update/delete need higher roles)
 - **Image upload** (`ThaliaImageUploader`): **local-disk** by default under `data/uploads/`; set `THALIA_IMAGE_ADAPTER=smugmug` plus `config/secrets.js` for SmugMug (see below)
 - Optional: albums/images CRUD at `/smugmugAlbums`, `/smugmugImages`; gallery lab at `/smugmugGalleryLab`
@@ -95,11 +96,13 @@ This section describes the intended behaviour and test coverage. Some features m
 | `/fruit` | 200 list | 200 list | full CRUD |
 | `/fruit/new` (create) | 401 | 403 | allowed via CRUD rule |
 | `/profile` / `/profile/:id` | 401 | 200 view (`:id`), update only own or admin | full |
-| `/admin` | 401 | 403 | 200 |
+| `/admin` | 401 | 403 | 200 (site hub `src/admin.hbs` after takeover) |
+| `/admin/overview` | 401 | 403 | 200 (`wrap('admin_overview.hbs')`) |
 | `/users/...` (User CRUD) | 401 | 200 read (e.g. list) | full CRUD (`ThaliaSecurity` default route) |
 | `/sessions/...`, `/audits/...` | 401 | 403 | full CRUD (defaults from `securityConfig()`) |
 
 - **Profiles**: Route guard grants **user** + **admin** read/update on `/profile`. **`profileController`** still enforces “edit only if owner or **`userAuth.role === 'admin'`**”.
+- **`/admin`**: `securityConfig()` reserves the path (route rule + scaffold leaf). This example **claims** it with `claimAdminNamespace` so config lists admin pages; see `server/security/README.md`.
 - **`/users` vs `/user`**: Framework defaults guard the **`users`** controller prefix (`/users/...`). See `RoleRouteGuard` longest-prefix matching in `server/route-guard.ts`.
 
 ### Implementation status

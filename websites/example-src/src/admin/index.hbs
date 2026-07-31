@@ -1,0 +1,14 @@
+{{#> wrapper }}
+  {{> navigation }}
+  <section class="page-section">
+    <div class="container" style="max-width: 40rem;">
+      <h1 class="mb-3">Admin (example-src)</h1>
+      <p>This page is <strong>not</strong> behind ThaliaSecurity. Anyone who can reach the site can open
+        <code>/admin</code> because this project has no <code>securityConfig()</code> and no
+        <code>/admin</code> route rule.</p>
+      <p class="text-muted small mb-0">Contrast with <code>example-auth</code>, where merging Security reserves
+        <code>/admin</code> (admin-only) until the site claims it with <code>claimAdminNamespace</code>.</p>
+    </div>
+  </section>
+  {{> footer }}
+{{/wrapper}}

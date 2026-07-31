@@ -295,6 +295,13 @@ describe('Request-handler: example-src (Handlebars, TypeScript, controller)', ()
     expect(html).toContain('Guide index page')
   })
 
+  test('tryHandlebars: /admin serves src/admin/index.hbs without auth (no ThaliaSecurity)', async () => {
+    const response = await fetchFromServer('/admin', port)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toMatch(/not<\/strong> behind ThaliaSecurity|not behind ThaliaSecurity/i)
+  })
+
   test('tryHandlebars: paths containing /partials/ are not served as top-level templates (no HTML render)', async () => {
     // This would previously render the input partial as a full page; now it should fall through and 404.
     const response = await fetchFromServer('/views/partials/input.html', port)
@@ -1193,6 +1200,16 @@ describeExampleAuth('Request-handler: example-auth authenticated (user / admin)'
       if (!serverStarted || !adminCookie) return
       const response = await fetchWithCookie('/admin', adminCookie)
       expect(response.status).toBe(200)
+      const html = await response.text()
+      expect(html).toMatch(/took over|claimAdminNamespace|Example Auth admin/i)
+    })
+
+    test('admin GET /admin/overview returns 200 (wrap takeover)', async () => {
+      if (!serverStarted || !adminCookie) return
+      const response = await fetchWithCookie('/admin/overview', adminCookie)
+      expect(response.status).toBe(200)
+      const html = await response.text()
+      expect(html).toMatch(/Admin overview|admin_overview/i)
     })
 
     test('admin GET /users/list returns 200', async () => {

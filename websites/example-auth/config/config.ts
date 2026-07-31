@@ -20,14 +20,26 @@
  * Authenticated password change is **on by default** via `security.securityConfig()` (`POST /api/profile/password`);
  * the own-profile password card in `profile_content.hbs` posts to that endpoint. Opt out with `disablePasswordChange: true`.
  *
+ * ### Reserved `/admin`
+ *
+ * `securityConfig()` claims `controllers.admin` as a scaffold leaf and gates `/admin` to the admin role.
+ * This site **takes over** with `claimAdminNamespace({ overview: wrap('admin_overview.hbs') })`:
+ * hub at `src/admin.hbs` (`/admin`), explicit page at `/admin/overview`. See `server/security/README.md`.
+ *
  * ### `config.thaliaAuth`
  *
  * Populated by `ThaliaSecurity.defaultThaliaAuthOptions()`. Tune via **`new ThaliaSecurity({ … })`**:
  * **`mailAuthPath`**, **`disableSelfRegistration`**, **`sessionMaxAgeSeconds`**, etc.
  */
 import path from 'path';
-import { CrudFactory, ThaliaImageUploader } from 'thalia/controllers';
-import { type RoleRouteRule, ThaliaSecurity, ProfileControllerFactory, validateProfilePhotoHttpHttpsUrl } from 'thalia/security';
+import { CrudFactory, ThaliaImageUploader, wrap } from 'thalia/controllers';
+import {
+    type RoleRouteRule,
+    ThaliaSecurity,
+    ProfileControllerFactory,
+    claimAdminNamespace,
+    validateProfilePhotoHttpHttpsUrl,
+} from 'thalia/security';
 import { recursiveObjectMerge } from 'thalia/website';
 import { fruit } from '../models/fruit.js';
 import { albums, images } from '../models/drizzle-schema';
@@ -139,6 +151,10 @@ const roleBasedSecurityConfig = recursiveObjectMerge(recursiveObjectMerge(securi
     routes: exampleAuthRoutes,
     controllers: {
         profile: profileMachine.controller,
+        /** Replaces framework admin leaf — list admin pages here so config stays auditable. */
+        admin: claimAdminNamespace({
+            overview: wrap('admin_overview.hbs'),
+        }),
     },
 });
 

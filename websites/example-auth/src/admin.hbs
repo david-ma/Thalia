@@ -1,0 +1,31 @@
+{{#> wrapper }}
+  {{> navigation }}
+  <section class="page-section">
+    <div class="container" style="max-width: 42rem;">
+      <h1 class="mb-3">Example Auth admin</h1>
+      <p class="text-muted">This site <strong>took over</strong> the reserved <code>/admin</code> namespace from
+        <code>securityConfig()</code> with <code>claimAdminNamespace</code> in
+        <code>config/config.ts</code>. Guests and non-admins still cannot reach these URLs
+        (RoleRouteGuard).</p>
+      <p>Pattern:</p>
+      <pre class="small bg-light border rounded p-3"><code>import { wrap } from 'thalia/controllers'
+import { claimAdminNamespace } from 'thalia/security'
+
+controllers: {
+  admin: claimAdminNamespace({
+    overview: wrap('admin_overview.hbs'),
+  }),
+}</code></pre>
+      <ul>
+        <li><a href="/admin/overview">/admin/overview</a> — explicit <code>wrap('admin_overview.hbs')</code></li>
+        <li><a href="/users/list">/users/list</a> — framework CRUD (admin tooling; not a password UI)</li>
+        <li><a href="/sessions/list">/sessions/list</a></li>
+        <li><a href="/audits/list">/audits/list</a></li>
+      </ul>
+      <p class="small text-muted mb-0">Bare <code>/admin</code> falls through to this Handlebars file because
+        <code>controllers.admin</code> is an object, not the framework leaf function. Full write-up:
+        <code>server/security/README.md</code>.</p>
+    </div>
+  </section>
+  {{> footer }}
+{{/wrapper}}

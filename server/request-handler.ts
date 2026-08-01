@@ -17,8 +17,28 @@ import * as sass from 'sass'
 import zlib from 'zlib'
 import { renderMarkdownPage } from './markdown'
 import { TemplateError } from './errors'
+import {
+  GZIP_SIZE_THRESHOLD,
+  getContentType,
+  hasRangeHeader,
+  isGzipFriendlyMime,
+  setStaticFileHeaders,
+  streamStaticFile,
+} from './static-files'
 
-const GZIP_SIZE_THRESHOLD = 10 * 1024 // 10kb
+export {
+  GZIP_SIZE_THRESHOLD,
+  getContentType,
+  mimeBaseType,
+  isGzipFriendlyMime,
+  inlineContentTypes,
+  contentDispositionInline,
+  setStaticFileHeaders,
+  parseBytesRange,
+  hasRangeHeader,
+  streamStaticFile,
+} from './static-files'
+export type { ParsedByteRange } from './static-files'
 
 const THALIA_SASS_OPTIONS = {
   silenceDeprecations: Array.from([
@@ -42,12 +62,6 @@ type FolderIndexData = {
   parentPath: string
   title: string
 }
-
-/** Result of parsing `Range: bytes=…` for a known resource size (v1: single contiguous range). */
-type ParsedByteRange =
-  | { kind: 'none' }
-  | { kind: 'partial'; start: number; end: number }
-  | { kind: 'unsatisfiable' }
 
 export class RequestHandler {
   constructor(public website: Website) {
@@ -118,193 +132,6 @@ export class RequestHandler {
     this.website.renderError(this.res, error)
   }
 
-  private static getContentType(filePath: string): string {
-    const ext = filePath.split('.').pop()?.toLowerCase()
-    const contentTypes: { [key: string]: string } = {
-      html: 'text/html; charset=utf-8',
-      css: 'text/css; charset=utf-8',
-      js: 'text/javascript; charset=utf-8',
-      json: 'application/json; charset=utf-8',
-      xml: 'application/xml; charset=utf-8',
-      yml: 'application/yaml; charset=utf-8',
-      yaml: 'application/yaml; charset=utf-8',
-      txt: 'text/plain; charset=utf-8',
-      err: 'text/plain; charset=utf-8',
-      log: 'text/plain; charset=utf-8',
-      csv: 'text/csv; charset=utf-8',
-      tsv: 'text/tab-separated-values; charset=utf-8',
-      png: 'image/png',
-      jpg: 'image/jpeg',
-      gif: 'image/gif',
-      svg: 'image/svg+xml; charset=utf-8',
-      ico: 'image/x-icon',
-      webp: 'image/webp',
-      pdf: 'application/pdf',
-      md: 'text/markdown; charset=utf-8',
-      woff: 'font/woff',
-      woff2: 'font/woff2',
-      ttf: 'font/ttf',
-      eot: 'font/eot',
-      otf: 'font/otf',
-      wav: 'audio/wav',
-      mp3: 'audio/mpeg',
-      m4a: 'audio/mp4',
-      aac: 'audio/aac',
-      ogg: 'audio/ogg',
-      oga: 'audio/ogg',
-      flac: 'audio/flac',
-      opus: 'audio/opus',
-      webm: 'video/webm',
-      mp4: 'video/mp4',
-      mov: 'video/quicktime',
-    }
-    return contentTypes[ext ?? ''] || 'application/octet-stream'
-  }
-
-  /** MIME type without parameters (`text/html; charset=utf-8` → `text/html`). */
-  private static mimeBaseType(contentType: string): string {
-    return contentType.split(';')[0]?.trim().toLowerCase() ?? contentType
-  }
-
-  /**
-   * Textual static assets compress well with gzip (same family as charset=utf-8 in getContentType).
-   * Skips already-compressed binary (images, fonts, video, etc.).
-   */
-  private static isGzipFriendlyMime(contentType: string): boolean {
-    const base = RequestHandler.mimeBaseType(contentType)
-    return base.startsWith('text/') || base === 'application/json' || base === 'image/svg+xml'
-  }
-
-  /** MIME types the browser should display in-page rather than download. */
-  private static inlineContentTypes = new Set([
-    'application/json',
-    'application/pdf',
-    'application/xml',
-    'application/yaml',
-    'text/css',
-    'text/html',
-    'text/javascript',
-    'text/markdown',
-    'text/plain',
-    'text/csv',
-    'text/tab-separated-values',
-  ])
-
-  private static contentDispositionInline(filename: string): string {
-    const escaped = filename.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
-    return `inline; filename="${escaped}"`
-  }
-
-  private static setStaticFileHeaders(
-    res: ServerResponse,
-    pathname: string,
-    contentType: string,
-    servedFilename?: string,
-  ): void {
-    res.setHeader('Content-Type', contentType)
-    if (RequestHandler.inlineContentTypes.has(RequestHandler.mimeBaseType(contentType))) {
-      const filename = servedFilename ?? path.basename(pathname)
-      res.setHeader('Content-Disposition', RequestHandler.contentDispositionInline(filename))
-    }
-  }
-
-  /**
-   * Parse a single `Range: bytes=start-end` or `bytes=start-` for a resource of `size` bytes.
-   * Multipart ranges and suffix forms (`bytes=-N`) are ignored in v1 (treated as no range).
-   * @see https://www.rfc-editor.org/rfc/rfc9110#name-range-requests
-   */
-  private static parseBytesRange(
-    rangeHeader: string | string[] | undefined,
-    size: number,
-  ): ParsedByteRange {
-    if (rangeHeader == null) return { kind: 'none' }
-    const raw = Array.isArray(rangeHeader) ? rangeHeader[0] : rangeHeader
-    if (!raw || typeof raw !== 'string') return { kind: 'none' }
-
-    const match = /^bytes=(\d+)-(\d*)$/i.exec(raw.trim())
-    if (!match) return { kind: 'none' }
-
-    const start = Number(match[1])
-    const endToken = match[2]
-    if (!Number.isFinite(start) || size === 0 || start >= size) {
-      return { kind: 'unsatisfiable' }
-    }
-
-    const end =
-      endToken === '' ? size - 1 : Math.min(Number(endToken), size - 1)
-    if (!Number.isFinite(end) || end < start) {
-      return { kind: 'unsatisfiable' }
-    }
-
-    return { kind: 'partial', start, end }
-  }
-
-  /** True when the client sent a Range header (skip on-the-fly gzip; Range + gzip is messy). */
-  private static hasRangeHeader(req: IncomingMessage): boolean {
-    const range = req.headers['range']
-    if (range == null) return false
-    if (Array.isArray(range)) return range.length > 0 && Boolean(range[0])
-    return range.length > 0
-  }
-
-  /**
-   * Stream an uncompressed file, honouring a single byte Range when present.
-   * Sets Accept-Ranges: bytes on 200/206.
-   * Unsatisfiable ranges → 416 with Content-Range bytes star-slash-size (RFC 9110).
-   */
-  private static streamStaticFile(
-    requestHandler: RequestHandler,
-    targetPath: string,
-    finish: (message: string) => void,
-    successLabel: string,
-  ): void {
-    const size = fs.statSync(targetPath).size
-    const range = RequestHandler.parseBytesRange(requestHandler.req.headers['range'], size)
-
-    requestHandler.res.setHeader('Accept-Ranges', 'bytes')
-
-    if (range.kind === 'unsatisfiable') {
-      requestHandler.res.setHeader('Content-Range', `bytes */${size}`)
-      requestHandler.res.writeHead(416)
-      requestHandler.res.end()
-      finish(`Range not satisfiable for ${requestHandler.pathname}`)
-      return
-    }
-
-    let streamStart: number | undefined
-    let streamEnd: number | undefined
-    if (range.kind === 'partial') {
-      streamStart = range.start
-      streamEnd = range.end
-      const length = streamEnd - streamStart + 1
-      requestHandler.res.setHeader(
-        'Content-Range',
-        `bytes ${streamStart}-${streamEnd}/${size}`,
-      )
-      requestHandler.res.setHeader('Content-Length', length.toString())
-      requestHandler.res.writeHead(206)
-    } else {
-      requestHandler.res.setHeader('Content-Length', size.toString())
-    }
-
-    const stream = fs.createReadStream(
-      targetPath,
-      streamStart !== undefined && streamEnd !== undefined
-        ? { start: streamStart, end: streamEnd }
-        : undefined,
-    )
-    stream.on('error', (error) => {
-      console.error(`Error streaming ${successLabel}:`, error)
-      if (!requestHandler.res.headersSent) requestHandler.res.writeHead(500)
-      requestHandler.res.end('Internal Server Error')
-      finish(`Error streaming ${successLabel}`)
-    })
-    requestHandler.res.on('finish', () => {
-      finish(`Successfully streamed ${successLabel}`)
-    })
-    stream.pipe(requestHandler.res)
-  }
-
   /** Project folders searched for PDFs (first match wins). */
   private static readonly pdfStaticFolders = ['public', 'data', 'dist', 'docs'] as const
 
@@ -366,15 +193,15 @@ export class RequestHandler {
       // Range + gzip is messy: skip on-the-fly gzip when Range is present.
       // Precompressed `.gz` sidecars: if only the sidecar exists, ignore Range and serve the full
       // gzip body (current behaviour). Range applies only to uncompressed on-disk files.
-      const wantsRange = RequestHandler.hasRangeHeader(requestHandler.req)
+      const wantsRange = hasRangeHeader(requestHandler.req)
 
       if (!fs.existsSync(targetPath)) {
         if (isGzipAccepted && fs.existsSync(`${targetPath}.gz`)) {
           targetPath += '.gz'
           requestHandler.res.setHeader('Content-Encoding', 'gzip')
           // MIME from the logical URL (e.g. .json), not the on-disk .gz name (would be octet-stream).
-          const logicalContentType = RequestHandler.getContentType(requestHandler.pathname)
-          RequestHandler.setStaticFileHeaders(
+          const logicalContentType = getContentType(requestHandler.pathname)
+          setStaticFileHeaders(
             requestHandler.res,
             requestHandler.pathname,
             logicalContentType,
@@ -390,8 +217,8 @@ export class RequestHandler {
         }
       }
 
-      const contentType = RequestHandler.getContentType(requestHandler.pathname)
-      RequestHandler.setStaticFileHeaders(
+      const contentType = getContentType(requestHandler.pathname)
+      setStaticFileHeaders(
         requestHandler.res,
         requestHandler.pathname,
         contentType
@@ -402,7 +229,7 @@ export class RequestHandler {
         return finish(`Redirected to ${indexPath}`)
       } else if (
         !wantsRange &&
-        RequestHandler.isGzipFriendlyMime(contentType) &&
+        isGzipFriendlyMime(contentType) &&
         isGzipAccepted &&
         fs.statSync(targetPath).size > GZIP_SIZE_THRESHOLD
       ) {
@@ -424,8 +251,9 @@ export class RequestHandler {
           return finish(`Successfully gzipped file ${requestHandler.pathname}`)
         })
       } else {
-        RequestHandler.streamStaticFile(
-          requestHandler,
+        streamStaticFile(
+          requestHandler.req,
+          requestHandler.res,
           targetPath,
           finish,
           `file ${requestHandler.pathname}`,
@@ -617,15 +445,16 @@ export class RequestHandler {
       if (!target) return next(requestHandler)
 
       const contentType = 'application/pdf'
-      RequestHandler.setStaticFileHeaders(
+      setStaticFileHeaders(
         requestHandler.res,
         requestHandler.pathname,
         contentType,
         path.basename(target),
       )
 
-      RequestHandler.streamStaticFile(
-        requestHandler,
+      streamStaticFile(
+        requestHandler.req,
+        requestHandler.res,
         target,
         finish,
         `pdf ${requestHandler.pathname}`,
@@ -681,7 +510,7 @@ export class RequestHandler {
 
       fs.promises.readFile(target, 'utf8').then((content) => {
         if(requestHandler.requestInfo.query.raw === 'true') {
-          requestHandler.res.writeHead(200, { 'Content-Type': RequestHandler.getContentType(target) })
+          requestHandler.res.writeHead(200, { 'Content-Type': getContentType(target) })
           requestHandler.res.end(content)
           return finish(`Successfully served raw csv ${requestHandler.pathname}`)
         }

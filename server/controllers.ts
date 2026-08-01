@@ -18,8 +18,101 @@ import url from 'url'
 import { ParsedUrlQuery } from 'querystring'
 import type { Machine, MachineReport } from './types.js'
 import { parseForm } from './util.js'
+import { getContentType, setStaticFileHeaders } from './static-files.js'
 
 export type { Machine, MachineReport, MachineStatus, DatabaseInitReport, MachineInitEntry } from './types.js'
+
+/** Bytes of existing content sent before live-follow begins (`slug=stream`). */
+export const LATEST_DATA_STREAM_INITIAL_BYTES = 64 * 1024
+/** Poll interval while following a growing file (`slug=stream`). */
+export const LATEST_DATA_STREAM_POLL_MS = 500
+
+/**
+ * Chunked live-follow of an uncompressed file: send the last `initialBytes`, then
+ * append new bytes as the file grows (poll). Handles truncate/rotate under the same path.
+ * Does not decompress `.gz` — caller must pass a real on-disk path.
+ */
+export function followDataFile(
+  res: ServerResponse,
+  req: IncomingMessage,
+  filePath: string,
+  options: { initialBytes?: number; pollMs?: number } = {},
+): void {
+  const initialBytes = options.initialBytes ?? LATEST_DATA_STREAM_INITIAL_BYTES
+  const pollMs = options.pollMs ?? LATEST_DATA_STREAM_POLL_MS
+  const filename = path.basename(filePath)
+
+  let closed = false
+  let timer: ReturnType<typeof setInterval> | undefined
+  const cleanup = () => {
+    if (closed) return
+    closed = true
+    if (timer !== undefined) clearInterval(timer)
+  }
+
+  req.on('close', cleanup)
+  res.on('close', cleanup)
+
+  let position = 0
+  try {
+    const size = fs.statSync(filePath).size
+    position = Math.max(0, size - initialBytes)
+  } catch {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
+    res.end('File not found')
+    cleanup()
+    return
+  }
+
+  const contentType = getContentType(filePath)
+  setStaticFileHeaders(res, filePath, contentType, filename)
+  res.setHeader('Cache-Control', 'no-cache, no-transform')
+  res.setHeader('X-Accel-Buffering', 'no')
+  res.setHeader('X-Filename', filename)
+  res.writeHead(200)
+
+  const pushFrom = (from: number, to: number): number => {
+    if (to <= from || closed) return from
+    const length = to - from
+    const buf = Buffer.alloc(length)
+    const fd = fs.openSync(filePath, 'r')
+    try {
+      fs.readSync(fd, buf, 0, length, from)
+    } finally {
+      fs.closeSync(fd)
+    }
+    if (!closed && !res.writableEnded) {
+      res.write(buf)
+    }
+    return to
+  }
+
+  try {
+    position = pushFrom(position, fs.statSync(filePath).size)
+  } catch (err) {
+    console.error(`followDataFile initial read failed: ${err instanceof Error ? err.message : err}`)
+    cleanup()
+    if (!res.writableEnded) res.end()
+    return
+  }
+
+  timer = setInterval(() => {
+    if (closed) return
+    try {
+      const size = fs.statSync(filePath).size
+      if (size < position) {
+        // Truncated or replaced under the same path (e.g. logrotate).
+        position = 0
+      }
+      if (size > position) {
+        position = pushFrom(position, size)
+      }
+    } catch {
+      cleanup()
+      if (!res.writableEnded) res.end()
+    }
+  }, pollMs)
+}
 
 /**
  * Redirects GET requests to the lexicographically-latest file in `data/<folder>` matching `.<type>`.
@@ -31,12 +124,14 @@ export type { Machine, MachineReport, MachineStatus, DatabaseInitReport, Machine
  *
  * Responds 404 if the folder is missing or contains no matching file.
  *
- * If the slug is "list", it will return a list of all files in the folder.
+ * Slugs (last path segment):
+ * - `list` — JSON array of matching filenames
+ * - `stream` — chunked live-follow of the latest **uncompressed** file (skips `.gz`-only)
  *
  * Mount tip: prefer nesting under a path prefix that is *not* the static file URL, e.g.
- * `data: { logs: latestData('logs') }` → `/data/logs` redirects to `/logs/<file>` (static).
- * Or use {@link latestlogs} as `controllers.logs` so `/logs` is an index, `/logs/latest`
- * redirects, and unknown `/logs/<file>` falls through to static.
+ * `data: { logs: latestData('logs') }` → `/data/logs` redirects to `/logs/<file>` (static);
+ * `/data/logs/stream` live-tails the newest file. Or use {@link latestlogs} as `controllers.logs`
+ * so `/logs` is an index, `/logs/latest` redirects, and unknown `/logs/<file>` falls through to static.
  */
 export function latestData(
   folder: string,
@@ -46,7 +141,7 @@ export function latestData(
   } = {},
 ): Controller {
   const { type = 'json', sort = 'name' } = options
-  return (res, _req, website, requestInfo) => {
+  return (res, req, website, requestInfo) => {
     const dir = path.join(website.rootPath, 'data', folder)
     fs.promises
       .readdir(dir, { withFileTypes: true })
@@ -87,6 +182,19 @@ export function latestData(
           res.end('404')
           return
         }
+
+        if (requestInfo.slug === 'stream') {
+          const filePath = path.join(dir, latest)
+          if (!fs.existsSync(filePath)) {
+            res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
+            console.error(`No uncompressed ${latest} in data/${folder} (stream skips .gz)`)
+            res.end('404')
+            return
+          }
+          followDataFile(res, req, filePath)
+          return
+        }
+
         res.writeHead(302, { Location: `/${folder}/${latest}` })
         res.end()
       })

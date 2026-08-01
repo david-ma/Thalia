@@ -7,6 +7,13 @@
 
 import { describe, test, expect, afterEach } from 'bun:test'
 import { RequestHandler } from '../../server/request-handler.js'
+import {
+  getContentType,
+  mimeBaseType,
+  isGzipFriendlyMime,
+  parseBytesRange,
+  setStaticFileHeaders,
+} from '../../server/static-files.js'
 import type { RequestInfo } from '../../server/server.js'
 import type { IncomingMessage, ServerResponse } from 'http'
 import path from 'path'
@@ -18,22 +25,6 @@ type RequestHandlerPrivateStub = {
   decodePathnameForFilesystemLookup(pathname: string): string | null
   filesystemRelativePath(pathname: string): string | null
   resolvePdfPath(rh: { rootPath: string; pathname: string }): string | null
-  getContentType(filePath: string): string
-  mimeBaseType(contentType: string): string
-  isGzipFriendlyMime(contentType: string): boolean
-  parseBytesRange(
-    rangeHeader: string | string[] | undefined,
-    size: number,
-  ):
-    | { kind: 'none' }
-    | { kind: 'partial'; start: number; end: number }
-    | { kind: 'unsatisfiable' }
-  setStaticFileHeaders(
-    res: ServerResponse,
-    pathname: string,
-    contentType: string,
-    servedFilename?: string,
-  ): void
   resolveFolderIndexData(rh: { rootPath: string; pathname: string }): {
     pathname: string
     basePath: string
@@ -47,11 +38,6 @@ const rhPrivate = RequestHandler as unknown as RequestHandlerPrivateStub
 const decodePathnameForFilesystemLookup = rhPrivate.decodePathnameForFilesystemLookup.bind(RequestHandler)
 const filesystemRelativePath = rhPrivate.filesystemRelativePath.bind(RequestHandler)
 const resolvePdfPath = rhPrivate.resolvePdfPath.bind(RequestHandler)
-const getContentType = rhPrivate.getContentType.bind(RequestHandler)
-const mimeBaseType = rhPrivate.mimeBaseType.bind(RequestHandler)
-const isGzipFriendlyMime = rhPrivate.isGzipFriendlyMime.bind(RequestHandler)
-const parseBytesRange = rhPrivate.parseBytesRange.bind(RequestHandler)
-const setStaticFileHeaders = rhPrivate.setStaticFileHeaders.bind(RequestHandler)
 const resolveFolderIndexData = rhPrivate.resolveFolderIndexData.bind(RequestHandler)
 
 function mockResponse(): ServerResponse & { headers: Record<string, string | number> } {
@@ -92,7 +78,7 @@ describe('RequestHandler decodePathnameForFilesystemLookup', () => {
   })
 })
 
-describe('RequestHandler getContentType', () => {
+describe('static-files getContentType', () => {
   test('text-like extensions include charset=utf-8', () => {
     expect(getContentType('/index.html')).toBe('text/html; charset=utf-8')
     expect(getContentType('/css/main.css')).toBe('text/css; charset=utf-8')
@@ -131,7 +117,7 @@ describe('RequestHandler getContentType', () => {
   })
 })
 
-describe('RequestHandler mimeBaseType', () => {
+describe('static-files mimeBaseType', () => {
   test('strips parameters and lowercases', () => {
     expect(mimeBaseType('text/html; charset=utf-8')).toBe('text/html')
     expect(mimeBaseType('Text/CSS; Charset=UTF-8')).toBe('text/css')
@@ -139,7 +125,7 @@ describe('RequestHandler mimeBaseType', () => {
   })
 })
 
-describe('RequestHandler isGzipFriendlyMime', () => {
+describe('static-files isGzipFriendlyMime', () => {
   test('allows text/* and common textual application types', () => {
     expect(isGzipFriendlyMime('text/html; charset=utf-8')).toBe(true)
     expect(isGzipFriendlyMime('text/markdown; charset=utf-8')).toBe(true)
@@ -157,7 +143,7 @@ describe('RequestHandler isGzipFriendlyMime', () => {
   })
 })
 
-describe('RequestHandler parseBytesRange', () => {
+describe('static-files parseBytesRange', () => {
   test('no header → none', () => {
     expect(parseBytesRange(undefined, 100)).toEqual({ kind: 'none' })
     expect(parseBytesRange('', 100)).toEqual({ kind: 'none' })
@@ -202,7 +188,7 @@ describe('RequestHandler parseBytesRange', () => {
   })
 })
 
-describe('RequestHandler setStaticFileHeaders', () => {
+describe('static-files setStaticFileHeaders', () => {
   test('sets Content-Type as given', () => {
     const res = mockResponse()
     setStaticFileHeaders(res, '/readme.md', 'text/markdown; charset=utf-8')

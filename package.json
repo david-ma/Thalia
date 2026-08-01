@@ -53,6 +53,11 @@
       "import": "./server/controllers.ts",
       "default": "./server/controllers.ts"
     },
+    "./static-files": {
+      "types": "./server/static-files.ts",
+      "import": "./server/static-files.ts",
+      "default": "./server/static-files.ts"
+    },
     "./mail": {
       "types": "./server/mail.ts",
       "import": "./server/mail.ts",

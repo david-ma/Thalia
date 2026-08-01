@@ -407,3 +407,39 @@ describe('RequestHandler checkPathExploit', () => {
     handler.handleRequest(req, res, requestInfo)
   })
 })
+
+describe('RequestHandler.resolveControllerLeaf', () => {
+  const index = (() => {}) as import('../../server/website.js').Controller
+  const latest = (() => {}) as import('../../server/website.js').Controller
+  const leaf = (() => {}) as import('../../server/website.js').Controller
+
+  test('exact leaf function', () => {
+    expect(RequestHandler.resolveControllerLeaf({ fruit: leaf }, '/fruit')).toBe(leaf)
+  })
+
+  test('nested object with no trailing segment uses index when present', () => {
+    const controllers = { logs: { index, latest } }
+    expect(RequestHandler.resolveControllerLeaf(controllers, '/logs')).toBe(index)
+    expect(RequestHandler.resolveControllerLeaf(controllers, '/logs/')).toBe(index)
+  })
+
+  test('nested named child is returned', () => {
+    const controllers = { logs: { index, latest } }
+    expect(RequestHandler.resolveControllerLeaf(controllers, '/logs/latest')).toBe(latest)
+    expect(RequestHandler.resolveControllerLeaf(controllers, '/logs/index')).toBe(index)
+  })
+
+  test('unknown nested segment falls through (null) for static passthrough', () => {
+    const controllers = { logs: { index, latest } }
+    expect(RequestHandler.resolveControllerLeaf(controllers, '/logs/pm2-out.log')).toBeNull()
+  })
+
+  test('object without index falls through', () => {
+    const controllers = { logs: { latest } }
+    expect(RequestHandler.resolveControllerLeaf(controllers, '/logs')).toBeNull()
+  })
+
+  test('function mid-walk wins (remaining segments ignored)', () => {
+    expect(RequestHandler.resolveControllerLeaf({ fruit: leaf }, '/fruit/apple')).toBe(leaf)
+  })
+})

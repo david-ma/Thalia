@@ -8,7 +8,7 @@
 
 import { IncomingMessage, ServerResponse } from 'http'
 import { fileURLToPath } from 'url'
-import { Website, type NestedControllerMap } from './website'
+import { Website, type Controller, type NestedControllerMap } from './website'
 import { RequestInfo } from './server'
 import path from 'path'
 import { dirname } from 'path'
@@ -879,31 +879,57 @@ export class RequestHandler {
     })
   }
 
+  /**
+   * Walk pathname segments through the controller tree.
+   * - Hitting a function mid-walk returns that leaf (remaining segments are not nested keys).
+   * - Ending on a nested object uses `index` when it is a function (so `/logs` → `logs.index`).
+   * - Missing segment → null (caller continues the static / 404 chain).
+   */
+  static resolveControllerLeaf(
+    controllers: Record<string, NestedControllerMap>,
+    pathname: string,
+    homepageController = 'homepage',
+  ): Controller | null {
+    let segments = pathname.split('/').filter(Boolean)
+    if (segments.length === 0) {
+      segments = [homepageController]
+    }
+
+    let node: NestedControllerMap = controllers
+    for (const segment of segments) {
+      if (typeof node === 'function') {
+        return node
+      }
+      if (node === null || typeof node !== 'object' || !(segment in node)) {
+        return null
+      }
+      node = (node as Record<string, NestedControllerMap>)[segment]
+    }
+
+    if (typeof node === 'function') {
+      return node
+    }
+    if (node !== null && typeof node === 'object') {
+      const index = (node as Record<string, NestedControllerMap>)['index']
+      if (typeof index === 'function') {
+        return index
+      }
+    }
+    return null
+  }
+
   private static tryController(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
-      const pathname = requestHandler.pathname ?? ''
-      let segments = pathname.split('/').filter(Boolean)
-      if (segments.length === 0) {
-        segments = [requestHandler.requestInfo.controller]
+      const leaf = RequestHandler.resolveControllerLeaf(
+        requestHandler.website.controllers,
+        requestHandler.pathname ?? '',
+        requestHandler.requestInfo.controller,
+      )
+      if (!leaf) {
+        return next(requestHandler)
       }
-
-      let node: NestedControllerMap = requestHandler.website.controllers
-      for (const segment of segments) {
-        if (typeof node === 'function') {
-          node(requestHandler.res, requestHandler.req, requestHandler.website, requestHandler.requestInfo)
-          return finish(`Successfully executed controller ${requestHandler.requestInfo.controller}`)
-        }
-        if (node === null || typeof node !== 'object' || !(segment in node)) {
-          return next(requestHandler)
-        }
-        node = (node as Record<string, NestedControllerMap>)[segment]
-      }
-
-      if (typeof node === 'function') {
-        node(requestHandler.res, requestHandler.req, requestHandler.website, requestHandler.requestInfo)
-        return finish(`Successfully executed controller ${requestHandler.requestInfo.controller}`)
-      }
-      return next(requestHandler)
+      leaf(requestHandler.res, requestHandler.req, requestHandler.website, requestHandler.requestInfo)
+      return finish(`Successfully executed controller ${requestHandler.requestInfo.controller}`)
     })
   }
 

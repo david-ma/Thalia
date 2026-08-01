@@ -22,59 +22,6 @@ import { parseForm } from './util.js'
 export type { Machine, MachineReport, MachineStatus, DatabaseInitReport, MachineInitEntry } from './types.js'
 
 /**
- * Read the latest 10 logs from the log directory
- */
-export const latestlogs = async (res: ServerResponse, _req: IncomingMessage, website: Website) => {
-  try {
-    const logDirectory = path.join(website.rootPath, 'public', 'log')
-    if (!fs.existsSync(logDirectory)) {
-      res.writeHead(200, { 'Content-Type': 'text/html' })
-      res.end('No logs found')
-      return
-    }
-
-    // Get list of log files
-    const logs = fs
-      .readdirSync(logDirectory)
-      .filter((filename) => !filename.startsWith('.'))
-      .slice(-10)
-
-    if (logs.length === 0) {
-      res.writeHead(200, { 'Content-Type': 'text/html' })
-      res.end('No logs found')
-      return
-    }
-
-    // Get stats for all logs
-    const stats = await Promise.all(logs.map((log) => fs.promises.stat(path.join(logDirectory, log))))
-
-    // Prepare data for template
-    const data = {
-      stats: logs.map((log, i) => ({
-        filename: log,
-        size: stats[i]?.size ?? 0,
-        created: stats[i]?.birthtime?.toLocaleString() ?? 'Unknown',
-        lastModified: stats[i]?.mtime?.toLocaleString() ?? 'Unknown',
-      })),
-    }
-
-    // Get and compile template
-    const template = website.handlebars.partials['logs']
-    if (!template) {
-      throw new Error('logs template not found')
-    }
-
-    const html = website.handlebars.compile(template)(data)
-    res.writeHead(200, { 'Content-Type': 'text/html' })
-    res.end(html)
-  } catch (error) {
-    console.error(`Error in ${website.name}/latestlogs: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    res.writeHead(500, { 'Content-Type': 'text/html' })
-    res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-  }
-}
-
-/**
  * Redirects GET requests to the lexicographically-latest file in `data/<folder>` matching `.<type>`.
  * Files compressed with `.gz` are matched against their uncompressed name; Thalia's static handler
  * is expected to serve the `.gz` sibling transparently.
@@ -85,6 +32,11 @@ export const latestlogs = async (res: ServerResponse, _req: IncomingMessage, web
  * Responds 404 if the folder is missing or contains no matching file.
  *
  * If the slug is "list", it will return a list of all files in the folder.
+ *
+ * Mount tip: prefer nesting under a path prefix that is *not* the static file URL, e.g.
+ * `data: { logs: latestData('logs') }` → `/data/logs` redirects to `/logs/<file>` (static).
+ * Or use {@link latestlogs} as `controllers.logs` so `/logs` is an index, `/logs/latest`
+ * redirects, and unknown `/logs/<file>` falls through to static.
  */
 export function latestData(
   folder: string,
@@ -145,6 +97,72 @@ export function latestData(
         res.end('500')
       })
   }
+}
+
+/**
+ * Drop-in nested controllers for password-gated (or open) log browsing:
+ *
+ * ```ts
+ * controllers: { logs: latestlogs }
+ * ```
+ *
+ * - `GET /logs` → HTML index (`index`) of the 10 most recently modified files in `data/logs`
+ * - `GET /logs/latest` → same as `latestData('logs', { type: 'log' })` (302 to newest `.log`)
+ * - `GET /logs/<file>` → no controller match → static `data/logs/<file>` (passthrough)
+ *
+ * Requires the `logs` Handlebars partial (framework ships `src/views/partials/logs.hbs`).
+ */
+export const latestlogs: Record<string, Controller> = {
+  index: async (res: ServerResponse, _req: IncomingMessage, website: Website) => {
+    try {
+      const logDirectory = path.join(website.rootPath, 'data', 'logs')
+      if (!fs.existsSync(logDirectory)) {
+        res.writeHead(200, { 'Content-Type': 'text/html' })
+        res.end('No logs found')
+        return
+      }
+
+      const names = (await fs.promises.readdir(logDirectory)).filter((filename) => !filename.startsWith('.'))
+      const withStats = await Promise.all(
+        names.map(async (filename) => {
+          const stats = await fs.promises.stat(path.join(logDirectory, filename))
+          return { filename, stats }
+        }),
+      )
+      const logs = withStats
+        .sort((a, b) => a.stats.mtime.getTime() - b.stats.mtime.getTime())
+        .slice(-10)
+
+      if (logs.length === 0) {
+        res.writeHead(200, { 'Content-Type': 'text/html' })
+        res.end('No logs found')
+        return
+      }
+
+      const data = {
+        stats: logs.map(({ filename, stats }) => ({
+          filename,
+          size: stats.size,
+          created: stats.birthtime.toLocaleString(),
+          lastModified: stats.mtime.toLocaleString(),
+        })),
+      }
+
+      const template = website.handlebars.partials['logs']
+      if (!template) {
+        throw new Error('logs template not found')
+      }
+
+      const html = website.handlebars.compile(template)(data)
+      res.writeHead(200, { 'Content-Type': 'text/html' })
+      res.end(html)
+    } catch (error) {
+      console.error(`Error in ${website.name}/latestlogs: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      res.writeHead(500, { 'Content-Type': 'text/html' })
+      res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  },
+  latest: latestData('logs', { type: 'log' }),
 }
 
 // Go deeper, /data/<folder>/<datestamp_UUID_folder>/manifest.json

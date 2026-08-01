@@ -270,7 +270,7 @@ export const latestlogs: Record<string, Controller> = {
       res.end(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   },
-  latest: latestData('logs', { type: 'log' }),
+  latest: latestData('logs', { type: 'log', sort: 'lastModified' }),
 }
 
 // Go deeper, /data/<folder>/<datestamp_UUID_folder>/manifest.json

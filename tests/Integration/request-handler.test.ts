@@ -786,6 +786,40 @@ describeExampleAuth('Request-handler: example-auth guest (no session)', () => {
     expect(html).toMatch(/Password|password/i)
     expect(html).toMatch(/newUser|Create new account/i)
     expect(html).toMatch(/forgotPassword|Forgot password/i)
+    expect(html).toContain('/privacy-policy')
+    expect(html).toContain('/cookie-policy')
+    expect(html).toContain('/terms-of-use')
+  })
+
+  test('guest GET /privacy-policy returns 200 (not login)', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/privacy-policy', port)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toMatch(/Privacy policy/i)
+    expect(html).not.toMatch(/name=["']Password["']|id=["']Password["']/i)
+    expect(html).toContain('/cookie-policy')
+    expect(html).toContain('/terms-of-use')
+  })
+
+  test('guest GET /cookie-policy returns 200 (not login)', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/cookie-policy', port)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toMatch(/Cookie policy/i)
+    expect(html).not.toMatch(/name=["']Password["']|id=["']Password["']/i)
+    expect(html).toContain('/privacy-policy')
+  })
+
+  test('guest GET /terms-of-use returns 200 (not login)', async () => {
+    if (!serverStarted) return
+    const response = await fetchFromServer('/terms-of-use', port)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toMatch(/Terms of use/i)
+    expect(html).not.toMatch(/name=["']Password["']|id=["']Password["']/i)
+    expect(html).toContain('/privacy-policy')
   })
 
   test('auth flow: guest POST /logon with wrong password returns 200 and error', async () => {
@@ -1077,6 +1111,16 @@ describeExampleAuth('Request-handler: example-auth authenticated (user / admin)'
       if (!serverStarted || !userCookie) return
       const response = await fetchWithCookie('/', userCookie)
       expect(response.status).toBe(200)
+    })
+
+    test('user GET /privacy-policy, /cookie-policy, and /terms-of-use return 200', async () => {
+      if (!serverStarted || !userCookie) return
+      for (const path of ['/privacy-policy', '/cookie-policy', '/terms-of-use'] as const) {
+        const response = await fetchWithCookie(path, userCookie)
+        expect(response.status).toBe(200)
+        const html = await response.text()
+        expect(html).not.toMatch(/name=["']Password["']|id=["']Password["']/i)
+      }
     })
 
     test('user GET /users/json returns 200 (read-only listing)', async () => {

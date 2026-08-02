@@ -171,6 +171,25 @@ See **`websites/example-src`**: `src/admin/index.hbs` at `/admin` with **no** Se
 | `/users` | User CRUD machine (do not use as a password UI) |
 | `/sessions`, `/audits` | Admin-oriented CRUD |
 | Auth pages (`/logon`, `/setup`, …) | Allow-listed for guests where needed |
+| `/privacy-policy`, `/cookie-policy`, `/terms-of-use` | Guest-readable legal pages (Handlebars fallthrough); see below |
+
+### Privacy, cookie, and terms pages
+
+Thalia ships default pages as ordinary Handlebars files:
+
+- `src/privacy-policy.hbs`
+- `src/cookie-policy.hbs`
+- `src/terms-of-use.hbs`
+
+`tryHandlebars` serves **site** `src/<path>.hbs` first, then falls back to the framework package `src/<path>.hbs`. **No controllers** are registered for these paths — that would block the file override.
+
+When **RoleRouteGuard** is on, the built-in allow list (and matching default `RoleRouteRule`s from `securityConfig()`) grants **`guest` / `user` / `admin` → `read`** so guests are not redirected to login.
+
+Default copy is intentionally generic (operator / Website, Privacy Act / APPs, Australian Consumer Law). Override by placing the same filename under the site’s `src/`.
+
+**Discoverability:** default **`userLogin`** (and related auth surfaces) include **`{{> policy-links }}`**. Optional site footer: **`{{> policy-footer }}`**.
+
+**Opt out:** override with your own page, or claim the path with a site controller that 404s/redirects. Filtering route rules alone is not enough while allow-list entries remain.
 
 ## Deny behaviour
 

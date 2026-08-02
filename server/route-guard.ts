@@ -69,6 +69,11 @@ const ALWAYS_ALLOW_PATHS: string[] = [
   '/resetPassword', // controller
   '/setup', // first bootstrap (GET/POST until an admin exists)
 
+  // Guest-readable policy pages (controllers from securityConfig(); overridable HBS)
+  '/privacy-policy',
+  '/cookie-policy',
+  '/terms-of-use',
+
   // static asset prefixes
   '/css',
   '/js',

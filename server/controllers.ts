@@ -1758,24 +1758,79 @@ export function md_file(filename: string, data: any = {}, wrapper_template: stri
 }
 
 /**
- * If we're in NODE_ENV=development, serve a simple index, which lists the markdown files in the docs folder
- * 
- * Use the markdown index template, md_list.hbs
- * Next try using show_folder_index.hbs from showFolderIndex in request-handler.ts
+ * Development-only listing of the **project** `docs/` folder at `/docs`.
+ *
+ * Uses the same `show_folder_index` partial as RequestHandler.showFolderIndex.
+ * Links use `basePath: '/'` so entries resolve at the site root (e.g. `/test/`,
+ * `/note.md`) — matching tryMarkdown / folder-index fallthrough for `docs/`.
+ * Framework `Thalia/docs` is never consulted.
  */
-export const docsIndex: Controller = (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
-  if (website.env === 'development') {
-    const folder_path = path.join(website.rootPath, 'docs')
-    const files = fs.readdirSync(folder_path).map((file) => file.replace('docs/', '/'))
-    const html = website.getContentHtml('md_list', 'wrapper')
-    res.end(html({
-      files: files,
-      slug: requestInfo.slug,
-      filename: requestInfo.slug.replace('.md', ''),
-    }))
-  } else {
+export const docsIndex: Controller = (
+  res: ServerResponse,
+  _req: IncomingMessage,
+  website: Website,
+  requestInfo: RequestInfo,
+) => {
+  if (website.env !== 'development') {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
     res.end('404 Not Found')
+    return
   }
+
+  const folderPath = path.join(website.rootPath, 'docs')
+  let entries: { name: string; isDirectory: boolean }[]
+  try {
+    entries = fs
+      .readdirSync(folderPath, { withFileTypes: true })
+      .filter((d) => !d.name.startsWith('.'))
+      .map((d) => ({ name: d.name, isDirectory: d.isDirectory() }))
+      .sort(
+        (a, b) =>
+          Number(b.isDirectory) - Number(a.isDirectory) ||
+          a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+      )
+  } catch {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
+    res.end('404 Not Found')
+    return
+  }
+
+  website.loadPartials()
+
+  const data = {
+    pathname: 'docs',
+    // Absolute from site root: relative `name` from `/docs` would become `/docs/name`.
+    basePath: '/',
+    entries,
+    parentPath: '',
+    title: 'docs',
+  }
+
+  const partialTemplate = website.handlebars.partials['show_folder_index']
+  if (!partialTemplate) {
+    res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' })
+    res.end('Missing show_folder_index template')
+    return
+  }
+
+  const contentHtml =
+    typeof partialTemplate === 'function'
+      ? partialTemplate(data)
+      : website.handlebars.compile(partialTemplate)(data)
+
+  website.handlebars.registerPartial('content', contentHtml)
+  const wrapper = website.handlebars.partials['wrapper'] ?? ''
+  const html =
+    typeof wrapper === 'function'
+      ? wrapper({ requestInfo, version: website.version, title: data.title })
+      : website.handlebars.compile(wrapper)({
+          requestInfo,
+          version: website.version,
+          title: data.title,
+        })
+
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+  res.end(html)
 }
 
 

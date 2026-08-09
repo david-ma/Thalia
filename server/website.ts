@@ -194,7 +194,8 @@ export class Website {
       controllers: {
         version,
         health,
-        docs: docsIndex,
+        // Exact `/docs` only — nested `/docs/...` falls through to static/md/folder index.
+        docs: { index: docsIndex },
         'placeholder-image': placeholderImage,
       },
       routes: [],

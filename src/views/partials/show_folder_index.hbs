@@ -1,11 +1,9 @@
-{{!-- Development folder listing: RequestHandler.showFolderIndex + docsIndex (/docs). --}}
+{{!-- Development folder listing: RequestHandler.showFolderIndex + docsIndex (/docs).
+     Theme follows html data-theme / data-color-scheme (nav palette); no local dark-mode island. --}}
 <link rel="stylesheet" href="/css/markdown.css">
 <div class="folder-index" id="folder-index-root">
   <div class="folder-index__header">
     <h1 class="folder-index__title">Index of {{pathname}}</h1>
-    <button type="button" class="folder-index__theme-toggle" id="folder-index-theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
-      <span class="folder-index__theme-icon" aria-hidden="true">🌙</span>
-    </button>
   </div>
   <nav class="folder-index__breadcrumb" aria-label="Breadcrumb">
     <a href="/">Home</a>{{#if pathname}}{{#if parentPath}} / <a href="/{{parentPath}}/">{{parentPath}}</a>{{/if}} / <span>{{title}}</span>{{/if}}
@@ -33,41 +31,3 @@
     </tbody>
   </table>
 </div>
-
-<script>
-(function () {
-  var STORAGE_KEY = 'folder-index-theme';
-  var root = document.getElementById('folder-index-root');
-  var btn = document.getElementById('folder-index-theme-toggle');
-  if (!root || !btn) return;
-
-  function getPreferred() {
-    var saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === 'dark' || saved === 'light') return saved;
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }
-
-  function apply(theme) {
-    root.classList.toggle('dark-mode', theme === 'dark');
-    btn.querySelector('.folder-index__theme-icon').textContent = theme === 'dark' ? '☀️' : '🌙';
-    btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Toggle dark mode');
-  }
-
-  var theme = getPreferred();
-  apply(theme);
-
-  btn.addEventListener('click', function () {
-    theme = theme === 'dark' ? 'light' : 'dark';
-    localStorage.setItem(STORAGE_KEY, theme);
-    apply(theme);
-  });
-
-  if (window.matchMedia) {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
-      if (localStorage.getItem(STORAGE_KEY)) return;
-      theme = e.matches ? 'dark' : 'light';
-      apply(theme);
-    });
-  }
-})();
-</script>

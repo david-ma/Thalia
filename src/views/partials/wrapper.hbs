@@ -12,6 +12,9 @@
   {{/if}}
   <title>{{#if title}}{{title}}{{else}}Website{{/if}}</title>
 
+  {{!-- Apply data-theme before CSS/paint (FOUC). Sites may override styles.hbs; boot stays first. --}}
+  {{> theme-boot }}
+
   {{!-- Font Awesome: used by Start Bootstrap “Agency” style partials under partials/agency/ --}}
   <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
 
@@ -40,11 +43,12 @@
   {{!-- Optional extras (e.g. theme SCSS → /css/*.css); core JS loads at end of body --}}
 </head>
 
-<body{{#if bodyId}} id="{{bodyId}}"{{/if}}{{#if bodyClass}} class="{{bodyClass}}"{{/if}}>
+<body{{#if bodyId}} id="{{bodyId}}"{{/if}}{{#if useCrudStyles}} class="use-crud-styles{{#if bodyClass}} {{bodyClass}}{{/if}}"{{else}}{{#if bodyClass}} class="{{bodyClass}}"{{/if}}{{/if}}>
   {{> nav }}
   <div class="{{#if wrapperMainClass}}{{wrapperMainClass}}{{else}}container page py-3{{/if}}">
     <div class="row">
-      <main class="col-12 default-crud-styles" role="main">
+      {{!-- default-crud-styles is opt-in (CrudFactory / auth login pass useCrudStyles) so themed pages are not painted by CRUD chrome --}}
+      <main class="col-12{{#if useCrudStyles}} default-crud-styles{{/if}}" role="main">
         {{#if @partial-block }}
           {{~> @partial-block~}}
         {{else}}

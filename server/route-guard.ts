@@ -537,6 +537,7 @@ export class RoleRouteGuard extends BasicRouteGuard {
               const login_html = this.website.getContentHtml('userLogin')(
                 withAuthLoginNavFlags(this.website, {
                   route: request.pathname,
+                  useCrudStyles: true,
                 }),
               )
 

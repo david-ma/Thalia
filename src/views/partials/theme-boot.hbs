@@ -1,0 +1,33 @@
+{{!--
+  Early theme boot — include from head (wrapper → styles, or directly).
+  Storage: thalia-theme. Known ids must match theme-toggle.ts + thalia-themes.scss.
+--}}
+<script>
+(function () {
+  var KNOWN = {
+    light: 1, dark: 1, thalia: 1, "thalia-dark": 1,
+    "solarized-light": 1, "solarized-dark": 1,
+    "rose-pine": 1, "rose-pine-moon": 1, "rose-pine-dawn": 1,
+    dracula: 1, monokai: 1, agency: 1
+  };
+  var DARK = {
+    dark: 1, "thalia-dark": 1, "solarized-dark": 1,
+    "rose-pine": 1, "rose-pine-moon": 1, dracula: 1, monokai: 1
+  };
+  try {
+    var m = localStorage.getItem("thalia-theme");
+    if (m && KNOWN[m]) {
+      document.documentElement.setAttribute("data-theme", m);
+      document.documentElement.setAttribute(
+        "data-color-scheme",
+        DARK[m] ? "dark" : "light"
+      );
+    } else if (!m || m === "system") {
+      document.documentElement.setAttribute(
+        "data-color-scheme",
+        window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+      );
+    }
+  } catch (e) {}
+})();
+</script>

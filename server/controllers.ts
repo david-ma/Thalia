@@ -599,14 +599,17 @@ export function crudWrapperMainClass(fullWidth: boolean): string | undefined {
   return fullWidth ? 'container-fluid page py-3 px-3' : undefined
 }
 
-/** Merge CRUD page data with optional full-width wrapper class for Handlebars layouts. */
+/** Merge CRUD page data with wrapper flags for Handlebars layouts (`useCrudStyles`, optional full-width). */
 export function crudWrapperPageData<T extends Record<string, unknown>>(
   data: T,
   options: { fullWidth?: boolean },
-): T & { wrapperMainClass?: string } {
+): T & { useCrudStyles: true; wrapperMainClass?: string } {
   const wrapperMainClass = crudWrapperMainClass(Boolean(options.fullWidth))
-  if (!wrapperMainClass) return data
-  return { ...data, wrapperMainClass }
+  return {
+    ...data,
+    useCrudStyles: true,
+    ...(wrapperMainClass ? { wrapperMainClass } : {}),
+  }
 }
 
 export function crudCsvEscape(val: unknown): string {
@@ -823,7 +826,9 @@ export class CrudFactory implements Machine {
     this.columnRenderers = options?.columnRenderers ?? {}
   }
 
-  private pageData<T extends Record<string, unknown>>(data: T): T & { wrapperMainClass?: string } {
+  private pageData<T extends Record<string, unknown>>(
+    data: T,
+  ): T & { useCrudStyles: true; wrapperMainClass?: string } {
     return crudWrapperPageData(data, { fullWidth: this.fullWidth })
   }
 

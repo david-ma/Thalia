@@ -12,51 +12,71 @@ $crud-danger: #d20f39;
 $crud-radius: 0.65rem;
 $crud-shadow: 0 4px 24px color-mix(in srgb, #000 18%, transparent);
 
-body {
+// Shell chrome only when wrapper sets body.use-crud-styles (CrudFactory / auth).
+body.use-crud-styles {
   background: $crud-frame;
   color: $crud-surface;
   font-size: 18px;
-}
 
-div.page {
-  background: $crud-surface;
-  color: $crud-text;
-  min-height: 100vh;
-  border-radius: $crud-radius;
-  box-shadow: $crud-shadow;
-  border: 1px solid $crud-border;
-}
-
-nav {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem 1rem;
-  background: $crud-surface-2;
-  padding: 0.65rem 1rem;
-  margin-bottom: 1rem;
-  width: 100%;
-  border-radius: calc($crud-radius - 0.15rem);
-  border: 1px solid $crud-border;
-
-  a {
+  div.page {
+    background: $crud-surface;
     color: $crud-text;
-    text-decoration: none;
-    font-weight: 500;
-    border-radius: 0.35rem;
-    padding: 0.25rem 0.4rem;
-    transition: background 0.15s ease, color 0.15s ease;
+    min-height: 100vh;
+    border-radius: $crud-radius;
+    box-shadow: $crud-shadow;
+    border: 1px solid $crud-border;
+  }
 
-    &:hover {
-      background: $crud-accent-soft;
+  > nav,
+  nav[aria-label='Primary'] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    background: $crud-surface-2;
+    padding: 0.65rem 1rem;
+    margin-bottom: 1rem;
+    width: 100%;
+    border-radius: calc($crud-radius - 0.15rem);
+    border: 1px solid $crud-border;
+
+    a {
       color: $crud-text;
-    }
+      text-decoration: none;
+      font-weight: 500;
+      border-radius: 0.35rem;
+      padding: 0.25rem 0.4rem;
+      transition: background 0.15s ease, color 0.15s ease;
 
-    &:focus-visible {
-      outline: 2px solid $crud-accent;
-      outline-offset: 2px;
+      &:hover {
+        background: $crud-accent-soft;
+        color: $crud-text;
+      }
+
+      &:focus-visible {
+        outline: 2px solid $crud-accent;
+        outline-offset: 2px;
+      }
     }
+  }
+
+  p.message {
+    color: color-mix(in srgb, #1a7f37 85%, $crud-text);
+    font-weight: 500;
+    margin: 0.5rem 0;
+  }
+
+  p.error {
+    color: $crud-danger;
+    font-weight: 600;
+    margin: 0.5rem 0;
+  }
+
+  label {
+    text-transform: capitalize;
+    font-weight: 500;
+    color: $crud-text-muted;
   }
 }
 
@@ -267,22 +287,4 @@ div.default-crud-styles {
       font-weight: 500;
     }
   }
-}
-
-p.message {
-  color: color-mix(in srgb, #1a7f37 85%, $crud-text);
-  font-weight: 500;
-  margin: 0.5rem 0;
-}
-
-p.error {
-  color: $crud-danger;
-  font-weight: 600;
-  margin: 0.5rem 0;
-}
-
-label {
-  text-transform: capitalize;
-  font-weight: 500;
-  color: $crud-text-muted;
 }

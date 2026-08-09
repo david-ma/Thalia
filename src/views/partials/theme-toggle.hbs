@@ -1,0 +1,105 @@
+{{!--
+  Theme toggle — docs/2026-08-10_themes-upstream-plan.md
+  Usage: theme-toggle (system cycle) | binary=true | palette=true
+  Requires theme-boot in head.
+--}}
+{{#if palette}}
+<div class="dropdown theme-toggle theme-toggle--palette{{#if className}} {{className}}{{/if}}">
+  <button
+    type="button"
+    class="btn btn-sm btn-outline-secondary dropdown-toggle"
+    data-bs-toggle="dropdown"
+    data-theme-toggle
+    data-theme-mode="palette"
+    aria-expanded="false"
+    aria-label="Choose colour theme"
+  >
+    <span class="theme-toggle__label" data-theme-toggle-label>Theme</span>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end theme-toggle__menu">
+    <li>
+      <button type="button" class="dropdown-item theme-toggle__item" data-theme-set="system">
+        <span class="theme-toggle__swatch" style="background: linear-gradient(135deg,#ffffff 50%,#212529 50%)" aria-hidden="true"></span>
+        System
+      </button>
+    </li>
+    <li><hr class="dropdown-divider"></li>
+    <li>
+      <button type="button" class="dropdown-item theme-toggle__item" data-theme-set="thalia">
+        <span class="theme-toggle__swatch" style="background:#ffffff; border:1px solid #ced4da" aria-hidden="true"></span>
+        Thalia
+      </button>
+    </li>
+    <li>
+      <button type="button" class="dropdown-item theme-toggle__item" data-theme-set="thalia-dark">
+        <span class="theme-toggle__swatch" style="background:#212529" aria-hidden="true"></span>
+        Thalia Dark
+      </button>
+    </li>
+    <li><hr class="dropdown-divider"></li>
+    <li>
+      <button type="button" class="dropdown-item theme-toggle__item" data-theme-set="solarized-light">
+        <span class="theme-toggle__swatch" style="background:#fdf6e3" aria-hidden="true"></span>
+        Solarized Light
+      </button>
+    </li>
+    <li>
+      <button type="button" class="dropdown-item theme-toggle__item" data-theme-set="solarized-dark">
+        <span class="theme-toggle__swatch" style="background:#002b36" aria-hidden="true"></span>
+        Solarized Dark
+      </button>
+    </li>
+    <li><hr class="dropdown-divider"></li>
+    <li>
+      <button type="button" class="dropdown-item theme-toggle__item" data-theme-set="rose-pine-dawn">
+        <span class="theme-toggle__swatch" style="background:#faf4ed" aria-hidden="true"></span>
+        Rosé Pine Dawn
+      </button>
+    </li>
+    <li>
+      <button type="button" class="dropdown-item theme-toggle__item" data-theme-set="rose-pine-moon">
+        <span class="theme-toggle__swatch" style="background:#232136" aria-hidden="true"></span>
+        Rosé Pine Moon
+      </button>
+    </li>
+    <li>
+      <button type="button" class="dropdown-item theme-toggle__item" data-theme-set="rose-pine">
+        <span class="theme-toggle__swatch" style="background:#191724" aria-hidden="true"></span>
+        Rosé Pine
+      </button>
+    </li>
+    <li><hr class="dropdown-divider"></li>
+    <li>
+      <button type="button" class="dropdown-item theme-toggle__item" data-theme-set="dracula">
+        <span class="theme-toggle__swatch" style="background:#282a36" aria-hidden="true"></span>
+        Dracula
+      </button>
+    </li>
+    <li>
+      <button type="button" class="dropdown-item theme-toggle__item" data-theme-set="monokai">
+        <span class="theme-toggle__swatch" style="background:#272822" aria-hidden="true"></span>
+        Monokai
+      </button>
+    </li>
+    <li><hr class="dropdown-divider"></li>
+    <li>
+      <button type="button" class="dropdown-item theme-toggle__item" data-theme-set="agency">
+        <span class="theme-toggle__swatch" style="background:#ffc800" aria-hidden="true"></span>
+        Bootstrap Agency
+      </button>
+    </li>
+  </ul>
+</div>
+{{else}}
+<button
+  type="button"
+  class="btn btn-sm btn-outline-secondary theme-toggle{{#if className}} {{className}}{{/if}}"
+  data-theme-toggle
+  data-theme-mode="{{#if binary}}binary{{else}}system{{/if}}"
+  aria-label="Cycle colour theme"
+  title="Cycle colour theme"
+>
+  <span class="theme-toggle__label" data-theme-toggle-label>Theme</span>
+</button>
+{{/if}}
+<script type="module" src="/js/theme-toggle.js"></script>

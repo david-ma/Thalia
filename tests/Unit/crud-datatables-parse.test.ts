@@ -242,16 +242,21 @@ describe('crudWrapperMainClass', () => {
 })
 
 describe('crudWrapperPageData', () => {
-  test('adds wrapperMainClass when fullWidth', () => {
+  test('adds useCrudStyles and wrapperMainClass when fullWidth', () => {
     expect(crudWrapperPageData({ title: 'List' }, { fullWidth: true })).toEqual({
       title: 'List',
+      useCrudStyles: true,
       wrapperMainClass: 'container-fluid page py-3 px-3',
     })
   })
 
-  test('leaves data unchanged when not fullWidth', () => {
+  test('adds useCrudStyles when not fullWidth', () => {
     const data = { title: 'List', readOnly: true }
-    expect(crudWrapperPageData(data, { fullWidth: false })).toBe(data)
+    expect(crudWrapperPageData(data, { fullWidth: false })).toEqual({
+      title: 'List',
+      readOnly: true,
+      useCrudStyles: true,
+    })
   })
 })
 

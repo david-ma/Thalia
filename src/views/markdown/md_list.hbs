@@ -1,4 +1,4 @@
 Pages:
 {{#each files}}
-  <li><a href="/{{../controller}}/{{this}}">{{this}}</a></li>
+  <li><a href="/{{#if controller}}/{{controller}}/{{/if}}{{this}}">{{this}}</a></li>
 {{/each}}

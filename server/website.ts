@@ -39,7 +39,7 @@ import { RoleRouteGuard, BasicRouteGuard, RouteGuard } from './route-guard'
 import { Socket } from 'socket.io'
 import { RequestInfo } from './server'
 import { ThaliaDatabase } from './database'
-import { placeholderImage } from './controllers'
+import { placeholderImage, docsIndex } from './controllers'
 import { health, version } from './health'
 import { findThaliaRoot, resolveThaliaGitHash, resolveWebsiteGitHash } from './git-hash'
 import os from 'os'
@@ -194,6 +194,7 @@ export class Website {
       controllers: {
         version,
         health,
+        docs: docsIndex,
         'placeholder-image': placeholderImage,
       },
       routes: [],

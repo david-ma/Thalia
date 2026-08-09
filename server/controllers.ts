@@ -1757,6 +1757,28 @@ export function md_file(filename: string, data: any = {}, wrapper_template: stri
   }
 }
 
+/**
+ * If we're in NODE_ENV=development, serve a simple index, which lists the markdown files in the docs folder
+ * 
+ * Use the markdown index template, md_list.hbs
+ * Next try using show_folder_index.hbs from showFolderIndex in request-handler.ts
+ */
+export const docsIndex: Controller = (res: ServerResponse, req: IncomingMessage, website: Website, requestInfo: RequestInfo) => {
+  if (website.env === 'development') {
+    const folder_path = path.join(website.rootPath, 'docs')
+    const files = fs.readdirSync(folder_path).map((file) => file.replace('docs/', '/'))
+    const html = website.getContentHtml('md_list', 'wrapper')
+    res.end(html({
+      files: files,
+      slug: requestInfo.slug,
+      filename: requestInfo.slug.replace('.md', ''),
+    }))
+  } else {
+    res.end('404 Not Found')
+  }
+}
+
+
 export {
   ThaliaImageUploader,
   readLimitedJsonObject,

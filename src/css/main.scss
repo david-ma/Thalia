@@ -78,5 +78,19 @@ body {
   letter-spacing: normal;
 }
 
+/*
+ * Alternating section band — theme-aware stand-in for Bootstrap `bg-light`.
+ * Mix paper toward ink (~12%) for a slight lift/dim vs neighbouring sections.
+ * Avoid `filter: brightness` — it also shifts text, icons, and photos.
+ */
+.thalia-section-alt {
+  background-color: color-mix(
+    in srgb,
+    var(--thalia-paper, #ffffff) 88%,
+    var(--thalia-ink, #212529) 12%
+  );
+  color: var(--thalia-ink, inherit);
+}
+
 // Adding profiles for the doombox project, DKGM 2025-01-19
 // @import 'profiles.scss';

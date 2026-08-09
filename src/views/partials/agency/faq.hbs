@@ -14,7 +14,8 @@
   faqSectionId       (optional)  `<section id="…">`; default `"faq"`
 
   faqSectionClass    (optional)  Classes on `<section>` (spacing / background).
-                                Default: `page-section bg-light`
+                                Default: `page-section thalia-section-alt`
+                                (theme-aware alt band — not Bootstrap `bg-light`)
 
   faqHeading         (optional)  Main `<h2>`; default `"Frequently Asked Questions"`
 
@@ -79,7 +80,7 @@
   • Give `idSuffix` stable, readable values; they appear in fragment targets.
 ================================================================================
 --}}
-<section class="{{#if faqSectionClass}}{{faqSectionClass}}{{else}}page-section bg-light{{/if}}"
+<section class="{{#if faqSectionClass}}{{faqSectionClass}}{{else}}page-section thalia-section-alt{{/if}}"
   id="{{#if faqSectionId}}{{faqSectionId}}{{else}}faq{{/if}}">
   <div class="container">
     <div class="text-center">

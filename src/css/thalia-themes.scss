@@ -771,6 +771,18 @@
     --bs-btn-active-bg: #e0b000;
     --bs-btn-active-border-color: #e0b000;
   }
+
+  // XL masthead CTA (Agency btn-xl) — keep yellow even if Bootstrap CDN utilities win.
+  .btn-primary.btn-xl {
+    color: #212529;
+    background-color: #ffc800;
+    border-color: #ffc800;
+  }
+
+  // Dark fixed nav sits on the masthead photo; keep brand readable.
+  #mainNav .navbar-brand {
+    color: #ffc800;
+  }
 }
 
 // Mermaid: invert light SVGs when the active pack (or system dark) is dark-scheme.

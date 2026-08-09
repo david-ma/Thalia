@@ -44,7 +44,17 @@
 </head>
 
 <body{{#if bodyId}} id="{{bodyId}}"{{/if}}{{#if useCrudStyles}} class="use-crud-styles{{#if bodyClass}} {{bodyClass}}{{/if}}"{{else}}{{#if bodyClass}} class="{{bodyClass}}"{{/if}}{{/if}}>
-  {{> nav }}
+  {{#unless hideNav}}{{> nav }}{{/unless}}
+  {{!-- wrapperBleed: full-width Agency-style landings (no container.page chrome) --}}
+  {{#if wrapperBleed}}
+    <main class="{{#if useCrudStyles}}default-crud-styles{{/if}}" role="main">
+      {{#if @partial-block }}
+        {{~> @partial-block~}}
+      {{else}}
+        {{~> content~}}
+      {{/if}}
+    </main>
+  {{else}}
   <div class="{{#if wrapperMainClass}}{{wrapperMainClass}}{{else}}container page py-3{{/if}}">
     <div class="row">
       {{!-- default-crud-styles is opt-in (CrudFactory / auth login pass useCrudStyles) so themed pages are not painted by CRUD chrome --}}
@@ -57,6 +67,7 @@
       </main>
     </div>
   </div>
+  {{/if}}
 
   {{> scripts }}
 </body>

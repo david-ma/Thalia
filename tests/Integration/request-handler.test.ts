@@ -324,6 +324,15 @@ describe('Request-handler: example-src (Handlebars, TypeScript, controller)', ()
     expect(js.length).toBeGreaterThan(0)
   })
 
+  test('/js/theme-toggle.js compiles framework src/js TypeScript when the site has no override', async () => {
+    const response = await fetchFromServer('/js/theme-toggle.js', port)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('javascript')
+    const js = await response.text()
+    expect(js).toContain('thalia-theme')
+    expect(js).toContain('data-theme-toggle')
+  })
+
   test('/fruit redirects or serves via controller (tryController)', async () => {
     const response = await fetchFromServer('/fruit', port)
     expect([200, 301, 302]).toContain(response.status)

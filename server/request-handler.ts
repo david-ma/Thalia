@@ -636,8 +636,15 @@ export class RequestHandler {
         return next(requestHandler)
       }
 
-      const tsPath = requestHandler.projectSourcePath.replace('.js', '.ts')
-      if (fs.existsSync(tsPath)) {
+      const projectTsPath = requestHandler.projectSourcePath.replace('.js', '.ts')
+      const frameworkTsPath = requestHandler.thaliaSourcePath.replace('.js', '.ts')
+      const tsPath = fs.existsSync(projectTsPath)
+        ? projectTsPath
+        : fs.existsSync(frameworkTsPath)
+          ? frameworkTsPath
+          : null
+
+      if (tsPath) {
         // create dist folder if it doesn't exist
         fs.mkdirSync(requestHandler.projectDistPath, { recursive: true })
         Bun.build({
@@ -655,8 +662,8 @@ export class RequestHandler {
             return finish(`Successfully compiled typescript file ${requestHandler.pathname}`)
           })
           .catch((error) => {
-            // Fall back to next handler so pre-built assets (e.g. public/js/*.js)
-            // can be served when Bun.build fails (e.g. three/examples/jsm).
+            // Fall back to static handling so a site-owned public/js file can
+            // still serve browser code which Bun.build cannot bundle.
             console.error('TypeScript compile failed, falling back:', requestHandler.pathname, error)
             return next(requestHandler)
           })

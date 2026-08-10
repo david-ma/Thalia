@@ -83,6 +83,10 @@ export function readThemeId(): ThemeId {
   } catch {
     /* private mode */
   }
+  if (typeof document !== "undefined") {
+    const siteDefault = document.documentElement.getAttribute("data-theme-default");
+    if (isThemeId(siteDefault)) return siteDefault;
+  }
   return "system";
 }
 

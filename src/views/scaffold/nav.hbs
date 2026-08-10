@@ -1,5 +1,5 @@
-{{!-- Framework chrome: theme control only (no second navbar).
-     Fixed + high z-index so it stays clickable above Agency fixed-top (#mainNav ~1030). --}}
-<div class="thalia-theme-bar" aria-label="Theme">
+<nav class="d-flex flex-wrap align-items-center justify-content-between gap-2 py-2 px-1" aria-label="Primary">
+  <a class="fw-semibold text-decoration-none" href="/">Home</a>
+  <span class="text-muted small d-none d-sm-inline">Thalia</span>
   {{> theme-toggle palette=true }}
-</div>
+</nav>

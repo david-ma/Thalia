@@ -1,6 +1,8 @@
 {{!--
   Early theme boot — include from head (wrapper → styles, or directly).
   Storage: thalia-theme. Known ids must match theme-toggle.ts + thalia-themes.scss.
+  Pass defaultTheme="…" through wrapper data to choose a site default without
+  writing a preference. Invalid defaults and stored values fall back to system.
 --}}
 <script>
 (function () {
@@ -14,20 +16,24 @@
     dark: 1, "thalia-dark": 1, "solarized-dark": 1,
     "rose-pine": 1, "rose-pine-moon": 1, dracula: 1, monokai: 1
   };
+  var root = document.documentElement;
+  var fallback = "{{#if defaultTheme}}{{defaultTheme}}{{else}}system{{/if}}";
+  if (fallback !== "system" && !KNOWN[fallback]) fallback = "system";
+  root.setAttribute("data-theme-default", fallback);
+  var m = fallback;
   try {
-    var m = localStorage.getItem("thalia-theme");
-    if (m && KNOWN[m]) {
-      document.documentElement.setAttribute("data-theme", m);
-      document.documentElement.setAttribute(
-        "data-color-scheme",
-        DARK[m] ? "dark" : "light"
-      );
-    } else if (!m || m === "system") {
-      document.documentElement.setAttribute(
-        "data-color-scheme",
-        window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-      );
-    }
+    var stored = localStorage.getItem("thalia-theme");
+    if (stored === "system" || KNOWN[stored]) m = stored;
   } catch (e) {}
+  if (m === "system") {
+    root.removeAttribute("data-theme");
+    root.setAttribute(
+      "data-color-scheme",
+      window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+    );
+  } else {
+    root.setAttribute("data-theme", m);
+    root.setAttribute("data-color-scheme", DARK[m] ? "dark" : "light");
+  }
 })();
 </script>

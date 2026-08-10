@@ -52,20 +52,6 @@ body {
   font-weight: 600;
 }
 
-/* Float clear of Agency fixed-top (~4.5–5rem) and Bootstrap z-index 1030 */
-.thalia-theme-bar {
-  position: fixed;
-  top: 5rem;
-  right: 0.75rem;
-  z-index: 1080;
-  pointer-events: auto;
-}
-
-.thalia-theme-bar .theme-toggle .btn {
-  backdrop-filter: blur(6px);
-  background: color-mix(in srgb, var(--thalia-paper, #fff) 82%, transparent);
-}
-
 /* Agency fixed-top: outline button readable on dark navbar */
 .theme-toggle--agency-nav .btn {
   --bs-btn-color: #fff;

@@ -114,6 +114,7 @@ describe('md_file template context', () => {
     const website = {
       rootPath: tmpRoot,
       version: { gitHash: 'mdhash' },
+      refreshPartialsForRender() {},
       handlebars: {
         registerPartial() {},
         partials: { wrapper: 'wrapper-body' },

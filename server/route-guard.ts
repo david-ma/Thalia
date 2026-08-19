@@ -13,13 +13,18 @@ export function basicPasswordAuthRequired(routeRule: RouteRule, nodeEnv: string,
   if (routeRule.ip_whitelist && ipMatchesWhitelist(clientIp, routeRule.ip_whitelist)) return false
   return true
 }
-import { Website } from './website'
+import { Website, compileHandlebarsTemplate } from './website'
 import formidable, { Fields } from 'formidable'
 import { RequestInfo } from './server'
 import { RequestHandler } from './request-handler'
 import { CrudFactory } from './controllers'
 import { and, eq, gt, or, isNull } from 'drizzle-orm'
 import { withAuthLoginNavFlags } from './security/auth-response-helpers.js'
+
+function renderLoginHtml(website: Website, data: { route: string; message?: string }): string {
+  website.refreshPartialsForRender()
+  return compileHandlebarsTemplate(website.handlebars, website.handlebars.partials['login'])(data)
+}
 
 /**
  * True when `fullpath` is exactly this route key, or when it continues with another path segment
@@ -219,7 +224,7 @@ export class BasicRouteGuard extends RouteGuard {
               request.res.end()
               return finish('Logged in')
             } else {
-              const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
+              const login_html = renderLoginHtml(this.website, {
                 route: request.pathname,
                 message: 'Invalid password',
               })
@@ -230,7 +235,7 @@ export class BasicRouteGuard extends RouteGuard {
           })
           return
         } else {
-          const login_html = this.website.handlebars.compile(this.website.handlebars.partials['login'])({
+          const login_html = renderLoginHtml(this.website, {
             route: request.pathname,
           })
           request.res.writeHead(401, { 'Content-Type': 'text/html' })
@@ -409,7 +414,7 @@ export class BasicRouteGuard extends RouteGuard {
                 res.end()
                 return true
               } else {
-                const login_html = website.handlebars.compile(website.handlebars.partials['login'])({
+                const login_html = renderLoginHtml(website, {
                   route: pathname,
                   message: 'Invalid password',
                 })
@@ -427,7 +432,7 @@ export class BasicRouteGuard extends RouteGuard {
           }
         } else {
           // If the user doesn't have the login cookie, get the login page
-          const login_html = website.handlebars.compile(website.handlebars.partials['login'])({
+          const login_html = renderLoginHtml(website, {
             route: pathname,
           })
 

@@ -9,7 +9,7 @@
  */
 
 import { IncomingMessage, ServerResponse } from 'http'
-import { Website, type Controller } from './website'
+import { Website, compileHandlebarsTemplate, type Controller } from './website'
 import fs from 'fs'
 import path from 'path'
 import { and, asc, desc, eq, getTableName, isNull, like, or, sql, type SQL } from 'drizzle-orm'
@@ -256,12 +256,13 @@ export const latestlogs: Record<string, Controller> = {
         })),
       }
 
+      website.refreshPartialsForRender()
       const template = website.handlebars.partials['logs']
       if (!template) {
         throw new Error('logs template not found')
       }
 
-      const html = website.handlebars.compile(template)(data)
+      const html = compileHandlebarsTemplate(website.handlebars, template)(data)
       res.writeHead(200, { 'Content-Type': 'text/html' })
       res.end(html)
     } catch (error) {
@@ -1729,9 +1730,12 @@ export function md_file(filename: string, data: any = {}, wrapper_template: stri
       .readFile(path.join(website.rootPath, 'src', filename), 'utf8')
       .then((content) => {
         try {
+          website.refreshPartialsForRender()
           website.handlebars.registerPartial('content', marked.parse(content, { async: false }))
-          const templateFile = website.handlebars.partials[wrapper_template] ?? ''
-          const compiled = website.handlebars.compile(templateFile)
+          const compiled = compileHandlebarsTemplate(
+            website.handlebars,
+            website.handlebars.partials[wrapper_template] ?? '',
+          )
           const html = compiled({
             content: filename,
             wrapper: wrapper_template,
@@ -1813,21 +1817,14 @@ export const docsIndex: Controller = (
     return
   }
 
-  const contentHtml =
-    typeof partialTemplate === 'function'
-      ? partialTemplate(data)
-      : website.handlebars.compile(partialTemplate)(data)
+  const contentHtml = compileHandlebarsTemplate(website.handlebars, partialTemplate)(data)
 
   website.handlebars.registerPartial('content', contentHtml)
-  const wrapper = website.handlebars.partials['wrapper'] ?? ''
-  const html =
-    typeof wrapper === 'function'
-      ? wrapper({ requestInfo, version: website.version, title: data.title })
-      : website.handlebars.compile(wrapper)({
-          requestInfo,
-          version: website.version,
-          title: data.title,
-        })
+  const html = compileHandlebarsTemplate(website.handlebars, website.handlebars.partials['wrapper'] ?? '')({
+    requestInfo,
+    version: website.version,
+    title: data.title,
+  })
 
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
   res.end(html)

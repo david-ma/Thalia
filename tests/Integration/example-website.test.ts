@@ -1,5 +1,5 @@
 /**
- * Example Minimal Website Integration Test
+ * Lightweight static example integration tests.
  * 
  * Tests that the example-minimal website boots up and serves content correctly.
  * This is a lightweight test using the minimal example project (no database required).
@@ -52,3 +52,32 @@ describe('Example Minimal Website', () => {
   })
 })
 
+describe('Example Agency reference website', () => {
+  const project = 'example-agency'
+  let port: number
+
+  beforeAll(async () => {
+    const serverInfo = await startTestServer(project)
+    port = serverInfo.port
+    await waitForServerHttp(port)
+  })
+
+  afterAll(async () => {
+    await stopTestServer(project)
+  })
+
+  test('serves the static upstream visual reference', async () => {
+    const response = await fetchFromServer('/', port)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toContain('<title>Agency - Start Bootstrap Theme</title>')
+    expect(html).toContain('startbootstrap-agency')
+  })
+
+  test('serves its independent static stylesheet', async () => {
+    const response = await fetchFromServer('/css/styles.css', port)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('text/css')
+    expect((await response.text()).length).toBeGreaterThan(10_000)
+  })
+})

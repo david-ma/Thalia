@@ -26,7 +26,9 @@ export function sendAuthHtml(res: ServerResponse, website: Website, view: string
     res.statusCode = 200
     res.setHeader('Content-Type', 'text/html; charset=utf-8')
   }
-  const payload = view === 'userLogin' ? withAuthLoginNavFlags(website, data) : data
+  const withNav = view === 'userLogin' ? withAuthLoginNavFlags(website, data) : data
+  // Auth forms live under .default-crud-styles (login box, labels) — opt in like CrudFactory.
+  const payload = { useCrudStyles: true, ...withNav }
   res.end(website.getContentHtml(view)(payload))
 }
 

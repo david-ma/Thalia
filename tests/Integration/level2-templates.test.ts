@@ -57,6 +57,12 @@ describe('Level 2: Handlebars (node_env=development)', () => {
     expect(response.status).toBe(200)
     const html = await response.text()
     expect(html).toContain('<title>example-src – Home</title>')
+    expect(html).toContain('var fallback = "agency"')
+    expect(html).toContain('data-theme-set="agency"')
+    expect(html).toContain('fonts.googleapis.com')
+    expect(html).toContain('href="#services"')
+    expect(html).not.toContain('Example&nbsp;Auth')
+    expect(html.match(/<nav\b/g)).toHaveLength(1)
     expect(html).not.toContain(
       'this should be overridden by the dist/index.html and src/index.hbs',
     )

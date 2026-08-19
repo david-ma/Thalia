@@ -1,0 +1,807 @@
+// Framework theme packs. See docs/guides/themes.md
+// Imported from main.scss. Tokens: --thalia-*, --thalia-md-*, --thalia-font-*.
+// Default :root = thalia (current wrapper look). Chess sandbox was the proof source.
+
+@mixin thalia-bs-from-tokens {
+  --bs-body-color: var(--thalia-ink);
+  --bs-body-bg: var(--thalia-paper);
+  --bs-secondary-color: var(--thalia-muted);
+  --bs-border-color: var(--thalia-line);
+  --bs-link-color: var(--thalia-accent);
+  --bs-table-color: var(--thalia-ink);
+  --bs-table-bg: transparent;
+  --bs-table-border-color: var(--thalia-line);
+  --bs-table-hover-bg: var(--thalia-hover);
+  --bs-table-hover-color: var(--thalia-ink);
+}
+
+@mixin thalia-dark-button-overrides {
+  .btn-outline-primary {
+    --bs-btn-color: var(--thalia-accent);
+    --bs-btn-border-color: var(--thalia-accent);
+    --bs-btn-hover-color: var(--thalia-paper);
+    --bs-btn-hover-bg: var(--thalia-accent);
+    --bs-btn-hover-border-color: var(--thalia-accent);
+    --bs-btn-active-color: var(--thalia-paper);
+    --bs-btn-active-bg: var(--thalia-accent);
+    --bs-btn-active-border-color: var(--thalia-accent);
+  }
+
+  .btn-outline-secondary {
+    --bs-btn-color: var(--thalia-muted);
+    --bs-btn-border-color: var(--thalia-line);
+    --bs-btn-hover-color: var(--thalia-ink);
+    --bs-btn-hover-bg: var(--thalia-surface-strong);
+    --bs-btn-hover-border-color: var(--thalia-muted);
+    --bs-btn-active-color: var(--thalia-ink);
+    --bs-btn-active-bg: var(--thalia-surface-strong);
+    --bs-btn-active-border-color: var(--thalia-muted);
+  }
+}
+
+// --- Solarized Light (default :root + data-theme=light|solarized-light) ---
+@mixin thalia-theme-solarized-light {
+  color-scheme: light;
+  --thalia-font-sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --thalia-font-mono: "Source Code Pro", ui-monospace, Menlo, Consolas, monospace;
+
+  --thalia-ink: #657b83;
+  --thalia-muted: #93a1a1;
+  --thalia-paper: #fdf6e3;
+  --thalia-accent: #2aa198;
+  --thalia-line: #eee8d5;
+  --thalia-bg-glow-1: #eee8d5;
+  --thalia-bg-glow-2: #e7e0cd;
+  --thalia-surface: rgba(255, 255, 255, 0.55);
+  --thalia-surface-soft: rgba(238, 232, 213, 0.65);
+  --thalia-surface-strong: rgba(255, 255, 255, 0.75);
+  --thalia-surface-chip: rgba(255, 255, 255, 0.9);
+  --thalia-hover: rgba(42, 161, 152, 0.1);
+  --thalia-hover-strong: rgba(42, 161, 152, 0.16);
+  --thalia-hot: rgba(42, 161, 152, 0.2);
+  --thalia-hot-ring: rgba(42, 161, 152, 0.5);
+  --thalia-hot-soft: rgba(42, 161, 152, 0.3);
+  --thalia-pop-top: #fffcf3;
+  --thalia-pop-bot: #fdf6e3;
+  --thalia-bubble-black-top: #f5f0e0;
+  --thalia-bubble-black-bot: #eee8d5;
+  --thalia-inset: rgba(255, 255, 255, 0.7);
+  --thalia-shadow: rgba(0, 43, 54, 0.12);
+  --thalia-eval-white: #fdf6e3;
+  --thalia-eval-black: #002b36;
+  --thalia-cheat: #cb4b16;
+  --thalia-reject: #dc322f;
+  --thalia-submit: #268bd2;
+
+  --thalia-md-code-bg: #fdf6e3;
+  --thalia-md-code-fg: #657b83;
+  --thalia-md-code-header: #eee8d5;
+  --thalia-md-code-border: rgba(101, 123, 131, 0.22);
+  --thalia-md-hl-comment: #93a1a1;
+  --thalia-md-hl-keyword: #859900;
+  --thalia-md-hl-title: #268bd2;
+  --thalia-md-hl-deletion: #dc322f;
+  --thalia-md-hl-subst: #cb4b16;
+  --thalia-md-hl-literal: #2aa198;
+  --thalia-md-hl-attr: #b58900;
+  --thalia-md-hl-ln: #93a1a1;
+  --thalia-md-hl-ln-border: #eee8d5;
+
+  --bs-body-color-rgb: 101, 123, 131;
+  --bs-body-bg-rgb: 253, 246, 227;
+  --bs-emphasis-color: #073642;
+  --bs-secondary-bg: #eee8d5;
+  --bs-tertiary-bg: rgba(238, 232, 213, 0.5);
+  --bs-border-color-translucent: rgba(101, 123, 131, 0.2);
+  --bs-link-color-rgb: 42, 161, 152;
+  --bs-link-hover-color: #1a7f78;
+  --bs-code-color: #b58900;
+  --bs-highlight-bg: rgba(42, 161, 152, 0.15);
+  --bs-primary: #2aa198;
+  --bs-primary-rgb: 42, 161, 152;
+  --bs-secondary: #93a1a1;
+  --bs-secondary-rgb: 147, 161, 161;
+  --bs-table-striped-bg: rgba(238, 232, 213, 0.55);
+
+  @include thalia-bs-from-tokens;
+}
+
+// --- Solarized Dark ---
+@mixin thalia-theme-solarized-dark {
+  color-scheme: dark;
+  --thalia-font-sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --thalia-font-mono: "Source Code Pro", ui-monospace, Menlo, Consolas, monospace;
+
+  --thalia-ink: #93a1a1;
+  --thalia-muted: #586e75;
+  --thalia-paper: #002b36;
+  --thalia-accent: #2aa198;
+  --thalia-line: #0a4552;
+  --thalia-bg-glow-1: #073642;
+  --thalia-bg-glow-2: #004052;
+  --thalia-surface: rgba(147, 161, 161, 0.08);
+  --thalia-surface-soft: rgba(147, 161, 161, 0.06);
+  --thalia-surface-strong: rgba(147, 161, 161, 0.12);
+  --thalia-surface-chip: rgba(147, 161, 161, 0.16);
+  --thalia-hover: rgba(42, 161, 152, 0.12);
+  --thalia-hover-strong: rgba(42, 161, 152, 0.18);
+  --thalia-hot: rgba(42, 161, 152, 0.22);
+  --thalia-hot-ring: rgba(42, 161, 152, 0.55);
+  --thalia-hot-soft: rgba(42, 161, 152, 0.35);
+  --thalia-pop-top: #0a3a44;
+  --thalia-pop-bot: #073642;
+  --thalia-bubble-black-top: #0a3f4a;
+  --thalia-bubble-black-bot: #073642;
+  --thalia-inset: rgba(147, 161, 161, 0.08);
+  --thalia-shadow: rgba(0, 21, 27, 0.55);
+  --thalia-eval-white: #eee8d5;
+  --thalia-eval-black: #002b36;
+  --thalia-cheat: #cb4b16;
+  --thalia-reject: #dc322f;
+  --thalia-submit: #268bd2;
+
+  --thalia-md-code-bg: #002b36;
+  --thalia-md-code-fg: #93a1a1;
+  --thalia-md-code-header: #073642;
+  --thalia-md-code-border: rgba(147, 161, 161, 0.14);
+  --thalia-md-hl-comment: #586e75;
+  --thalia-md-hl-keyword: #859900;
+  --thalia-md-hl-title: #268bd2;
+  --thalia-md-hl-deletion: #dc322f;
+  --thalia-md-hl-subst: #cb4b16;
+  --thalia-md-hl-literal: #2aa198;
+  --thalia-md-hl-attr: #b58900;
+  --thalia-md-hl-ln: #586e75;
+  --thalia-md-hl-ln-border: #0a4552;
+
+  --bs-body-color-rgb: 147, 161, 161;
+  --bs-body-bg-rgb: 0, 43, 54;
+  --bs-emphasis-color: #eee8d5;
+  --bs-secondary-bg: #073642;
+  --bs-tertiary-bg: rgba(147, 161, 161, 0.08);
+  --bs-border-color-translucent: rgba(147, 161, 161, 0.18);
+  --bs-link-color-rgb: 42, 161, 152;
+  --bs-link-hover-color: #3dbfb5;
+  --bs-code-color: #b58900;
+  --bs-highlight-bg: rgba(42, 161, 152, 0.2);
+  --bs-primary: #2aa198;
+  --bs-primary-rgb: 42, 161, 152;
+  --bs-secondary: #586e75;
+  --bs-secondary-rgb: 88, 110, 117;
+  --bs-table-striped-bg: rgba(7, 54, 66, 0.55);
+
+  @include thalia-bs-from-tokens;
+}
+
+// --- Rosé Pine (main) https://rosepinetheme.com/palette/ ---
+@mixin thalia-theme-rose-pine {
+  color-scheme: dark;
+  --thalia-font-sans: "DM Sans", "Segoe UI", system-ui, sans-serif;
+  --thalia-font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --thalia-ink: #e0def4;
+  --thalia-muted: #908caa;
+  --thalia-paper: #191724;
+  --thalia-accent: #9ccfd8; // foam
+  --thalia-line: #403d52; // highlight med
+  --thalia-bg-glow-1: #1f1d2e;
+  --thalia-bg-glow-2: #26233a;
+  --thalia-surface: rgba(224, 222, 244, 0.06);
+  --thalia-surface-soft: rgba(224, 222, 244, 0.04);
+  --thalia-surface-strong: rgba(224, 222, 244, 0.1);
+  --thalia-surface-chip: rgba(224, 222, 244, 0.12);
+  --thalia-hover: rgba(156, 207, 216, 0.12);
+  --thalia-hover-strong: rgba(156, 207, 216, 0.18);
+  --thalia-hot: rgba(196, 167, 231, 0.2);
+  --thalia-hot-ring: rgba(156, 207, 216, 0.55);
+  --thalia-hot-soft: rgba(156, 207, 216, 0.3);
+  --thalia-pop-top: #1f1d2e;
+  --thalia-pop-bot: #191724;
+  --thalia-bubble-black-top: #26233a;
+  --thalia-bubble-black-bot: #1f1d2e;
+  --thalia-inset: rgba(224, 222, 244, 0.06);
+  --thalia-shadow: rgba(0, 0, 0, 0.45);
+  --thalia-eval-white: #e0def4;
+  --thalia-eval-black: #191724;
+  --thalia-cheat: #f6c177; // gold
+  --thalia-reject: #eb6f92; // love
+  --thalia-submit: #c4a7e7; // iris
+
+  --thalia-md-code-bg: #191724;
+  --thalia-md-code-fg: #e0def4;
+  --thalia-md-code-header: #1f1d2e;
+  --thalia-md-code-border: rgba(224, 222, 244, 0.12);
+  --thalia-md-hl-comment: #6e6a86;
+  --thalia-md-hl-keyword: #c4a7e7;
+  --thalia-md-hl-title: #9ccfd8;
+  --thalia-md-hl-deletion: #eb6f92;
+  --thalia-md-hl-subst: #ebbcba;
+  --thalia-md-hl-literal: #31748f;
+  --thalia-md-hl-attr: #f6c177;
+  --thalia-md-hl-ln: #6e6a86;
+  --thalia-md-hl-ln-border: #403d52;
+
+  --bs-body-color-rgb: 224, 222, 244;
+  --bs-body-bg-rgb: 25, 23, 36;
+  --bs-emphasis-color: #e0def4;
+  --bs-secondary-bg: #1f1d2e;
+  --bs-tertiary-bg: rgba(224, 222, 244, 0.06);
+  --bs-border-color-translucent: rgba(224, 222, 244, 0.14);
+  --bs-link-color-rgb: 156, 207, 216;
+  --bs-link-hover-color: #b3dfe5;
+  --bs-code-color: #f6c177;
+  --bs-highlight-bg: rgba(156, 207, 216, 0.18);
+  --bs-primary: #9ccfd8;
+  --bs-primary-rgb: 156, 207, 216;
+  --bs-secondary: #908caa;
+  --bs-secondary-rgb: 144, 140, 170;
+  --bs-table-striped-bg: rgba(31, 29, 46, 0.8);
+
+  @include thalia-bs-from-tokens;
+}
+
+// --- Rosé Pine Moon ---
+@mixin thalia-theme-rose-pine-moon {
+  color-scheme: dark;
+  --thalia-font-sans: "DM Sans", "Segoe UI", system-ui, sans-serif;
+  --thalia-font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --thalia-ink: #e0def4;
+  --thalia-muted: #908caa;
+  --thalia-paper: #232136;
+  --thalia-accent: #9ccfd8;
+  --thalia-line: #44415a;
+  --thalia-bg-glow-1: #2a273f;
+  --thalia-bg-glow-2: #393552;
+  --thalia-surface: rgba(224, 222, 244, 0.06);
+  --thalia-surface-soft: rgba(224, 222, 244, 0.04);
+  --thalia-surface-strong: rgba(224, 222, 244, 0.1);
+  --thalia-surface-chip: rgba(224, 222, 244, 0.12);
+  --thalia-hover: rgba(156, 207, 216, 0.12);
+  --thalia-hover-strong: rgba(156, 207, 216, 0.18);
+  --thalia-hot: rgba(196, 167, 231, 0.2);
+  --thalia-hot-ring: rgba(62, 143, 176, 0.55);
+  --thalia-hot-soft: rgba(156, 207, 216, 0.3);
+  --thalia-pop-top: #2a273f;
+  --thalia-pop-bot: #232136;
+  --thalia-bubble-black-top: #393552;
+  --thalia-bubble-black-bot: #2a273f;
+  --thalia-inset: rgba(224, 222, 244, 0.06);
+  --thalia-shadow: rgba(0, 0, 0, 0.45);
+  --thalia-eval-white: #e0def4;
+  --thalia-eval-black: #232136;
+  --thalia-cheat: #f6c177;
+  --thalia-reject: #eb6f92;
+  --thalia-submit: #c4a7e7;
+
+  --thalia-md-code-bg: #232136;
+  --thalia-md-code-fg: #e0def4;
+  --thalia-md-code-header: #2a273f;
+  --thalia-md-code-border: rgba(224, 222, 244, 0.12);
+  --thalia-md-hl-comment: #6e6a86;
+  --thalia-md-hl-keyword: #c4a7e7;
+  --thalia-md-hl-title: #9ccfd8;
+  --thalia-md-hl-deletion: #eb6f92;
+  --thalia-md-hl-subst: #ea9a97;
+  --thalia-md-hl-literal: #3e8fb0;
+  --thalia-md-hl-attr: #f6c177;
+  --thalia-md-hl-ln: #6e6a86;
+  --thalia-md-hl-ln-border: #44415a;
+
+  --bs-body-color-rgb: 224, 222, 244;
+  --bs-body-bg-rgb: 35, 33, 54;
+  --bs-emphasis-color: #e0def4;
+  --bs-secondary-bg: #2a273f;
+  --bs-tertiary-bg: rgba(224, 222, 244, 0.06);
+  --bs-border-color-translucent: rgba(224, 222, 244, 0.14);
+  --bs-link-color-rgb: 156, 207, 216;
+  --bs-link-hover-color: #b3dfe5;
+  --bs-code-color: #f6c177;
+  --bs-highlight-bg: rgba(156, 207, 216, 0.18);
+  --bs-primary: #9ccfd8;
+  --bs-primary-rgb: 156, 207, 216;
+  --bs-secondary: #908caa;
+  --bs-secondary-rgb: 144, 140, 170;
+  --bs-table-striped-bg: rgba(42, 39, 63, 0.85);
+
+  @include thalia-bs-from-tokens;
+}
+
+// --- Rosé Pine Dawn ---
+@mixin thalia-theme-rose-pine-dawn {
+  color-scheme: light;
+  --thalia-font-sans: "Lora", "Georgia", "Times New Roman", serif;
+  --thalia-font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --thalia-ink: #575279;
+  --thalia-muted: #797593;
+  --thalia-paper: #faf4ed;
+  --thalia-accent: #286983; // pine
+  --thalia-line: #dfdad9;
+  --thalia-bg-glow-1: #fffaf3;
+  --thalia-bg-glow-2: #f2e9e1;
+  --thalia-surface: rgba(255, 250, 243, 0.75);
+  --thalia-surface-soft: rgba(242, 233, 225, 0.65);
+  --thalia-surface-strong: rgba(255, 255, 255, 0.85);
+  --thalia-surface-chip: rgba(255, 255, 255, 0.95);
+  --thalia-hover: rgba(40, 105, 131, 0.08);
+  --thalia-hover-strong: rgba(40, 105, 131, 0.14);
+  --thalia-hot: rgba(144, 122, 169, 0.16);
+  --thalia-hot-ring: rgba(40, 105, 131, 0.45);
+  --thalia-hot-soft: rgba(86, 148, 159, 0.25);
+  --thalia-pop-top: #fffaf3;
+  --thalia-pop-bot: #faf4ed;
+  --thalia-bubble-black-top: #f2e9e1;
+  --thalia-bubble-black-bot: #efe6dc;
+  --thalia-inset: rgba(255, 255, 255, 0.75);
+  --thalia-shadow: rgba(87, 82, 121, 0.12);
+  --thalia-eval-white: #faf4ed;
+  --thalia-eval-black: #575279;
+  --thalia-cheat: #ea9d34;
+  --thalia-reject: #b4637a;
+  --thalia-submit: #907aa9;
+
+  --thalia-md-code-bg: #fffaf3;
+  --thalia-md-code-fg: #575279;
+  --thalia-md-code-header: #f2e9e1;
+  --thalia-md-code-border: rgba(87, 82, 121, 0.18);
+  --thalia-md-hl-comment: #9893a5;
+  --thalia-md-hl-keyword: #907aa9;
+  --thalia-md-hl-title: #286983;
+  --thalia-md-hl-deletion: #b4637a;
+  --thalia-md-hl-subst: #d7827e;
+  --thalia-md-hl-literal: #56949f;
+  --thalia-md-hl-attr: #ea9d34;
+  --thalia-md-hl-ln: #9893a5;
+  --thalia-md-hl-ln-border: #dfdad9;
+
+  --bs-body-color-rgb: 87, 82, 121;
+  --bs-body-bg-rgb: 250, 244, 237;
+  --bs-emphasis-color: #575279;
+  --bs-secondary-bg: #f2e9e1;
+  --bs-tertiary-bg: rgba(242, 233, 225, 0.6);
+  --bs-border-color-translucent: rgba(87, 82, 121, 0.18);
+  --bs-link-color-rgb: 40, 105, 131;
+  --bs-link-hover-color: #1f5470;
+  --bs-code-color: #ea9d34;
+  --bs-highlight-bg: rgba(40, 105, 131, 0.12);
+  --bs-primary: #286983;
+  --bs-primary-rgb: 40, 105, 131;
+  --bs-secondary: #797593;
+  --bs-secondary-rgb: 121, 117, 147;
+  --bs-table-striped-bg: rgba(242, 233, 225, 0.55);
+
+  @include thalia-bs-from-tokens;
+}
+
+// --- Dracula https://draculatheme.com/spec ---
+@mixin thalia-theme-dracula {
+  color-scheme: dark;
+  --thalia-font-sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --thalia-font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --thalia-ink: #f8f8f2;
+  --thalia-muted: #6272a4;
+  --thalia-paper: #282a36;
+  --thalia-accent: #bd93f9; // purple
+  --thalia-line: #44475a;
+  --thalia-bg-glow-1: #21222c;
+  --thalia-bg-glow-2: #343746;
+  --thalia-surface: rgba(248, 248, 242, 0.06);
+  --thalia-surface-soft: rgba(248, 248, 242, 0.04);
+  --thalia-surface-strong: rgba(248, 248, 242, 0.1);
+  --thalia-surface-chip: rgba(248, 248, 242, 0.12);
+  --thalia-hover: rgba(189, 147, 249, 0.14);
+  --thalia-hover-strong: rgba(189, 147, 249, 0.22);
+  --thalia-hot: rgba(255, 121, 198, 0.2);
+  --thalia-hot-ring: rgba(189, 147, 249, 0.55);
+  --thalia-hot-soft: rgba(139, 233, 253, 0.3);
+  --thalia-pop-top: #343746;
+  --thalia-pop-bot: #282a36;
+  --thalia-bubble-black-top: #44475a;
+  --thalia-bubble-black-bot: #343746;
+  --thalia-inset: rgba(248, 248, 242, 0.06);
+  --thalia-shadow: rgba(0, 0, 0, 0.5);
+  --thalia-eval-white: #f8f8f2;
+  --thalia-eval-black: #282a36;
+  --thalia-cheat: #ffb86c;
+  --thalia-reject: #ff5555;
+  --thalia-submit: #8be9fd;
+
+  --thalia-md-code-bg: #282a36;
+  --thalia-md-code-fg: #f8f8f2;
+  --thalia-md-code-header: #21222c;
+  --thalia-md-code-border: rgba(248, 248, 242, 0.12);
+  --thalia-md-hl-comment: #6272a4;
+  --thalia-md-hl-keyword: #ff79c6;
+  --thalia-md-hl-title: #50fa7b;
+  --thalia-md-hl-deletion: #ff5555;
+  --thalia-md-hl-subst: #ffb86c;
+  --thalia-md-hl-literal: #bd93f9;
+  --thalia-md-hl-attr: #f1fa8c;
+  --thalia-md-hl-ln: #6272a4;
+  --thalia-md-hl-ln-border: #44475a;
+
+  --bs-body-color-rgb: 248, 248, 242;
+  --bs-body-bg-rgb: 40, 42, 54;
+  --bs-emphasis-color: #f8f8f2;
+  --bs-secondary-bg: #21222c;
+  --bs-tertiary-bg: rgba(248, 248, 242, 0.06);
+  --bs-border-color-translucent: rgba(248, 248, 242, 0.14);
+  --bs-link-color-rgb: 189, 147, 249;
+  --bs-link-hover-color: #d6bcff;
+  --bs-code-color: #f1fa8c;
+  --bs-highlight-bg: rgba(189, 147, 249, 0.2);
+  --bs-primary: #bd93f9;
+  --bs-primary-rgb: 189, 147, 249;
+  --bs-secondary: #6272a4;
+  --bs-secondary-rgb: 98, 114, 164;
+  --bs-table-striped-bg: rgba(68, 71, 90, 0.45);
+
+  @include thalia-bs-from-tokens;
+}
+
+// --- Monokai (classic editor palette) ---
+@mixin thalia-theme-monokai {
+  color-scheme: dark;
+  --thalia-font-sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --thalia-font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --thalia-ink: #f8f8f2;
+  --thalia-muted: #75715e;
+  --thalia-paper: #272822;
+  --thalia-accent: #a6e22e; // green
+  --thalia-line: #3e3d32;
+  --thalia-bg-glow-1: #1e1f1c;
+  --thalia-bg-glow-2: #3e3d32;
+  --thalia-surface: rgba(248, 248, 242, 0.06);
+  --thalia-surface-soft: rgba(248, 248, 242, 0.04);
+  --thalia-surface-strong: rgba(248, 248, 242, 0.1);
+  --thalia-surface-chip: rgba(248, 248, 242, 0.12);
+  --thalia-hover: rgba(166, 226, 46, 0.12);
+  --thalia-hover-strong: rgba(166, 226, 46, 0.2);
+  --thalia-hot: rgba(249, 38, 114, 0.2);
+  --thalia-hot-ring: rgba(166, 226, 46, 0.55);
+  --thalia-hot-soft: rgba(102, 217, 239, 0.3);
+  --thalia-pop-top: #3e3d32;
+  --thalia-pop-bot: #272822;
+  --thalia-bubble-black-top: #49483e;
+  --thalia-bubble-black-bot: #3e3d32;
+  --thalia-inset: rgba(248, 248, 242, 0.06);
+  --thalia-shadow: rgba(0, 0, 0, 0.5);
+  --thalia-eval-white: #f8f8f2;
+  --thalia-eval-black: #272822;
+  --thalia-cheat: #fd971f;
+  --thalia-reject: #f92672;
+  --thalia-submit: #66d9ef;
+
+  --thalia-md-code-bg: #272822;
+  --thalia-md-code-fg: #f8f8f2;
+  --thalia-md-code-header: #1e1f1c;
+  --thalia-md-code-border: rgba(248, 248, 242, 0.12);
+  --thalia-md-hl-comment: #75715e;
+  --thalia-md-hl-keyword: #f92672;
+  --thalia-md-hl-title: #a6e22e;
+  --thalia-md-hl-deletion: #f92672;
+  --thalia-md-hl-subst: #fd971f;
+  --thalia-md-hl-literal: #ae81ff;
+  --thalia-md-hl-attr: #e6db74;
+  --thalia-md-hl-ln: #75715e;
+  --thalia-md-hl-ln-border: #3e3d32;
+
+  --bs-body-color-rgb: 248, 248, 242;
+  --bs-body-bg-rgb: 39, 40, 34;
+  --bs-emphasis-color: #f8f8f2;
+  --bs-secondary-bg: #1e1f1c;
+  --bs-tertiary-bg: rgba(248, 248, 242, 0.06);
+  --bs-border-color-translucent: rgba(248, 248, 242, 0.14);
+  --bs-link-color-rgb: 166, 226, 46;
+  --bs-link-hover-color: #c2f04a;
+  --bs-code-color: #e6db74;
+  --bs-highlight-bg: rgba(166, 226, 46, 0.18);
+  --bs-primary: #a6e22e;
+  --bs-primary-rgb: 166, 226, 46;
+  --bs-secondary: #75715e;
+  --bs-secondary-rgb: 117, 113, 94;
+  --bs-table-striped-bg: rgba(62, 61, 50, 0.55);
+
+  @include thalia-bs-from-tokens;
+}
+
+// --- Bootstrap Agency (Start Bootstrap Agency via Thalia agency.scss) ---
+@mixin thalia-theme-agency {
+  color-scheme: light;
+  --thalia-font-sans: "Roboto Slab", "Georgia", "Times New Roman", serif;
+  --thalia-font-mono: "Source Code Pro", ui-monospace, Menlo, Consolas, monospace;
+
+  --thalia-ink: #212529;
+  --thalia-muted: #6c757d;
+  --thalia-paper: #ffffff;
+  --thalia-accent: #ffc800; // Agency primary yellow
+  --thalia-line: #dee2e6;
+  --thalia-bg-glow-1: #f8f9fa;
+  --thalia-bg-glow-2: #e9ecef;
+  --thalia-surface: rgba(248, 249, 250, 0.85);
+  --thalia-surface-soft: rgba(233, 236, 239, 0.7);
+  --thalia-surface-strong: rgba(255, 255, 255, 0.95);
+  --thalia-surface-chip: #ffffff;
+  --thalia-hover: rgba(255, 200, 0, 0.12);
+  --thalia-hover-strong: rgba(255, 200, 0, 0.2);
+  --thalia-hot: rgba(255, 200, 0, 0.28);
+  --thalia-hot-ring: rgba(255, 200, 0, 0.55);
+  --thalia-hot-soft: rgba(33, 37, 41, 0.12);
+  --thalia-pop-top: #ffffff;
+  --thalia-pop-bot: #f8f9fa;
+  --thalia-bubble-black-top: #e9ecef;
+  --thalia-bubble-black-bot: #dee2e6;
+  --thalia-inset: rgba(255, 255, 255, 0.9);
+  --thalia-shadow: rgba(33, 37, 41, 0.12);
+  --thalia-eval-white: #ffffff;
+  --thalia-eval-black: #212529;
+  --thalia-cheat: #fd7e14;
+  --thalia-reject: #dc3545;
+  --thalia-submit: #0d6efd;
+
+  --thalia-md-code-bg: #f8f9fa;
+  --thalia-md-code-fg: #212529;
+  --thalia-md-code-header: #e9ecef;
+  --thalia-md-code-border: rgba(33, 37, 41, 0.14);
+  --thalia-md-hl-comment: #6c757d;
+  --thalia-md-hl-keyword: #6610f2;
+  --thalia-md-hl-title: #0d6efd;
+  --thalia-md-hl-deletion: #dc3545;
+  --thalia-md-hl-subst: #fd7e14;
+  --thalia-md-hl-literal: #198754;
+  --thalia-md-hl-attr: #d63384;
+  --thalia-md-hl-ln: #adb5bd;
+  --thalia-md-hl-ln-border: #dee2e6;
+
+  --bs-body-color-rgb: 33, 37, 41;
+  --bs-body-bg-rgb: 255, 255, 255;
+  --bs-emphasis-color: #212529;
+  --bs-secondary-bg: #e9ecef;
+  --bs-tertiary-bg: rgba(233, 236, 239, 0.6);
+  --bs-border-color-translucent: rgba(0, 0, 0, 0.175);
+  --bs-link-color-rgb: 204, 160, 0;
+  --bs-link-hover-color: #997800;
+  --bs-code-color: #d63384;
+  --bs-highlight-bg: #fff4cc;
+  --bs-primary: #ffc800;
+  --bs-primary-rgb: 255, 200, 0;
+  --bs-secondary: #6c757d;
+  --bs-secondary-rgb: 108, 117, 125;
+  --bs-table-striped-bg: rgba(233, 236, 239, 0.55);
+
+  @include thalia-bs-from-tokens;
+}
+
+// --- Thalia (default framework chrome: Bootstrap light + current tab greys) ---
+@mixin thalia-theme-thalia {
+  color-scheme: light;
+  --thalia-font-sans: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, "Lucida Grande", Arial, sans-serif;
+  --thalia-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --thalia-ink: #212529;
+  --thalia-muted: #495057;
+  --thalia-paper: #ffffff;
+  --thalia-accent: #0d6efd;
+  --thalia-line: #ced4da;
+  --thalia-bg-glow-1: #f8f9fa;
+  --thalia-bg-glow-2: #e9ecef;
+  --thalia-surface: #eef1f554;
+  --thalia-surface-soft: #eef1f554;
+  --thalia-surface-strong: #ffffff;
+  --thalia-surface-chip: #f8f9fa;
+  --thalia-hover: rgba(13, 110, 253, 0.1);
+  --thalia-hover-strong: rgba(13, 110, 253, 0.16);
+  --thalia-hot: rgba(13, 110, 253, 0.2);
+  --thalia-hot-ring: rgba(13, 110, 253, 0.45);
+  --thalia-hot-soft: rgba(13, 110, 253, 0.28);
+  --thalia-pop-top: #ffffff;
+  --thalia-pop-bot: #f8f9fa;
+  --thalia-bubble-black-top: #e9ecef;
+  --thalia-bubble-black-bot: #dee2e6;
+  --thalia-inset: rgba(255, 255, 255, 0.85);
+  --thalia-shadow: rgba(33, 37, 41, 0.12);
+  --thalia-eval-white: #ffffff;
+  --thalia-eval-black: #212529;
+  --thalia-cheat: #fd7e14;
+  --thalia-reject: #dc3545;
+  --thalia-submit: #0d6efd;
+
+  /* Keep atom-one-dark code cards (today’s markdown look) */
+  --thalia-md-code-bg: #282c34;
+  --thalia-md-code-fg: #abb2bf;
+  --thalia-md-code-header: #21252b;
+  --thalia-md-code-border: rgba(0, 0, 0, 0.2);
+  --thalia-md-hl-comment: #5c6370;
+  --thalia-md-hl-keyword: #c678dd;
+  --thalia-md-hl-title: #61aeee;
+  --thalia-md-hl-deletion: #e06c75;
+  --thalia-md-hl-subst: #e06c75;
+  --thalia-md-hl-literal: #56b6c2;
+  --thalia-md-hl-attr: #d19a66;
+  --thalia-md-hl-ln: #5c6370;
+  --thalia-md-hl-ln-border: #3e4451;
+
+  --bs-body-color-rgb: 33, 37, 41;
+  --bs-body-bg-rgb: 255, 255, 255;
+  --bs-emphasis-color: #212529;
+  --bs-secondary-bg: #e9ecef;
+  --bs-tertiary-bg: rgba(233, 236, 239, 0.55);
+  --bs-border-color-translucent: rgba(0, 0, 0, 0.175);
+  --bs-link-color-rgb: 13, 110, 253;
+  --bs-link-hover-color: #0a58ca;
+  --bs-code-color: #d63384;
+  --bs-highlight-bg: rgba(13, 110, 253, 0.12);
+  --bs-primary: #0d6efd;
+  --bs-primary-rgb: 13, 110, 253;
+  --bs-secondary: #6c757d;
+  --bs-secondary-rgb: 108, 117, 125;
+  --bs-table-striped-bg: rgba(233, 236, 239, 0.55);
+
+  @include thalia-bs-from-tokens;
+}
+
+// --- Thalia Dark (system / binary dark companion) ---
+@mixin thalia-theme-thalia-dark {
+  color-scheme: dark;
+  --thalia-font-sans: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, "Lucida Grande", Arial, sans-serif;
+  --thalia-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --thalia-ink: #f8f9fa;
+  --thalia-muted: #adb5bd;
+  --thalia-paper: #212529;
+  --thalia-accent: #6ea8fe;
+  --thalia-line: #495057;
+  --thalia-bg-glow-1: #2b3035;
+  --thalia-bg-glow-2: #343a40;
+  --thalia-surface: rgba(73, 80, 87, 0.45);
+  --thalia-surface-soft: rgba(52, 58, 64, 0.85);
+  --thalia-surface-strong: rgba(33, 37, 41, 0.95);
+  --thalia-surface-chip: #343a40;
+  --thalia-hover: rgba(110, 168, 254, 0.14);
+  --thalia-hover-strong: rgba(110, 168, 254, 0.22);
+  --thalia-hot: rgba(110, 168, 254, 0.28);
+  --thalia-hot-ring: rgba(110, 168, 254, 0.5);
+  --thalia-hot-soft: rgba(248, 249, 250, 0.12);
+  --thalia-pop-top: #343a40;
+  --thalia-pop-bot: #212529;
+  --thalia-bubble-black-top: #343a40;
+  --thalia-bubble-black-bot: #2b3035;
+  --thalia-inset: rgba(0, 0, 0, 0.35);
+  --thalia-shadow: rgba(0, 0, 0, 0.45);
+  --thalia-eval-white: #f8f9fa;
+  --thalia-eval-black: #212529;
+  --thalia-cheat: #fd9843;
+  --thalia-reject: #ea868f;
+  --thalia-submit: #6ea8fe;
+
+  --thalia-md-code-bg: #1e222a;
+  --thalia-md-code-fg: #abb2bf;
+  --thalia-md-code-header: #181b21;
+  --thalia-md-code-border: rgba(255, 255, 255, 0.1);
+  --thalia-md-hl-comment: #5c6370;
+  --thalia-md-hl-keyword: #c678dd;
+  --thalia-md-hl-title: #61aeee;
+  --thalia-md-hl-deletion: #e06c75;
+  --thalia-md-hl-subst: #e06c75;
+  --thalia-md-hl-literal: #56b6c2;
+  --thalia-md-hl-attr: #d19a66;
+  --thalia-md-hl-ln: #5c6370;
+  --thalia-md-hl-ln-border: #3e4451;
+
+  --bs-body-color-rgb: 248, 249, 250;
+  --bs-body-bg-rgb: 33, 37, 41;
+  --bs-emphasis-color: #f8f9fa;
+  --bs-secondary-bg: #343a40;
+  --bs-tertiary-bg: rgba(52, 58, 64, 0.65);
+  --bs-border-color-translucent: rgba(255, 255, 255, 0.15);
+  --bs-link-color-rgb: 110, 168, 254;
+  --bs-link-hover-color: #9ec5fe;
+  --bs-code-color: #e685b5;
+  --bs-highlight-bg: rgba(110, 168, 254, 0.18);
+  --bs-primary: #6ea8fe;
+  --bs-primary-rgb: 110, 168, 254;
+  --bs-secondary: #adb5bd;
+  --bs-secondary-rgb: 173, 181, 189;
+  --bs-table-striped-bg: rgba(52, 58, 64, 0.55);
+
+  @include thalia-bs-from-tokens;
+}
+
+// --- Apply packs ---
+:root {
+  @include thalia-theme-thalia;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    @include thalia-theme-thalia-dark;
+    @include thalia-dark-button-overrides;
+  }
+}
+
+:root[data-theme="thalia"],
+:root[data-theme="light"] {
+  @include thalia-theme-thalia;
+}
+
+:root[data-theme="thalia-dark"],
+:root[data-theme="dark"] {
+  @include thalia-theme-thalia-dark;
+  @include thalia-dark-button-overrides;
+}
+
+:root[data-theme="solarized-light"] {
+  @include thalia-theme-solarized-light;
+}
+
+:root[data-theme="solarized-dark"] {
+  @include thalia-theme-solarized-dark;
+  @include thalia-dark-button-overrides;
+}
+
+:root[data-theme="rose-pine"] {
+  @include thalia-theme-rose-pine;
+  @include thalia-dark-button-overrides;
+}
+
+:root[data-theme="rose-pine-moon"] {
+  @include thalia-theme-rose-pine-moon;
+  @include thalia-dark-button-overrides;
+}
+
+:root[data-theme="rose-pine-dawn"] {
+  @include thalia-theme-rose-pine-dawn;
+}
+
+:root[data-theme="dracula"] {
+  @include thalia-theme-dracula;
+  @include thalia-dark-button-overrides;
+}
+
+:root[data-theme="monokai"] {
+  @include thalia-theme-monokai;
+  @include thalia-dark-button-overrides;
+}
+
+:root[data-theme="agency"] {
+  @include thalia-theme-agency;
+
+  // Agency primary is yellow — dark label text (Start Bootstrap Agency).
+  .btn-primary {
+    --bs-btn-color: #212529;
+    --bs-btn-bg: #ffc800;
+    --bs-btn-border-color: #ffc800;
+    --bs-btn-hover-color: #212529;
+    --bs-btn-hover-bg: #ffd133;
+    --bs-btn-hover-border-color: #ffd133;
+    --bs-btn-active-color: #212529;
+    --bs-btn-active-bg: #e0b000;
+    --bs-btn-active-border-color: #e0b000;
+  }
+
+  // XL masthead CTA (Agency btn-xl) — keep yellow even if Bootstrap CDN utilities win.
+  .btn-primary.btn-xl {
+    color: #212529;
+    background-color: #ffc800;
+    border-color: #ffc800;
+  }
+
+  // Dark fixed nav sits on the masthead photo; keep brand readable.
+  #mainNav .navbar-brand {
+    color: #ffc800;
+  }
+}
+
+// Mermaid: invert light SVGs when the active pack (or system dark) is dark-scheme.
+:root[data-color-scheme="dark"] pre.mermaid {
+  filter: invert(1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) pre.mermaid {
+    filter: invert(1);
+  }
+}

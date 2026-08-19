@@ -1,6 +1,9 @@
 # Example: `example-agency`
 
-This is a Thalia example website built from the **Start Bootstrap “Agency”** theme.
+This is the static visual reference for the **Start Bootstrap “Agency”** theme.
+It deliberately serves the upstream-style HTML, CSS, and JavaScript from
+`public/`; compare it with `example-src`, which composes the same design through
+Thalia's Handlebars partials, shared SCSS theme tokens, and browser TypeScript.
 
 ## Attribution
 
@@ -8,7 +11,7 @@ This is a Thalia example website built from the **Start Bootstrap “Agency”**
   - **Theme page**: `https://startbootstrap.com/theme/agency`
   - **License**: MIT (per Start Bootstrap’s distribution of this theme)
 
-This repository includes a Thalia-adapted version of the theme so you can run it locally and use it as a starting point for your own Thalia sites.
+This repository also includes a Thalia-adapted version in `example-src`.
 
 ## Quickstart
 
@@ -19,5 +22,5 @@ bun install
 bun dev example-agency
 ```
 
-To save on space, the assets have been hotlinked from the original theme's github.io page.
+To save space, image assets are hotlinked from the original theme's github.io page.
 - https://startbootstrap.github.io/startbootstrap-agency/

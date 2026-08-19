@@ -22,12 +22,60 @@ html {
   font-size: 16px;
 }
 
+@import 'thalia-themes.scss';
+
+body {
+  font-family: var(--thalia-font-sans, #{$font-family-base});
+  color: var(--thalia-ink, inherit);
+  background-color: var(--thalia-paper, inherit);
+}
+
 .outlined-box {
   border: 1px solid;
-  border-color: #e5e6e9 #dfe0e4 #d0d1d5;
+  border-color: var(--thalia-line, #e5e6e9) var(--thalia-line, #dfe0e4) var(--thalia-line, #d0d1d5);
   border-radius: 3px;
   margin-bottom: 10px;
-  background: #fff;
+  background: var(--thalia-paper, #fff);
+}
+
+.theme-toggle__swatch {
+  display: inline-block;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 0.2rem;
+  margin-right: 0.45rem;
+  vertical-align: -0.1rem;
+  border: 1px solid var(--thalia-line, rgba(0, 0, 0, 0.12));
+}
+
+.theme-toggle__menu .theme-toggle__item.active {
+  font-weight: 600;
+}
+
+/* Agency fixed-top: outline button readable on dark navbar */
+.theme-toggle--agency-nav .btn {
+  --bs-btn-color: #fff;
+  --bs-btn-border-color: rgba(255, 255, 255, 0.55);
+  --bs-btn-hover-color: #212529;
+  --bs-btn-hover-bg: #ffc800;
+  --bs-btn-hover-border-color: #ffc800;
+  font-size: 0.75rem;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/*
+ * Alternating section band — theme-aware stand-in for Bootstrap `bg-light`.
+ * Mix paper toward ink (~12%) for a slight lift/dim vs neighbouring sections.
+ * Avoid `filter: brightness` — it also shifts text, icons, and photos.
+ */
+.thalia-section-alt {
+  background-color: color-mix(
+    in srgb,
+    var(--thalia-paper, #ffffff) 88%,
+    var(--thalia-ink, #212529) 12%
+  );
+  color: var(--thalia-ink, inherit);
 }
 
 // Adding profiles for the doombox project, DKGM 2025-01-19

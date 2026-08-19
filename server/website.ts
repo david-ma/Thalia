@@ -406,12 +406,16 @@ export class Website {
   public loadPartials() {
     this.registerHandlebarsHelpers()
 
+    // Framework views first; site `src/` last (overrides by basename).
+    // Do not load other websites' partials — that caused example-auth's
+    // navigation.hbs to replace Agency chrome on example-src / every site.
     const paths = [
       path.join(cwd(), 'node_modules', 'thalia', 'src', 'views'),
       path.join(cwd(), 'src', 'views'),
-      path.join(cwd(), 'websites', 'example-minimal', 'src', 'partials'),
-      path.join(cwd(), 'websites', 'example-src', 'src', 'partials'),
-      path.join(cwd(), 'websites', 'example-auth', 'src', 'partials'),
+      // Do we want to load these for every website?
+      // path.join(cwd(), 'websites', 'example-minimal', 'src', 'partials'),
+      // path.join(cwd(), 'websites', 'example-src', 'src', 'partials'),
+      // path.join(cwd(), 'websites', 'example-auth', 'src', 'partials'),
       path.join(this.rootPath, 'src'),
     ]
 

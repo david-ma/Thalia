@@ -24,11 +24,24 @@ The framework does not ship a webpack toolchain; browser TypeScript and SCSS are
 ├── bin/                      # Framework helper CLIs (dev, sitemap, SCSS build)
 ├── websites/                 # Example / deployed sites (each has its own config + src + public)
 │   ├── example-minimal/
-│   ├── example-src/
+│   ├── example-agency/       # Static upstream Agency visual reference
+│   ├── example-src/          # Source pipeline + themed Handlebars conversion
 │   └── example-auth/         # Auth + DB-backed example (heavier integration tests)
 ├── tests/                    # Unit + integration + E2E tests (Bun)
 └── src/                      # Framework-shipped assets/partials (served as fallback)
 ```
+
+The examples have deliberately different jobs:
+
+| Example | Purpose | Automated coverage |
+|---|---|---|
+| `example-agency` | Static upstream Agency reference for visual comparison | Lightweight boot/static-asset smoke |
+| `example-minimal` | Smallest configured Thalia site using only `public/` assets | Default integration suite |
+| `example-src` | Handlebars, Markdown, SCSS, browser TypeScript, controllers, uploads, and theme composition | Main deterministic integration fixture |
+| `example-auth` | Security, role guards, database CRUD, profiles, and image integrations | Config/unit tests by default; service-backed integration tests opt in |
+
+Start with `example-minimal`, use `example-src` for framework features, and
+consult `example-auth` only when adding authenticated or database-backed flows.
 
 Each website typically looks like:
 

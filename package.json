@@ -100,6 +100,7 @@
     "bin/**/*",
     "public/**/*",
     "src/**/*",
+    "docs/guides/**/*",
     "tests/Integration/helpers.ts",
     "AGENTS.md",
     "README.md",

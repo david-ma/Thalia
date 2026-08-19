@@ -1,63 +1,55 @@
-// Thalia tab-container partial (Bootstrap 5 nav-tabs + tab-content).
+// Thalia tab-container (Bootstrap 5 nav-tabs + tab-content).
 // Loaded from wrapper.hbs as /css/tabs.css — override in your site src/css/tabs.scss.
+// Colours follow --thalia-* (thalia-themes.scss). Fallbacks = current light chrome / thalia pack.
 
-// $tabs-bar-bg: #eef1f5;
-$tabs-bar-bg: #eef1f554;
-$tabs-bar-border: #ced4da;
-$tabs-inactive-fg: #495057;
-$tabs-active-fg: #212529;
-$tabs-panel-bg: #04191445;
-$tabs-panel-border: #dee2e6;
 $tabs-radius: 0.5rem;
 
 .thalia-tabs {
-  background: $tabs-bar-bg;
-  border: 1px solid $tabs-bar-border;
+  background: var(--thalia-surface-soft, #eef1f554);
+  border: 1px solid var(--thalia-line, #ced4da);
   border-radius: $tabs-radius;
   padding: 0.65rem 0.75rem 0;
   margin-bottom: 1.25rem;
 
   .nav-tabs {
-    border-bottom: 1px solid $tabs-bar-border;
+    border-bottom: 1px solid var(--thalia-line, #ced4da);
     gap: 0.35rem;
     margin-bottom: 0;
   }
 
   .nav-link {
-    color: $tabs-inactive-fg;
+    color: var(--thalia-muted, #495057);
     font-weight: 500;
     font-size: 0.9375rem;
-    background: color-mix(in srgb, $tabs-panel-bg 55%, $tabs-bar-bg);
+    background: var(--thalia-surface, color-mix(in srgb, #04191445 55%, #eef1f554));
     border-color: transparent;
     margin-bottom: -1px;
 
     &:hover,
     &:focus {
-      color: $tabs-active-fg;
-      background: color-mix(in srgb, $tabs-panel-bg 90%, $tabs-bar-bg);
-      border-color: $tabs-panel-border $tabs-panel-border transparent;
+      color: var(--thalia-ink, #212529);
+      border-color: transparent;
+      background: color-mix(in srgb, var(--thalia-paper, #fff) 90%, var(--thalia-surface-soft, #eef1f554));
     }
 
-    &.active,
-    .nav-item.show & {
-      color: $tabs-active-fg;
+    &.active {
+      color: var(--thalia-ink, #212529);
       font-weight: 600;
-      background: $tabs-panel-bg;
-      border-color: $tabs-panel-border $tabs-panel-border $tabs-panel-bg;
+      background: var(--thalia-paper, #fff);
+      border-color: var(--thalia-line, #dee2e6) var(--thalia-line, #dee2e6) var(--thalia-paper, #fff);
     }
   }
 
   .tab-content {
-    background: $tabs-panel-bg;
-    border: 1px solid $tabs-panel-border;
-    border-top: none;
+    background: var(--thalia-paper, #fff);
+    border: 1px solid var(--thalia-line, #dee2e6);
+    border-top: 0;
     border-radius: 0 0 $tabs-radius $tabs-radius;
-    margin: 0 -0.75rem;
-    padding: 1rem 1.25rem 1.25rem;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    padding: 1rem 1.1rem 1.15rem;
+    margin-bottom: 0.15rem;
   }
 
   .tab-pane {
-    color: $tabs-active-fg;
+    color: var(--thalia-ink, #212529);
   }
 }

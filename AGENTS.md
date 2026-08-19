@@ -13,6 +13,21 @@ If the user installed Thalia via npm (`bun add thalia` / `npm install thalia`), 
 
 Agents should NOT install new packages. Agents should make suggestions for useful packages to the user and ask the user to `bun install` or otherwise provide the install instructions for the user to manually perform.
 
+## Task guides
+
+`AGENTS.md` contains repository-wide facts and rules which should always be in
+context. Detailed, evolving implementation guidance lives in `docs/guides/` so
+the root instructions stay concise enough to load reliably.
+
+Before changing an area listed in the [guide index](docs/guides/README.md), read
+the linked guide completely. In particular, read
+[the themes guide](docs/guides/themes.md) before changing theme SCSS, theme
+partials, the browser toggle, or a site's theme integration.
+
+Add a nested `AGENTS.md` only when a subtree has mandatory rules which differ
+from the repository-wide rules. Do not use nested instruction files as a
+substitute for reference documentation.
+
 ## What Thalia is for
 
 Thalia is a **Bun-first web framework** for hosting **one or many websites** from a single codebase. It’s optimised for “internal tools + content-rich sites” where you want:
@@ -91,4 +106,4 @@ REQUIRE_EXAMPLE_AUTH_LOGIN=1 bun run test:integration:example-auth
 
 ## NPM publishing note
 
-The npm package is configured via `package.json` `files`. By default it ships framework code (`server/`, `bin/`, `models/`, `src/`, `public/`) and **does not ship** the repo’s `websites/` directory.
+The npm package is configured via `package.json` `files`. By default it ships framework code (`server/`, `bin/`, `models/`, `src/`, `public/`) and the stable topic guides under `docs/guides/`; it **does not ship** the repo’s `websites/` directory.

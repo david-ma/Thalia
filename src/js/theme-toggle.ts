@@ -1,6 +1,6 @@
 /**
  * Theme registry + toggle modes (binary | system | palette).
- * See docs/2026-08-10_themes-upstream-plan.md
+ * See docs/guides/themes.md
  *
  * html[data-theme="<id>"] applies a pack from thalia-themes.scss.
  * html[data-color-scheme="light"|"dark"] is derived for Mermaid invert etc.

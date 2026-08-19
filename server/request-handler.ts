@@ -626,11 +626,9 @@ export class RequestHandler {
   }
 
   /**
-   * If we have a typescript file, we try to compile it to javascript.
-   * Sideeffect: This will create the javascript file in /dist
-   * We could create the javsacript file in /tmp instead
-   * Or we could upgrade the tryScss to also create the css file in /dist, so it matches
-   * Either way, we should aim to be consistent.
+   * Compile browser TypeScript on request, preferring the site's `src/js` over
+   * framework `src/js` at the same URL. Bun writes the bundle to the site's
+   * ignored `dist/` cache; static `public/js` remains the final fallback.
    */
   private static tryTypescript(requestHandler: RequestHandler): Promise<RequestHandler> {
     return new Promise((next, finish) => {
@@ -652,9 +650,12 @@ export class RequestHandler {
         Bun.build({
           entrypoints: [tsPath],
           target: 'browser',
-          outdir: requestHandler.projectDistPath, // Perhaps we should write to /tmp instead
+          outdir: requestHandler.projectDistPath,
         })
           .then((result) => {
+            if (!result.success || !result.outputs[0]) {
+              throw new Error(`Bun.build produced no JavaScript for ${requestHandler.pathname}`)
+            }
             const jsPath = result.outputs[0].path
             return Bun.file(jsPath).text()
           })

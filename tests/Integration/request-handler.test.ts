@@ -333,6 +333,15 @@ describe('Request-handler: example-src (Handlebars, TypeScript, controller)', ()
     expect(js).toContain('data-theme-toggle')
   })
 
+  test('/js/utils.js prefers site src/js over framework src/js at the same path', async () => {
+    const response = await fetchFromServer('/js/utils.js', port)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('javascript')
+    const js = await response.text()
+    expect(js).toContain('example-src-site-override')
+    expect(js).not.toContain('camelize')
+  })
+
   test('/fruit redirects or serves via controller (tryController)', async () => {
     const response = await fetchFromServer('/fruit', port)
     expect([200, 301, 302]).toContain(response.status)

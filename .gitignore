@@ -55,4 +55,6 @@ Icon
 websites/ubc
 tmp
 .cursor
-docs
+docs/*
+!docs/guides/
+!docs/guides/**

@@ -63,6 +63,21 @@ describe('theme-toggle registry', () => {
     expect(scssIds).toEqual(registryIds)
   })
 
+  test('every theme pack implements the same Thalia token contract', () => {
+    const scss = fs.readFileSync(path.join(root, 'src/css/thalia-themes.scss'), 'utf8')
+    const packs = Array.from(
+      scss.matchAll(/@mixin thalia-theme-([a-z0-9-]+) \{([\s\S]*?)^\}/gm),
+      (match) => ({
+        id: match[1],
+        tokens: Array.from(match[2].matchAll(/^\s*(--thalia-[a-z0-9-]+):/gm), (token) => token[1]).sort(),
+      }),
+    )
+
+    expect(packs.length).toBeGreaterThan(0)
+    const expected = packs[0].tokens
+    for (const pack of packs) expect(pack.tokens, pack.id).toEqual(expected)
+  })
+
   test('early boot registry and dark schemes stay in sync', () => {
     const boot = fs.readFileSync(path.join(root, 'src/views/partials/theme-boot.hbs'), 'utf8')
     const idsFromObject = (name: 'KNOWN' | 'DARK') => {

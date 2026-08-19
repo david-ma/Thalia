@@ -55,7 +55,10 @@ when the framework core does not yet consume every token.
 - Semantic actions: `--thalia-cheat`, `--thalia-reject`, and
   `--thalia-submit`.
 - Evaluation contrast: `--thalia-eval-white` and `--thalia-eval-black`.
-- Markdown and highlighting: the `--thalia-md-*` properties.
+- Markdown and highlighting: the `--thalia-md-*` properties. Rendered
+  Markdown prose uses the foundation tokens (`--thalia-ink`, `--thalia-muted`,
+  `--thalia-accent`, `--thalia-line`, surfaces) rather than a second prose
+  palette. Do not hard-code ink on `.markdown-body`.
 - Bootstrap bridge: each pack also supplies the Bootstrap variables used by
   Thalia components.
 

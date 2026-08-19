@@ -78,6 +78,12 @@ describe('theme-toggle registry', () => {
     for (const pack of packs) expect(pack.tokens, pack.id).toEqual(expected)
   })
 
+  test('markdown prose consumes foundation tokens instead of hardcoded ink', () => {
+    const scss = fs.readFileSync(path.join(root, 'src/css/markdown.scss'), 'utf8')
+    expect(scss).toMatch(/\.markdown-doc \.markdown-body \{[\s\S]*color:\s*var\(--thalia-ink/)
+    expect(scss).not.toMatch(/\.markdown-doc \.markdown-body \{[\s\S]*color:\s*\$markdown-prose-fg/)
+  })
+
   test('early boot registry and dark schemes stay in sync', () => {
     const boot = fs.readFileSync(path.join(root, 'src/views/partials/theme-boot.hbs'), 'utf8')
     const idsFromObject = (name: 'KNOWN' | 'DARK') => {

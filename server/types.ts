@@ -206,6 +206,21 @@ export interface RawWebsiteConfig {
   sitemap?: SitemapConfig
   /** SmugMug upload OAuth: callback URL + default album (secrets still win where present). */
   smugmug?: SmugMugSiteOptions
+  /**
+   * Optional Bearer hook for RoleRouteGuard. When the request has
+   * `Authorization: Bearer …`, the guard calls this **before** session-cookie
+   * lookup. Return a `user`/`admin` auth object to authenticate; `null` falls
+   * through to the cookie. Used by Homelab’s extension tokens.
+   */
+  resolveBearerUserAuth?: (
+    this: Website,
+    token: string,
+    requestInfo: { pathname?: string },
+  ) =>
+    | Promise<{ role: string; [key: string]: unknown } | null | undefined>
+    | { role: string; [key: string]: unknown }
+    | null
+    | undefined
 }
 
 export interface WebsiteConfig extends BasicWebsiteConfig, RawWebsiteConfig {

@@ -42,8 +42,8 @@ So the guard applies to **anything** that reaches that pipeline: pages, APIs ser
 ## Roles and sessions
 
 - **Roles** are currently **`admin`**, **`user`**, and **`guest`** (`Role` in `server/route-guard.ts`).
-- **`guest`** means no valid session (or no session cookie), locked user treated as guest, or database unavailable for session resolution (no `db` / Drizzle).
-- **`user` / `admin`** come from the **`users.role`** column joined via **`sessions`** for the `sessionId` cookie.
+- **`guest`** means no valid session (or no session cookie), no successful **Bearer** hook result, locked user treated as guest, or database unavailable for session resolution (no `db` / Drizzle).
+- **`user` / `admin`** come from the **`users.role`** column joined via **`sessions`** for the `sessionId` cookie, **or** from optional **`config.resolveBearerUserAuth`** when the request has `Authorization: Bearer …` (Homelab extension tokens). Bearer is tried first; a `user`/`admin` result wins. `null` / errors fall through to the cookie. Chrome new-tab can still send a site cookie; Firefox `moz-extension://` usually cannot, so the hook is required for the extension.
 
 ### Ending sessions (logout / password reset)
 

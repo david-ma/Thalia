@@ -95,6 +95,42 @@ const ALWAYS_ALLOW_PERMISSIONS: Record<Role, Permission[]> = {
   admin: ['read'],
 }
 
+/**
+ * Plaintext token from `Authorization: Bearer …`, or empty if absent/malformed.
+ * Does not validate the token; sites do that in `config.resolveBearerUserAuth`.
+ */
+export function parseBearerAuthorizationHeader(header: unknown): string {
+  if (typeof header !== 'string') return ''
+  const match = /^Bearer\s+(\S+)/i.exec(header.trim())
+  return match?.[1]?.trim() ?? ''
+}
+
+/**
+ * If the site configured `resolveBearerUserAuth` and this request carries a
+ * Bearer token, return that auth when the hook yields `user` or `admin`.
+ * Hook errors and `null` fall through to session cookies.
+ */
+export async function resolveBearerUserAuthIfConfigured(
+  website: Website,
+  req: IncomingMessage,
+  requestInfo: RequestInfo,
+): Promise<UserAuth | null> {
+  const token = parseBearerAuthorizationHeader(req.headers?.authorization)
+  if (!token) return null
+  const hook = website.config?.resolveBearerUserAuth
+  if (typeof hook !== 'function') return null
+  try {
+    const resolved = await hook.call(website, token, requestInfo)
+    if (!resolved || typeof resolved !== 'object') return null
+    const role = (resolved as UserAuth).role
+    if (role !== 'user' && role !== 'admin') return null
+    return resolved as UserAuth
+  } catch (err) {
+    console.error('resolveBearerUserAuth failed', err)
+    return null
+  }
+}
+
 function normalizeRoutePath(p: string | undefined | null): string {
   const raw = (p ?? '').trim()
   if (!raw) return '/'
@@ -564,6 +600,13 @@ export class RoleRouteGuard extends BasicRouteGuard {
   }
 
   private getUserAuth(req: IncomingMessage, requestInfo: RequestInfo): Promise<UserAuth> {
+    return resolveBearerUserAuthIfConfigured(this.website, req, requestInfo).then((fromBearer) => {
+      if (fromBearer) return fromBearer
+      return this.getSessionUserAuth(requestInfo)
+    })
+  }
+
+  private getSessionUserAuth(requestInfo: RequestInfo): Promise<UserAuth> {
     const sessionId = requestInfo.cookies.sessionId
     // Must run before touching `db` — init failures set `website.db` to null.
     if (!this.website.db?.drizzle) {

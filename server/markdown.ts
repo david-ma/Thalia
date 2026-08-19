@@ -8,14 +8,14 @@ import { Marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
 import type { RequestInfo } from './server'
-import type { WebsiteVersionInfo } from './website'
+import { compileHandlebarsTemplate, type WebsiteVersionInfo } from './website.js'
 import { escapeHtml } from './util.js'
 
 export interface MarkdownHandlebars {
   registerPartial(name: string, value: string): void
   registerHelper(name: string, fn: (...args: unknown[]) => unknown): void
   compile(template: string): (context: Record<string, unknown>) => string
-  partials: Record<string, string | undefined>
+  partials: Record<string, string | ((context: Record<string, unknown>) => string) | undefined>
 }
 
 export type MarkdownPageContext = {
@@ -247,7 +247,10 @@ export function compileMarkdownPageHtml(
     mermaidSources,
     frontMatter,
   }
-  const renderedBody = handlebars.compile(prepareMarkdownBodyForCompile(contentHtml))(compileCtx)
+  const renderedBody = compileHandlebarsTemplate(
+    handlebars,
+    prepareMarkdownBodyForCompile(contentHtml),
+  )(compileCtx)
   const markdownPartial = handlebars.partials['markdown'] ?? '{{> content }}'
   const pageCtx: Record<string, unknown> = {
     ...compileCtx,
@@ -258,7 +261,7 @@ export function compileMarkdownPageHtml(
     markdownDocTabs: buildMarkdownDocTabs(!!frontMatterYaml),
     ...(frontMatterYaml ? { frontMatterYaml } : {}),
   }
-  return handlebars.compile(markdownPartial)(pageCtx)
+  return compileHandlebarsTemplate(handlebars, markdownPartial)(pageCtx)
 }
 
 /**

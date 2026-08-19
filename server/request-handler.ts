@@ -8,7 +8,7 @@
 
 import { IncomingMessage, ServerResponse } from 'http'
 import { fileURLToPath } from 'url'
-import { Website, type Controller, type NestedControllerMap } from './website'
+import { Website, compileHandlebarsTemplate, type Controller, type NestedControllerMap } from './website'
 import { RequestInfo } from './server'
 import path from 'path'
 import { dirname } from 'path'
@@ -368,13 +368,14 @@ export class RequestHandler {
 
       if (requestHandler.requestInfo.node_env !== 'development') return next(requestHandler)
 
+      requestHandler.website.refreshPartialsForRender()
       const data = RequestHandler.resolveFolderIndexData(requestHandler)
       if (!data) return next(requestHandler)
 
       const partialTemplate = requestHandler.website.handlebars.partials['show_folder_index']
       if (!partialTemplate) return next(requestHandler)
 
-      const contentHtml = requestHandler.website.handlebars.compile(partialTemplate)(data)
+      const contentHtml = compileHandlebarsTemplate(requestHandler.website.handlebars, partialTemplate)(data)
       const html = RequestHandler.renderFolderIndexWrapper(requestHandler, contentHtml, data.title)
       requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
       requestHandler.res.end(html)
@@ -428,10 +429,14 @@ export class RequestHandler {
   }
 
   private static renderFolderIndexWrapper(rh: RequestHandler, contentHtml: string, title: string): string {
-    if (rh.website.env === 'development') rh.website.loadPartials()
+    rh.website.refreshPartialsForRender()
     rh.website.handlebars.registerPartial('content', contentHtml)
     const wrapper = rh.website.handlebars.partials['wrapper'] ?? ''
-    return rh.website.handlebars.compile(wrapper)({ requestInfo: rh.requestInfo, version: rh.website.version, title })
+    return compileHandlebarsTemplate(rh.website.handlebars, wrapper)({
+      requestInfo: rh.requestInfo,
+      version: rh.website.version,
+      title,
+    })
   }
 
   /**
@@ -558,10 +563,7 @@ export class RequestHandler {
               version: requestHandler.website.version,
             },
             {
-              reloadPartials:
-                requestHandler.website.env === 'development'
-                  ? () => requestHandler.website.loadPartials()
-                  : undefined,
+              reloadPartials: () => requestHandler.website.refreshPartialsForRender(),
             },
           )
           requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })

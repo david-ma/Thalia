@@ -22,7 +22,7 @@ import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import { and, eq, gt } from 'drizzle-orm'
 import type { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
-import type { NestedControllerMap, Website } from '../website.js'
+import { compileHandlebarsTemplate, type NestedControllerMap, type Website } from '../website.js'
 import type { Machine, MachineReport } from '../controllers.js'
 import { MailService, mailTable } from '../mail.js'
 import { users, sessions, audits, authLoginThrottles, type User } from '../../models/security-models.js'
@@ -314,13 +314,14 @@ export class ThaliaSecurity implements Machine {
             })
             .where(eq(usersTable.id, user.id))
 
+          website.refreshPartialsForRender()
           const partialTemplate = website.handlebars.partials['passwordResetEmail']
           const siteLabel = (website.name && String(website.name).trim()) || ''
           const preheader = siteLabel
             ? `${siteLabel} — use the link below to set a new password. Expires in 1 hour.`
             : 'Use the link below to set a new password. Expires in 1 hour.'
           const html = partialTemplate
-            ? website.handlebars.compile(partialTemplate)({
+            ? compileHandlebarsTemplate(website.handlebars, partialTemplate)({
                 resetUrl,
                 siteName: website.name,
                 email: user.email,

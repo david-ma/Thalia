@@ -202,6 +202,7 @@ export interface RawWebsiteConfig {
   /** Thalia security module settings (sessions, signup, bootstrap) */
   thaliaAuth?: ThaliaAuthOptions
   handlebarsHelpers?: Record<string, (...args: any[]) => any>
+  /** Sitemap configuration for a website. Provides a list of URLs that should be included in the sitemap. Generate the sitemap by running the `generate-sitemap.ts` script. */
   sitemap?: SitemapConfig
   /** SmugMug upload OAuth: callback URL + default album (secrets still win where present). */
   smugmug?: SmugMugSiteOptions

@@ -85,7 +85,9 @@ export class Website {
   private readonly mode: ServerMode = 'standalone'
   private readonly port: number = 1337
   public config!: WebsiteConfig
-  public handlebars = Handlebars.create()
+  public handlebars = createSafeHandlebars()
+  /** File-backed Handlebars sources. Handlebars mutates `partials` to compiled functions after render. */
+  private partialSources: Record<string, string> = {}
   public domains: string[] = []
   public controllers: Record<string, NestedControllerMap> = {}
   private websockets!: WebsocketConfig
@@ -426,29 +428,53 @@ export class Website {
     }
   }
 
-  public getContentHtml(content: string, template: string = 'wrapper'): HandlebarsTemplateDelegate<any> {
+  /**
+   * In production, Handlebars replaces partial strings with compiled functions after the
+   * first render (e.g. homepage markdown's `{{#> wrapper }}`). Restore file sources so
+   * later pages such as `wrap('ecom.hbs')` can compile again.
+   */
+  public refreshPartialsForRender(): void {
     if (this.env == 'development') {
       this.loadPartials()
+    } else {
+      this.restorePartialSources()
     }
+  }
+
+  private restorePartialSources(): void {
+    for (const [name, source] of Object.entries(this.partialSources)) {
+      this.handlebars.registerPartial(name, source)
+    }
+  }
+
+  private partialSource(
+    name: string,
+    fallback?: string | HandlebarsTemplateDelegate<any>,
+  ): string | HandlebarsTemplateDelegate<any> {
+    const fromDisk = this.partialSources[name]
+    if (typeof fromDisk === 'string') {
+      return fromDisk
+    }
+    const live = this.handlebars.partials[name] ?? fallback ?? ''
+    return live as string | HandlebarsTemplateDelegate<any>
+  }
+
+  public getContentHtml(content: string, template: string = 'wrapper'): HandlebarsTemplateDelegate<any> {
+    this.refreshPartialsForRender()
 
     // Check that the template is a valid template, otherwise use 'wrapper'
-    if (!this.handlebars.partials[template]) {
+    if (!this.handlebars.partials[template] && !this.partialSources[template]) {
       template = 'wrapper'
     }
 
-    const templateFile = this.handlebars.partials[template] ?? ''
-    const contentFile = this.handlebars.partials[content] ?? this.handlebars.partials['404'] ?? '404'
+    const templateFile = this.partialSource(template)
+    const contentFile = this.partialSource(content, this.partialSource('404', '404'))
     this.handlebars.registerPartial('styles', '')
     this.handlebars.registerPartial('scripts', '')
     this.handlebars.registerPartial('content', '')
-    this.handlebars.registerPartial('content', contentFile)
+    this.handlebars.registerPartial('content', contentFile as string | HandlebarsTemplateDelegate<any>)
 
-    // Handlebars may already have replaced a partial string with a compiled
-    // template function after earlier renders — never pass that to compile().
-    if (typeof templateFile === 'function') {
-      return templateFile as HandlebarsTemplateDelegate<any>
-    }
-    return this.handlebars.compile(typeof templateFile === 'string' ? templateFile : String(templateFile ?? ''))
+    return compileHandlebarsTemplate(this.handlebars, templateFile)
   }
 
   /**
@@ -511,6 +537,7 @@ export class Website {
     }
 
     Object.entries(views).forEach(([name, content]) => {
+      this.partialSources[name] = content
       this.handlebars.registerPartial(name, content)
     })
 
@@ -534,11 +561,8 @@ export class Website {
 
     res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' })
     try {
-      const template = this.handlebars.partials['error']
-      const compiledTemplate =
-        typeof template === 'function'
-          ? (template as HandlebarsTemplateDelegate<any>)
-          : this.handlebars.compile(typeof template === 'string' ? template : '')
+      const template = this.partialSource('error')
+      const compiledTemplate = compileHandlebarsTemplate(this.handlebars, template)
 
       const data =
         this.env == 'development' && details
@@ -621,9 +645,7 @@ export class Website {
     }
 
     try {
-      if (this.env == 'development') {
-        this.loadPartials()
-      }
+      this.refreshPartialsForRender()
       let templateFile: string | HandlebarsTemplateDelegate<any> | null = null
       if (templatePath) {
         templateFile = fs.readFileSync(templatePath, 'utf8')
@@ -632,7 +654,7 @@ export class Website {
           errorContext.template = path.basename(templatePath).replace(/\.(hbs|handlebars|mustache)$/, '')
         }
       } else if (template) {
-        templateFile = this.templates()[template] ?? this.handlebars.partials[template]
+        templateFile = this.templates()[template] ?? this.partialSources[template] ?? this.handlebars.partials[template]
         errorContext.source = typeof templateFile === 'string' ? templateFile : undefined
         if (!templatePath) {
           errorContext.templatePath = this.guessTemplatePath(template)
@@ -648,22 +670,7 @@ export class Website {
 
       data = data ?? {}
 
-      if (typeof templateFile === 'function') {
-        return this.sendCompiledHtml(
-          res,
-          templateFile as HandlebarsTemplateDelegate<any>,
-          data,
-          errorContext,
-        )
-      }
-      if (typeof templateFile !== 'string') {
-        throw new TemplateError(`Template ${template} is not a string or compiled template`, {
-          template,
-          website: this.name,
-        })
-      }
-
-      const compiledTemplate = this.handlebars.compile(templateFile)
+      const compiledTemplate = compileHandlebarsTemplate(this.handlebars, templateFile)
       return this.sendCompiledHtml(res, compiledTemplate, data, errorContext)
     } catch (error) {
       this.renderError(res, error as Error, errorContext)
@@ -834,6 +841,38 @@ export const controllerFactories = {
       stream.pipe(res)
     }
   },
+}
+
+type CompileOptions = Parameters<typeof Handlebars.compile>[1]
+
+/**
+ * Handlebars.compile throws if given an already-compiled template (`function ret(...)`).
+ * After the first render, Handlebars replaces `partials[name]` with that function.
+ */
+export function compileHandlebarsTemplate(
+  handlebars: { compile: (input: any, options?: CompileOptions) => HandlebarsTemplateDelegate },
+  input: unknown,
+): HandlebarsTemplateDelegate {
+  if (typeof input === 'function') {
+    return input as HandlebarsTemplateDelegate
+  }
+  if (typeof input !== 'string') {
+    throw new TemplateError('Handlebars template is not a string or compiled template', {})
+  }
+  return handlebars.compile(input)
+}
+
+/** Isolated Handlebars env whose `compile()` is safe to call with a compiled template. */
+export function createSafeHandlebars(): ReturnType<typeof Handlebars.create> {
+  const hb = Handlebars.create()
+  const originalCompile = hb.compile.bind(hb)
+  hb.compile = ((input: unknown, options?: CompileOptions) => {
+    if (typeof input === 'function') {
+      return input as HandlebarsTemplateDelegate
+    }
+    return originalCompile(input as string, options)
+  }) as typeof hb.compile
+  return hb
 }
 
 /**

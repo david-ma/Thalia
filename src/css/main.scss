@@ -27,7 +27,12 @@ html {
 body {
   font-family: var(--thalia-font-sans, #{$font-family-base});
   color: var(--thalia-ink, inherit);
+  background-color: var(--thalia-canvas, var(--thalia-paper, inherit));
+}
+
+div.page {
   background-color: var(--thalia-paper, inherit);
+  color: var(--thalia-ink, inherit);
 }
 
 .outlined-box {

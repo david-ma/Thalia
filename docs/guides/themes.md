@@ -36,6 +36,21 @@ overwriting the visitor's saved preference:
 Stored visitor choice wins over `defaultTheme`. Invalid defaults and invalid
 stored values fall back to `system`.
 
+## Two-layer layout (canvas vs paper)
+
+Thalia’s wrapper puts content in `div.container.page`. Theme packs define:
+
+| Token | Role |
+|---|---|
+| `--thalia-canvas` | Viewport behind the column (`body`, `--bs-body-bg`) |
+| `--thalia-paper` | Reading surface (`div.page`, cards that should sit on “the page”) |
+
+Light packs use a grey canvas so the viewport is not a full-bleed white. Dark
+packs use a canvas darker than paper so the column lifts. A site may override
+only these two tokens (and optional radius/shadow on `div.page`) without
+forking packs. Do not turn `useCrudStyles` on just to recover a dark frame —
+that opt-in is for CRUD/admin chrome.
+
 The toggle partial supports three presentations:
 
 ```hbs
@@ -55,8 +70,11 @@ Every pack must define the same `--thalia-*` properties. The contract is broad
 on purpose: examples and downstream sites may use the extended palette even
 when the framework core does not yet consume every token.
 
-- Foundations: fonts, ink, muted text, paper, accent, line, glow, surfaces,
-  hover/hot states, pop/bubble layers, inset, and shadow.
+- Foundations: fonts, ink, muted text, **canvas** (viewport / body), **paper**
+  (reading column / `div.page`), accent, line, glow, surfaces, hover/hot
+  states, pop/bubble layers, inset, and shadow.
+  Do not paint `--thalia-paper` on `body` — that flattens the two-layer
+  layout. Body uses `--thalia-canvas`; `div.page` uses `--thalia-paper`.
 - Semantic actions: `--thalia-cheat`, `--thalia-reject`, and
   `--thalia-submit`.
 - Evaluation contrast: `--thalia-eval-white` and `--thalia-eval-black`.

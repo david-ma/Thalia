@@ -84,6 +84,12 @@ describe('theme-toggle registry', () => {
     expect(scss).not.toMatch(/\.markdown-doc \.markdown-body \{[\s\S]*color:\s*\$markdown-prose-fg/)
   })
 
+  test('body uses canvas and div.page uses paper', () => {
+    const scss = fs.readFileSync(path.join(root, 'src/css/main.scss'), 'utf8')
+    expect(scss).toMatch(/body\s*\{[\s\S]*background-color:\s*var\(--thalia-canvas/)
+    expect(scss).toMatch(/div\.page\s*\{[\s\S]*background-color:\s*var\(--thalia-paper/)
+  })
+
   test('early boot registry and dark schemes stay in sync', () => {
     const boot = fs.readFileSync(path.join(root, 'src/views/partials/theme-boot.hbs'), 'utf8')
     const idsFromObject = (name: 'KNOWN' | 'DARK') => {

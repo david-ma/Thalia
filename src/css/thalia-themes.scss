@@ -4,7 +4,7 @@
 
 @mixin thalia-bs-from-tokens {
   --bs-body-color: var(--thalia-ink);
-  --bs-body-bg: var(--thalia-paper);
+  --bs-body-bg: var(--thalia-canvas);
   --bs-secondary-color: var(--thalia-muted);
   --bs-border-color: var(--thalia-line);
   --bs-link-color: var(--thalia-accent);
@@ -48,6 +48,7 @@
   --thalia-ink: #657b83;
   --thalia-muted: #93a1a1;
   --thalia-paper: #fdf6e3;
+  --thalia-canvas: #eee8d5;
   --thalia-accent: #2aa198;
   --thalia-line: #eee8d5;
   --thalia-bg-glow-1: #eee8d5;
@@ -115,6 +116,7 @@
   --thalia-ink: #93a1a1;
   --thalia-muted: #586e75;
   --thalia-paper: #002b36;
+  --thalia-canvas: #00141a;
   --thalia-accent: #2aa198;
   --thalia-line: #0a4552;
   --thalia-bg-glow-1: #073642;
@@ -182,6 +184,7 @@
   --thalia-ink: #e0def4;
   --thalia-muted: #908caa;
   --thalia-paper: #191724;
+  --thalia-canvas: #13111b;
   --thalia-accent: #9ccfd8; // foam
   --thalia-line: #403d52; // highlight med
   --thalia-bg-glow-1: #1f1d2e;
@@ -249,6 +252,7 @@
   --thalia-ink: #e0def4;
   --thalia-muted: #908caa;
   --thalia-paper: #232136;
+  --thalia-canvas: #1a1827;
   --thalia-accent: #9ccfd8;
   --thalia-line: #44415a;
   --thalia-bg-glow-1: #2a273f;
@@ -316,6 +320,7 @@
   --thalia-ink: #575279;
   --thalia-muted: #797593;
   --thalia-paper: #faf4ed;
+  --thalia-canvas: #f2e9e1;
   --thalia-accent: #286983; // pine
   --thalia-line: #dfdad9;
   --thalia-bg-glow-1: #fffaf3;
@@ -383,6 +388,7 @@
   --thalia-ink: #f8f8f2;
   --thalia-muted: #6272a4;
   --thalia-paper: #282a36;
+  --thalia-canvas: #1e1f29;
   --thalia-accent: #bd93f9; // purple
   --thalia-line: #44475a;
   --thalia-bg-glow-1: #21222c;
@@ -450,6 +456,7 @@
   --thalia-ink: #f8f8f2;
   --thalia-muted: #75715e;
   --thalia-paper: #272822;
+  --thalia-canvas: #1b1c18;
   --thalia-accent: #a6e22e; // green
   --thalia-line: #3e3d32;
   --thalia-bg-glow-1: #1e1f1c;
@@ -517,6 +524,7 @@
   --thalia-ink: #212529;
   --thalia-muted: #6c757d;
   --thalia-paper: #ffffff;
+  --thalia-canvas: #e9ecef;
   --thalia-accent: #ffc800; // Agency primary yellow
   --thalia-line: #dee2e6;
   --thalia-bg-glow-1: #f8f9fa;
@@ -584,6 +592,7 @@
   --thalia-ink: #212529;
   --thalia-muted: #495057;
   --thalia-paper: #ffffff;
+  --thalia-canvas: #e9ecef;
   --thalia-accent: #0d6efd;
   --thalia-line: #ced4da;
   --thalia-bg-glow-1: #f8f9fa;
@@ -651,7 +660,8 @@
 
   --thalia-ink: #f8f9fa;
   --thalia-muted: #adb5bd;
-  --thalia-paper: #212529;
+  --thalia-paper: #2b3035;
+  --thalia-canvas: #16181b;
   --thalia-accent: #6ea8fe;
   --thalia-line: #495057;
   --thalia-bg-glow-1: #2b3035;
@@ -692,7 +702,7 @@
   --thalia-md-hl-ln-border: #3e4451;
 
   --bs-body-color-rgb: 248, 249, 250;
-  --bs-body-bg-rgb: 33, 37, 41;
+  --bs-body-bg-rgb: 22, 24, 27;
   --bs-emphasis-color: #f8f9fa;
   --bs-secondary-bg: #343a40;
   --bs-tertiary-bg: rgba(52, 58, 64, 0.65);

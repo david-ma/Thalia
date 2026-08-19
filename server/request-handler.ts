@@ -15,7 +15,7 @@ import { dirname } from 'path'
 import fs from 'fs'
 import * as sass from 'sass'
 import zlib from 'zlib'
-import { renderMarkdownPage } from './markdown'
+import { markdownDocumentTitle, renderMarkdownPage } from './markdown'
 import { TemplateError } from './errors'
 import {
   GZIP_SIZE_THRESHOLD,
@@ -60,7 +60,10 @@ type FolderIndexData = {
   basePath: string
   entries: FolderIndexEntry[]
   parentPath: string
+  /** Folder name for on-page breadcrumb. */
   title: string
+  /** Browser tab title (`{site} - {folder}` for `docs/` listings). */
+  pageTitle: string
 }
 
 export class RequestHandler {
@@ -376,7 +379,7 @@ export class RequestHandler {
       if (!partialTemplate) return next(requestHandler)
 
       const contentHtml = compileHandlebarsTemplate(requestHandler.website.handlebars, partialTemplate)(data)
-      const html = RequestHandler.renderFolderIndexWrapper(requestHandler, contentHtml, data.title)
+      const html = RequestHandler.renderFolderIndexWrapper(requestHandler, contentHtml, data.pageTitle)
       requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
       requestHandler.res.end(html)
       finish(`Successfully rendered folder index ${requestHandler.pathname}`)
@@ -425,7 +428,12 @@ export class RequestHandler {
     const segments = pathname.split('/').filter(Boolean)
     const parentPath = segments.length > 1 ? segments.slice(0, -1).join('/') : ''
     const title = path.basename(dirPath)
-    return { pathname, basePath, entries, parentPath, title }
+    const siteName = rh.website?.name
+    const pageTitle =
+      RequestHandler.isProjectDocsPath(rh.rootPath, dirPath) && siteName
+        ? markdownDocumentTitle({ websiteName: siteName, sourcePath: dirPath })
+        : title
+    return { pathname, basePath, entries, parentPath, title, pageTitle }
   }
 
   private static renderFolderIndexWrapper(rh: RequestHandler, contentHtml: string, title: string): string {
@@ -564,12 +572,10 @@ export class RequestHandler {
             },
             {
               reloadPartials: () => requestHandler.website.refreshPartialsForRender(),
-              documentTitle: RequestHandler.isProjectDocsPath(requestHandler.rootPath, target)
-                ? {
-                    websiteName: requestHandler.website.name,
-                    sourcePath: target,
-                  }
-                : undefined,
+              documentTitle: {
+                websiteName: requestHandler.website.name,
+                sourcePath: target,
+              },
             },
           )
           requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })

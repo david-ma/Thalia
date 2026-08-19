@@ -1812,7 +1812,7 @@ export const docsIndex: Controller = (
     basePath: '/',
     entries,
     parentPath: '',
-    title: `${website.name} - docs`,
+    title: 'docs',
   }
 
   const partialTemplate = website.handlebars.partials['show_folder_index']
@@ -1828,7 +1828,7 @@ export const docsIndex: Controller = (
   const html = compileHandlebarsTemplate(website.handlebars, website.handlebars.partials['wrapper'] ?? '')({
     requestInfo,
     version: website.version,
-    title: data.title,
+    title: `${website.name} - docs`,
   })
 
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })

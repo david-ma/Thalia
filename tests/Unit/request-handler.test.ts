@@ -25,12 +25,13 @@ type RequestHandlerPrivateStub = {
   decodePathnameForFilesystemLookup(pathname: string): string | null
   filesystemRelativePath(pathname: string): string | null
   resolvePdfPath(rh: { rootPath: string; pathname: string }): string | null
-  resolveFolderIndexData(rh: { rootPath: string; pathname: string }): {
+  resolveFolderIndexData(rh: { rootPath: string; pathname: string; website?: { name: string } }): {
     pathname: string
     basePath: string
     entries: { name: string; isDirectory: boolean }[]
     parentPath: string
     title: string
+    pageTitle: string
   } | null
 }
 
@@ -285,7 +286,21 @@ describe('RequestHandler resolveFolderIndexData', () => {
       ],
       parentPath: '',
       title: 'guides',
+      pageTitle: 'guides',
     })
+  })
+
+  test('prefixes docs folder tab titles with the site name', () => {
+    tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'thalia-folder-index-'))
+    fs.mkdirSync(path.join(tmpRoot, 'docs', 'guides'), { recursive: true })
+
+    const data = resolveFolderIndexData({
+      rootPath: tmpRoot,
+      pathname: '/guides',
+      website: { name: 'micronet' },
+    })
+    expect(data?.title).toBe('guides')
+    expect(data?.pageTitle).toBe('micronet - guides')
   })
 
   test('computes parent path and title for nested directories', () => {
@@ -297,6 +312,7 @@ describe('RequestHandler resolveFolderIndexData', () => {
     expect(data?.basePath).toBe('/guides/chapter/')
     expect(data?.parentPath).toBe('guides')
     expect(data?.title).toBe('chapter')
+    expect(data?.pageTitle).toBe('chapter')
   })
 })
 

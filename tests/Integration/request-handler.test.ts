@@ -449,6 +449,7 @@ describe('Request-handler: example-src (Handlebars, TypeScript, controller)', ()
     const html = await response.text()
     expect(html).toContain('About')
     expect(html).toContain('src/about.md')
+    expect(html).toContain('<title>example-src - about</title>')
   })
 
   test('tryMarkdown: /path serves src/path/index.md when path/index.md exists (directory-style)', async () => {

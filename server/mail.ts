@@ -1,4 +1,5 @@
 import nodemailer, { SendMailOptions, SentMessageInfo, Transporter } from 'nodemailer'
+import path from 'path'
 import type { Machine, MachineReport } from './types.js'
 import { mysqlTable, text } from 'drizzle-orm/mysql-core'
 import { MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
@@ -6,6 +7,29 @@ import { IncomingMessage, ServerResponse } from 'http'
 import { Website } from './website'
 import { RequestInfo } from './server'
 import { recursiveObjectMerge } from './website'
+
+/** Shape of `config/mailAuth.js` (transport and/or Gmail `mailAuth`, plus optional From). */
+export type MailAuthModule = {
+  transport?: unknown
+  mailAuth?: unknown
+  from?: unknown
+  defaults?: unknown
+}
+
+/**
+ * Default nodemailer options from a mail auth module.
+ * File `from` wins over `defaults.from`. Constructor defaults are merged separately in {@link MailService.init}.
+ */
+export function resolveMailAuthDefaults(authModule: MailAuthModule | null | undefined): SendMailOptions {
+  const defaults: SendMailOptions = {}
+  if (authModule && typeof authModule.defaults === 'object' && authModule.defaults !== null && !Array.isArray(authModule.defaults)) {
+    Object.assign(defaults, authModule.defaults)
+  }
+  if (typeof authModule?.from === 'string' && authModule.from.trim()) {
+    defaults.from = authModule.from.trim()
+  }
+  return defaults
+}
 
 export class MailService implements Machine {
   private transporter!: Transporter
@@ -18,10 +42,13 @@ export class MailService implements Machine {
   public defaultSendMailOptions: SendMailOptions
 
   /**
-   * @param authPath - The path to the mail auth file
+   * @param authPath - Path to `mailAuth.js`
+   * @param defaultSendMailOptions - Constructor defaults; keys in the auth file win (`from` / `defaults`)
    *
-   * This file should export an object with a full transport config (allowing you to use mailcatcher, or some other smtp server)
-   * or an object with a just the username & password, for gmail.
+   * The auth file should export `transport` (Mailcatcher or other SMTP) or `mailAuth` (Gmail user/pass).
+   * Export `from` (and optionally `defaults`) so every `sendEmail` has an envelope sender.
+   * Hosted SMTP often rejects an empty reverse-path (`MAIL FROM:<>`) as a bounce.
+   * `from` must be a mailbox the authenticated account may send as — not the SMTP login name.
    */
   constructor(authPath: string, defaultSendMailOptions: SendMailOptions = {}) {
     this.authPath = authPath
@@ -33,22 +60,38 @@ export class MailService implements Machine {
     this.website = website
     this.name = name
 
-    const { mailAuth, transport } = await this.safeImport(this.authPath)
+    const authModule = (await this.safeImport(this.authPath)) as MailAuthModule
+    const fileDefaults = resolveMailAuthDefaults(authModule)
+    this.defaultSendMailOptions = recursiveObjectMerge(
+      this.defaultSendMailOptions as Record<string, any>,
+      fileDefaults as Record<string, any>,
+    ) as SendMailOptions
+
+    const { mailAuth, transport } = authModule
     if (transport) {
-      this.transporter = nodemailer.createTransport(transport)
+      this.transporter = nodemailer.createTransport(transport as object, this.defaultSendMailOptions)
       this.isInitialized = true
       console.log('Mail transporter initialized successfully using transport config')
     } else if (mailAuth) {
-      this.transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
-        auth: mailAuth,
-      })
+      this.transporter = nodemailer.createTransport(
+        {
+          host: 'smtp.gmail.com',
+          port: 587,
+          secure: false,
+          auth: mailAuth as { user: string; pass: string },
+        },
+        this.defaultSendMailOptions,
+      )
       this.isInitialized = true
       console.log('Mail transporter initialized successfully using mailAuth config')
     } else {
       console.error('No mailAuth found in mailAuth.js')
+    }
+
+    if (this.isInitialized && !this.defaultSendMailOptions.from) {
+      console.warn(
+        'MailService has no default From. SMTP may treat mail as a bounce (MAIL FROM:<>). Export `from` from mailAuth.js as a mailbox the SMTP account may send as.',
+      )
     }
 
     return this.health()
@@ -91,12 +134,16 @@ export class MailService implements Machine {
   }
 
   async sendEmail(sendMailOptions: SendMailOptions): Promise<string> {
+    const mailOptions: SendMailOptions = recursiveObjectMerge(
+      this.defaultSendMailOptions as Record<string, any>,
+      sendMailOptions as Record<string, any>,
+    ) as SendMailOptions
+
     const doSend = () => {
       if (!this.transporter || !this.isInitialized) {
         console.error('No transporter found or not initialized')
         return Promise.resolve('No transporter found or not initialized')
       }
-      const mailOptions: SendMailOptions = recursiveObjectMerge(this.defaultSendMailOptions, sendMailOptions)
       return new Promise<string>((resolve) => {
         this.transporter.sendMail(mailOptions, (error: Error | null, info: SentMessageInfo) => {
           if (error) {
@@ -113,11 +160,11 @@ export class MailService implements Machine {
     if (this.website?.db?.drizzle) {
       try {
         await this.website.db.drizzle.insert(this.table).values({
-          from: sendMailOptions.from,
-          to: sendMailOptions.to,
-          subject: sendMailOptions.subject,
-          text: sendMailOptions.text,
-          html: sendMailOptions.html,
+          from: mailOptions.from,
+          to: mailOptions.to,
+          subject: mailOptions.subject,
+          text: mailOptions.text,
+          html: mailOptions.html,
         })
       } catch (error) {
         console.error('Error logging email to database', error)
@@ -131,14 +178,20 @@ export class MailService implements Machine {
    * @param path - The path to the file to import
    * @returns The imported module or {} on error (avoids unhandled rejection when mailAuth.js is missing)
    */
-  private async safeImport(path: string): Promise<any> {
+  private async safeImport(modulePath: string): Promise<MailAuthModule> {
+    const spec =
+      modulePath.startsWith('file:') || modulePath.startsWith('data:')
+        ? modulePath
+        : path.isAbsolute(modulePath)
+          ? `file://${modulePath}`
+          : modulePath
     try {
-      const mod = await import(path)
-      return mod ?? {}
+      const mod = await import(spec)
+      return (mod ?? {}) as MailAuthModule
     } catch (e) {
       console.warn(
         'Mail auth file not found or invalid (mail will not be ready):',
-        path,
+        modulePath,
         e instanceof Error ? e.message : String(e),
       )
       return {}

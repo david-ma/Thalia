@@ -4,6 +4,7 @@
  * and mermaid blocks in a Diagram/Source tabbed partial.
  */
 
+import path from 'path'
 import { Marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
@@ -23,9 +24,44 @@ export type MarkdownPageContext = {
   version: WebsiteVersionInfo
 }
 
+export type MarkdownDocumentTitleOptions = {
+  websiteName: string
+  sourcePath: string
+}
+
 export type RenderMarkdownPageOptions = {
   /** Called in development before compiling the wrapper (reload partials). */
   reloadPartials?: () => void
+  /**
+   * When set, document `<title>` is `{websiteName} - {page}`.
+   * `{page}` is YAML `title` when present, otherwise the file basename (or parent folder for `index.md`).
+   */
+  documentTitle?: MarkdownDocumentTitleOptions
+}
+
+/** Label for a Markdown file when YAML `title` is absent. */
+export function markdownPageLabelFromSourcePath(sourcePath: string): string {
+  const base = path.basename(sourcePath, path.extname(sourcePath))
+  if (base !== 'index') return base
+  const parent = path.basename(path.dirname(sourcePath))
+  return parent || base
+}
+
+/**
+ * Browser tab title: `{site} - {page}`.
+ * Prefers a YAML `title` string; otherwise uses the source path label.
+ */
+export function markdownDocumentTitle(options: {
+  websiteName?: string
+  sourcePath?: string
+  frontMatterTitle?: string
+}): string {
+  const page =
+    (typeof options.frontMatterTitle === 'string' && options.frontMatterTitle.trim()) ||
+    (options.sourcePath ? markdownPageLabelFromSourcePath(options.sourcePath) : '')
+  const site = options.websiteName?.trim() || ''
+  if (site && page) return `${site} - ${page}`
+  return page || site || 'Website'
 }
 
 function decodeHtml(s: string): string {
@@ -252,9 +288,17 @@ export function compileMarkdownPageHtml(
     prepareMarkdownBodyForCompile(contentHtml),
   )(compileCtx)
   const markdownPartial = handlebars.partials['markdown'] ?? '{{> content }}'
+  const meta = pageMetaFromFrontMatter(frontMatter)
+  if (options?.documentTitle) {
+    meta.title = markdownDocumentTitle({
+      websiteName: options.documentTitle.websiteName,
+      sourcePath: options.documentTitle.sourcePath,
+      frontMatterTitle: meta.title,
+    })
+  }
   const pageCtx: Record<string, unknown> = {
     ...compileCtx,
-    ...pageMetaFromFrontMatter(frontMatter),
+    ...meta,
     markdownBody: renderedBody,
     markdownBodyRaw: body,
     markdownRaw: markdownSource,

@@ -21,6 +21,8 @@ import {
   buildMarkdownDocTabs,
   compileMarkdownPageHtml,
   prepareMarkdownBodyForCompile,
+  markdownDocumentTitle,
+  markdownPageLabelFromSourcePath,
   type MarkdownPageContext,
 } from '../../server/markdown.js'
 
@@ -158,5 +160,58 @@ describe('markdown pipeline', () => {
     expect(withFm).toContain('id="markdown-body-source"')
     expect(withFm).toContain('id="markdown-raw-source"')
     expect(withFm).toContain('# Hi')
+  })
+
+  test('markdownPageLabelFromSourcePath uses basename, or parent folder for index.md', () => {
+    expect(markdownPageLabelFromSourcePath('/site/docs/2026-08-19_keeping_data_fresh.md')).toBe(
+      '2026-08-19_keeping_data_fresh',
+    )
+    expect(markdownPageLabelFromSourcePath('/site/docs/guides/index.md')).toBe('guides')
+  })
+
+  test('markdownDocumentTitle prefixes the site name and prefers YAML title', () => {
+    expect(
+      markdownDocumentTitle({
+        websiteName: 'micronet',
+        sourcePath: '/site/docs/2026-08-19_keeping_data_fresh.md',
+      }),
+    ).toBe('micronet - 2026-08-19_keeping_data_fresh')
+    expect(
+      markdownDocumentTitle({
+        websiteName: 'micronet',
+        sourcePath: '/site/docs/note.md',
+        frontMatterTitle: 'Keeping Micronet dashboard data fresh',
+      }),
+    ).toBe('micronet - Keeping Micronet dashboard data fresh')
+  })
+
+  test('compileMarkdownPageHtml sets wrapper title when documentTitle is provided', () => {
+    const handlebars = Handlebars.create()
+    registerMarkdownHelpers(handlebars)
+    registerPartialsFromDir(handlebars, PARTIALS_DIR)
+    handlebars.registerPartial('wrapper', '<title>{{#if title}}{{title}}{{else}}Website{{/if}}</title>')
+
+    const ctx = {
+      requestInfo: { pathname: '/note' },
+      version: { websiteName: 'micronet', version: '0' },
+    } as MarkdownPageContext
+
+    const html = compileMarkdownPageHtml(
+      handlebars,
+      '<p>Hi</p>',
+      [],
+      null,
+      null,
+      '# Hi\n',
+      '# Hi\n',
+      ctx,
+      {
+        documentTitle: {
+          websiteName: 'micronet',
+          sourcePath: '/tmp/docs/2026-08-19_keeping_data_fresh.md',
+        },
+      },
+    )
+    expect(html).toContain('<title>micronet - 2026-08-19_keeping_data_fresh</title>')
   })
 })

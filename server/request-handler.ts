@@ -564,6 +564,12 @@ export class RequestHandler {
             },
             {
               reloadPartials: () => requestHandler.website.refreshPartialsForRender(),
+              documentTitle: RequestHandler.isProjectDocsPath(requestHandler.rootPath, target)
+                ? {
+                    websiteName: requestHandler.website.name,
+                    sourcePath: target,
+                  }
+                : undefined,
             },
           )
           requestHandler.res.writeHead(200, { 'Content-Type': 'text/html' })
@@ -599,6 +605,13 @@ export class RequestHandler {
       out.push(decoded)
     }
     return out.join('/')
+  }
+
+  /** True when `target` is a file under the site's `docs/` folder (not `src/`). */
+  private static isProjectDocsPath(rootPath: string, target: string): boolean {
+    const docsRoot = path.resolve(rootPath, 'docs')
+    const resolved = path.resolve(target)
+    return resolved === docsRoot || resolved.startsWith(docsRoot + path.sep)
   }
 
   // TODO: /index.html should try /index.md

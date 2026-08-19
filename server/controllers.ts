@@ -1812,7 +1812,7 @@ export const docsIndex: Controller = (
     basePath: '/',
     entries,
     parentPath: '',
-    title: 'docs',
+    title: `${website.name} - docs`,
   }
 
   const partialTemplate = website.handlebars.partials['show_folder_index']

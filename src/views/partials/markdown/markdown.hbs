@@ -7,12 +7,13 @@
     markdownBodyRaw   — body source only, after front matter (Body tab; when YAML present)
     markdownRaw       — full .md source (Raw tab; includes front matter fences)
     frontMatterYaml   — optional raw YAML (no --- fences)
-    title, description, author — from front matter
+    title, description, author — YAML when present; docs/*.md titles are
+    `{websiteName} - {yaml title or filename}` (see markdownDocumentTitle)
 
   Override pane markup: copy markdown-pane-*.hbs into your site src/partials/.
   Override tabs chrome: copy tabs/tab-container.hbs (or tab-button / tab-pane).
 --}}
-{{#> wrapper }}
+{{#> wrapper title=title }}
 
 {{#if frontMatter.hide_tabs }}
 <style>

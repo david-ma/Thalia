@@ -795,13 +795,4 @@
   }
 }
 
-// Mermaid: invert light SVGs when the active pack (or system dark) is dark-scheme.
-:root[data-color-scheme="dark"] pre.mermaid {
-  filter: invert(1);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) pre.mermaid {
-    filter: invert(1);
-  }
-}
+// Mermaid invert lives on the card in markdown.scss (per-diagram toggle + dark default).

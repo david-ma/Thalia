@@ -153,6 +153,13 @@ table.hljs-ln tr td.hljs-ln-code {
   letter-spacing: 0.02em;
 }
 
+.code-card__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
 .code-card__tabs {
   display: flex;
   gap: 0.25rem;
@@ -174,6 +181,22 @@ table.hljs-ln tr td.hljs-ln-code {
 }
 
 .code-card__tab--active {
+  color: #61aeee;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.code-card__invert {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--thalia-md-code-fg, #{$markdown-code-fg});
+  background: transparent;
+  border: 1px solid var(--thalia-md-code-border, rgba(255, 255, 255, 0.16));
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.code-card__invert:hover,
+.code-card__invert--active {
   color: #61aeee;
   background: rgba(255, 255, 255, 0.1);
 }
@@ -202,9 +225,25 @@ table.hljs-ln tr td.hljs-ln-code {
 }
 
 .code-card--mermaid .code-card__body pre.mermaid {
-  background: var(--thalia-paper, #fff);
+  // Native Mermaid canvas is light; invert the island, not ID-scoped SVG rules.
+  background: #fff;
   padding: 1rem;
   min-height: 4rem;
+}
+
+:root[data-color-scheme='dark'] .code-card--mermaid:not([data-mermaid-invert]) pre.mermaid,
+.code-card--mermaid[data-mermaid-invert='on'] pre.mermaid {
+  filter: invert(1);
+}
+
+.code-card--mermaid[data-mermaid-invert='off'] pre.mermaid {
+  filter: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]):not([data-color-scheme]) .code-card--mermaid:not([data-mermaid-invert]) pre.mermaid {
+    filter: invert(1);
+  }
 }
 
 .code-card--mermaid .code-card__panel[data-tab='source'] pre {

@@ -15,9 +15,19 @@ exports[`markdown pipeline parseMarkdown + wrapMarkdownCodeBlocks + Handlebars r
 <div class="code-card code-card--mermaid" data-language="mermaid">
   <div class="code-card__header">
     <span class="code-card__lang">mermaid</span>
-    <div class="code-card__tabs" role="tablist">
-      <button type="button" class="code-card__tab code-card__tab--active" role="tab" aria-selected="true" data-tab="diagram">Diagram</button>
-      <button type="button" class="code-card__tab" role="tab" aria-selected="false" data-tab="source">Source</button>
+    <div class="code-card__actions">
+      <div class="code-card__tabs" role="tablist">
+        <button type="button" class="code-card__tab code-card__tab--active" role="tab" aria-selected="true" data-tab="diagram">Diagram</button>
+        <button type="button" class="code-card__tab" role="tab" aria-selected="false" data-tab="source">Source</button>
+      </div>
+      <button
+        type="button"
+        class="code-card__invert"
+        data-mermaid-invert-toggle
+        aria-pressed="false"
+        aria-label="Invert diagram colours"
+        title="Invert diagram colours"
+      >Invert</button>
     </div>
   </div>
   <div class="code-card__body">

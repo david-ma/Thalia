@@ -6,8 +6,31 @@
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 <script>
 (function () {
+  function mermaidSchemeIsDark() {
+    var root = document.documentElement;
+    var scheme = root.getAttribute('data-color-scheme');
+    if (scheme === 'dark') return true;
+    if (scheme === 'light') return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
+  function mermaidCardIsInverted(card) {
+    var forced = card.getAttribute('data-mermaid-invert');
+    if (forced === 'on') return true;
+    if (forced === 'off') return false;
+    return mermaidSchemeIsDark();
+  }
+
+  function syncMermaidInvertButton(card) {
+    var btn = card.querySelector('[data-mermaid-invert-toggle]');
+    if (!btn) return;
+    var on = mermaidCardIsInverted(card);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.classList.toggle('code-card__invert--active', on);
+  }
+
   document.querySelectorAll('.code-card--mermaid').forEach(function (card) {
-    var tabs = card.querySelectorAll('.code-card__tab');
+    var tabs = card.querySelectorAll('.code-card__tabs .code-card__tab');
     var panels = card.querySelectorAll('.code-card__panel');
     tabs.forEach(function (tab) {
       tab.addEventListener('click', function () {
@@ -23,7 +46,20 @@
         });
       });
     });
+
+    var invertBtn = card.querySelector('[data-mermaid-invert-toggle]');
+    if (invertBtn) {
+      invertBtn.addEventListener('click', function () {
+        card.setAttribute('data-mermaid-invert', mermaidCardIsInverted(card) ? 'off' : 'on');
+        syncMermaidInvertButton(card);
+      });
+    }
+    syncMermaidInvertButton(card);
   });
+
+  new MutationObserver(function () {
+    document.querySelectorAll('.code-card--mermaid').forEach(syncMermaidInvertButton);
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-color-scheme', 'data-theme'] });
 
   function highlightOnTabShow(tabId, selector) {
     var tab = document.getElementById(tabId);

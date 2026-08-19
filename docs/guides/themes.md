@@ -16,6 +16,11 @@ The active choice is stored as `thalia-theme` in `localStorage`. The early boot
 partial applies it in the document head to avoid a flash of the wrong theme and
 sets `data-color-scheme` to `light` or `dark` for consumers such as Mermaid.
 
+Mermaid still renders a light SVG with ID-scoped colours, so dark packs cannot
+restyle nodes from outside. The Markdown card inverts that light island by
+default in a dark scheme. Each card has an **Invert** control (not a tab) that
+sets `data-mermaid-invert="on|off"` and wins over the automatic default.
+
 ## Using themes in a site
 
 The framework wrapper includes `theme-boot` and the framework navigation

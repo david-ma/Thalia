@@ -61,6 +61,8 @@ describe('markdown pipeline', () => {
     const rendered = template({ mermaidSources })
 
     expect(rendered).toMatchSnapshot()
+    expect(rendered).toContain('data-mermaid-invert-toggle')
+    expect(rendered).toContain('data-tab="diagram"')
   })
 
   test('parseFrontMatter returns body, parsed front matter, and raw YAML', () => {

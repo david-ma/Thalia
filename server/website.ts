@@ -39,6 +39,12 @@ import { RoleRouteGuard, BasicRouteGuard, RouteGuard } from './route-guard'
 import { Socket } from 'socket.io'
 import { RequestInfo } from './server'
 import { ThaliaDatabase } from './database'
+import {
+  dbBootSleep,
+  idleDatabaseReconnectStatus,
+  resolveDbRetryDelaysSeconds,
+  type DatabaseReconnectStatus,
+} from './database-boot'
 import { placeholderImage, docsIndex } from './controllers'
 import { health, version } from './health'
 import { findThaliaRoot, resolveThaliaGitHash, resolveWebsiteGitHash } from './git-hash'
@@ -106,6 +112,12 @@ export class Website {
     source: 'file' | 'defaults' | 'error'
     error?: string
   } = { loaded: true, source: 'defaults' }
+
+  /** Background MariaDB reconnect after a failed boot init (serve-first). */
+  private dbReconnectAborted = false
+  private dbReconnectInFlight: Promise<boolean> | null = null
+  private dbReconnectLoop: Promise<void> | null = null
+  private dbReconnectStatus: DatabaseReconnectStatus = idleDatabaseReconnectStatus()
 
   /**
    * Creates a new Website instance
@@ -785,37 +797,176 @@ export class Website {
   }
 
   /**
-   * Load database configuration and initialize database connection
-   * Database initialization failures are logged but don't prevent the website from loading
+   * Snapshot of background DB reconnect state for `/health` and operators.
+   */
+  public getDatabaseReconnectStatus(): DatabaseReconnectStatus {
+    return { ...this.dbReconnectStatus }
+  }
+
+  /**
+   * Load database configuration and initialize database connection.
+   * Failures are logged; the website keeps listening. A background reconnect
+   * schedule retries until MariaDB accepts connections (or the schedule ends).
    */
   private loadDatabase(): Promise<ThaliaDatabase | null> {
     return new Promise((resolve) => {
-      if (this.config.database) {
-        const db = new ThaliaDatabase(this)
-        this.db = db
-        db.init()
-          .then(() => {
-            resolve(this.db)
-          })
-          .catch(async (error: unknown) => {
-            console.warn(`Failed to initialize database for website "${this.name}":`, error)
-            console.warn(`Website "${this.name}" will continue without database connection`)
-            await db.closeMysqlPool()
-            // Set db to undefined so code can check if database is available
-            this.db = null as unknown as ThaliaDatabase
-            resolve(null)
-          })
-      } else {
+      if (!this.config.database) {
         resolve(null)
+        return
       }
+
+      void this.attemptDatabaseConnect()
+        .then((ok) => {
+          if (ok) {
+            resolve(this.db)
+            return
+          }
+          console.warn(`Website "${this.name}" will continue without database connection`)
+          this.startDatabaseReconnect()
+          resolve(null)
+        })
+        .catch(() => {
+          // attemptDatabaseConnect always resolves boolean; defensive fallback
+          this.startDatabaseReconnect()
+          resolve(null)
+        })
     })
   }
 
   /**
+   * Try to (re)connect and init machines once. Mutexed so only one attempt runs.
+   * Returns true when `website.db` is attached with a live connection.
+   */
+  public async reloadDatabase(): Promise<boolean> {
+    if (!this.config.database) return false
+    if (this.hasLiveDatabase()) return true
+    if (this.dbReconnectInFlight) return this.dbReconnectInFlight
+
+    this.dbReconnectInFlight = this.attemptDatabaseConnect().finally(() => {
+      this.dbReconnectInFlight = null
+    })
+    return this.dbReconnectInFlight
+  }
+
+  private hasLiveDatabase(): boolean {
+    const db = this.db as ThaliaDatabase | null | undefined
+    return Boolean(db?.drizzle)
+  }
+
+  private async attemptDatabaseConnect(): Promise<boolean> {
+    if (!this.config.database) return false
+    if (this.hasLiveDatabase()) return true
+
+    const db = new ThaliaDatabase(this)
+    // Optimistic assign so machine init can read `website.db` during init hooks.
+    this.db = db
+    try {
+      await db.init()
+      this.dbReconnectStatus = idleDatabaseReconnectStatus()
+      console.log(`[thalia] database ready for website "${this.name}"`)
+      return true
+    } catch (error: unknown) {
+      console.warn(`Failed to initialize database for website "${this.name}":`, error)
+      await db.closeMysqlPool()
+      this.db = null as unknown as ThaliaDatabase
+      return false
+    }
+  }
+
+  private startDatabaseReconnect(): void {
+    if (this.dbReconnectLoop) return
+    if (!this.config.database) return
+
+    const delays = resolveDbRetryDelaysSeconds(this.config.database.boot)
+    this.dbReconnectAborted = false
+    this.dbReconnectStatus = {
+      reconnecting: true,
+      attemptIndex: 0,
+      nextAttemptAt: null,
+      scheduleExhausted: false,
+    }
+
+    console.warn(
+      `[thalia] website "${this.name}" starting database reconnect schedule ` +
+        `(${delays.length} retries, delaysSeconds=[${delays.join(',')}])`,
+    )
+
+    this.dbReconnectLoop = this.runDatabaseReconnectSchedule(delays).finally(() => {
+      this.dbReconnectLoop = null
+    })
+  }
+
+  private async runDatabaseReconnectSchedule(delays: number[]): Promise<void> {
+    for (let i = 0; i < delays.length; i++) {
+      if (this.dbReconnectAborted) return
+      if (this.hasLiveDatabase()) {
+        this.dbReconnectStatus = idleDatabaseReconnectStatus()
+        return
+      }
+
+      const delaySeconds = delays[i] ?? 0
+      const delayMs = delaySeconds * 1000
+      this.dbReconnectStatus = {
+        reconnecting: true,
+        attemptIndex: i + 1,
+        nextAttemptAt: new Date(Date.now() + delayMs).toISOString(),
+        scheduleExhausted: false,
+      }
+
+      await dbBootSleep(delayMs)
+      if (this.dbReconnectAborted) return
+      if (this.hasLiveDatabase()) {
+        this.dbReconnectStatus = idleDatabaseReconnectStatus()
+        return
+      }
+
+      this.dbReconnectStatus = {
+        ...this.dbReconnectStatus,
+        nextAttemptAt: null,
+      }
+
+      console.log(
+        `[thalia] database reconnect attempt ${i + 1}/${delays.length} for website "${this.name}"`,
+      )
+      const ok = await this.reloadDatabase()
+      if (ok) {
+        console.log(
+          `[thalia] database reconnected for website "${this.name}" after scheduled attempt ${i + 1}`,
+        )
+        this.dbReconnectStatus = idleDatabaseReconnectStatus()
+        return
+      }
+    }
+
+    this.dbReconnectStatus = {
+      reconnecting: false,
+      attemptIndex: delays.length,
+      nextAttemptAt: null,
+      scheduleExhausted: true,
+    }
+    console.warn(
+      `[thalia] database reconnect schedule exhausted for website "${this.name}" — ` +
+        `db remains unavailable until process restart`,
+    )
+  }
+
+  private abortDatabaseReconnect(): void {
+    this.dbReconnectAborted = true
+    if (this.dbReconnectStatus.reconnecting) {
+      this.dbReconnectStatus = {
+        ...this.dbReconnectStatus,
+        reconnecting: false,
+        nextAttemptAt: null,
+      }
+    }
+  }
+
+  /**
    * Close the configured MySQL pool so test runs and shutdown do not leak connections.
-   * Safe when `db` is null (init failed).
+   * Safe when `db` is null (init failed). Aborts background reconnect.
    */
   public async closeDatabase(): Promise<void> {
+    this.abortDatabaseReconnect()
     try {
       const db = this.db as ThaliaDatabase | null
       if (db) {

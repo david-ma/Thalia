@@ -44,7 +44,7 @@ It’s designed so you can start with something tangible quickly, then grow it i
 
 - **Static-ish site**: serve Handlebars + Markdown + static assets (`public/`). Great for landing pages, documentation, and “show me something now”. Built-in `.md` serving is `src/`-only; for Markdown outside `src/` (e.g. `data/`), call **`renderMarkdownPage`** from **`thalia/markdown`** in a custom controller.
 - **Controllers for dynamic pages**: add route handlers for forms, API calls, redirects, light dynamic behaviour.
-- **DB-backed internal tool**: add Drizzle schemas + queries, then build pages/controllers around them.
+- **DB-backed internal tool**: add Drizzle schemas + queries, then build pages/controllers around them. If MariaDB is briefly unreachable at boot (common after host reboot while Docker is still starting), Thalia keeps listening and **reconnects in the background** with a fixed backoff; override via `database.boot.retryDelaysSeconds` or `THALIA_DB_RETRY_DELAYS`.
 - **CRUD-first admin UI**: register CrudFactory machines for quick admin interfaces, then replace/augment with custom controllers as needs evolve.
 - **Security-gated app**: use Thalia’s optional security subsystem when you need auth/roles/guards (see repo docs and examples). For **editable user profiles**, use **`ProfileControllerFactory`** from **`thalia/security`** with a site Handlebars partial (see **`websites/example-auth/src/partials/profile_content.hbs`**); the framework file **`src/views/security/profile.hbs`** is a **legacy demo** only—not the supported profile flow. **`securityConfig()` reserves `/admin`** (admin-only route + scaffold leaf). Take over with **`claimAdminNamespace({ … })`** and **`wrap('….hbs')`** — see `server/security/README.md` and `websites/example-auth`.
 

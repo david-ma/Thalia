@@ -22,12 +22,17 @@ import {
   probeWebsiteMigrations,
   type WebsiteHealthMigrationsStatus,
 } from './drizzle-migration-status.js'
+import type { DatabaseReconnectStatus } from './database-boot.js'
 import type { RequestInfo } from './server.js'
 import type { DatabaseInitReport, MachineReport } from './types.js'
 import type { Website, Controller } from './website.js'
 
 export type WebsiteHealthDbStatus = {
   connected: boolean
+  reconnecting: boolean
+  attemptIndex: number
+  nextAttemptAt: string | null
+  scheduleExhausted: boolean
 }
 
 /** Non-machine config load status (hollow boot when loaded=false). */
@@ -136,12 +141,28 @@ export async function buildWebsiteHealth(website: Website): Promise<WebsiteHealt
     machines.every((m) => m.status !== 'error') &&
     !migrationsFailHealth(migrations)
 
+  const reconnect: DatabaseReconnectStatus =
+    typeof website.getDatabaseReconnectStatus === 'function'
+      ? website.getDatabaseReconnectStatus()
+      : {
+          reconnecting: false,
+          attemptIndex: 0,
+          nextAttemptAt: null,
+          scheduleExhausted: false,
+        }
+
   return {
     ok,
     website: website.name,
     checkedAt,
     config,
-    db: { connected },
+    db: {
+      connected,
+      reconnecting: reconnect.reconnecting,
+      attemptIndex: reconnect.attemptIndex,
+      nextAttemptAt: reconnect.nextAttemptAt,
+      scheduleExhausted: reconnect.scheduleExhausted,
+    },
     migrations,
     machines,
     lastInit,

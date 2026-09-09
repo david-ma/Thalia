@@ -197,4 +197,84 @@ describe('Website database reconnect', () => {
 
     await website.closeDatabase()
   })
+
+  test('closeDatabase interrupts hung backoff without waiting for sleep', async () => {
+    const root = writeSite({ retryDelaysSeconds: [60] })
+    setDbBootSleepForTests(() => new Promise(() => {})) // never resolves on its own
+
+    initSpy = spyOn(ThaliaDatabase.prototype, 'init').mockImplementation(async function () {
+      throw new DatabaseError('always down', { website: 'db-close-sleep', originalError: 'down' })
+    })
+
+    const website = await Website.create({
+      name: 'db-close-sleep',
+      rootPath: root,
+      mode: 'standalone',
+      port: 0,
+    })
+
+    expect(website.getDatabaseReconnectStatus().reconnecting).toBe(true)
+
+    const t0 = performance.now()
+    await website.closeDatabase()
+    expect(performance.now() - t0).toBeLessThan(500)
+    expect(website.getDatabaseReconnectStatus().reconnecting).toBe(false)
+    expect(await website.reloadDatabase()).toBe(false)
+  })
+
+  test('closeDatabase discards a late successful reconnect and closes its pool', async () => {
+    const root = writeSite({ retryDelaysSeconds: [0] })
+    setDbBootSleepForTests(async () => {})
+
+    let releaseInit!: () => void
+    const initGate = new Promise<void>((resolve) => {
+      releaseInit = resolve
+    })
+    let calls = 0
+    let poolsClosed = 0
+
+    initSpy = spyOn(ThaliaDatabase.prototype, 'init').mockImplementation(async function (
+      this: ThaliaDatabase,
+    ) {
+      calls += 1
+      if (calls === 1) {
+        throw new DatabaseError('fail first', { website: 'db-late', originalError: 'down' })
+      }
+      await initGate
+      ;(this as { drizzle: unknown }).drizzle = {
+        execute: async () => [[]],
+      }
+      return this
+    })
+
+    const closeSpy = spyOn(ThaliaDatabase.prototype, 'closeMysqlPool').mockImplementation(
+      async function () {
+        poolsClosed += 1
+      },
+    )
+
+    try {
+      const website = await Website.create({
+        name: 'db-late',
+        rootPath: root,
+        mode: 'standalone',
+        port: 0,
+      })
+
+      for (let i = 0; i < 40 && calls < 2; i++) {
+        await Bun.sleep(10)
+      }
+      expect(calls).toBe(2)
+
+      const closing = website.closeDatabase()
+      releaseInit()
+      await closing
+
+      expect(website.db?.drizzle).toBeFalsy()
+      expect(poolsClosed).toBeGreaterThan(0)
+      expect(await website.reloadDatabase()).toBe(false)
+    } finally {
+      closeSpy.mockRestore()
+    }
+  })
 })

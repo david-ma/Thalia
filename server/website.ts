@@ -118,6 +118,8 @@ export class Website {
   private dbReconnectInFlight: Promise<boolean> | null = null
   private dbReconnectLoop: Promise<void> | null = null
   private dbReconnectStatus: DatabaseReconnectStatus = idleDatabaseReconnectStatus()
+  /** Resolvers woken when reconnect is aborted (interrupt backoff sleep). */
+  private dbReconnectAbortWaiters: Array<() => void> = []
 
   /**
    * Creates a new Website instance
@@ -839,6 +841,7 @@ export class Website {
    */
   public async reloadDatabase(): Promise<boolean> {
     if (!this.config.database) return false
+    if (this.dbReconnectAborted) return false
     if (this.hasLiveDatabase()) return true
     if (this.dbReconnectInFlight) return this.dbReconnectInFlight
 
@@ -855,6 +858,7 @@ export class Website {
 
   private async attemptDatabaseConnect(): Promise<boolean> {
     if (!this.config.database) return false
+    if (this.dbReconnectAborted) return false
     if (this.hasLiveDatabase()) return true
 
     const db = new ThaliaDatabase(this)
@@ -862,6 +866,11 @@ export class Website {
     this.db = db
     try {
       await db.init()
+      if (this.dbReconnectAborted) {
+        await db.closeMysqlPool()
+        this.db = null as unknown as ThaliaDatabase
+        return false
+      }
       this.dbReconnectStatus = idleDatabaseReconnectStatus()
       console.log(`[thalia] database ready for website "${this.name}"`)
       return true
@@ -876,9 +885,9 @@ export class Website {
   private startDatabaseReconnect(): void {
     if (this.dbReconnectLoop) return
     if (!this.config.database) return
+    if (this.dbReconnectAborted) return
 
     const delays = resolveDbRetryDelaysSeconds(this.config.database.boot)
-    this.dbReconnectAborted = false
     this.dbReconnectStatus = {
       reconnecting: true,
       attemptIndex: 0,
@@ -913,7 +922,7 @@ export class Website {
         scheduleExhausted: false,
       }
 
-      await dbBootSleep(delayMs)
+      await this.waitBeforeReconnectAttempt(delayMs)
       if (this.dbReconnectAborted) return
       if (this.hasLiveDatabase()) {
         this.dbReconnectStatus = idleDatabaseReconnectStatus()
@@ -929,6 +938,7 @@ export class Website {
         `[thalia] database reconnect attempt ${i + 1}/${delays.length} for website "${this.name}"`,
       )
       const ok = await this.reloadDatabase()
+      if (this.dbReconnectAborted) return
       if (ok) {
         console.log(
           `[thalia] database reconnected for website "${this.name}" after scheduled attempt ${i + 1}`,
@@ -937,6 +947,8 @@ export class Website {
         return
       }
     }
+
+    if (this.dbReconnectAborted) return
 
     this.dbReconnectStatus = {
       reconnecting: false,
@@ -950,8 +962,29 @@ export class Website {
     )
   }
 
+  /** Backoff sleep that ends early when reconnect is aborted (shutdown). */
+  private async waitBeforeReconnectAttempt(ms: number): Promise<void> {
+    if (this.dbReconnectAborted) return
+
+    let settled = false
+    await new Promise<void>((resolve) => {
+      const done = () => {
+        if (settled) return
+        settled = true
+        const idx = this.dbReconnectAbortWaiters.indexOf(done)
+        if (idx >= 0) this.dbReconnectAbortWaiters.splice(idx, 1)
+        resolve()
+      }
+      this.dbReconnectAbortWaiters.push(done)
+      void dbBootSleep(ms).then(done)
+    })
+  }
+
   private abortDatabaseReconnect(): void {
     this.dbReconnectAborted = true
+    const waiters = this.dbReconnectAbortWaiters
+    this.dbReconnectAbortWaiters = []
+    for (const wake of waiters) wake()
     if (this.dbReconnectStatus.reconnecting) {
       this.dbReconnectStatus = {
         ...this.dbReconnectStatus,
@@ -963,10 +996,19 @@ export class Website {
 
   /**
    * Close the configured MySQL pool so test runs and shutdown do not leak connections.
-   * Safe when `db` is null (init failed). Aborts background reconnect.
+   * Safe when `db` is null (init failed). Aborts background reconnect and waits for
+   * in-flight attempts so a late success cannot leave a pool open after teardown.
    */
   public async closeDatabase(): Promise<void> {
     this.abortDatabaseReconnect()
+
+    const pending: Array<Promise<unknown>> = []
+    if (this.dbReconnectInFlight) pending.push(this.dbReconnectInFlight)
+    if (this.dbReconnectLoop) pending.push(this.dbReconnectLoop)
+    if (pending.length > 0) {
+      await Promise.all(pending.map((p) => p.catch(() => undefined)))
+    }
+
     try {
       const db = this.db as ThaliaDatabase | null
       if (db) {
@@ -974,6 +1016,8 @@ export class Website {
       }
     } catch {
       /* ignore */
+    } finally {
+      this.db = null as unknown as ThaliaDatabase
     }
   }
 }

@@ -104,6 +104,8 @@ describe('buildWebsiteHealth', () => {
     expect(snap.website).toBe('demo')
     expect(snap.config).toEqual({ loaded: true, source: 'file' })
     expect(snap.db.connected).toBe(false)
+    expect(snap.db.reconnecting).toBe(false)
+    expect(snap.db.scheduleExhausted).toBe(false)
     expect(snap.ok).toBe(false)
     expect(snap.migrations).toEqual({ checked: false, reason: 'no-db' })
     expect(snap.machines).toEqual([{ name: 'm1', status: 'ok', detail: 'ready' }])

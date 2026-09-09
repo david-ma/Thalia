@@ -124,9 +124,16 @@ export type Machine = {
 // Use SQLiteTableWithColumns for now, but we will add PgTableWithColumns later
 // export type DatabaseTable = SQLiteTableWithColumns<any> | PgTableWithColumns<any>
 // export type DatabaseTable = SQLiteTableWithColumns<any>
+import type { DatabaseBootConfig } from './database-boot.js'
+
 export interface DatabaseConfig {
   schemas: Record<string, any>
   machines?: Record<string, Machine>
+  /**
+   * Boot / reconnect behaviour when MariaDB is slow (e.g. Docker still starting after reboot).
+   * Default: optional DB + background reconnect with the framework backoff schedule.
+   */
+  boot?: DatabaseBootConfig
 }
 
 import { SecurityConfig, type RoleRouteRule } from './route-guard.js'

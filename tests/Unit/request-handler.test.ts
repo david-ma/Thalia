@@ -82,12 +82,19 @@ describe('RequestHandler decodePathnameForFilesystemLookup', () => {
 describe('static-files getContentType', () => {
   test('text-like extensions include charset=utf-8', () => {
     expect(getContentType('/index.html')).toBe('text/html; charset=utf-8')
+    expect(getContentType('/manual/Default.htm')).toBe('text/html; charset=utf-8')
     expect(getContentType('/css/main.css')).toBe('text/css; charset=utf-8')
     expect(getContentType('/app.js')).toBe('text/javascript; charset=utf-8')
     expect(getContentType('/data.json')).toBe('application/json; charset=utf-8')
     expect(getContentType('/readme.md')).toBe('text/markdown; charset=utf-8')
     expect(getContentType('/export.csv')).toBe('text/csv; charset=utf-8')
     expect(getContentType('/robots.txt')).toBe('text/plain; charset=utf-8')
+  })
+
+  test('extension matching is case-insensitive', () => {
+    expect(getContentType('/manual/Default.HTM')).toBe('text/html; charset=utf-8')
+    expect(getContentType('/Index.HTML')).toBe('text/html; charset=utf-8')
+    expect(getContentType('/style.CSS')).toBe('text/css; charset=utf-8')
   })
 
   test('binary extensions omit charset', () => {
@@ -222,6 +229,14 @@ describe('static-files setStaticFileHeaders', () => {
     expect(res2.headers['content-disposition']).toBe('inline; filename="app.js"')
   })
 
+  test('inline for .htm as text/html', () => {
+    const contentType = getContentType('/manual/Default.htm')
+    const res = mockResponse()
+    setStaticFileHeaders(res, '/manual/Default.htm', contentType)
+    expect(res.headers['content-type']).toBe('text/html; charset=utf-8')
+    expect(res.headers['content-disposition']).toBe('inline; filename="Default.htm"')
+  })
+
   test('no Content-Disposition for binary assets', () => {
     const res = mockResponse()
     setStaticFileHeaders(res, '/images/photo.png', 'image/png')
@@ -230,6 +245,10 @@ describe('static-files setStaticFileHeaders', () => {
     const res2 = mockResponse()
     setStaticFileHeaders(res2, '/fonts/icon.woff2', 'font/woff2')
     expect(res2.headers['content-disposition']).toBeUndefined()
+
+    const res3 = mockResponse()
+    setStaticFileHeaders(res3, '/file.unknown', 'application/octet-stream')
+    expect(res3.headers['content-disposition']).toBeUndefined()
   })
 })
 

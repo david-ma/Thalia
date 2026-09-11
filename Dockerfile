@@ -18,7 +18,8 @@
 #   docker buildx build --push --platform linux/arm64,linux/amd64 \
 #     --progress=plain --tag frostickle/thalia:1.1.2 .
 
-FROM oven/bun:1.3.14-debian AS base
+# Keep aligned with .github/workflows/tests.yml; bun.lock v2 requires Bun 1.4+.
+FROM oven/bun:1.4.2-debian AS base
 WORKDIR /usr/app/Thalia
 
 # Chromium for headless browser / Puppeteer. Thalia core does not depend on puppeteer;

@@ -9,9 +9,9 @@ import { publicWebsiteVersion } from '../../server/health'
 import type { Website } from '../../server/website'
 
 test('Node and Bun report actual runtime independently of compatibility version', () => {
-  expect(runtimeIdentity({ node: '24.3.0', bun: '1.4.1' })).toEqual({
+  expect(runtimeIdentity({ node: '24.3.0', bun: '1.4.2' })).toEqual({
     name: 'bun',
-    version: '1.4.1',
+    version: '1.4.2',
     nodeCompatibilityVersion: '24.3.0',
   })
   expect(runtimeIdentity({ node: '24.3.0' }).name).toBe('node')

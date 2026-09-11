@@ -27,6 +27,8 @@ export type DrizzleMigrationCompare = {
 /** Present when the site has a migrations folder worth checking. */
 export type WebsiteHealthMigrationsChecked = DrizzleMigrationCompare & {
   checked: true
+  method: 'count-only'
+  schemaVerified: false
 }
 
 /** Present when we skip the check (no fail impact on /health ok). */
@@ -123,7 +125,7 @@ export async function resolveMigrationsOutDir(
       skipped: {
         checked: false,
         reason: 'error',
-        error: e instanceof Error ? e.message : String(e),
+        error: 'migration-config-unavailable',
       },
     }
   }
@@ -173,13 +175,15 @@ export async function probeWebsiteMigrations(options: {
     const cmp = compareDrizzleMigrationCounts(expected, appliedRowCount)
     return {
       checked: true,
+      method: 'count-only',
+      schemaVerified: false,
       ...cmp,
     }
   } catch (e) {
     return {
       checked: false,
       reason: 'error',
-      error: e instanceof Error ? e.message : String(e),
+      error: 'migration-query-failed',
     }
   }
 }
@@ -190,5 +194,5 @@ export function migrationsFailHealth(m: WebsiteHealthMigrationsStatus): boolean 
     // Config import / probe errors are actionable; missing drizzle is optional.
     return m.reason === 'error'
   }
-  return !m.upToDate || m.ledgerAhead || m.pending > 0
+  return !m.migrationsTable || !m.upToDate || m.ledgerAhead || m.pending > 0
 }

@@ -60,16 +60,12 @@ describe('evaluateHealthTokenGate', () => {
   test('unauthorized when token missing or wrong', () => {
     const env = { THALIA_HEALTH_TOKEN: 'correct' }
     expect(evaluateHealthTokenGate(fakeReq({}), env)).toBe('unauthorized')
-    expect(
-      evaluateHealthTokenGate(fakeReq({ authorization: 'Bearer wrong' }), env),
-    ).toBe('unauthorized')
+    expect(evaluateHealthTokenGate(fakeReq({ authorization: 'Bearer wrong' }), env)).toBe('unauthorized')
   })
 
   test('ok when Bearer matches', () => {
     const env = { THALIA_HEALTH_TOKEN: 'correct' }
-    expect(
-      evaluateHealthTokenGate(fakeReq({ authorization: 'Bearer correct' }), env),
-    ).toBe('ok')
+    expect(evaluateHealthTokenGate(fakeReq({ authorization: 'Bearer correct' }), env)).toBe('ok')
   })
 })
 
@@ -108,7 +104,7 @@ describe('buildWebsiteHealth', () => {
     expect(snap.db.scheduleExhausted).toBe(false)
     expect(snap.ok).toBe(false)
     expect(snap.migrations).toEqual({ checked: false, reason: 'no-db' })
-    expect(snap.machines).toEqual([{ name: 'm1', status: 'ok', detail: 'ready' }])
+    expect(snap.machines).toEqual([{ name: 'm1', status: 'ok' }])
     expect(snap.lastInit?.wallMs).toBe(12)
   })
 
@@ -128,7 +124,7 @@ describe('buildWebsiteHealth', () => {
     expect(snap.ok).toBe(false)
     expect(snap.config.loaded).toBe(false)
     expect(snap.config.source).toBe('error')
-    expect(snap.config.error).toContain('SmugMugUploader')
+    expect(snap.config.error).toBe('config-load-failed')
     expect(snap.migrations).toEqual({ checked: false, reason: 'no-db' })
     expect(snap.machines).toEqual([])
     expect(snap.lastInit).toBeNull()
@@ -177,4 +173,109 @@ describe('buildWebsiteHealth', () => {
       fs.rmSync(root, { recursive: true, force: true })
     }
   })
+})
+
+test('database-free configuration is ready with explicitly skipped checks', async () => {
+  const snap = await buildWebsiteHealth({ name: 'files', rootPath: '/nonexistent', config: {} } as Website)
+  expect(snap.ok).toBe(true)
+  expect(snap.db.required).toBe(false)
+  expect(snap.checks.database.state).toBe('skipped')
+  expect(snap.readinessReasons).toEqual([])
+})
+
+test('required database stays required before initialisation and during reconnect', async () => {
+  const snap = await buildWebsiteHealth({
+    name: 'db',
+    rootPath: '/nonexistent',
+    config: { database: {} },
+    getDatabaseReconnectStatus: () => ({
+      reconnecting: true,
+      attemptIndex: 2,
+      nextAttemptAt: '2026-09-11T00:00:00.000Z',
+      scheduleExhausted: false,
+    }),
+  } as unknown as Website)
+  expect(snap.ok).toBe(false)
+  expect(snap.db.required).toBe(true)
+  expect(snap.db.reconnecting).toBe(true)
+  expect(snap.readinessReasons).toContain('database-unavailable')
+})
+
+test('lost connection and missing required machine fail without exposing errors', async () => {
+  const snap = await buildWebsiteHealth({
+    name: 'db',
+    rootPath: '/nonexistent',
+    config: { database: { machines: { missing: {} } } },
+    db: {
+      drizzle: {
+        execute: async () => {
+          throw new Error('mysql://secret:password@host')
+        },
+      },
+      machines: {},
+    },
+  } as unknown as Website)
+  expect(snap.readinessReasons).toContain('database-unavailable')
+  expect(snap.readinessReasons).toContain('required-machine-unavailable')
+  expect(JSON.stringify(snap)).not.toContain('password')
+})
+
+test('machine errors and init details are allowlisted', async () => {
+  const snap = await buildWebsiteHealth({
+    name: 'db',
+    rootPath: '/nonexistent',
+    config: { database: {} },
+    db: {
+      drizzle: { execute: async () => [] },
+      machines: {
+        bad: {
+          health: async () => ({ name: 'bad', status: 'error', error: 'secret', detail: 'secret', extra: 'secret' }),
+        },
+      },
+      lastInitReport: {
+        wallMs: 1,
+        machines: [{ name: 'bad', status: 'error', error: 'secret', detail: 'secret', durationMs: 1 }],
+      },
+    },
+  } as unknown as Website)
+  expect(snap.ok).toBe(false)
+  expect(JSON.stringify(snap)).not.toContain('secret')
+})
+
+test('endpoint gates return no diagnostic payload and version stays public', async () => {
+  const { health, version } = await import('../../server/health')
+  const previous = process.env.THALIA_HEALTH_TOKEN
+  const invoke = (controller: typeof health, headers = {}) =>
+    new Promise<{ status: number; body: any }>((resolve) => {
+      const res = {
+        statusCode: 200,
+        headersSent: false,
+        writableEnded: false,
+        setHeader() {},
+        end(body: string) {
+          resolve({ status: this.statusCode, body: JSON.parse(body) })
+        },
+      }
+      controller(
+        res as any,
+        fakeReq(headers),
+        { name: 'test', config: {}, rootPath: '/nonexistent' } as Website,
+        {} as any,
+      )
+    })
+  try {
+    delete process.env.THALIA_HEALTH_TOKEN
+    expect(await invoke(health)).toEqual({ status: 404, body: { error: 'Not found' } })
+    process.env.THALIA_HEALTH_TOKEN = 'fixture-token'
+    expect(await invoke(health)).toEqual({ status: 401, body: { error: 'Unauthorized' } })
+    expect(await invoke(health, { authorization: 'Bearer wrong' })).toEqual({
+      status: 401,
+      body: { error: 'Unauthorized' },
+    })
+    expect((await invoke(health, { authorization: 'Bearer fixture-token' })).status).toBe(200)
+    expect((await invoke(version)).status).toBe(200)
+  } finally {
+    if (previous === undefined) delete process.env.THALIA_HEALTH_TOKEN
+    else process.env.THALIA_HEALTH_TOKEN = previous
+  }
 })

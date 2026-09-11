@@ -28,6 +28,8 @@ import type { DatabaseInitReport, MachineReport } from './types.js'
 import type { Website, Controller } from './website.js'
 
 export type WebsiteHealthDbStatus = {
+  configured: boolean
+  required: boolean
   connected: boolean
   reconnecting: boolean
   attemptIndex: number
@@ -47,6 +49,11 @@ export type WebsiteHealthConfigStatus = {
 export type { WebsiteHealthMigrationsStatus }
 
 export type WebsiteHealthSnapshot = {
+  schemaVersion: 2
+  identity: Website['buildMetadata']['identity'] | null
+  diagnostics: Website['buildMetadata']['diagnostics'] | null
+  checks: Record<string, { state: 'success' | 'failure' | 'skipped'; reason: string }>
+  readinessReasons: string[]
   ok: boolean
   website: string
   checkedAt: string
@@ -109,21 +116,28 @@ export async function buildWebsiteHealth(website: Website): Promise<WebsiteHealt
     ? {
         loaded: website.configStatus.loaded,
         source: website.configStatus.source,
-        ...(website.configStatus.error ? { error: website.configStatus.error } : {}),
+        ...(website.configStatus.error ? { error: 'config-load-failed' } : {}),
       }
     : { loaded: true, source: 'defaults' }
 
+  const configured = !!website.config?.database
+  const required = configured || !!website.db
   const machinesMap = website.db?.machines ?? {}
+  const expectedMachines = Object.keys(website.config?.database?.machines ?? {})
   const machines: MachineReport[] = await Promise.all(
     Object.entries(machinesMap).map(async ([name, machine]) => {
       try {
         const report = await machine.health()
-        return { ...report, name: report.name || name }
+        return {
+          name,
+          status: ['ok', 'degraded', 'error'].includes(report.status) ? report.status : 'error',
+          ...(report.error ? { error: 'machine-reported-error' } : {}),
+        }
       } catch (e) {
         return {
           name,
           status: 'error' as const,
-          error: e instanceof Error ? e.message : String(e),
+          error: 'machine-health-failed',
         }
       }
     }),
@@ -134,12 +148,52 @@ export async function buildWebsiteHealth(website: Website): Promise<WebsiteHealt
     drizzle: connected ? website.db?.drizzle : null,
   })
 
-  const lastInit = website.db?.lastInitReport ?? null
-  const ok =
-    config.loaded &&
-    connected &&
-    machines.every((m) => m.status !== 'error') &&
-    !migrationsFailHealth(migrations)
+  const init = website.db?.lastInitReport
+  const lastInit = init
+    ? {
+        website: website.name,
+        wallMs: init.wallMs,
+        machines: init.machines.map((m) => ({
+          name: m.name,
+          status: m.status,
+          durationMs: m.durationMs,
+          ...(m.error ? { error: 'machine-init-failed' } : {}),
+        })),
+      }
+    : null
+  const machineFailure = machines.some((m) => m.status !== 'ok') || expectedMachines.some((name) => !machinesMap[name])
+  const checks: WebsiteHealthSnapshot['checks'] = {
+    config: {
+      state: config.loaded ? 'success' : 'failure',
+      reason: config.loaded ? 'config-loaded' : 'config-load-failed',
+    },
+    database: {
+      state: required ? (connected ? 'success' : 'failure') : 'skipped',
+      reason: required ? (connected ? 'database-connected' : 'database-unavailable') : 'database-not-configured',
+    },
+    machines: {
+      state: machineFailure ? 'failure' : machines.length ? 'success' : 'skipped',
+      reason: machineFailure ? 'required-machine-unavailable' : machines.length ? 'machines-ready' : 'no-machines',
+    },
+    migrations: {
+      state: migrationsFailHealth(migrations) ? 'failure' : migrations.checked ? 'success' : 'skipped',
+      reason: migrations.checked
+        ? !migrations.migrationsTable
+          ? 'ledger-unavailable'
+          : migrations.ledgerAhead
+            ? 'ledger-ahead'
+            : migrations.pending
+              ? 'migrations-pending'
+              : 'counts-match'
+        : migrations.reason === 'error'
+          ? (migrations.error ?? 'migration-check-failed')
+          : migrations.reason,
+    },
+  }
+  const readinessReasons = Object.values(checks)
+    .filter((c) => c.state === 'failure')
+    .map((c) => c.reason)
+  const ok = readinessReasons.length === 0
 
   const reconnect: DatabaseReconnectStatus =
     typeof website.getDatabaseReconnectStatus === 'function'
@@ -152,11 +206,18 @@ export async function buildWebsiteHealth(website: Website): Promise<WebsiteHealt
         }
 
   return {
+    schemaVersion: 2,
+    identity: website.buildMetadata?.identity ?? null,
+    diagnostics: website.buildMetadata?.diagnostics ?? null,
+    checks,
+    readinessReasons,
     ok,
     website: website.name,
     checkedAt,
     config,
     db: {
+      configured,
+      required,
       connected,
       reconnecting: reconnect.reconnecting,
       attemptIndex: reconnect.attemptIndex,
@@ -180,7 +241,7 @@ function endJson(res: ServerResponse, statusCode: number, body: unknown): void {
 /** GET /version — public build/runtime metadata. */
 export const version: Controller = (res, _req, website) => {
   try {
-    endJson(res, 200, website.version)
+    endJson(res, 200, publicWebsiteVersion(website))
   } catch (error) {
     console.error(`Error in ${website.name}/version: ${error instanceof Error ? error.message : 'Unknown error'}`)
     if (!res.headersSent) {
@@ -213,5 +274,21 @@ async function handleHealth(res: ServerResponse, req: IncomingMessage, website: 
   } catch (error) {
     console.error(`Error in ${website.name}/health: ${error instanceof Error ? error.message : 'Unknown error'}`)
     endJson(res, 500, { error: 'Internal Server Error' })
+  }
+}
+
+/** Explicit allowlist: never serialise the template/process version object publicly. */
+export function publicWebsiteVersion(website: Website) {
+  const identity = website.buildMetadata?.identity
+  return {
+    schemaVersion: 2,
+    hostname: website.buildMetadata?.diagnostics.process.hostname ?? null,
+    NODE_ENV: website.buildMetadata?.diagnostics.process.environment ?? null,
+    identity: identity ?? null,
+    websiteName: identity?.application.id ?? null,
+    version: identity?.application.version ?? 'unknown',
+    gitHash: identity?.application.revision ?? 'unknown',
+    thaliaVersion: identity?.framework.version ?? 'unknown',
+    thaliaGitHash: identity?.framework.revision ?? 'unknown',
   }
 }

@@ -71,6 +71,8 @@ describe('migrationsFailHealth', () => {
     expect(
       migrationsFailHealth({
         checked: true,
+        method: 'count-only',
+        schemaVerified: false,
         expected: 2,
         applied: 0,
         pending: 2,
@@ -168,4 +170,21 @@ describe('filesystem helpers', () => {
       expect(status.pending).toBe(0)
     }
   })
+})
+
+test('query failures are sanitised and count checks explicitly do not verify schema', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'thalia-query-failure-'))
+  try {
+    fs.writeFileSync(path.join(root, 'drizzle.config.ts'), "export default { out: './drizzle' }")
+    fs.mkdirSync(path.join(root, 'drizzle'))
+    const failed = await probeWebsiteMigrations({ rootPath: root, drizzle: { execute: async () => { throw new Error('mysql://secret:password@host') } } })
+    expect(failed).toEqual({ checked: false, reason: 'error', error: 'migration-query-failed' })
+    expect(migrationsFailHealth(failed)).toBe(true)
+    const missing = await probeWebsiteMigrations({ rootPath: root, drizzle: { execute: async () => { throw new Error('no such table') } } })
+    expect(missing).toMatchObject({ checked: true, method: 'count-only', schemaVerified: false, migrationsTable: false })
+    expect(migrationsFailHealth(missing)).toBe(true)
+    const ahead = await probeWebsiteMigrations({ rootPath: root, drizzle: { execute: async () => [[{ c: 2 }]] } })
+    expect(ahead).toMatchObject({ ledgerAhead: true })
+    expect(migrationsFailHealth(ahead)).toBe(true)
+  } finally { fs.rmSync(root, { recursive: true, force: true }) }
 })

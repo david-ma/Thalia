@@ -13,6 +13,7 @@ so read the relevant file before changing that area.
 | Area | Read before changing |
 |---|---|
 | Themes, colour tokens, theme boot/toggle, themed examples | [Themes](themes.md) |
+| Version identity and authenticated readiness | [Version and health](version-health.md) |
 
 Add another topic guide when an integration has multiple coordinated files,
 public extension points, or non-obvious tests. Keep transient investigations and

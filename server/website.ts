@@ -47,7 +47,8 @@ import {
 } from './database-boot'
 import { placeholderImage, docsIndex } from './controllers'
 import { health, version } from './health'
-import { findThaliaRoot, resolveThaliaGitHash, resolveWebsiteGitHash } from './git-hash'
+import { findThaliaRoot } from './git-hash'
+import { captureBuildMetadata, type BuildMetadata } from './build-metadata'
 import os from 'os'
 import { ConfigurationError, TemplateError, FileSystemError } from './errors'
 import {
@@ -101,6 +102,7 @@ export class Website {
   public routeGuard!: RouteGuard
   public db!: ThaliaDatabase
   public version!: WebsiteVersionInfo
+  public buildMetadata!: BuildMetadata
   /**
    * Result of loading `config/config.ts`.
    * - `loaded: true`, `source: 'file'` — site config merged
@@ -138,9 +140,7 @@ export class Website {
       thaliaVersion: '',
       thaliaGitHash: '',
       serverMode: this.mode,
-      processStartTime: new Date().toLocaleString('en-AU', {
-        timeZone: 'Australia/Melbourne',
-      }),
+      processStartTime: new Date(Date.now() - process.uptime() * 1000).toISOString(),
       nodeVersion: process.version,
       NODE_ENV: this.env,
       hostname: os.hostname(),
@@ -150,21 +150,13 @@ export class Website {
       pid: process.pid,
     }
 
-    try {
-      const thaliaRoot = findThaliaRoot(import.meta.dirname)
-      const thaliaPackageJson = path.join(thaliaRoot, 'package.json')
-      if (fs.existsSync(thaliaPackageJson)) {
-        this.version.thaliaVersion = JSON.parse(fs.readFileSync(thaliaPackageJson, 'utf8')).version
-      }
-      this.version.thaliaGitHash = resolveThaliaGitHash(thaliaRoot, this.rootPath)
+    this.buildMetadata = captureBuildMetadata(this.rootPath, findThaliaRoot(import.meta.dirname))
+    this.version.version = this.buildMetadata.identity.application.version ?? 'unknown'
+    this.version.gitHash = this.buildMetadata.identity.application.revision ?? 'unknown'
+    this.version.thaliaVersion = this.buildMetadata.identity.framework.version ?? 'unknown'
+    this.version.thaliaGitHash = this.buildMetadata.identity.framework.revision ?? 'unknown'
+    this.version.runtime = this.buildMetadata.diagnostics.process.runtime.version ?? 'unknown'
 
-      if (fs.existsSync(path.join(this.rootPath, 'package.json'))) {
-        this.version.version = JSON.parse(fs.readFileSync(path.join(this.rootPath, 'package.json'), 'utf8')).version
-      }
-      this.version.gitHash = resolveWebsiteGitHash(this.rootPath)
-    } catch {
-      // Version metadata is best-effort; resolve helpers fall back to 'unknown'.
-    }
   }
 
   /**

@@ -21,17 +21,15 @@ function hashFromBunTag(tag: string): string | undefined {
 function gitHashFromDirectory(cwd: string): string | undefined {
   if (!fs.existsSync(path.join(cwd, '.git'))) return undefined
   try {
-    return execSync('git rev-parse --short HEAD', { cwd }).toString().trim()
+    return execSync('git rev-parse --short HEAD', { cwd, timeout: 2000, stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim()
   } catch {
     return undefined
   }
 }
 
-export function resolveGitHash(
-  cwd: string,
-  envOverride?: string,
-  metadataFallback?: () => string | undefined,
-): string {
+export function resolveGitHash(cwd: string, envOverride?: string, metadataFallback?: () => string | undefined): string {
   const fromEnv = envOverride?.trim()
   if (fromEnv) return fromEnv
 
@@ -131,11 +129,7 @@ function findThaliaHashInLockObject(value: unknown): string | undefined {
 }
 
 function thaliaInstallHash(thaliaRoot: string, siteRoot: string): string | undefined {
-  return (
-    thaliaHashFromBunTag(thaliaRoot) ??
-    thaliaHashFromBunLock(siteRoot) ??
-    thaliaHashFromPackageLock(siteRoot)
-  )
+  return thaliaHashFromBunTag(thaliaRoot) ?? thaliaHashFromBunLock(siteRoot) ?? thaliaHashFromPackageLock(siteRoot)
 }
 
 function websiteHashFromPackageJson(siteRoot: string): string | undefined {
@@ -152,12 +146,63 @@ function websiteHashFromPackageJson(siteRoot: string): string | undefined {
 }
 
 export function resolveThaliaGitHash(thaliaRoot: string, siteRoot: string): string {
-  return resolveGitHash(thaliaRoot, process.env.THALIA_GIT_HASH, () =>
-    thaliaInstallHash(thaliaRoot, siteRoot),
-  )
+  return resolveGitHash(thaliaRoot, process.env.THALIA_GIT_HASH, () => thaliaInstallHash(thaliaRoot, siteRoot))
 }
 
 export function resolveWebsiteGitHash(siteRoot: string): string {
   const envOverride = process.env.WEBSITE_GIT_HASH ?? process.env.THALIA_WEBSITE_GIT_HASH
   return resolveGitHash(siteRoot, envOverride, () => websiteHashFromPackageJson(siteRoot))
+}
+
+export type RevisionMetadata = {
+  revision: string | null
+  source: 'environment' | 'git-at-startup' | 'package-metadata' | 'install-metadata' | 'unknown'
+  precision: 'full' | 'abbreviated' | 'unknown'
+  dirty: boolean | null
+  dirtyScope: 'startup-checkout' | null
+}
+
+export function resolveRevision(
+  cwd: string,
+  override?: string,
+  fallback?: () => string | undefined,
+  fallbackSource: RevisionMetadata['source'] = 'package-metadata',
+): RevisionMetadata {
+  const valid = (value?: string) => (value && /^[a-f0-9]{7,40}$/i.test(value.trim()) ? value.trim() : null)
+  const supplied = valid(override)
+  const git = supplied ? null : valid(gitHashFromDirectory(cwd))
+  const revision = supplied ?? git ?? valid(fallback?.())
+  let dirty: boolean | null = null
+  if (git) {
+    try {
+      dirty = !!execSync('git status --porcelain --untracked-files=normal', {
+        cwd,
+        stdio: ['ignore', 'pipe', 'ignore'],
+        timeout: 2000,
+      })
+        .toString()
+        .trim()
+    } catch {}
+  }
+  return {
+    revision,
+    source: supplied ? 'environment' : git ? 'git-at-startup' : revision ? fallbackSource : 'unknown',
+    precision: revision ? (revision.length === 40 ? 'full' : 'abbreviated') : 'unknown',
+    dirty,
+    dirtyScope: git ? 'startup-checkout' : null,
+  }
+}
+
+export function captureRevisions(thaliaRoot: string, siteRoot: string, env: NodeJS.ProcessEnv) {
+  return {
+    application: resolveRevision(siteRoot, env.WEBSITE_GIT_HASH ?? env.THALIA_WEBSITE_GIT_HASH, () =>
+      websiteHashFromPackageJson(siteRoot),
+    ),
+    framework: resolveRevision(
+      thaliaRoot,
+      env.THALIA_GIT_HASH,
+      () => thaliaInstallHash(thaliaRoot, siteRoot),
+      'install-metadata',
+    ),
+  }
 }
